@@ -1,0 +1,95 @@
+{
+  "appId": "dev.gridloc.chordinal",
+  "productName": "Chordinal",
+  "asar": false,
+  "directories": {
+    "output": "release/chordinal",
+    "buildResources": "assets/chordinal-icon"
+  },
+  "files": [
+    "chordinal.html",
+    "dist/**",
+    "src/**",
+    "electron/**",
+    "tools/project-files.mjs",
+    "tools/project-folders.mjs",
+    "tools/soundfont-download.mjs",
+    "assets/chordinal-icon/icon.png",
+    "README.md",
+    "docs/**",
+    "LICENSE",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "soundfonts/GeneralUser-GS",
+      "to": "soundfonts/GeneralUser-GS"
+    }
+  ],
+  "mac": {
+    "category": "public.app-category.music",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": [
+          "arm64",
+          "x64"
+        ]
+      },
+      {
+        "target": "zip",
+        "arch": [
+          "arm64",
+          "x64"
+        ]
+      }
+    ],
+    "icon": "assets/chordinal-icon/icon.icns",
+    "identity": "-",
+    "hardenedRuntime": false,
+    "extendInfo": {
+      "NSMicrophoneUsageDescription": "Chordinal listens to the microphone to turn whistled melodies and chords into notes."
+    }
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "assets/chordinal-icon/icon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  },
+  "linux": {
+    "target": [
+      "flatpak"
+    ],
+    "category": "Audio",
+    "icon": "assets/chordinal-icon/icon.png"
+  },
+  "flatpak": {
+    "runtimeVersion": "25.08",
+    "baseVersion": "25.08",
+    "finishArgs": [
+      "--socket=wayland",
+      "--socket=x11",
+      "--share=ipc",
+      "--device=dri",
+      "--socket=pulseaudio",
+      "--share=network",
+      "--filesystem=home"
+    ]
+  },
+  "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+  "extraMetadata": {
+    "name": "chordinal",
+    "productName": "Chordinal",
+    "main": "electron/chordinal.js"
+  }
+}

@@ -47,6 +47,7 @@ function startChordinal(packaged, screen, dir)
 startShell({
     name: 'Music Generator',
     id: 'music-generator',
+    icon: 'icon',
     page: 'index.html',
     async setup({ packaged, ipcMain, screen })
     {

@@ -2,9 +2,10 @@
 default:
     @just --list
 
-# install the desktop app (~/Applications/Music Generator.app on macOS) that runs this checkout
+# install both desktop apps (~/Applications/Music Generator.app and Chordinal.app on macOS) that run this checkout
 install: build
-    bash tools/install-app.sh
+    bash tools/install-app.sh music-generator
+    bash tools/install-app.sh chordinal
 
 # install the pinned Preact, esbuild and Electron into node_modules
 deps:
@@ -15,8 +16,7 @@ deps:
 build: deps
     node tools/build.mjs
 
-# on macOS it starts through `open`, so macOS asks for the microphone for the app, not for the terminal
-# build and run it without installing: the microphone needs no browser permission, and projects save into projects/
+# build and run Music Generator without installing: projects save into projects/
 app: build
     #!/usr/bin/env sh
     if [ "$(uname)" = Darwin ]; then
@@ -25,6 +25,7 @@ app: build
         npx electron .
     fi
 
+# on macOS it starts through `open`, so macOS asks for the microphone for the app, not for the terminal
 # build and run Chordinal, the DAW for making music by hand: its projects are folders anywhere (Documents/Chordinal/ by default)
 chordinal: build
     #!/usr/bin/env sh
@@ -73,15 +74,21 @@ whistle +args:
 catalog:
     node tools/sf2-catalog.mjs
 
-# render assets/icon.svg into assets/icon/ (icon.icns, icon.ico, icon.png); needs Inkscape
+# assets/icon.svg goes to assets/icon/, assets/chordinal.svg to assets/chordinal-icon/; needs Inkscape
+# render each app's icon as icon.icns, icon.ico and icon.png
 icons:
     bash tools/make-icons.sh assets/icon.svg assets/icon
+    bash tools/make-icons.sh assets/chordinal.svg assets/chordinal-icon --work build/chordinal-icons
 
-# build the installable app for this OS into release/ (macOS: .dmg and .zip; Windows: installer; Linux: .flatpak)
-# it comes with GeneralUser GS (downloaded first if missing); the other libraries are downloaded in the app
-package: build
+# into release/music-generator/ and release/chordinal/ (macOS: .dmg and .zip; Windows: installer; Linux: .flatpak)
+# each comes with GeneralUser GS (downloaded first if missing); the other libraries are downloaded in the app
+# e.g. just package   ·   just package chordinal
+# build both installable apps for this OS, or the ones named
+package *apps="music-generator chordinal": build
+    #!/usr/bin/env sh
+    set -e
     bash tools/fetch-soundfonts.sh generaluser
-    npx electron-builder --publish never
+    for a in {{apps}}; do npx electron-builder --config "packaging/$a.json" --publish never; done
 
 # download the openly licensed SoundFont libraries into soundfonts/ (all, or those named); ones already there are skipped
 # e.g. just soundfonts   ·   just soundfonts generaluser

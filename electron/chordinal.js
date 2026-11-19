@@ -28,6 +28,7 @@ app.on('open-file', (e, file)=> { e.preventDefault(); if (handOver) handOver(fil
 startShell({
     name: 'Chordinal',
     id: 'chordinal',
+    icon: 'chordinal-icon',
     page: 'chordinal.html',
     askMicrophone: true,
     async setup({ ipcMain, screen })

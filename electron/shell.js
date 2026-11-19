@@ -37,6 +37,7 @@ export const exists = (file)=> fs.access(file).then(()=> true, ()=> false);
  * @property {string} name  the app's name, which names its data folder
  * @property {string} id  a short name for the headless run's folders
  * @property {string} page  the page it loads, beside index.html
+ * @property {string} icon  the folder in assets/ holding its icon.png, for the window on Windows and Linux
  * @property {boolean} [askMicrophone]  asks for the microphone at start-up (macOS)
  * @property {(shell: Shell)=> Promise<void>|void} [setup]  its own IPC, before the window opens
  * @property {(shell: Shell, url: string, method: string, body: ()=> Promise<Uint8Array>)=> Promise<Response|null>} [request]
@@ -182,7 +183,7 @@ export function startShell(config)
         const win = new BrowserWindow({
             width: 1280, height: 800, minWidth: 800, minHeight: 500,
             title: app.name,
-            icon: path.join(ROOT, 'assets', 'icon', 'icon.png'),   // Windows and Linux; the macOS app's comes from its bundle
+            icon: path.join(ROOT, 'assets', config.icon, 'icon.png'),   // Windows and Linux; the macOS app's comes from its bundle
             backgroundColor: '#18181c',     // the page's background, so the window never flashes white
             autoHideMenuBar: true,
             show: false,

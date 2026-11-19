@@ -1,0 +1,94 @@
+{
+  "appId": "dev.gridloc.music-generator",
+  "productName": "Music Generator",
+  "asar": false,
+  "directories": {
+    "output": "release/music-generator",
+    "buildResources": "assets/icon"
+  },
+  "files": [
+    "index.html",
+    "dist/**",
+    "src/**",
+    "electron/**",
+    "tools/project-files.mjs",
+    "tools/project-folders.mjs",
+    "tools/soundfont-download.mjs",
+    "assets/icon/icon.png",
+    "README.md",
+    "docs/**",
+    "LICENSE",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "projects",
+      "to": "projects",
+      "filter": [
+        "*/project.json"
+      ]
+    },
+    {
+      "from": "soundfonts/GeneralUser-GS",
+      "to": "soundfonts/GeneralUser-GS"
+    }
+  ],
+  "mac": {
+    "category": "public.app-category.music",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": [
+          "arm64",
+          "x64"
+        ]
+      },
+      {
+        "target": "zip",
+        "arch": [
+          "arm64",
+          "x64"
+        ]
+      }
+    ],
+    "icon": "assets/icon/icon.icns",
+    "identity": "-",
+    "hardenedRuntime": false
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "assets/icon/icon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  },
+  "linux": {
+    "target": [
+      "flatpak"
+    ],
+    "category": "Audio",
+    "icon": "assets/icon/icon.png"
+  },
+  "flatpak": {
+    "runtimeVersion": "25.08",
+    "baseVersion": "25.08",
+    "finishArgs": [
+      "--socket=wayland",
+      "--socket=x11",
+      "--share=ipc",
+      "--device=dri",
+      "--socket=pulseaudio",
+      "--share=network",
+      "--filesystem=xdg-documents"
+    ]
+  },
+  "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+}

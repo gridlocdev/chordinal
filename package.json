@@ -8,7 +8,7 @@
     "test": "node --test",
     "check": "node tools/coupling-report.mjs --strict",
     "app": "node tools/build.mjs && electron .",
-    "package": "electron-builder --publish never"
+    "package": "electron-builder --config packaging/music-generator.json --publish never && electron-builder --config packaging/chordinal.json --publish never"
   },
   "devDependencies": {
     "electron": "44.9.2",
@@ -25,101 +25,5 @@
   "description": "Write, whistle and arrange music: a small DAW with a song composer and a whistle-to-notes sketchpad",
   "author": "gridlocdev",
   "homepage": "https://github.com/gridlocdev/music-generator",
-  "license": "MIT",
-  "build": {
-    "appId": "dev.gridloc.music-generator",
-    "productName": "Music Generator",
-    "asar": false,
-    "directories": {
-      "output": "release",
-      "buildResources": "assets/icon"
-    },
-    "files": [
-      "index.html",
-      "dist/**",
-      "src/**",
-      "electron/**",
-      "tools/project-files.mjs",
-      "tools/soundfont-download.mjs",
-      "assets/icon/icon.png",
-      "README.md",
-      "docs/**",
-      "LICENSE",
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "projects",
-        "to": "projects",
-        "filter": [
-          "*/project.json"
-        ]
-      },
-      {
-        "from": "soundfonts/GeneralUser-GS",
-        "to": "soundfonts/GeneralUser-GS"
-      }
-    ],
-    "mac": {
-      "category": "public.app-category.music",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "arm64",
-            "x64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "arm64",
-            "x64"
-          ]
-        }
-      ],
-      "icon": "assets/icon/icon.icns",
-      "identity": "-",
-      "hardenedRuntime": false,
-      "extendInfo": {
-        "NSMicrophoneUsageDescription": "Music Generator listens to the microphone to turn whistled melodies into notes."
-      }
-    },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "assets/icon/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    },
-    "linux": {
-      "target": [
-        "flatpak"
-      ],
-      "category": "Audio",
-      "icon": "assets/icon/icon.png"
-    },
-    "flatpak": {
-      "runtimeVersion": "25.08",
-      "baseVersion": "25.08",
-      "finishArgs": [
-        "--socket=wayland",
-        "--socket=x11",
-        "--share=ipc",
-        "--device=dri",
-        "--socket=pulseaudio",
-        "--share=network",
-        "--filesystem=xdg-documents"
-      ]
-    },
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
-  }
+  "license": "MIT"
 }

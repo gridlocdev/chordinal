@@ -73,8 +73,9 @@ Chordinal's window has a transport bar at the top, the channel rack above a brow
 | `tools/compose.mjs` | composes a song in Node: prints the plan and melody, writes a `.mid` (`just compose`) |
 | `tools/make-projects.mjs` | writes the written songs as project files in `projects/` (`just projects`) |
 | `tools/build.mjs` | bundles the UI with esbuild (`just build`, `--watch` for `just dev`, `--check` for `just check`) |
-| `tools/install-app.sh` | installs the desktop app that runs this checkout (`just install`): a renamed Electron in `~/Applications` on macOS, with the icon from `assets/icon/`; a launcher on Linux |
-| `assets/icon.svg`, `tools/make-icons.sh` | the app icon's source, and the script (`just icons`) that renders it into `assets/icon/` |
+| `tools/install-app.sh` | installs Music Generator or Chordinal as a desktop app that runs this checkout (`just install` does both): a renamed Electron in `~/Applications` on macOS, with the app's icon; a launcher on Linux |
+| `assets/icon.svg`, `assets/chordinal.svg`, `tools/make-icons.sh` | each app's icon source, and the script (`just icons`) that renders them into `assets/icon/` and `assets/chordinal-icon/` |
+| `packaging/music-generator.json`, `packaging/chordinal.json` | each app's electron-builder config (`just package`): its entry, app id, name, icon, files and bundled resources |
 | `tools/project-folders.mjs` | Chordinal's project folders in its main process: reaching only folders the user picked in this run or has in Open Recent (the last ten, kept in its user data folder), and writing `project.json` through a temporary file |
 | `tools/project-files.mjs` | the desktop app's `projects/` requests: `GET /projects/` lists the projects, `PUT /projects/<name>/project.json` saves one (to a temporary file, then swapped in), `GET` and `PUT /projects/<name>/takes/…` list and keep its takes |
 | `electron/shell.js`, `electron/preload.cjs`, `tools/soundfont-download.mjs` | what both desktop apps share: serves the checkout on `app://game/`, allows the microphone for that origin only, checks and downloads SoundFont libraries, and keeps each app's settings in a file in its own user data folder through the `window.appStorage` hook. `--dev` reloads the window when `dist/` changes; `--headless` runs it hidden and muted, with its own settings, for automated tests |

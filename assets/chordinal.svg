@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Chordinal's icon source, on the same grid as icon.svg (Music Generator's): an 824-unit tile at (100,100) on a
+     1024 canvas. tools/make-icons.sh crops to the tile for Windows and Linux. The glyph is a three-note chord on
+     one stem. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tile" gradientUnits="userSpaceOnUse" x1="0" y1="100" x2="0" y2="924">
+      <stop offset="0" stop-color="#8C7BFF" />
+      <stop offset="1" stop-color="#4A35D4" />
+    </linearGradient>
+  </defs>
+
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" />
+
+  <g fill="#FFFFFF" transform="translate(12 19)">
+    <ellipse cx="500" cy="700" rx="84" ry="62" transform="rotate(-22 500 700)" />
+    <ellipse cx="500" cy="554" rx="84" ry="62" transform="rotate(-22 500 554)" />
+    <ellipse cx="500" cy="408" rx="84" ry="62" transform="rotate(-22 500 408)" />
+    <rect x="537" y="220" width="44" height="466" />
+  </g>
+</svg>

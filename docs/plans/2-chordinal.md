@@ -7,4 +7,4 @@ Each slice leaves `just check` and `just test` green and names the Chordinal PRD
 - [x] **3. The left panel** (§5, §6, §7). The channel rack and the browser tabs. Waits on 2.
 - [x] **4. Generate Part…** (§8). Waits on 2.
 - [x] **5. Music Generator slimmed down** (§9). Open in Chordinal, and whistling moved to Chordinal. Waits on 2.
-- [ ] **6. Packaging** (§3.3). Both apps and their icons. Waits on 5.
+- [x] **6. Packaging** (§3.3). Both apps and their icons. Waits on 5.
