@@ -5,8 +5,10 @@
 /**
  * @typedef {{ beat: number, beats: number, key: number, vel: number, [mark: string]: any }} Note
  *   beat is from the clip's start; extra fields are marks a MIDI FX may read (vibrato, ornament …)
- * @typedef {{ id: string, start: number, beats: number, notes: Note[], mute?: boolean }} Clip
- *   a muted clip is kept but not played
+ * @typedef {{ id: string, start: number, beats: number, notes: Note[], mute?: boolean, pattern?: string, step?: number }} Clip
+ *   a muted clip is kept but not played; a clip with a pattern shares its notes, length and step with every clip of that
+ *   pattern (PRD §3.2); step is the step grid's step in beats (PRD §4.4)
+ * @typedef {{ id: string, name: string }} Pattern
  * @typedef {{ beat: number, value: number, curve: 'set' | 'linear' | 'exp' }} Keyframe
  * @typedef {{ volumeDb: number, pan: number, mute: boolean, solo: boolean, lowCut: number,
  *   sends: { reverb: number, delay: number }, autoPan: { rate: number, depth: number } | null,
@@ -14,11 +16,14 @@
  *   duck: dip by db on every note of those keys on another track (a kick), like a sidechain
  * @typedef {{ id: string, name: string, color: number[], instrument: { bank: number, program: number }, mixer: Mixer,
  *   fx: { type: string, [param: string]: any }[], automation: { tone?: Keyframe[], reverb?: Keyframe[], delay?: Keyframe[] },
- *   clips: Clip[] }} Track
+ *   clips: Clip[], stepRows?: number[] }} Track
+ *   stepRows: the drum keys the step grid shows for the track (PRD §4.6)
  * @typedef {{ title: string, length: number, tempoMap: import('../lib/tempo-map.js').TempoSegment[],
  *   meters: import('./meter.js').MeterChange[], key: { tonic: number, mode: string } | null,
  *   markers: { beat: number, name: string, meta?: object }[], loop: { from: number, to: number } | null,
- *   groove: object, chords: { beat: number, beats: number, name: string, tones: number[] }[], tracks: Track[] }} Project
+ *   groove: object, chords: { beat: number, beats: number, name: string, tones: number[] }[], tracks: Track[],
+ *   patterns?: Pattern[] }} Project
+ *   patterns: missing means none, so projects made before patterns (and the composer's) stay as they were
  *   groove: settings a MIDI FX shares across tracks (swing, style); markers' meta is for MIDI FX too
  */
 
@@ -90,8 +95,101 @@ export const removeTrack = (p, id)=> ({ ...p, tracks: p.tracks.filter(t => t.id 
 
 export const addClip = (p, trackId, clip)=> updateTrack(p, trackId, t => ({ ...t, clips: [...t.clips, clip].sort((a, b)=> a.start - b.start) }));
 
-export const updateClip = (p, trackId, clipId, patch)=> updateTrack(p, trackId, t =>
-    ({ ...t, clips: t.clips.map(c => c.id === clipId ? patchOf(c, patch) : c).sort((a, b)=> a.start - b.start) }));
+/** changes a clip; a change to a pattern clip's notes, length or step goes to every clip of its pattern (PRD §3.3) */
+export function updateClip(p, trackId, clipId, patch)
+{
+    const old = findClip(p, trackId, clipId);
+    let next = null;
+    const out = updateTrack(p, trackId, t =>
+        ({ ...t, clips: t.clips.map(c => c.id === clipId ? (next = patchOf(c, patch)) : c).sort((a, b)=> a.start - b.start) }));
+    if (!old || !next?.pattern || next.pattern !== old.pattern || LINKED.every(k => next[k] === old[k])) return out;
+    return spreadPattern(out, next);
+}
+
+// ── patterns ────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** what every clip of a pattern shares (PRD §3.2) */
+const LINKED = /** @type {const} */ (['notes', 'beats', 'step']);
+
+/** a clip with these shared fields from another; a missing step stays missing */
+function withShared(clip, from)
+{
+    const { step, ...rest } = clip;
+    return { ...rest, notes: from.notes, beats: from.beats, ...(from.step !== undefined && { step: from.step }) };
+}
+
+/** every other clip of `source`'s pattern made to match it */
+function spreadPattern(p, source)
+{
+    return { ...p, tracks: p.tracks.map(t => t.clips.some(c => c.pattern === source.pattern && c.id !== source.id)
+        ? { ...t, clips: t.clips.map(c => c.pattern === source.pattern && c.id !== source.id ? withShared(c, source) : c) } : t) };
+}
+
+/** a clip on its own again: no pattern */
+export const unlinked = ({ pattern, ...clip })=> clip;
+
+export const patternsOf = (p)=> p.patterns ?? [];
+
+export const findPattern = (p, id)=> patternsOf(p).find(x => x.id === id) ?? null;
+
+/** a pattern id not yet used, like 'p3' */
+function newPatternId(p)
+{
+    const used = new Set(patternsOf(p).map(x => x.id));
+    let n = 1;
+    while (used.has(`p${n}`)) n++;
+    return `p${n}`;
+}
+
+/** the next free name for a pattern on a track: "Drums 1", "Drums 2" (PRD §3.4) */
+export function nextPatternName(p, base)
+{
+    const names = new Set(patternsOf(p).map(x => x.name));
+    let n = 1;
+    while (names.has(`${base} ${n}`)) n++;
+    return `${base} ${n}`;
+}
+
+/** an ordinary clip turned into the only clip of a new pattern (PRD §3.4); a pattern clip is left as it is */
+export function makePattern(p, trackId, clipId, name)
+{
+    const clip = findClip(p, trackId, clipId);
+    if (!clip || clip.pattern) return p;
+    const id = newPatternId(p);
+    return updateClip({ ...p, patterns: [...patternsOf(p), { id, name }] }, trackId, clipId, { pattern: id });
+}
+
+/** a pattern clip turned into an ordinary clip with the same notes (PRD §3.6) */
+export function makeUnique(p, trackId, clipId)
+{
+    const clip = findClip(p, trackId, clipId);
+    if (!clip?.pattern) return p;
+    return updateClip(p, trackId, clipId, unlinked);
+}
+
+/** a new name for a pattern; an empty or unchanged name changes nothing (PRD §3.7) */
+export function renamePattern(p, id, name)
+{
+    const pattern = findPattern(p, id), clean = name.trim();
+    if (!pattern || !clean || clean === pattern.name) return p;
+    return { ...p, patterns: patternsOf(p).map(x => x === pattern ? { ...x, name: clean } : x) };
+}
+
+/** what's wrong with the project's patterns, for tests: clips of a pattern that disagree, clips of a missing pattern */
+export function patternProblems(p)
+{
+    const problems = [], first = new Map();
+    for (const t of p.tracks) for (const c of t.clips)
+    {
+        if (!c.pattern) continue;
+        if (!findPattern(p, c.pattern)) problems.push(`clip ${c.id} plays a missing pattern ${c.pattern}`);
+        const f = first.get(c.pattern);
+        if (!f) { first.set(c.pattern, c); continue; }
+        for (const k of LINKED)
+            if (JSON.stringify(f[k]) !== JSON.stringify(c[k])) problems.push(`clips ${f.id} and ${c.id} of ${c.pattern} differ in ${k}`);
+    }
+    return problems;
+}
 
 export const removeClip = (p, trackId, clipId)=> updateTrack(p, trackId, t => ({ ...t, clips: t.clips.filter(c => c.id !== clipId) }));
 
@@ -117,10 +215,11 @@ export function splitAt(p, beat, trackId = null)
         {
             if (beat <= c.start + 1e-9 || beat >= c.start + c.beats - 1e-9) continue;
             const cut = beat - c.start;
-            const left = { ...c, beats: cut, notes: c.notes.filter(n => n.beat < cut - 1e-9).map(n => ({ ...n, beats: Math.min(n.beats, cut - n.beat) })) };
-            const right = { ...c, id: newId(out, 'c'), start: beat, beats: c.beats - cut,
+            // PRD §3.8: the pieces of a cut pattern clip are ordinary clips
+            const left = { ...unlinked(c), beats: cut, notes: c.notes.filter(n => n.beat < cut - 1e-9).map(n => ({ ...n, beats: Math.min(n.beats, cut - n.beat) })) };
+            const right = { ...unlinked(c), id: newId(out, 'c'), start: beat, beats: c.beats - cut,
                 notes: c.notes.filter(n => n.beat >= cut - 1e-9).map(n => ({ ...n, beat: n.beat - cut })) };
-            out = addClip(updateClip(out, t.id, c.id, left), t.id, right);
+            out = addClip(updateClip(out, t.id, c.id, ()=> left), t.id, right);
         }
     }
     return out;
@@ -226,7 +325,7 @@ export function joinClips(p, trackId, clipIds)
         .sort((a, b)=> a.beat - b.beat || a.key - b.key);
     const first = clips.reduce((a, b)=> b.start < a.start ? b : a);
     return updateTrack(p, trackId, x => ({ ...x, clips: x.clips.filter(c => c === first || !clipIds.includes(c.id))
-        .map(c => c === first ? { ...c, start, beats: end - start, notes } : c) }));
+        .map(c => c === first ? { ...unlinked(c), start, beats: end - start, notes } : c) }));
 }
 
 /** notes moved onto a grid (in beats), all the way or by a strength from 0 to 1, their ends too; none gets shorter than
