@@ -45,8 +45,8 @@
 | Turn drum steps on or off | | click a step in the step grid, drag to paint; `Shift` click accents a step |
 | Step size of a drum clip (1/8, 1/16, 1/32, 1/16 triplet) | | the step grid's **Step** menu |
 | Add or hide a drum row | | right-click a row in the step grid, **Add Row**, **Hide** |
-| Play the selected track's instrument | `A S D F G H J K L ; '` white keys, `W E T Y U O P` black keys | a MIDI keyboard, with its sustain pedal |
-| Octave down, up | `Z`, `X` | |
+| Play the selected track's instrument (click the piano roll first; while it has the focus, `B`, `C`, `M`, `Q` and `R` wait until you click elsewhere, or use the menus) | `A S D F G H J K L ; '` white keys, `W E T Y U O P` black keys | a MIDI keyboard, with its sustain pedal |
+| Octave down, up, in the piano roll | `Z`, `X` | |
 | Show or hide the browser | `B` | |
 | Put an instrument on a track | | click it in the browser's Instruments tab, or drag it onto the track |
 | Piano roll, mixer, step grid | `Cmd 1`, `Cmd 2`, `Cmd 3` | |

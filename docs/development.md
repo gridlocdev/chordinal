@@ -213,7 +213,7 @@ To publish a release, set `version` in `package.json`, commit, and push a tag `v
 
 ## Adding a command
 
-Add it to `COMMANDS` in `src/ui/commands.js` with a label, an `accelerator` (a Cmd shortcut the menu bar answers) or `shown` (a plain key the page answers, which still types in a text field; never one of the musical-typing letters `A`–`L`, `;`, `'`, `W E T Y U O P`, `Z`, `X`), and `enabled`/`checked` if it has them. Mark it `field: true` if it changes the project and its Cmd shortcut should go to a text field that has focus instead (Cmd+Backspace deletes text there, not the track). Then put `item('id')` in the shared menus in `src/ui/menu-bar.js` (or an app's File menu in `src/app/menu-bar.js` or `src/chordinal/menu-bar.js`) and in any right-click menu in `src/ui/context-menus.js` it belongs in.
+Add it to `COMMANDS` in `src/ui/commands.js` with a label, an `accelerator` (a Cmd shortcut the menu bar answers) or `shown` (a plain key the page answers, which still types in a text field; never one of the musical-typing letters `A`–`L`, `;`, `'`, `W E T Y U O P`, `Z`, `X`; a letter waits while the piano roll has the focus, since its letters play notes there), and `enabled`/`checked` if it has them. Mark it `field: true` if it changes the project and its Cmd shortcut should go to a text field that has focus instead (Cmd+Backspace deletes text there, not the track). Then put `item('id')` in the shared menus in `src/ui/menu-bar.js` (or an app's File menu in `src/app/menu-bar.js` or `src/chordinal/menu-bar.js`) and in any right-click menu in `src/ui/context-menus.js` it belongs in.
 
 ## SoundFont libraries
 

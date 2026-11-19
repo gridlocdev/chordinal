@@ -173,6 +173,18 @@ test('the left panel: the channel rack above the browser, a row\'s double-click,
         await until('the panel is hidden', async ()=> !await page.$('.left'));
         await page.keyboard.press('b');
         await until('the panel is back', async ()=> !!await page.$('.left'));
+        // while the piano roll has the focus its letters play notes, so B doesn't hide the panel until the arrangement is clicked
+        await page.click('.editor .tabs button:has-text("Piano Roll")');
+        await page.waitForSelector('.roll');
+        await page.click('.roll', { position: { x: 5, y: 5 } });
+        await page.keyboard.press('b');
+        await new Promise(r => setTimeout(r, 300));
+        assert.ok(await page.$('.left'), 'B played a note instead of hiding the panel');
+        await page.click('.arrange');
+        await page.keyboard.press('b');
+        await until('the panel is hidden again', async ()=> !await page.$('.left'));
+        await page.keyboard.press('b');
+        await until('the panel is back again', async ()=> !!await page.$('.left'));
         // §9.3: whistling is Chordinal's: Record Melody on a track, Whistle a Chord once a stretch of the chord track is picked
         // (neither is clicked: a headless run never opens the microphone)
         const menuItem = (id)=> run.app.evaluate(({ Menu }, id)=> { const m = Menu.getApplicationMenu().getMenuItemById(id); return m && { enabled: m.enabled }; }, id);

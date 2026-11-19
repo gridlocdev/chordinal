@@ -60,7 +60,7 @@ Chordinal's window has a transport bar at the top, the channel rack above a brow
 | `src/ui/bounce.js` | Export as Audio File: the project, or a range of it, played once through an offline render and saved as a stereo WAV, or one WAV per track (stems) into a folder, optionally normalized |
 | `src/ui/components/ExportDialog.jsx` | the Export dialog: range, mix or stems, normalize, tail |
 | `src/ui/recording.js` | whistle → MIDI: recording a take into a new clip on the selected track (or a chord onto the chord track), dropped audio files and kept takes read the same way, keeping takes beside the project, and New from melody |
-| `src/ui/live.js` | musical typing and MIDI input playing the selected track's instrument |
+| `src/ui/live.js` | musical typing (while the piano roll has the focus, `focus.js`) and MIDI input playing the selected track's instrument |
 | `src/ui/libraries.js` | the SoundFont library in use (an installed one while the picked one isn't) and downloading the others from the Instruments tab |
 | `src/ui/commands.js` | every command (label, shortcut, action, when it can be used); `menu-bar.js` builds the menus both apps share from them and keeps an app's bar current, `keys.js` answers the plain-key shortcuts (Cmd shortcuts are the menu bar's) |
 | `src/ui/timeline.js` | tempo and meter: the whole song's, changes from a bar on, and the flags the ruler shows for them with their menu |

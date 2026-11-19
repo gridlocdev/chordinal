@@ -1,5 +1,5 @@
-// Playing the selected track's instrument live: musical typing on the computer keyboard and any MIDI keyboard. A key
-// sounds while any input holds it.
+// Playing the selected track's instrument live: musical typing on the computer keyboard (while the piano roll has the
+// focus, focus.js) and any MIDI keyboard. A key sounds while any input holds it.
 import { signal, effect } from '@preact/signals';
 import { midi } from '../platform/midi.js';
 import { NOTE_KEYS, OCTAVE_KEYS, typing } from '../platform/keys.js';
@@ -8,6 +8,7 @@ import { loadSoundFont, findPreset, createInstrument } from '../audio/soundfont.
 import { presetFor } from '../daw/instruments.js';
 import { audioEngine } from '../platform/audio-engine.js';
 import { settings, setSettings, selectedTrack, status } from './store.js';
+import { musicalTyping } from './focus.js';
 
 const KEY_VELOCITY = 100;       // computer keys have no velocity
 const SUSTAIN_CC = 64;
@@ -86,7 +87,7 @@ export function startLive()
     });
     addEventListener('keydown', (e)=>
     {
-        if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || typing()) return;
+        if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || typing() || !musicalTyping()) return;
         if (e.code in OCTAVE_KEYS)
         {
             const octave = Math.max(OCTAVES[0], Math.min(OCTAVES[1], settings.value.octave + OCTAVE_KEYS[e.code]));

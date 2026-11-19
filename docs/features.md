@@ -48,7 +48,7 @@ Every track has mute, solo, a fader and pan. Put any instrument from the librari
 
 ## Playing it like an instrument
 
-Your computer keys or a MIDI keyboard, with velocity and a sustain pedal, play the selected track's instrument.
+Your computer keys (once you click the piano roll) or a MIDI keyboard, with velocity and a sustain pedal, play the selected track's instrument.
 
 ## Importing and exporting
 

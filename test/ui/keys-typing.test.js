@@ -1,5 +1,6 @@
 // With no menu bar (the browser), the page answers the Cmd shortcuts itself; while a text field has focus, the ones
-// marked `field` are left to the field, so Cmd+Backspace deletes text there instead of the selected track.
+// marked `field` are left to the field, so Cmd+Backspace deletes text there instead of the selected track. While the
+// piano roll has the focus its letters play notes, so the plain-letter commands (B, C, M, Q, R) wait until it hasn't.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -11,7 +12,8 @@ globalThis.document = { activeElement: null };
 
 const { handleKey } = await import('../../src/ui/keys.js');
 const { COMMANDS } = await import('../../src/ui/commands.js');
-const { hist, selected } = await import('../../src/ui/store.js');
+const { hist, selected, settings, setSettings } = await import('../../src/ui/store.js');
+const { focus, musicalTyping } = await import('../../src/ui/focus.js');
 const { emptyProject, history, addTrack, makeTrack } = await import('../../src/daw/project.js');
 
 const key = (code, mods = {})=> ({ code, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, repeat: false, ...mods });
@@ -39,4 +41,25 @@ test('the shortcuts left to a text field are the editing ones; File and View sho
     const field = Object.keys(COMMANDS).filter(id => COMMANDS[id].field);
     assert.deepEqual(field.sort(), ['deleteTrack', 'duplicate', 'duplicateTrack', 'join', 'makePattern', 'newTrack', 'split', 'trackDown', 'trackUp']);
     for (const id of ['save', 'saveAs', 'new', 'open', 'zoomIn', 'roll']) assert.ok(!COMMANDS[id].field, id);
+});
+
+test('the letters play notes only while the piano roll is showing and focused, and B toggles the browser everywhere else', ()=>
+{
+    document.activeElement = null;
+    setSettings({ editorTab: 'roll', browserOpen: false });
+    focus.value = 'roll';
+    assert.equal(musicalTyping(), true);
+    assert.equal(handleKey(key('KeyB')), false, 'B is left to musical typing');
+    assert.equal(settings.value.browserOpen, false);
+
+    focus.value = 'arrange';
+    assert.equal(musicalTyping(), false);
+    assert.equal(handleKey(key('KeyB')), true);
+    assert.equal(settings.value.browserOpen, true);
+
+    focus.value = 'roll';
+    setSettings({ editorTab: 'mixer' });
+    assert.equal(musicalTyping(), false, 'the roll is not showing');
+    assert.equal(handleKey(key('KeyB')), true);
+    assert.equal(settings.value.browserOpen, false);
 });
