@@ -9,7 +9,7 @@ import { beatToSeconds } from '../lib/tempo-map.js';
 import { encodeWavChannels, normalize, peakOf } from '../lib/wav.js';
 import { audioEngine } from '../platform/audio-engine.js';
 import { appMenu } from '../platform/app-menu.js';
-import { project, projectName, mix, status } from './store.js';
+import { project, projectName, mix, status, exporting } from './store.js';
 import { stop } from './player.js';
 
 /** whether the Export dialog is open */
@@ -44,9 +44,17 @@ async function render(p, instruments, from, to, tail, gains)
  *   files rather than the mix; normalized: the loudest peak brought to −1 dB (for stems, one gain for them all, so
  *   they keep their balance); tail: seconds after the end, for reverb and release
  */
-export async function bounce({ range = null, stems = false, normalized = false, tail = TAIL } = {})
+export async function bounce(options = {})
 {
+    if (exporting.value) return;
     stop();
+    exporting.value = true;
+    try { await exportAudio(options); }
+    finally { exporting.value = false; }
+}
+
+async function exportAudio({ range = null, stems = false, normalized = false, tail = TAIL })
+{
     const p = { ...project.value, loop: null };
     const name = fileName(projectName.value || p.title || 'untitled');
     const from = range?.from ?? 0, to = range?.to ?? projectEnd(p);

@@ -5,7 +5,7 @@ import { loadInstruments } from '../daw/instruments.js';
 import { playProject } from '../daw/player.js';
 import { projectEnd } from '../daw/project.js';
 import { audioEngine } from '../platform/audio-engine.js';
-import { project, mix, playing, beat, status, settings, levels } from './store.js';
+import { project, mix, playing, beat, status, settings, levels, exporting } from './store.js';
 
 let handle = null;
 let heard = null;           // the project the handle plays
@@ -15,7 +15,7 @@ const FALL = 0.92;           // what's left of a meter's level a frame later
 
 export async function play()
 {
-    if (audioEngine.rendering) { status.value = 'Wait for the export to finish'; return; }
+    if (audioEngine.rendering || exporting.value) { status.value = 'Wait for the export to finish'; return; }
     const p = project.value;
     const id = ++starting;
     halt();

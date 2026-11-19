@@ -10,7 +10,7 @@ import { projectEnd, markerRange, addMarker, findClip, insertTime, deleteTime } 
 import { projectMidi } from '../daw/project-midi.js';
 import { cut as cutChord } from '../sketch/takes.js';
 import { project, projectName, dirty, hist, selected, selectedClip, selectedTrack, chordRange, beat, playing,
-    settings, setSettings, status } from './store.js';
+    settings, setSettings, status, exporting } from './store.js';
 import { edit, undo, redo, save, saveAs, openProject } from './document.js';
 import { toggle, seek } from './player.js';
 import { record, recording, newFromMelody } from './recording.js';
@@ -29,7 +29,7 @@ import { askTempo, askMeter } from './timeline.js';
 import { newDialog as dialog, appDialog } from './dialogs.js';
 
 /** a dialog is open: commands wait */
-export const busy = ()=> !!(dialog.value || appDialog.value || exportDialog.value || asking.value || audioEngine.rendering);
+export const busy = ()=> !!(dialog.value || appDialog.value || exportDialog.value || asking.value || audioEngine.rendering || exporting.value);
 
 // ── what the commands act on ─────────────────────────────────────────────────────────────────────────────────────────
 

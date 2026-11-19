@@ -96,5 +96,7 @@ export const playing = signal(false);
 export const beat = signal(0);
 /** what's loading or what went wrong, shown in the transport */
 export const status = signal('');
+/** true from an export's start to its end, loading included: nothing else plays meanwhile */
+export const exporting = signal(false);
 /** while playing: each track's level (peak 0..1) and the master's, for the mixer's meters */
 export const levels = signal(/** @type {{ tracks: number[], master: number }} */ ({ tracks: [], master: 0 }));
