@@ -46,6 +46,22 @@ export function barLines(meters, from, to)
     return out;
 }
 
+/** the metronome's clicks from `from` up to `to`: one per beat unit of the meter (a quarter in x/4, an eighth in x/8),
+ * `first` on each bar's first beat */
+export function clickBeats(meters, from, to)
+{
+    const out = [];
+    meters.forEach((m, i)=>
+    {
+        const [n, d] = String(m.sig).split('/').map(Number);
+        const unit = n > 0 && d > 0 ? 4 / d : 1, bpb = beatsPerBar(m.sig), end = Math.min(to, meters[i + 1]?.beat ?? Infinity);
+        for (let bar = m.beat; bar < end - 1e-9; bar += bpb)
+            for (let k = 0, b = bar; k * unit < bpb - 1e-9 && b < end - 1e-9; k++, b = bar + k * unit)
+                if (b >= from - 1e-9) out.push({ beat: b, first: k === 0 });
+    });
+    return out;
+}
+
 /** the nearest grid line to a beat, `grid` beats apart, counted from the bar it's in */
 export function snap(meters, beat, grid)
 {

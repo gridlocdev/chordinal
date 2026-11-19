@@ -13,7 +13,7 @@ import { beatToSeconds, secondsToBeat } from '../lib/tempo-map.js';
 import { trackNotes, projectEnd, isDrums } from './project.js';
 import { performProject } from './fx.js';
 import { valueAt } from './automation.js';
-import { barAt } from './meter.js';
+import { clickBeats } from './meter.js';
 
 const LOOKAHEAD = 0.2;          // seconds of notes handed to Web Audio ahead of time
 const TICK_MS = 25;             // how often more notes are scheduled
@@ -49,7 +49,7 @@ export const ownsKey = (sounding, id, n)=> { const s = sounding.get(id); return 
  * @param {{ font: any, preset: any }[]} instrumentsOf  from loadInstruments, one per track
  * @param {{ from?: number, until?: number, mix?: { gain: number, pan: number }[], click?: boolean, ticker?: typeof startTicker }} [opts]
  *   from: the beat to start at; until: the beat to stop at, in a project with no loop (else its end); mix: each
- *   track's gain and pan to start with (see setMix); click: a metronome on every beat; ticker: what calls the
+ *   track's gain and pan to start with (see setMix); click: a metronome on each beat unit of the meter (meter.js clickBeats); ticker: what calls the
  *   scheduler (an offline render drives it itself)
  */
 export function playProject(project, instrumentsOf, { from = 0, until = null, mix = null, click = false, ticker = startTicker } = {})
@@ -158,9 +158,9 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
     };
 
     // the metronome, straight to the output past the mixer
-    const tick = (beat, at)=>
+    const clickList = click ? clickBeats(project.meters, 0, end) : [];
+    const tick = ({ first }, at)=>
     {
-        const first = Math.abs(barAt(project.meters, beat).start - beat) < 1e-6;
         const osc = new OscillatorNode(ctx, { frequency: first ? CLICK.bar : CLICK.beat });
         const env = new GainNode(ctx, { gain: 0 });
         env.gain.setValueAtTime(CLICK.gain, at);
@@ -183,7 +183,7 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
         next = indexFrom(data.events, s.from - PICKUP_BEATS, e => e.beat);
         nextDuck = indexFrom(duckBeats, s.from, b => b);
         nextFx = indexFrom(data.fx, s.from, e => e.beat);
-        nextClick = Math.ceil(s.from - 1e-6);
+        nextClick = indexFrom(clickList, s.from, c => c.beat);
         automate(s);
     };
     // notes already sounding at a beat play on from it, their note-offs still to come in this segment
@@ -236,7 +236,8 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
             const lead = (e)=> e.kind === 'tapeStop' ? e.seconds : 0;
             for (; nextFx < data.fx.length && data.fx[nextFx].beat < seg.until - 1e-9 && timeOf(seg, data.fx[nextFx].beat) - lead(data.fx[nextFx]) < limit; nextFx++)
                 fxEvent(data.fx[nextFx], seg);
-            if (click) for (; nextClick < seg.until - 1e-9 && timeOf(seg, nextClick) < limit; nextClick++) tick(nextClick, timeOf(seg, nextClick));
+            for (; nextClick < clickList.length && clickList[nextClick].beat < seg.until - 1e-9 && timeOf(seg, clickList[nextClick].beat) < limit; nextClick++)
+                tick(clickList[nextClick], timeOf(seg, clickList[nextClick].beat));
 
             // the loop's end: carry on from its start, one pass further on
             if (!switching) break;
