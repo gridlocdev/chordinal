@@ -12,13 +12,15 @@ import { checkLibraries } from '../ui/libraries.js';
 import { startLive, connectMidi } from '../ui/live.js';
 import { startEditorFollow } from '../ui/steps.js';
 import { handleKey } from '../ui/keys.js';
-import { textMenu } from '../ui/context-menus.js';
+import { textMenu, setTrackItems } from '../ui/context-menus.js';
 import { Transport } from '../ui/components/Transport.jsx';
 import { Arrange } from '../ui/components/Arrange.jsx';
 import { Editor } from '../ui/components/Editor.jsx';
 import { ExportDialog } from '../ui/components/ExportDialog.jsx';
 import { Ask } from '../ui/components/Ask.jsx';
 import { LeftPanel } from './components/LeftPanel.jsx';
+import { GeneratePart } from './components/GeneratePart.jsx';
+import { openGenerate } from './generate.js';
 import { useProjectFolders, startUp, watchWindow, newSong } from './files.js';
 import { startChordinalMenus } from './menu-bar.js';
 
@@ -49,6 +51,7 @@ function App()
             <Split />
             <Editor />
             <ExportDialog />
+            <GeneratePart />
             <Ask />
         </div>
     );
@@ -65,6 +68,7 @@ addEventListener('contextmenu', (e)=>
 });
 
 useProjectFolders();
+setTrackItems(trackId => [{ label: 'Generate Part…', run: ()=> openGenerate(trackId) }]);
 registerFx(HUMANIZE, humanizeFx);
 await loadSettings();
 await checkLibraries();

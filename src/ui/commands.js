@@ -26,10 +26,10 @@ import { exportDialog } from './bounce.js';
 import { importMidi } from './midi-import.js';
 import { audioEngine } from '../platform/audio-engine.js';
 import { askTempo, askMeter } from './timeline.js';
-import { newDialog as dialog } from './dialogs.js';
+import { newDialog as dialog, appDialog } from './dialogs.js';
 
 /** a dialog is open: commands wait */
-export const busy = ()=> !!(dialog.value || exportDialog.value || asking.value || audioEngine.rendering);
+export const busy = ()=> !!(dialog.value || appDialog.value || exportDialog.value || asking.value || audioEngine.rendering);
 
 // ── what the commands act on ─────────────────────────────────────────────────────────────────────────────────────────
 

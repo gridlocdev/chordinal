@@ -4,3 +4,6 @@ import { signal } from '@preact/signals';
 
 /** File → New's dialog is open */
 export const newDialog = signal(false);
+
+/** a dialog of one app's own is open (Chordinal's Generate Part…): the shortcuts wait, as for the others */
+export const appDialog = signal(false);

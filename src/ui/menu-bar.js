@@ -12,7 +12,8 @@ export const editMenu = ()=> ({ label: 'Edit', submenu: [item('undo'), item('red
     item('up'), item('down'), item('octaveUp'), item('octaveDown'), item('nudgeLeft'), item('nudgeRight'), '-',
     item('doubleSpeed'), item('halfSpeed'), item('reverse'), '-', item('insertBars'), item('deleteBars')] });
 
-export const trackMenu = ()=> ({ label: 'Track', submenu: [item('newTrack'), item('duplicateTrack'), item('renameTrack'), item('instrument'), '-',
+/** @param {any[]} more  the app's own items, after Choose Instrument */
+export const trackMenu = (more = [])=> ({ label: 'Track', submenu: [item('newTrack'), item('duplicateTrack'), item('renameTrack'), item('instrument'), ...more, '-',
     item('mute'), item('solo'), '-', item('trackUp'), item('trackDown'), '-', item('deleteTrack')] });
 
 /** @param {any[]} more  the app's own items at the end */

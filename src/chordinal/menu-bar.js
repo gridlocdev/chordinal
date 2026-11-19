@@ -1,9 +1,10 @@
-// Chordinal's menu bar: its File menu (§4: New, Open…, Open Recent, Save, Save As…) and Help, around the menus both
-// apps share.
+// Chordinal's menu bar: its File menu (§4: New, Open…, Open Recent, Save, Save As…), Track ▸ Generate Part… (§8) and
+// Help, around the menus both apps share.
 import { projectName } from '../ui/store.js';
 import { item, busy } from '../ui/commands.js';
 import { editMenu, trackMenu, transportMenu, viewMenu, startMenus } from '../ui/menu-bar.js';
 import { recent, newSong, openFolder, openRecent, clearRecent, revealProject } from './files.js';
+import { openGenerate } from './generate.js';
 
 /** an item of this app's own, waiting while a dialog is open as the shared commands do */
 const own = (id, label, run, more = {})=> ({ id, label, ...more, run: ()=> { if (!busy()) run(); } });
@@ -24,7 +25,8 @@ function fileMenu()
 
 function menuBar()
 {
-    return [fileMenu(), editMenu(), trackMenu(), transportMenu(), viewMenu(), { label: 'Help', submenu: [item('readme')] }];
+    const generate = own('generatePart', 'Generate Part…', ()=> openGenerate());
+    return [fileMenu(), editMenu(), trackMenu([generate]), transportMenu(), viewMenu(), { label: 'Help', submenu: [item('readme')] }];
 }
 
 export const startChordinalMenus = ()=> startMenus(menuBar);

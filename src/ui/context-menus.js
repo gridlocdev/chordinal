@@ -37,6 +37,10 @@ const speedItems = (by)=> [
 const pasteHere = (trackId, at)=> ({ label: 'Paste Here', enabled: !!clipboard.value, run: ()=> paste(at, trackId) });
 const playheadHere = (at)=> ({ label: 'Move Playhead Here', run: ()=> seek(at) });
 
+/** items an app adds to every track's menu, after Choose Instrument… (Chordinal's Generate Part…) */
+let appTrackItems = (trackId)=> /** @type {any[]} */ ([]);
+export const setTrackItems = (fn)=> { appTrackItems = fn; };
+
 function trackItems(trackId)
 {
     const t = trackOf(trackId);
@@ -45,6 +49,7 @@ function trackItems(trackId)
     return [
         { label: 'Rename…', run: ()=> renameTrack(trackId) },
         { label: 'Choose Instrument…', run: ()=> chooseInstrument(trackId) },
+        ...appTrackItems(trackId),
         { label: 'Color', submenu: TRACK_COLORS.map((c, n)=> ({ label: COLOR_NAMES[n], radio: true, checked: sameColor(c, t.color), run: ()=> setTrackColor(trackId, c) })) },
         '-',
         { label: 'Mute', checked: t.mixer.mute, run: ()=> toggleMute(trackId) },

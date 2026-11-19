@@ -206,3 +206,5 @@ input[type=range] { accent-color: var(--accent); }
 .rack .add button { flex: 1; font-size: 12px; padding: 3px 6px; }
 .knob { width: 22px; height: 22px; border-radius: 50%; background: var(--panel-2); border: 1px solid var(--line); position: relative; cursor: ns-resize; touch-action: none; }
 .knob .mark { position: absolute; left: 50%; top: 2px; bottom: 50%; width: 2px; margin-left: -1px; background: var(--accent); transform-origin: 50% 100%; }
+.dialog.generate .seed { display: flex; gap: 6px; }
+.dialog.generate .seed input { flex: 1; min-width: 0; }
