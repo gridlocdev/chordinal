@@ -1,6 +1,7 @@
 // The native menus: the page hands over its menu bar and right-click menus as plain items (src/platform/app-menu.js)
 // and gets back the id of the item picked. The bar gets the app menu and Window menu macOS expects around it. While a
-// text field has focus, Edit items marked `text` do the field's own edit (undo, copy, paste…) instead.
+// text field has focus, Edit items marked `text` do the field's own edit (undo, copy, paste…) instead, and items marked
+// `field` drop their shortcut, so the key reaches the field (the bar is built again as focus moves in and out).
 //
 // Headless (for automated tests) a right-click menu isn't shown: it's kept as globalThis.contextMenu, for the test to
 // click an item of.
@@ -16,6 +17,8 @@ const TEXT = new Set(['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll']);
 export function installMenus(ipcMain, { headless })
 {
     let typing = false;
+    /** the last bar handed over, and the page it came from, to build again when typing starts or stops */
+    let last = null;
 
     const build = (items, contents)=> items.map(x =>
     {
@@ -27,7 +30,7 @@ export function installMenus(ipcMain, { headless })
             label: x.label,
             enabled: x.enabled ?? true,
             ...(checkable && { type: x.radio ? 'radio' : 'checkbox', checked: x.checked }),
-            ...(x.accelerator && { accelerator: x.accelerator }),
+            ...(x.accelerator && { accelerator: x.accelerator, ...(typing && x.field && { registerAccelerator: false }) }),
             ...(x.shown && { accelerator: x.shown, registerAccelerator: false }),
             ...(x.submenu && { submenu: build(x.submenu, contents) }),
             click: ()=>
@@ -38,16 +41,24 @@ export function installMenus(ipcMain, { headless })
         };
     });
 
-    ipcMain.on('menu:typing', (e, on)=> { typing = !!on; });
-
-    ipcMain.on('menu:bar', (e, menus)=>
+    const setBar = ()=>
     {
-        const template = build(menus, e.sender);
+        const [menus, sender] = last;
+        const template = build(menus, sender);
         if (MAC) template.unshift({ role: 'appMenu' });
         const help = template.findIndex(m => m.label === 'Help');
         template.splice(help < 0 ? template.length : help, 0, { role: 'windowMenu' });
         Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    };
+
+    ipcMain.on('menu:typing', (e, on)=>
+    {
+        if (typing === !!on) return;
+        typing = !!on;
+        if (last) setBar();
     });
+
+    ipcMain.on('menu:bar', (e, menus)=> { last = [menus, e.sender]; setBar(); });
 
     ipcMain.on('menu:popup', (e, items)=>
     {

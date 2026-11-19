@@ -190,3 +190,22 @@ test('the left panel: the channel rack above the browser, a row\'s double-click,
         await fs.rm(tmp, { recursive: true, force: true });
     }
 });
+
+test('while a text field has focus, the menu bar leaves Cmd+Backspace and the other editing keys to it', { skip: !existsSync(path.join(ROOT, 'dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
+{
+    const marker = path.join(os.tmpdir(), `chordinal-dialog-${Date.now()}`);
+    const run = await launch(marker);
+    try
+    {
+        const registered = (id)=> run.app.evaluate(({ Menu }, id)=> Menu.getApplicationMenu().getMenuItemById(id).registerAccelerator, id);
+        assert.equal(await registered('deleteTrack'), true);
+        await run.page.evaluate(()=> { const box = document.createElement('input'); box.id = 'test-box'; document.body.append(box); box.focus(); });
+        await until('the bar was built for typing', async ()=> await registered('deleteTrack') === false);
+        assert.equal(await registered('duplicate'), false);
+        assert.equal(await registered('save'), true, 'Save still answers Cmd+S');
+        await run.page.evaluate(()=> document.getElementById('test-box').blur());
+        await until('the bar was built again', async ()=> await registered('deleteTrack') === true);
+        assert.ok(!existsSync(marker), 'no dialog was shown');
+    }
+    finally { run.proc.kill('SIGKILL'); }
+});

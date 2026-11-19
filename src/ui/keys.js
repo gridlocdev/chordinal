@@ -22,8 +22,8 @@ export function handleKey(e)
     if (busy()) return false;
     const code = e.code === 'Delete' ? 'Backspace' : e.code, cmd = e.metaKey || e.ctrlKey;
     const k = KEYS.find(x => x.code === code && x.shift === e.shiftKey && x.alt === e.altKey && x.cmd === cmd);
-    // a text field keeps its own keys, and its own undo, copy and paste
-    if (!k || (typing() && (!k.cmd || COMMANDS[k.id].text))) return false;
+    // a text field keeps its own keys, its own undo, copy and paste, and the Cmd keys of commands marked `field`
+    if (!k || (typing() && (!k.cmd || COMMANDS[k.id].text || COMMANDS[k.id].field))) return false;
     if (e.repeat && !['up', 'down', 'octaveUp', 'octaveDown', 'nudgeLeft', 'nudgeRight', 'prevBar', 'nextBar'].includes(k.id)) return false;
     const c = COMMANDS[k.id];
     if (c.enabled && !c.enabled()) return false;

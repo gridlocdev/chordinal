@@ -2,8 +2,9 @@
 // handed over through window.appMenu. An item's action stays here; the desktop app sends back its id when it's picked.
 //
 // An item is '-' (a separator) or { label, run?, accelerator?, shown?, enabled?, checked?, radio?, submenu?, text?,
-// role? }: `accelerator` is a shortcut the menu answers itself (Cmd+S); `shown` is one the page answers (Space), only
+// field?, role? }: `accelerator` is a shortcut the menu answers itself (Cmd+S); `shown` is one the page answers (Space), only
 // written beside the label; `text` ('undo', 'copy', …) does the text field's own edit instead while one has focus;
+// `field` leaves the accelerator's key to a text field while one has focus;
 // `role` is one of Electron's built-in items. In the menu bar an item's id is its `id`, so tests can click it.
 const backend = /** @type {any} */ (globalThis).appMenu;
 

@@ -132,7 +132,9 @@ const track = ()=> selectedTrack.value;
 
 /**
  * @typedef {{ label: string, run: ()=> any, accelerator?: string, shown?: string, enabled?: ()=> boolean,
- *   checked?: ()=> boolean, radio?: boolean, text?: string }} Command
+ *   checked?: ()=> boolean, radio?: boolean, text?: string, field?: boolean }} Command
+ * `field`: while a text field has focus, the command's shortcut is left to the field (Cmd+Backspace deletes to the start
+ * of the line there, not the track); the menu item still runs it when clicked.
  * @type {Record<string, Command>}
  */
 export const COMMANDS = {
@@ -152,12 +154,12 @@ export const COMMANDS = {
     cut: { label: 'Cut', accelerator: 'CmdOrCtrl+X', text: 'cut', run: cut, enabled: canCopy },
     copy: { label: 'Copy', accelerator: 'CmdOrCtrl+C', text: 'copy', run: copy, enabled: canCopy },
     paste: { label: 'Paste', accelerator: 'CmdOrCtrl+V', text: 'paste', run: ()=> paste(), enabled: ()=> !!clipboard.value && !!selected.value },
-    duplicate: { label: 'Duplicate', accelerator: 'CmdOrCtrl+D', run: duplicate, enabled: canCopy },
+    duplicate: { label: 'Duplicate', accelerator: 'CmdOrCtrl+D', field: true, run: duplicate, enabled: canCopy },
     delete: { label: 'Delete', shown: 'Backspace', run: deleteSelection, enabled: canDelete },
     selectAll: { label: 'Select All', accelerator: 'CmdOrCtrl+A', text: 'selectAll', run: ()=> { focus.value = 'roll'; pickAll(); }, enabled: ()=> !!track() },
     deselect: { label: 'Deselect All', shown: 'Escape', run: ()=> { clearPicked(); selectedClip.value = null; chordRange.value = null; } },
-    split: { label: 'Split at Playhead', accelerator: 'CmdOrCtrl+T', run: ()=> splitClipsAt(beat.value, selectedClip.value?.track ?? null) },
-    join: { label: 'Join with Next Clip', accelerator: 'CmdOrCtrl+J', enabled: ()=> !!selectedClip.value && !!nextClip(selectedClip.value.track, selectedClip.value.clip),
+    split: { label: 'Split at Playhead', accelerator: 'CmdOrCtrl+T', field: true, run: ()=> splitClipsAt(beat.value, selectedClip.value?.track ?? null) },
+    join: { label: 'Join with Next Clip', accelerator: 'CmdOrCtrl+J', field: true, enabled: ()=> !!selectedClip.value && !!nextClip(selectedClip.value.track, selectedClip.value.clip),
         run: ()=> joinWithNext(selectedClip.value.track, selectedClip.value.clip) },
     quantize: { label: 'Quantize', shown: 'Q', enabled: ()=> inRoll() || clipSelected(),
         run: ()=> inRoll() ? quantizePicked() : quantizeClip(selectedClip.value.track, selectedClip.value.clip) },
@@ -175,22 +177,22 @@ export const COMMANDS = {
     reverse: { label: 'Reverse', enabled: ()=> inRoll() || clipSelected(), run: onSelection(reversePicked, reverseClip) },
     muteClip: { label: 'Mute Clip', shown: 'M', enabled: ()=> !!selectedClip.value, checked: clipMuted,
         run: ()=> toggleClipMute(selectedClip.value.track, selectedClip.value.clip) },
-    makePattern: { label: 'Make Pattern', accelerator: 'CmdOrCtrl+P', enabled: ()=> !!selectedClip.value && !patternOf(selectedClip.value.track, selectedClip.value.clip),
+    makePattern: { label: 'Make Pattern', accelerator: 'CmdOrCtrl+P', field: true, enabled: ()=> !!selectedClip.value && !patternOf(selectedClip.value.track, selectedClip.value.clip),
         run: ()=> makePatternOf(selectedClip.value.track, selectedClip.value.clip) },
     makeUnique: { label: 'Make Unique', enabled: ()=> !!selectedClip.value && !!patternOf(selectedClip.value.track, selectedClip.value.clip),
         run: ()=> makeUniqueOf(selectedClip.value.track, selectedClip.value.clip) },
     insertBars: { label: 'Insert Bars at Playhead…', run: ()=> changeBars(true) },
     deleteBars: { label: 'Delete Bars at Playhead…', run: ()=> changeBars(false) },
     // Track
-    newTrack: { label: 'New Track', accelerator: 'Alt+CmdOrCtrl+N', run: ()=> addNewTrack({ after: selected.value }) },
-    duplicateTrack: { label: 'Duplicate Track', accelerator: 'Shift+CmdOrCtrl+D', run: ()=> duplicateTheTrack(selected.value), enabled: ()=> !!track() },
+    newTrack: { label: 'New Track', accelerator: 'Alt+CmdOrCtrl+N', field: true, run: ()=> addNewTrack({ after: selected.value }) },
+    duplicateTrack: { label: 'Duplicate Track', accelerator: 'Shift+CmdOrCtrl+D', field: true, run: ()=> duplicateTheTrack(selected.value), enabled: ()=> !!track() },
     renameTrack: { label: 'Rename Track…', run: ()=> renameTrack(selected.value), enabled: ()=> !!track() },
     instrument: { label: 'Choose Instrument…', run: ()=> chooseInstrument(selected.value), enabled: ()=> !!track() },
-    deleteTrack: { label: 'Delete Track', accelerator: 'CmdOrCtrl+Backspace', run: ()=> deleteTrack(selected.value), enabled: ()=> !!track() },
+    deleteTrack: { label: 'Delete Track', accelerator: 'CmdOrCtrl+Backspace', field: true, run: ()=> deleteTrack(selected.value), enabled: ()=> !!track() },
     mute: { label: 'Mute', run: ()=> toggleMute(selected.value), checked: ()=> !!track()?.mixer.mute, enabled: ()=> !!track() },
     solo: { label: 'Solo', run: ()=> toggleSolo(selected.value), checked: ()=> !!track()?.mixer.solo, enabled: ()=> !!track() },
-    trackUp: { label: 'Move Track Up', accelerator: 'Alt+CmdOrCtrl+Up', run: ()=> moveTrackBy(selected.value, -1), enabled: ()=> !!track() && project.value.tracks[0] !== track() },
-    trackDown: { label: 'Move Track Down', accelerator: 'Alt+CmdOrCtrl+Down', run: ()=> moveTrackBy(selected.value, 1), enabled: ()=> !!track() && project.value.tracks.at(-1) !== track() },
+    trackUp: { label: 'Move Track Up', accelerator: 'Alt+CmdOrCtrl+Up', field: true, run: ()=> moveTrackBy(selected.value, -1), enabled: ()=> !!track() && project.value.tracks[0] !== track() },
+    trackDown: { label: 'Move Track Down', accelerator: 'Alt+CmdOrCtrl+Down', field: true, run: ()=> moveTrackBy(selected.value, 1), enabled: ()=> !!track() && project.value.tracks.at(-1) !== track() },
     // Transport
     play: { label: 'Play or Stop', shown: 'Space', run: toggle },
     end: { label: 'Go to End', shown: 'End', run: ()=> seek(projectEnd(project.value)) },
@@ -233,7 +235,7 @@ export function item(id, extra = {})
     const c = COMMANDS[id];
     const run = extra.run ?? c.run;
     return {
-        id, label: c.label, accelerator: c.accelerator, shown: c.shown, text: c.text, radio: c.radio,
+        id, label: c.label, accelerator: c.accelerator, shown: c.shown, text: c.text, field: c.field, radio: c.radio,
         enabled: c.enabled ? c.enabled() : true,
         ...(c.checked && { checked: c.checked() }),
         ...extra,

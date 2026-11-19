@@ -1,0 +1,42 @@
+// With no menu bar (the browser), the page answers the Cmd shortcuts itself; while a text field has focus, the ones
+// marked `field` are left to the field, so Cmd+Backspace deletes text there instead of the selected track.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+globalThis.requestAnimationFrame ??= ()=> 0;
+globalThis.cancelAnimationFrame ??= ()=> {};
+class HTMLElement { constructor(tag, type) { this.tagName = tag; this.type = type; this.isContentEditable = false; } }
+globalThis.HTMLElement = HTMLElement;
+globalThis.document = { activeElement: null };
+
+const { handleKey } = await import('../../src/ui/keys.js');
+const { COMMANDS } = await import('../../src/ui/commands.js');
+const { hist, selected } = await import('../../src/ui/store.js');
+const { emptyProject, history, addTrack, makeTrack } = await import('../../src/daw/project.js');
+
+const key = (code, mods = {})=> ({ code, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, repeat: false, ...mods });
+
+test('Cmd+Backspace deletes the track, but not while typing in a text field', ()=>
+{
+    let p = emptyProject({ title: 'Keys' });
+    p = addTrack(p, { ...makeTrack(p, { name: 'Keys' }), id: 't1' });
+    hist.value = history(p);
+    selected.value = 't1';
+    const tracks = ()=> hist.value.present.tracks.length;
+    const before = tracks();
+
+    document.activeElement = new HTMLElement('INPUT', 'text');
+    assert.equal(handleKey(key('Backspace', { metaKey: true })), false);
+    assert.equal(tracks(), before);
+
+    document.activeElement = null;
+    assert.equal(handleKey(key('Backspace', { metaKey: true })), true);
+    assert.equal(tracks(), before - 1);
+});
+
+test('the shortcuts left to a text field are the editing ones; File and View shortcuts still work while typing', ()=>
+{
+    const field = Object.keys(COMMANDS).filter(id => COMMANDS[id].field);
+    assert.deepEqual(field.sort(), ['deleteTrack', 'duplicate', 'duplicateTrack', 'join', 'makePattern', 'newTrack', 'split', 'trackDown', 'trackUp']);
+    for (const id of ['save', 'saveAs', 'new', 'open', 'zoomIn', 'roll']) assert.ok(!COMMANDS[id].field, id);
+});
