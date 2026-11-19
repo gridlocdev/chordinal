@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { openProject, save, saveAs, edit } from '../../src/app/document.js';
+import { openProject, save, saveAs, edit, watchProjects } from '../../src/app/document.js';
 import { asking, answer } from '../../src/app/ask.js';
-import { projectName, dirty } from '../../src/app/store.js';
+import { projectName, dirty, project } from '../../src/app/store.js';
 import { emptyProject } from '../../src/daw/project.js';
 import { writeProject } from '../../src/daw/project-format.js';
 
@@ -78,4 +78,23 @@ test('a Save As that fails keeps the project under its old name', async ()=>
         assert.equal(projectName.value, 'old');
     }
     finally { globalThis.fetch = real; }
+});
+
+test('an edit made while a changed file is read again is kept, not reloaded over', async ()=>
+{
+    let changed = ()=> {};
+    globalThis.projectFolder = { onChange: (fn)=> { changed = fn; } };
+    disk.set('watched', writeProject(emptyProject({ title: 'Watched' })));
+    const opened = openProject('watched');
+    await tick();
+    if (asking.value) answer('');
+    await opened;
+    watchProjects();
+    disk.set('watched', writeProject(emptyProject({ title: 'Regenerated' })));
+    const real = globalThis.fetch;
+    // the edit lands while the file is being read
+    globalThis.fetch = async (url, opts)=> { if (url === 'projects/watched/project.json') edit(p => ({ ...p, title: 'Edited' })); return real(url, opts); };
+    try { await changed(); }
+    finally { globalThis.fetch = real; }
+    assert.equal(project.value.title, 'Edited');
 });

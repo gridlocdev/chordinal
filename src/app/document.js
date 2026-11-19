@@ -75,7 +75,8 @@ export function watchProjects()
         const name = projectName.value;
         if (!name || dirty.value || !projectList.value.some(p => p.name === name)) return;
         const text = await projectFiles.read(name).catch(()=> null);
-        if (!text || text === onDisk) return;
+        // an edit made, or another project opened, while it was read is kept: no reload over it
+        if (!text || text === onDisk || dirty.value || projectName.value !== name) return;
         try { show(readProject(text), name); onDisk = text; status.value = `Reloaded projects/${name}/: it changed on disk`; }
         catch (e) { status.value = `Couldn't read projects/${name} again: ${e.message}`; }
     });
