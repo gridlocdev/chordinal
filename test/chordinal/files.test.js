@@ -7,7 +7,7 @@ globalThis.cancelAnimationFrame ??= ()=> {};
 
 const disk = new Map();
 let recentList = /** @type {string[]} */ ([]);
-let pickSaveAnswer = '', pickOpenAnswer = '';
+let pickSaveAnswer = '', pickOpenAnswer = '', handedAnswer = '', handedOver = (dir)=> {};
 const toTop = (d)=> { recentList = [d, ...recentList.filter(x => x !== d)]; };
 /** @type {any} */ (globalThis).projectFolders = {
     read: async (d)=> { if (!disk.has(d)) throw new Error('no such folder'); return disk.get(d); },
@@ -20,6 +20,8 @@ const toTop = (d)=> { recentList = [d, ...recentList.filter(x => x !== d)]; };
     takes: async ()=> [],
     pickSave: async ()=> pickSaveAnswer,
     pickOpen: async ()=> pickOpenAnswer,
+    handed: async ()=> { const d = handedAnswer; handedAnswer = ''; return d; },
+    onHandedOver: (fn)=> { handedOver = fn; },
 };
 
 const { newSongProject, newSong, openFolder, openRecent, startUp, recent, useProjectFolders } = await import('../../src/chordinal/files.js');
@@ -48,6 +50,26 @@ test('the first start opens a new project with nothing to save, and asks nothing
     assert.equal(project.value.tracks.length, 2);
     assert.equal(dirty.value, false);
     assert.equal(asking.value, null);
+});
+
+test('a folder handed over at start-up (Open in Chordinal) opens instead of the last project; one handed over later asks first (§9.2)', async ()=>
+{
+    const a = '/docs/Chordinal/Handed', b = '/docs/Chordinal/Later';
+    for (const [dir, title] of [[a, 'Handed'], [b, 'Later']]) disk.set(dir, writeProject({ ...newSongProject(), title }));
+    handedAnswer = a;
+    await startUp();
+    assert.equal(projectName.value, a);
+    assert.equal(project.value.title, 'Handed');
+    addOne();
+    handedOver(b);
+    await tick();
+    assert.ok(asking.value, 'the unsaved changes are asked about');
+    answer(OTHER);
+    await tick(); await tick();
+    assert.equal(projectName.value, b);
+    disk.delete(a); disk.delete(b);
+    recentList = [];
+    await newSong();
 });
 
 test('New with unsaved changes asks Save, Don\'t Save or Cancel (§4.3)', async ()=>

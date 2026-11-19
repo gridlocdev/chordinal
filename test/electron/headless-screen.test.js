@@ -29,7 +29,9 @@ test('a headless run shows no dialog, Finder window or other app, and keeps what
     await s.openPath('/x.md');
     await s.openExternal('https://example.com');
     s.showInFolder('/y');
-    assert.deepEqual(globalThis.headlessPrompts.map(p => p.kind), ['saveDialog', 'openDialog', 'askToClose', 'openPath', 'openExternal', 'showInFolder']);
+    assert.equal(await s.launch('open', ['-a', 'Chordinal', '/z']), true);
+    assert.deepEqual(globalThis.headlessPrompts.map(p => p.kind), ['saveDialog', 'openDialog', 'askToClose', 'openPath', 'openExternal', 'showInFolder', 'launch']);
+    assert.deepEqual(globalThis.headlessPrompts.at(-1).what, { command: 'open', args: ['-a', 'Chordinal', '/z'] });
 });
 
 test('a headless test can queue what a dialog answers, once', async ()=>

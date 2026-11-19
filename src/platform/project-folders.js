@@ -29,6 +29,10 @@ export const projectFolders = {
     /** @returns {Promise<{ path: string, name: string }[]>} the projects in Documents/Chordinal/ */
     library: ()=> backend?.library() ?? Promise.resolve([]),
     reveal: (dir)=> backend?.reveal(dir),
+    /** @returns {Promise<string>} the folder handed over when Chordinal started (Open in Chordinal), or '' */
+    handed: ()=> backend?.handed() ?? Promise.resolve(''),
+    /** a folder handed over while Chordinal runs */
+    onHandedOver: (fn)=> backend?.onHandedOver(fn),
     /** asks for a project folder or its project.json; resolves to the folder, or '' when cancelled */
     pickOpen: ()=> backend?.pickOpen() ?? Promise.resolve(''),
     /** asks where to save a new folder for the project; resolves to it, or '' when cancelled */

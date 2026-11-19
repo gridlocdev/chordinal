@@ -80,10 +80,16 @@ export async function clearRecent()
     await refreshRecent();
 }
 
-/** start-up (§4.1, §4.2): the project open at the last quit, or a new one, saying nothing */
+let listening = false;
+
+/** start-up (§4.1, §4.2): a folder handed over (§9.2), else the project open at the last quit, else a new one, saying nothing */
 export async function startUp()
 {
     await refreshRecent();
+    if (!listening) projectFolders.onHandedOver((dir)=> { if (dir) openRecent(dir); });
+    listening = true;
+    const handed = await projectFolders.handed().catch(()=> '');
+    if (handed && await openProject(handed)) return;
     const last = settings.value.project;
     if (last && await projectFolders.exists(last) && await openProject(last)) return;
     await openNew(newSongProject(), { clean: true });

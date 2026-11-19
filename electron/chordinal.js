@@ -4,6 +4,10 @@
 //
 // Closing the window or quitting while the project has unsaved changes (§4.7): the page asks its own question, in the
 // window ("Save changes to …?"), saves if told to, then tells this side to close.
+//
+// A project folder handed over when Chordinal starts (on the command line, or by the Finder or Music Generator's Open
+// in Chordinal through macOS's open-file) opens instead of the last project; one handed over while it runs opens like
+// Open Recent, after the unsaved-changes question.
 import { app, BrowserWindow } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -14,6 +18,12 @@ const DEFAULT_FOLDER = ()=> path.join(app.getPath('documents'), 'Chordinal');
 
 /** whether each window's project has unsaved changes, as its page last said */
 const dirty = new WeakMap();
+
+/** folders handed over before the page asked for them, and the call that grants one once the folders are loaded */
+const handed = process.argv.slice(app.isPackaged ? 1 : 2).filter(a => !a.startsWith('-') && path.isAbsolute(a));
+let handOver = null;
+// macOS sends it before the app is ready, as well as while it runs
+app.on('open-file', (e, file)=> { e.preventDefault(); if (handOver) handOver(file); else handed.push(file); });
 
 startShell({
     name: 'Chordinal',
@@ -36,6 +46,9 @@ startShell({
         ipcMain.handle('folders:readTake', (e, dir, file)=> folders.readTake(dir, file));
         ipcMain.handle('folders:writeTake', (e, dir, file, bytes)=> folders.writeTake(dir, file, bytes));
         ipcMain.handle('folders:library', ()=> folders.listIn(DEFAULT_FOLDER()));
+        // the folder handed over at launch, granted, once
+        ipcMain.handle('folders:handed', ()=> { const file = handed.pop(); handed.length = 0; return file ? folders.grant(file) : ''; });
+        handOver = (file)=> { BrowserWindow.getAllWindows()[0]?.webContents.send('folders:handedOver', folders.grant(file)); };
         ipcMain.handle('folders:reveal', (e, dir)=> { screen.showInFolder(folders.fileToShow(dir)); });
         // Open…: a project folder, or its project.json
         ipcMain.handle('folders:pickOpen', async (e)=>
