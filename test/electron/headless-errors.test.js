@@ -1,0 +1,71 @@
+// Both apps' main processes, run headless: an error nothing caught exits the app with code 1 and says why on stderr,
+// instead of putting Electron's error dialog on the screen; and closing the window while the settings are being
+// written finishes the write, then quits.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import electronPath from 'electron';
+import { _electron } from 'playwright-core';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const LIMIT_MS = 15000;
+const APPS = [
+    { id: 'music-generator', entry: '.', ready: '.song' },
+    { id: 'chordinal', entry: 'electron/chordinal.js', ready: '.lane' },
+];
+const built = existsSync(path.join(ROOT, 'dist/chordinal.js')) && existsSync(path.join(ROOT, 'dist/app.js'));
+
+async function launch({ entry, ready })
+{
+    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, entry), '--headless'], cwd: ROOT });
+    const proc = app.process();
+    let stderr = '';
+    proc.stderr.on('data', (d)=> { stderr += d; });
+    const exited = new Promise(r => proc.once('exit', (code)=> r(code)));
+    const page = await app.firstWindow();
+    await page.waitForSelector(ready);
+    return { app, page, proc, exited, stderr: ()=> stderr };
+}
+
+/** the exit code, or 'still running' after the limit */
+const exitOf = (run)=> Promise.race([run.exited, new Promise(r => setTimeout(()=> r('still running'), LIMIT_MS))]);
+
+for (const config of APPS)
+{
+    for (const [kind, throwIt] of [
+        ['an uncaught exception', ()=> { setTimeout(()=> { throw new Error('boom from the test'); }); }],
+        ['an unhandled rejection', ()=> { Promise.reject(new Error('boom from the test')); }],
+    ])
+    {
+        test(`${config.id}: ${kind} in the headless main process exits with code 1 and no dialog`, { skip: !built && 'run just build first', timeout: 60000 }, async ()=>
+        {
+            const run = await launch(config);
+            try
+            {
+                await run.app.evaluate(throwIt).catch(()=> {});
+                assert.equal(await exitOf(run), 1);
+                assert.match(run.stderr(), /boom from the test/);
+            }
+            finally { if (run.proc.exitCode === null) run.proc.kill('SIGKILL'); }
+        });
+    }
+
+    test(`${config.id}: closing the window while the settings are written finishes the write and quits`, { skip: !built && 'run just build first', timeout: 60000 }, async ()=>
+    {
+        const run = await launch(config);
+        try
+        {
+            const mark = `closed-during-save-${Date.now()}`;
+            await run.page.evaluate((mark)=> { window.appStorage.write({ mark }); }, mark);
+            await run.app.evaluate(({ BrowserWindow })=> BrowserWindow.getAllWindows()[0].close());
+            assert.equal(await exitOf(run), 0, run.stderr());
+            const saved = JSON.parse(await fs.readFile(path.join(os.tmpdir(), `${config.id}-headless`, 'save.json'), 'utf8'));
+            assert.equal(saved.mark, mark);
+        }
+        finally { if (run.proc.exitCode === null) run.proc.kill('SIGKILL'); }
+    });
+}

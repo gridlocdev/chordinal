@@ -8,6 +8,7 @@
 // A project folder handed over when Chordinal starts (on the command line, or by the Finder or Music Generator's Open
 // in Chordinal through macOS's open-file) opens instead of the last project; one handed over while it runs opens like
 // Open Recent, after the unsaved-changes question.
+import './headless-errors.js';   // first: a headless run exits on an uncaught error instead of showing a dialog
 import { app, BrowserWindow } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';

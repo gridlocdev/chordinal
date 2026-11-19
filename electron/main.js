@@ -6,6 +6,7 @@
 // Open in Chordinal (Chordinal PRD §9.2) copies a project's folder into Documents/Chordinal/<title>/ (" 2", " 3" … when
 // the name is taken) and opens it in Chordinal: the checkout's Chordinal when run from it, the installed app on macOS.
 // When Chordinal can't be started, the folder is shown in the Finder instead.
+import './headless-errors.js';   // first: a headless run exits on an uncaught error instead of showing a dialog
 import { app, net } from 'electron';
 import fs from 'node:fs/promises';
 import { watch } from 'node:fs';
