@@ -172,6 +172,18 @@ async function chooseProjectName(title, current)
     return { name, title: typed };
 }
 
+/** the takes of the project's old folder, copied into its new one after a Save As (those already there are kept) */
+async function copyTakes(from, to)
+{
+    try
+    {
+        const there = new Set(await place.files.takes(to).catch(()=> []));
+        for (const file of await place.files.takes(from))
+            if (!there.has(file)) await place.files.writeTake(to, file, new Uint8Array(await place.files.readTake(from, file)));
+    }
+    catch (e) { status.value = `Saved ${place.where(to)}, but couldn't copy its takes: ${e.message}`; }
+}
+
 /** saves under a new name (the app's place asks where); the project takes the name only once it's saved there
  * @returns {Promise<boolean>} whether it saved */
 export async function saveAs()
@@ -183,7 +195,12 @@ export async function saveAs()
     const before = { name: projectName.value, onDisk };
     projectName.value = name;
     if (name !== before.name) onDisk = null;     // a new file, or one the user just agreed to replace
-    if (await queueSave()) { setSettings({ project: name }); return true; }
+    if (await queueSave())
+    {
+        setSettings({ project: name });
+        if (before.name && name !== before.name) await copyTakes(before.name, name);
+        return true;
+    }
     if (projectName.value === name) { projectName.value = before.name; onDisk = before.onDisk; }
     return false;
 }
