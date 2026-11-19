@@ -90,10 +90,13 @@ export function reload()
 }
 
 const MIX_ONLY = ['volumeDb', 'pan', 'mute', 'solo'];
+// what playback hears besides the tracks: the tempo, loop and end, and what Humanize reads (sections, meter, key,
+// chords, and the title as its seed)
+const HEARD = ['tempoMap', 'loop', 'markers', 'groove', 'meters', 'key', 'chords', 'length', 'title'];
 /** whether an edit changed more than the faders, pans, mutes and solos, which play on without a restart */
-function heardDifferently(a, b)
+export function heardDifferently(a, b)
 {
-    if (a.tracks.length !== b.tracks.length || a.tempoMap !== b.tempoMap || a.loop !== b.loop || a.markers !== b.markers || a.groove !== b.groove) return true;
+    if (a.tracks.length !== b.tracks.length || HEARD.some(k => a[k] !== b[k])) return true;
     return a.tracks.some((t, i)=>
     {
         const u = b.tracks[i];
