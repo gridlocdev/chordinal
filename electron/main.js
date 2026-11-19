@@ -15,6 +15,7 @@ import { projectRequest } from '../tools/project-files.mjs';
 import { downloadLibrary } from '../tools/soundfont-download.mjs';
 import { LIBRARIES } from '../src/audio/soundfont-catalog-data.js';
 import { installMenus } from './menus.js';
+import { screenCalls } from './headless-screen.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ORIGIN = 'app://game';
@@ -108,14 +109,15 @@ ipcMain.handle('save:write', (event, all)=> writeSave(all));
 
 // ---------------------------------------------------------------- menus, files and the Finder
 installMenus(ipcMain, { headless: HEADLESS });
+const screen = screenCalls({ headless: HEADLESS, dialog, shell });
 // a doc of the app opens in its own app; a project or take shows in the Finder
-ipcMain.handle('shell:open', async (e, rel)=> { const file = within(ROOT, rel); if (file?.endsWith('.md')) await shell.openPath(file); });
-ipcMain.handle('shell:reveal', (e, rel)=> { const file = within(path.join(DATA(), 'projects'), rel); if (file) shell.showItemInFolder(file); });
+ipcMain.handle('shell:open', async (e, rel)=> { const file = within(ROOT, rel); if (file?.endsWith('.md')) await screen.openPath(file); });
+ipcMain.handle('shell:reveal', (e, rel)=> { const file = within(path.join(DATA(), 'projects'), rel); if (file) screen.showInFolder(file); });
 // an exported file goes where the user picks
 ipcMain.handle('file:save', async (e, name, bytes)=>
 {
     const win = BrowserWindow.fromWebContents(e.sender);
-    const { canceled, filePath } = await dialog.showSaveDialog(win, { defaultPath: path.join(app.getPath('documents'), path.basename(String(name))) });
+    const { canceled, filePath } = await screen.saveDialog(win, { defaultPath: path.join(app.getPath('documents'), path.basename(String(name))) });
     if (canceled || !filePath) return '';
     await fs.writeFile(filePath, Buffer.from(bytes));
     return filePath;
@@ -124,7 +126,7 @@ ipcMain.handle('file:save', async (e, name, bytes)=>
 ipcMain.handle('file:open', async (e, title, extensions)=>
 {
     const win = BrowserWindow.fromWebContents(e.sender);
-    const { canceled, filePaths } = await dialog.showOpenDialog(win, { title: String(title), properties: ['openFile'],
+    const { canceled, filePaths } = await screen.openDialog(win, { title: String(title), properties: ['openFile'],
         filters: [{ name: String(title), extensions: [...extensions].map(String) }] });
     if (canceled || !filePaths[0]) return null;
     return { name: path.basename(filePaths[0]), bytes: new Uint8Array(await fs.readFile(filePaths[0])) };
@@ -134,7 +136,7 @@ let chosenFolder = '';
 ipcMain.handle('file:chooseFolder', async (e, name)=>
 {
     const win = BrowserWindow.fromWebContents(e.sender);
-    const { canceled, filePath } = await dialog.showSaveDialog(win, { title: 'Export each track into a new folder', buttonLabel: 'Export',
+    const { canceled, filePath } = await screen.saveDialog(win, { title: 'Export each track into a new folder', buttonLabel: 'Export',
         defaultPath: path.join(app.getPath('documents'), path.basename(String(name))) });
     if (canceled || !filePath) return '';
     await fs.mkdir(filePath, { recursive: true });
@@ -181,15 +183,14 @@ function createWindow()
     // web links open in the browser, never in the app's window; nothing else (file:, custom schemes) is opened
     win.webContents.setWindowOpenHandler(({ url })=>
     {
-        if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+        if (/^https?:\/\//i.test(url)) screen.openExternal(url);
         return { action: 'deny' };
     });
     // the page holds the close while the project has unsaved changes: ask
     win.webContents.on('will-prevent-unload', (e)=>
     {
-        const choice = dialog.showMessageBoxSync(win, { type: 'warning', buttons: ['Close Without Saving', 'Cancel'], defaultId: 1, cancelId: 1,
-            message: 'Close without saving?', detail: 'The project has changes that are not saved.' });
-        if (choice === 0) e.preventDefault();
+        if (screen.askToClose(win, { type: 'warning', buttons: ['Close Without Saving', 'Cancel'], defaultId: 1, cancelId: 1,
+            message: 'Close without saving?', detail: 'The project has changes that are not saved.' })) e.preventDefault();
     });
     win.webContents.on('will-navigate', (e, url)=> { if (!url.startsWith(ORIGIN + '/')) e.preventDefault(); });
     // F11 (and Ctrl+Cmd+F on macOS) toggles fullscreen
