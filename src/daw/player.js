@@ -8,7 +8,7 @@
 import { audioEngine, peak } from '../platform/audio-engine.js';
 import { startTicker } from '../platform/ticker.js';
 import { createInstrument } from '../audio/soundfont.js';
-import { createMixer, dbToGain } from '../audio/mixer.js';
+import { createMixer, dbToGain, delayTimes } from '../audio/mixer.js';
 import { beatToSeconds, secondsToBeat } from '../lib/tempo-map.js';
 import { trackNotes, projectEnd, isDrums } from './project.js';
 import { performProject } from './fx.js';
@@ -175,7 +175,8 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
 
     const sounding = new Map();       // `${track}:${key}` → { i, key }, notes on and not yet off
     const carried = new Set();        // notes a seek restarted mid-way: their note-off is still this segment's to play
-    let next = 0, nextDuck = 0, nextFx = 0, nextClick = 0, stopped = false;
+    const delayList = delayTimes(map);   // the shared delay keeps time with each tempo change
+    let next = 0, nextDuck = 0, nextFx = 0, nextClick = 0, nextDelay = 0, stopped = false;
     const indexFrom = (list, beat, get)=> { const k = list.findIndex(x => get(x) >= beat - 1e-9); return k < 0 ? list.length : k; };
     const begin = (s)=>
     {
@@ -184,6 +185,8 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
         nextDuck = indexFrom(duckBeats, s.from, b => b);
         nextFx = indexFrom(data.fx, s.from, e => e.beat);
         nextClick = indexFrom(clickList, s.from, c => c.beat);
+        nextDelay = indexFrom(delayList, s.from + 1e-6, d => d.beat);
+        mixer.delayAt(delayList[Math.max(0, nextDelay - 1)].seconds, s.at);
         automate(s);
     };
     // notes already sounding at a beat play on from it, their note-offs still to come in this segment
@@ -236,6 +239,8 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
             const lead = (e)=> e.kind === 'tapeStop' ? e.seconds : 0;
             for (; nextFx < data.fx.length && data.fx[nextFx].beat < seg.until - 1e-9 && timeOf(seg, data.fx[nextFx].beat) - lead(data.fx[nextFx]) < limit; nextFx++)
                 fxEvent(data.fx[nextFx], seg);
+            for (; nextDelay < delayList.length && delayList[nextDelay].beat < seg.until - 1e-9 && timeOf(seg, delayList[nextDelay].beat) < limit; nextDelay++)
+                mixer.delayAt(delayList[nextDelay].seconds, timeOf(seg, delayList[nextDelay].beat));
             for (; nextClick < clickList.length && clickList[nextClick].beat < seg.until - 1e-9 && timeOf(seg, clickList[nextClick].beat) < limit; nextClick++)
                 tick(clickList[nextClick], timeOf(seg, clickList[nextClick].beat));
 

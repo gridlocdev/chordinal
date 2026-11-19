@@ -9,6 +9,7 @@
 // ducking moves. The delay time wobbles slowly (a modulated delay), so the echoes shimmer a little.
 import { audioEngine } from '../platform/audio-engine.js';
 import { reverbImpulse } from '../lib/impulse.js';
+import { tempoSteps } from '../lib/tempo-map.js';
 
 export const dbToGain = (db)=> 10 ** (db / 20);
 
@@ -16,6 +17,12 @@ const MIX_BUS_DB = -3;          // headroom before the master chain
 const REVERB = { seconds: 2.2, decay: 3, lowCut: 250 };            // lowCut keeps the low end out of the reverb
 const DELAY = { beats: 0.75, feedback: 0.35, tone: 3500, wobble: { rate: 0.3, seconds: 0.003 } };   // a dotted eighth; tone darkens the repeats
 const OPEN_TONE = 20000;         // Hz; the tone filter's resting cutoff, until automation moves it
+
+const MAX_DELAY = 4;            // seconds the delay line holds
+const delaySeconds = (bpm)=> Math.min(MAX_DELAY, DELAY.beats * 60 / bpm);
+
+/** the delay's time through a tempo map: where it changes, in beats, and to what (a change per beat through a ramp) */
+export const delayTimes = (map)=> tempoSteps(map).map(({ beat, bpm })=> ({ beat, seconds: delaySeconds(bpm) }));
 
 let impulse = null;             // built once; every project's reverb shares it
 
@@ -49,7 +56,7 @@ export function createMixer({ tempo })
         .connect(bus);
 
     const delayIn = node(new GainNode(ctx));
-    const delay = node(new DelayNode(ctx, { delayTime: Math.min(4, DELAY.beats * 60 / tempo), maxDelayTime: 4 }));
+    const delay = node(new DelayNode(ctx, { delayTime: delaySeconds(tempo), maxDelayTime: MAX_DELAY }));
     const dark = node(new BiquadFilterNode(ctx, { type: 'lowpass', frequency: DELAY.tone }));
     delayIn.connect(delay).connect(dark).connect(node(new GainNode(ctx, { gain: DELAY.feedback }))).connect(delay);
     dark.connect(bus);
@@ -78,6 +85,12 @@ export function createMixer({ tempo })
             panner.connect(delaySendGain).connect(delayIn);
             if (autoPan) lfo(panner.pan, autoPan.rate, autoPan.depth);
             return { input, user, tone, fader, panner, pan, reverbSend, delaySend: delaySendGain, level };
+        },
+        /** the delay's time, `seconds`, from `at` (a quick glide, so the echoes don't jump), dropping later changes */
+        delayAt(seconds, at)
+        {
+            delay.delayTime.cancelScheduledValues(at);
+            delay.delayTime.setTargetAtTime(seconds, at, 0.02);
         },
         // a quick fade so nothing clicks, then everything is disconnected, tails included
         dispose(fade = 0.08)
