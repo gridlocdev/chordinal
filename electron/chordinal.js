@@ -29,6 +29,7 @@ startShell({
     name: 'Chordinal',
     id: 'chordinal',
     page: 'chordinal.html',
+    askMicrophone: true,
     async setup({ ipcMain, screen })
     {
         const folders = projectFolders({ listFile: path.join(app.getPath('userData'), 'recent.json') });

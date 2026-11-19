@@ -21,6 +21,7 @@ import { Ask } from '../ui/components/Ask.jsx';
 import { LeftPanel } from './components/LeftPanel.jsx';
 import { GeneratePart } from './components/GeneratePart.jsx';
 import { openGenerate } from './generate.js';
+import { recordMelody } from './whistle.js';
 import { useProjectFolders, startUp, watchWindow, newSong } from './files.js';
 import { startChordinalMenus } from './menu-bar.js';
 
@@ -68,7 +69,7 @@ addEventListener('contextmenu', (e)=>
 });
 
 useProjectFolders();
-setTrackItems(trackId => [{ label: 'Generate Part…', run: ()=> openGenerate(trackId) }]);
+setTrackItems(trackId => [{ label: 'Generate Part…', run: ()=> openGenerate(trackId) }, { label: 'Record Melody', run: ()=> recordMelody(trackId) }]);
 registerFx(HUMANIZE, humanizeFx);
 await loadSettings();
 await checkLibraries();

@@ -173,6 +173,11 @@ test('the left panel: the channel rack above the browser, a row\'s double-click,
         await until('the panel is hidden', async ()=> !await page.$('.left'));
         await page.keyboard.press('b');
         await until('the panel is back', async ()=> !!await page.$('.left'));
+        // §9.3: whistling is Chordinal's: Record Melody on a track, Whistle a Chord once a stretch of the chord track is picked
+        // (neither is clicked: a headless run never opens the microphone)
+        const menuItem = (id)=> run.app.evaluate(({ Menu }, id)=> { const m = Menu.getApplicationMenu().getMenuItemById(id); return m && { enabled: m.enabled }; }, id);
+        assert.deepEqual(await menuItem('recordMelody'), { enabled: true });
+        assert.deepEqual(await menuItem('whistleChord'), { enabled: false });
         await run.app.evaluate(({ BrowserWindow })=> BrowserWindow.getAllWindows()[0].webContents.send('doc:closing'));
         await page.waitForSelector('.dialog.ask');
         await page.click('.dialog.ask button.other');
