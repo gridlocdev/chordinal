@@ -40,6 +40,7 @@ export function down(e, p, track)
     if (px < GUTTER) return;
     if (py < STRIP + 4) { seek(G.beatAt(px)); return; }
     el.setPointerCapture(e.pointerId);
+    const gesture = `roll-${e.timeStamp}`;
     const all = notesOf(track);
 
     // the velocity strip: drag across notes to set how hard each is played
@@ -92,7 +93,7 @@ export function down(e, p, track)
     }
     else
     {
-        // a new note, in the clip under it or a new bar's clip
+        // a new note, in the clip under it or a new bar's clip: the clip, the note and dragging its length are one undo step
         let clip = track.clips.findLast(c => b >= c.start && b < c.start + c.beats);
         const start = Math.max(0, snap(b - (e.altKey ? 0 : settings.value.grid / 2), e));
         if (!clip)
@@ -100,11 +101,11 @@ export function down(e, p, track)
             const bar = barAt(p.meters, b);
             clip = { id: newId(p, 'c'), start: bar.start, beats: bar.beatsPerBar, notes: [] };
             const made = clip;
-            edit(q => addClip(q, track.id, made));
+            edit(q => addClip(q, track.id, made), gesture);
         }
         const note = { beat: Math.max(0, start - clip.start), beats: settings.value.grid, key, vel: NEW_VEL };
         const index = clip.notes.length;
-        changeNotes(track.id, new Map([[clip.id, (notes)=> [...notes, note]]]));
+        changeNotes(track.id, new Map([[clip.id, (notes)=> [...notes, note]]]), gesture);
         selectedClip.value = { track: track.id, clip: clip.id };
         picked.value = new Set([noteId(clip.id, index)]);
         grabbed = { n: note, i: index, clip, at: clip.start + note.beat };
@@ -137,7 +138,7 @@ export function down(e, p, track)
                 return { ...n, beat: Math.max(0, Math.min(o.clip.beats - 0.01, o.n.beat + shift)), key: Math.max(0, Math.min(127, o.n.key + dk)) };
             }));
         }
-        changeNotes(track.id, changes, `drag-${e.timeStamp}`);
+        changeNotes(track.id, changes, gesture);
         const now = grabbed.n.key + (mode === 'move' ? dk : 0);
         if (now !== sounding) { release(sounding); press(now); sounding = now; }
     };
