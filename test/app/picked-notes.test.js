@@ -43,3 +43,25 @@ test('opening another project drops the picks, and picks left from elsewhere ena
     assert.equal(picked.value.size, 0);
     assert.equal(focus.value, 'arrange');
 });
+
+test('transposing other notes after picking them is its own undo step', async ()=>
+{
+    const { transposePicked } = await import('../../src/app/notes.js');
+    const { undo } = await import('../../src/app/document.js');
+    const { project } = await import('../../src/app/store.js');
+    let p = emptyProject();
+    p = addTrack(p, { ...makeTrack(p, { name: 'Keys' }), id: 't1' });
+    p = addClip(p, 't1', { id: 'c1', start: 0, beats: 4, notes: [{ beat: 0, beats: 1, key: 60, vel: 90 }, { beat: 1, beats: 1, key: 64, vel: 90 }] });
+    hist.value = history(p);
+    selected.value = 't1';
+    const keys = ()=> project.value.tracks[0].clips[0].notes.map(n => n.key);
+    picked.value = new Set(['c1:0']);
+    transposePicked(1); transposePicked(1);    // a key held down: one step
+    picked.value = new Set(['c1:1']);
+    transposePicked(1);
+    assert.deepEqual(keys(), [62, 65]);
+    undo();
+    assert.deepEqual(keys(), [62, 64], 'undo takes back only the second note');
+    undo();
+    assert.deepEqual(keys(), [60, 64], 'and then both presses on the first');
+});

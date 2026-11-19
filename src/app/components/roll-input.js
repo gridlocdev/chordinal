@@ -45,13 +45,14 @@ export function down(e, p, track)
     // the velocity strip: drag across notes to set how hard each is played
     if (py >= G.bottom)
     {
+        const merge = `velocity-${e.timeStamp}`;     // one drag is one undo step
         const setVel = (m)=>
         {
             const x = m.clientX - r.left, vel = Math.round(Math.max(1, Math.min(127, (r.bottom - 2 - m.clientY) / (VEL_H - 6) * 127)));
             const near = all.filter(o => Math.abs(G.x(o.at) - x) <= 4 && (!picked.value.size || isPicked(track, o.clip.id, o.i)));
             if (!near.length) return;
             const ids = new Set(near.map(o => noteId(o.clip.id, o.i)));
-            changeNotes(track.id, new Map([...new Set(near.map(o => o.clip.id))].map(c => [c, (notes)=> notes.map((n, i)=> ids.has(noteId(c, i)) ? { ...n, vel } : n)])), 'velocity');
+            changeNotes(track.id, new Map([...new Set(near.map(o => o.clip.id))].map(c => [c, (notes)=> notes.map((n, i)=> ids.has(noteId(c, i)) ? { ...n, vel } : n)])), merge);
         };
         setVel(e);
         const up = ()=> { el.removeEventListener('pointermove', setVel); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); };

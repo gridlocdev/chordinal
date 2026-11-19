@@ -83,7 +83,12 @@ export function deletePicked()
     return true;
 }
 
-export const transposePicked = (by)=> mapPicked(n => ({ ...n, key: Math.max(0, Math.min(127, n.key + by)) }), 'transpose');
+// Key repeats on the same picked notes are one undo step; picking other notes starts a new one
+const pickings = new WeakMap();
+let pickingCount = 0;
+const sameNotes = (kind)=> { const s = picked.value; if (!pickings.has(s)) pickings.set(s, ++pickingCount); return `${kind}-${pickings.get(s)}`; };
+
+export const transposePicked = (by)=> mapPicked(n => ({ ...n, key: Math.max(0, Math.min(127, n.key + by)) }), sameNotes('transpose'));
 
 export const setVelocity = (vel)=> mapPicked(n => ({ ...n, vel }));
 
@@ -119,7 +124,7 @@ export function pickAll()
 export const pickKey = (key)=> { picked.value = new Set(notesOf(selectedTrack.value).filter(o => o.n.key === key).map(o => noteId(o.clip.id, o.i))); };
 
 /** the picked notes moved later (or earlier) by some beats, none before its clip's start */
-export const nudgePicked = (by)=> mapPicked(n => ({ ...n, beat: Math.max(0, n.beat + by) }), 'nudge');
+export const nudgePicked = (by)=> mapPicked(n => ({ ...n, beat: Math.max(0, n.beat + by) }), sameNotes('nudge'));
 
 /** fn(notes, from, to) on the picked notes of each clip, given the stretch they span in it */
 function mapPickedTogether(fn)
