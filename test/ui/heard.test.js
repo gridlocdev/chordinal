@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { heardDifferently } from '../../src/app/player.js';
+import { heardDifferently } from '../../src/ui/player.js';
 import { emptyProject, makeTrack, addTrack, setMeterAt, updateTrack } from '../../src/daw/project.js';
 
 test('an edit while playing restarts playback when it changes what is heard (meter, key, chords, length, title)', ()=>

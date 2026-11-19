@@ -1,6 +1,6 @@
 # Architecture
 
-A desktop app (Electron) with a DAW-style UI in [Preact](https://preactjs.com) and [signals](https://preactjs.com/guide/v10/signals). `src/app/main.jsx` is bundled by esbuild into `dist/app.js` (`just build`), which `index.html` loads. Everything below `src/app/` is plain ES modules with no DOM in the music logic, so the tools in `tools/` and the tests in `test/` run it in Node as it is.
+A desktop app (Electron) with a DAW-style UI in [Preact](https://preactjs.com) and [signals](https://preactjs.com/guide/v10/signals). `src/app/main.jsx` is bundled by esbuild into `dist/app.js` (`just build`), which `index.html` loads. It holds only the app's shell and layout; the views and actions are in `src/ui/`, where Chordinal will share them (`docs/plans/chordinal-prd.md` §3). Everything below `src/ui/` is plain ES modules with no DOM in the music logic, so the tools in `tools/` and the tests in `test/` run it in Node as it is.
 
 ## This app
 
@@ -51,23 +51,23 @@ The window has a transport bar at the top, a browser on the left (projects, inst
 | `src/daw/player.js` | `playProject(project, instruments, { from, mix, click, ticker })`: a channel strip per track with a level meter, its notes through the MIDI FX and its automation and ducking, scheduled ahead on the audio clock through the tempo map, from any beat, round the loop with a new pass each time, with an optional metronome; the handle seeks, takes new faders and pans, reads the meters, and stops. `ticker` is what calls the scheduler: a timer live, the render's pauses offline |
 | `src/composer/` | song spec → score, top down: the song plan (`plan.js`: form, keys, meters, energy curve, cadences, tempo map, loop), chords per section (`harmony.js`: cadences, harmonic rhythm, passing dim7s, harmony voices, call and response), the motif and melody (`melody.js`; repeats in `melody-repeats.js`, hand-written degree notation in `notation.js`, `ornaments.js`), the parts in any meter (`parts.js`, `meter-patterns.js`, `meter.js`), arrangement and rhythm passes (`arrange.js`, `syncopation.js`), a chip song's techniques (`chip.js`), all driven by `compose.js`. The knowledge tables: `composer-data.js`, `patterns-data.js`, `song-craft-data.js` (styles, variation, curve, tempo, motifs), `genre-data.js` (genre profiles: defaults, progressions, extensions, voicing, cadences, scales, blue notes, phrase repeats), `performance-data.js`, `ear-candy-data.js`. Written songs: `songs-data.js`, `genre-songs-data.js` (one per genre, with a story), `game-songs-data.js` (loops, a meter-changing boss, a leitmotif in two moods), `chip-songs-data.js` and `classical-songs-data.js`; `catalog.js` lists them and the feelings for File → New. The score becomes a project in `to-project.js` (a clip per section, markers, the chord track, the mix plan from `mix-plan.js` as channel strips, automation and ducking). The performance (`perform.js`: ghost notes, scoops, slides, vibrato, swing, timing; `ear-candy.js`) runs at play time as the **Humanize** MIDI FX (`humanize-fx.js`), which rebuilds the score's shape from a project's tracks, markers and groove |
 | `src/sketch/` | whistle → notes: recording a take over a click and count-in, read live a beat behind the playhead (`recorder.js`); reading a take, the chords whistled over stretches and the ones guessed for the rest (`takes.js`); a melody and its chords as a section and a spec for New from melody (`sketch-spec.js`); recording settings and the band it's composed for (`sketchpad-data.js`) |
-| `src/app/store.js` | the app's state as signals: settings (saved), the open project, its name, history and whether it's saved, the selection (track, clip, notes, a stretch of the chord track), the transport |
-| `src/app/document.js` | the open project as a document: open, save, save as, New (empty, or from the composer), and `edit(fn, mergeKey)`, through which every edit goes so undo can take it back |
-| `src/app/player.js` | plays the open project from the playhead, follows it (and the mixer's meters), stops, seeks, keeps the mixer's settings on the playing channels, and restarts after an edit that changes what's heard |
-| `src/app/midi-import.js` | File → Import MIDI File (a new project) and MIDI files dropped on a track (tracks added at that bar) |
-| `src/app/bounce.js` | Export as Audio File: the project, or a range of it, played once through an offline render and saved as a stereo WAV, or one WAV per track (stems) into a folder, optionally normalized |
-| `src/app/components/ExportDialog.jsx` | the Export dialog: range, mix or stems, normalize, tail |
-| `src/app/recording.js` | whistle → MIDI: recording a take into a new clip on the selected track (or a chord onto the chord track), dropped audio files and kept takes read the same way, keeping takes beside the project, and New from melody |
-| `src/app/live.js` | musical typing and MIDI input playing the selected track's instrument |
-| `src/app/libraries.js` | the SoundFont library in use (an installed one while the picked one isn't) and downloading the others from the Instruments tab |
-| `src/app/commands.js` | every command (label, shortcut, action, when it can be used); `menu-bar.js` builds the menu bar from them and keeps it current, `keys.js` answers the plain-key shortcuts (Cmd shortcuts are the menu bar's) |
-| `src/app/timeline.js` | tempo and meter: the whole song's, changes from a bar on, and the flags the ruler shows for them with their menu |
-| `src/app/context-menus.js` | the right-click menus, one per thing clicked, which select it first and are built from the commands and the actions below |
-| `src/app/tracks.js`, `src/app/notes.js`, `src/app/clipboard.js` | the actions on tracks and clips, on the piano roll's picked notes, and cut, copy, paste and duplicate for either |
-| `src/app/steps.js` | the step grid's actions (paint, accent, step size, rows, hearing a drum) and switching the editor between the piano roll and the step grid as clips are picked |
-| `src/app/focus.js`, `src/app/ask.js` | which pane the editing keys act on; an in-app question for a name or a yes (Electron has no `prompt`) |
-| `src/app/components/` | the views: `Transport`, `Browser`, `Arrange` (`Ruler`, `ChordLane`, a `TrackRow` per track, sharing `arrange-view.js`), `Editor` (`PianoRoll`, `Mixer` or `StepGrid`, whose geometry is in `grid-view.js`), `NewProject` (the New dialog), `Ask`; `canvas.js` is a canvas that redraws when the signals it reads change, the piano roll's parts are `roll-view.js` (what's shown, its geometry), `roll-draw.js` (drawing), `roll-input.js` (the pointer), `RollToolbar` and `RollPlayhead` |
-| `src/app/app.css` | the look: colour tokens and the panel grid |
+| `src/ui/store.js` | the app's state as signals: settings (saved), the open project, its name, history and whether it's saved, the selection (track, clip, notes, a stretch of the chord track), the transport |
+| `src/ui/document.js` | the open project as a document: open, save, save as, New (empty, or from the composer), and `edit(fn, mergeKey)`, through which every edit goes so undo can take it back |
+| `src/ui/player.js` | plays the open project from the playhead, follows it (and the mixer's meters), stops, seeks, keeps the mixer's settings on the playing channels, and restarts after an edit that changes what's heard |
+| `src/ui/midi-import.js` | File → Import MIDI File (a new project) and MIDI files dropped on a track (tracks added at that bar) |
+| `src/ui/bounce.js` | Export as Audio File: the project, or a range of it, played once through an offline render and saved as a stereo WAV, or one WAV per track (stems) into a folder, optionally normalized |
+| `src/ui/components/ExportDialog.jsx` | the Export dialog: range, mix or stems, normalize, tail |
+| `src/ui/recording.js` | whistle → MIDI: recording a take into a new clip on the selected track (or a chord onto the chord track), dropped audio files and kept takes read the same way, keeping takes beside the project, and New from melody |
+| `src/ui/live.js` | musical typing and MIDI input playing the selected track's instrument |
+| `src/ui/libraries.js` | the SoundFont library in use (an installed one while the picked one isn't) and downloading the others from the Instruments tab |
+| `src/ui/commands.js` | every command (label, shortcut, action, when it can be used); `menu-bar.js` builds the menu bar from them and keeps it current, `keys.js` answers the plain-key shortcuts (Cmd shortcuts are the menu bar's) |
+| `src/ui/timeline.js` | tempo and meter: the whole song's, changes from a bar on, and the flags the ruler shows for them with their menu |
+| `src/ui/context-menus.js` | the right-click menus, one per thing clicked, which select it first and are built from the commands and the actions below |
+| `src/ui/tracks.js`, `src/ui/notes.js`, `src/ui/clipboard.js` | the actions on tracks and clips, on the piano roll's picked notes, and cut, copy, paste and duplicate for either |
+| `src/ui/steps.js` | the step grid's actions (paint, accent, step size, rows, hearing a drum) and switching the editor between the piano roll and the step grid as clips are picked |
+| `src/ui/focus.js`, `src/ui/ask.js` | which pane the editing keys act on; an in-app question for a name or a yes (Electron has no `prompt`) |
+| `src/ui/components/` | the views: `Transport`, `Browser`, `Arrange` (`Ruler`, `ChordLane`, a `TrackRow` per track, sharing `arrange-view.js`), `Editor` (`PianoRoll`, `Mixer` or `StepGrid`, whose geometry is in `grid-view.js`), `NewProject` (the New dialog), `Ask`; `canvas.js` is a canvas that redraws when the signals it reads change, the piano roll's parts are `roll-view.js` (what's shown, its geometry), `roll-draw.js` (drawing), `roll-input.js` (the pointer), `RollToolbar` and `RollPlayhead` |
+| `src/ui/ui.css` | the look: colour tokens and the panel grid |
 | `tools/compose.mjs` | composes a song in Node: prints the plan and melody, writes a `.mid` (`just compose`) |
 | `tools/make-projects.mjs` | writes the written songs as project files in `projects/` (`just projects`) |
 | `tools/build.mjs` | bundles the UI with esbuild (`just build`, `--watch` for `just dev`, `--check` for `just check`) |
@@ -86,7 +86,7 @@ The synth covers the parts of SF2 that matter for these files: key/velocity spli
 
 ### SoundFont libraries
 
-The libraries live in `soundfonts/<folder>/`, ignored by git and downloaded by `just soundfonts`; `src/audio/soundfont-libraries-data.js` lists them. The instrument menu is built from `soundfont-catalog-data.js`, generated from the files by `just catalog`, so no `.sf2` (32–216 MB each) is fetched until one of its instruments is picked. `soundfont.js` then downloads it once and keeps it in memory. Run from the checkout, the app serves `soundfonts/` as it is; a release build serves its bundled GeneralUser GS and the libraries downloaded into its user data folder under the same urls, and `app/libraries.js` falls back to an installed library while the picked one isn't (`platform/soundfonts.js` asks the desktop app which are there and downloads the others). `soundfont-library.js` holds the library in use: switching it reloads the instrument musical typing plays, and the project (restarted if it's playing) loads its instruments from the new library. How to add one is in [development.md](development.md#soundfont-libraries).
+The libraries live in `soundfonts/<folder>/`, ignored by git and downloaded by `just soundfonts`; `src/audio/soundfont-libraries-data.js` lists them. The instrument menu is built from `soundfont-catalog-data.js`, generated from the files by `just catalog`, so no `.sf2` (32–216 MB each) is fetched until one of its instruments is picked. `soundfont.js` then downloads it once and keeps it in memory. Run from the checkout, the app serves `soundfonts/` as it is; a release build serves its bundled GeneralUser GS and the libraries downloaded into its user data folder under the same urls, and `ui/libraries.js` falls back to an installed library while the picked one isn't (`platform/soundfonts.js` asks the desktop app which are there and downloads the others). `soundfont-library.js` holds the library in use: switching it reloads the instrument musical typing plays, and the project (restarted if it's playing) loads its instruments from the new library. How to add one is in [development.md](development.md#soundfont-libraries).
 
 ### Project files
 
@@ -118,7 +118,8 @@ A beat is a quarter note; a note's beat is from its clip's start. `marker.meta`,
 | `src/audio/` | SoundFont instruments, the mixer, the library in use | lib, platform |
 | `src/daw/` | projects, their file, edits and undo, playback, the MIDI FX hook | the above |
 | `src/composer/`, `src/sketch/` | composing projects and the Humanize FX; whistle → notes | the above, **not each other** |
-| `src/app/` | the Preact UI | everything above |
+| `src/ui/` | the Preact UI both apps share: state, actions, commands and views | everything above |
+| `src/app/`, `src/chordinal/` | each app's shell: start-up and layout | everything above, **not each other** |
 
 `architecture.json` lists these layers for `tools/coupling-report.mjs`.
 
@@ -126,7 +127,7 @@ A beat is a quarter note; a note's beat is from its clip's start. `marker.meta`,
 
 - Imports only point down the table. For upward needs, pass a callback or a parameter.
 - Content (songs, tables, tuning) goes in `*-data.js` files that import nothing.
-- State the UI shows lives in signals in `app/store.js` (the recording in progress in `app/recording.js`). Components read it and call actions; they don't keep copies.
+- State the UI shows lives in signals in `ui/store.js` (the recording in progress in `ui/recording.js`). Components read it and call actions; they don't keep copies.
 - Files are named for what they do. No `utils.js`, `helpers.js`, `misc.js`.
 - `lib/` and `*-data.js` import no DOM code, and are covered by tests in `test/`.
 

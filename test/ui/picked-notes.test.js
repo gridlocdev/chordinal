@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hist, selected, picked } from '../../src/app/store.js';
+import { hist, selected, picked } from '../../src/ui/store.js';
 import { history } from '../../src/daw/project.js';
-import { pickedNotes } from '../../src/app/notes.js';
+import { pickedNotes } from '../../src/ui/notes.js';
 import { emptyProject, makeTrack, addTrack, addClip, makePattern } from '../../src/daw/project.js';
 
 test('picked notes in a linked copy are where they were picked, once each (PRD ยง3.3)', ()=>
@@ -21,10 +21,10 @@ test('picked notes in a linked copy are where they were picked, once each (PRD ย
 
 test('opening another project drops the picks, and picks left from elsewhere enable nothing', async ()=>
 {
-    const { canCopy } = await import('../../src/app/clipboard.js');
-    const { focus } = await import('../../src/app/focus.js');
-    const { openNew } = await import('../../src/app/document.js');
-    const { selectedClip } = await import('../../src/app/store.js');
+    const { canCopy } = await import('../../src/ui/clipboard.js');
+    const { focus } = await import('../../src/ui/focus.js');
+    const { openNew } = await import('../../src/ui/document.js');
+    const { selectedClip } = await import('../../src/ui/store.js');
     globalThis.cancelAnimationFrame ??= ()=> {};
     let p = emptyProject();
     p = addTrack(p, { ...makeTrack(p, { name: 'Keys' }), id: 't1' });
@@ -35,7 +35,7 @@ test('opening another project drops the picks, and picks left from elsewhere ena
     // Duplicate would paste notes that aren't here, as a clip with no start
     picked.value = new Set(['gone:0', 'gone:1']);
     assert.equal(canCopy(), false, 'Copy and Duplicate stay off: those notes are not here');
-    const { asking, answer } = await import('../../src/app/ask.js');
+    const { asking, answer } = await import('../../src/ui/ask.js');
     const opened = openNew(emptyProject({ title: 'Other' }));
     await new Promise(r => setTimeout(r, 0));
     if (asking.value) answer('');     // discard this project's unsaved changes
@@ -46,9 +46,9 @@ test('opening another project drops the picks, and picks left from elsewhere ena
 
 test('transposing other notes after picking them is its own undo step', async ()=>
 {
-    const { transposePicked } = await import('../../src/app/notes.js');
-    const { undo } = await import('../../src/app/document.js');
-    const { project } = await import('../../src/app/store.js');
+    const { transposePicked } = await import('../../src/ui/notes.js');
+    const { undo } = await import('../../src/ui/document.js');
+    const { project } = await import('../../src/ui/store.js');
     let p = emptyProject();
     p = addTrack(p, { ...makeTrack(p, { name: 'Keys' }), id: 't1' });
     p = addClip(p, 't1', { id: 'c1', start: 0, beats: 4, notes: [{ beat: 0, beats: 1, key: 60, vel: 90 }, { beat: 1, beats: 1, key: 64, vel: 90 }] });

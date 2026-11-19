@@ -189,7 +189,7 @@ Two flags help while working on it:
 
   Menus in a headless run: click a menu-bar item with
   `app.evaluate(({ Menu }, id) => Menu.getApplicationMenu().getMenuItemById(id).click(), 'undo')`
-  (ids are the keys of `COMMANDS` in `src/app/commands.js`; Cmd shortcuts belong to the menu bar,
+  (ids are the keys of `COMMANDS` in `src/ui/commands.js`; Cmd shortcuts belong to the menu bar,
   so a scripted `Meta+Z` does nothing). A right-click menu isn't shown; it is kept as
   `globalThis.contextMenu` in the main process, whose `items` a test can read and click.
 
@@ -237,11 +237,11 @@ to a draft release on GitHub; check it and publish it there.
 
 ## Adding a command
 
-Add it to `COMMANDS` in `src/app/commands.js` with a label, an `accelerator` (a Cmd shortcut the
+Add it to `COMMANDS` in `src/ui/commands.js` with a label, an `accelerator` (a Cmd shortcut the
 menu bar answers) or `shown` (a plain key the page answers, which still types in a text field; never one of
 the musical-typing letters `A`–`L`, `;`, `'`, `W E T Y U O P`, `Z`, `X`), and
-`enabled`/`checked` if it has them; then put `item('id')` in the menu bar in `menuBar()` (`src/app/menu-bar.js`) and in any
-right-click menu in `src/app/context-menus.js` it belongs in.
+`enabled`/`checked` if it has them; then put `item('id')` in the menu bar in `menuBar()` (`src/ui/menu-bar.js`) and in any
+right-click menu in `src/ui/context-menus.js` it belongs in.
 
 ## SoundFont libraries
 
@@ -298,7 +298,7 @@ falls back to when the band names one the chip bank doesn't have.
 
 ## Adding to the interface
 
-The interface lives in `src/app/`: the state as signals in `store.js`, what the controls do in
+The interface lives in `src/ui/`: the state as signals in `store.js`, what the controls do in
 `document.js` (open, save, New and `edit`), `player.js`, `recording.js` and `live.js`, and the
 views in `components/`. A view reads signals and calls actions; it doesn't touch the audio engine or
 the composer itself. Every change to the project goes through `edit(p => …)` with one of the pure

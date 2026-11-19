@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { openProject, save, saveAs, edit, watchProjects } from '../../src/app/document.js';
-import { asking, answer } from '../../src/app/ask.js';
-import { projectName, dirty, project } from '../../src/app/store.js';
+import { openProject, save, saveAs, edit, watchProjects } from '../../src/ui/document.js';
+import { asking, answer } from '../../src/ui/ask.js';
+import { projectName, dirty, project } from '../../src/ui/store.js';
 import { emptyProject } from '../../src/daw/project.js';
 import { writeProject } from '../../src/daw/project-format.js';
 

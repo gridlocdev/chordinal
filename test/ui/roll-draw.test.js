@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hist, selected, project } from '../../src/app/store.js';
+import { hist, selected, project } from '../../src/ui/store.js';
 import { history, emptyProject, makeTrack, addTrack } from '../../src/daw/project.js';
-import { undo } from '../../src/app/document.js';
-import { down } from '../../src/app/components/roll-input.js';
+import { undo } from '../../src/ui/document.js';
+import { down } from '../../src/ui/components/roll-input.js';
 
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};

@@ -7,21 +7,21 @@ import { audioEngine } from '../platform/audio-engine.js';
 import { projectFiles } from '../platform/project-files.js';
 import { registerFx } from '../daw/fx.js';
 import { HUMANIZE, humanizeFx } from '../composer/humanize-fx.js';
-import { settings, setSettings, loadSettings, project, dirty } from './store.js';
-import { checkLibraries } from './libraries.js';
-import { openProject, newProject } from './document.js';
-import { startLive, connectMidi } from './live.js';
-import { startMenus } from './menu-bar.js';
-import { startEditorFollow } from './steps.js';
-import { handleKey } from './keys.js';
-import { textMenu } from './context-menus.js';
-import { Transport } from './components/Transport.jsx';
-import { Browser } from './components/Browser.jsx';
-import { Arrange } from './components/Arrange.jsx';
-import { Editor } from './components/Editor.jsx';
-import { NewProject } from './components/NewProject.jsx';
-import { ExportDialog } from './components/ExportDialog.jsx';
-import { Ask } from './components/Ask.jsx';
+import { settings, setSettings, loadSettings, project, dirty } from '../ui/store.js';
+import { checkLibraries } from '../ui/libraries.js';
+import { openProject, newProject } from '../ui/document.js';
+import { startLive, connectMidi } from '../ui/live.js';
+import { startMenus } from '../ui/menu-bar.js';
+import { startEditorFollow } from '../ui/steps.js';
+import { handleKey } from '../ui/keys.js';
+import { textMenu } from '../ui/context-menus.js';
+import { Transport } from '../ui/components/Transport.jsx';
+import { Browser } from '../ui/components/Browser.jsx';
+import { Arrange } from '../ui/components/Arrange.jsx';
+import { Editor } from '../ui/components/Editor.jsx';
+import { NewProject } from '../ui/components/NewProject.jsx';
+import { ExportDialog } from '../ui/components/ExportDialog.jsx';
+import { Ask } from '../ui/components/Ask.jsx';
 
 const EDITOR_H = [140, 0.8];        // px, and at most this much of the window
 
