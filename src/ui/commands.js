@@ -237,7 +237,8 @@ export function item(id, extra = {})
         enabled: c.enabled ? c.enabled() : true,
         ...(c.checked && { checked: c.checked() }),
         ...extra,
-        run: ()=> { if (!busy()) run(); },
+        // the bar is rebuilt a moment after a change, so a click or shortcut can come after the command was disabled
+        run: ()=> { if (!busy() && (!c.enabled || c.enabled())) run(); },
     };
 }
 
