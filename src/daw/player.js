@@ -25,6 +25,18 @@ const DUCK = { seconds: 0.1, attack: 0.01 };     // a duck's dip and recovery
 const CLICK = { bar: 1760, beat: 1320, seconds: 0.05, gain: 0.3 };  // the metronome: pitches of a bar's first beat and the rest
 
 /**
+ * The notes sounding at a beat that started before it, which a start or a jump there has to restart: not drums, since
+ * a hit restarted mid-ring would sound like a new one.
+ * @param {any[][]} played each track's played notes
+ * @returns {{ i: number, n: any }[]}
+ */
+export function heldAt(played, tracks, beat)
+{
+    return played.flatMap((notes, i)=> isDrums(tracks[i]) ? [] :
+        notes.filter(n => n.grid < beat && n.beat < beat && n.beat + n.beats > beat).map(n => ({ i, n })));
+}
+
+/**
  * Starts playing. Returns a handle: the position in beats, seek(beat), setMix(channels), levels() and stop().
  * @param {import('./project.js').Project} project
  * @param {{ font: any, preset: any }[]} instrumentsOf  from loadInstruments, one per track
@@ -167,7 +179,18 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
         nextClick = Math.ceil(s.from - 1e-6);
         automate(s);
     };
+    // notes already sounding at a beat play on from it, their note-offs still to come in this segment
+    const restartHeld = (beat, at)=>
+    {
+        for (const { i, n } of heldAt(passData(seg.pass).played, tracks, beat))
+        {
+            instruments[i].noteOn(n.key, n.vel, at, n);
+            sounding.set(`${i}:${n.key}`, { i, key: n.key });
+            if (!n.held) carried.add(n);
+        }
+    };
     begin(seg);
+    restartHeld(seg.from, seg.at);
 
     const schedule = ()=>
     {
@@ -246,17 +269,7 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
             segments.push(seg);
             for (const s of strips) { s.fader.gain.cancelScheduledValues(0); s.fader.gain.setValueAtTime(1, now); }
             begin(seg);
-            passData(seg.pass).played.forEach((notes, i)=>
-            {
-                if (isDrums(tracks[i])) return;     // a hit restarted mid-ring would sound like a new one
-                for (const n of notes)
-                    if (n.grid < beat && n.beat < beat && n.beat + n.beats > beat)
-                    {
-                        instruments[i].noteOn(n.key, n.vel, now, n);
-                        sounding.set(`${i}:${n.key}`, { i, key: n.key });
-                        if (!n.held) carried.add(n);
-                    }
-            });
+            restartHeld(beat, now);
             schedule();
         },
         /**
