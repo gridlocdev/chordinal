@@ -1,6 +1,6 @@
 // Both apps' main processes, run headless: an error nothing caught exits the app with code 1 and says why on stderr,
 // instead of putting Electron's error dialog on the screen; and closing the window while the settings are being
-// written finishes the write, then quits.
+// written finishes the write, then quits. The export tool's windowless Electron exits the same way, with no flag.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
@@ -67,5 +67,28 @@ for (const config of APPS)
             assert.equal(saved.mark, mark);
         }
         finally { if (run.proc.exitCode === null) run.proc.kill('SIGKILL'); }
+    });
+}
+
+for (const [kind, throwIt] of [
+    ['an uncaught exception', ()=> { setTimeout(()=> { throw new Error('boom from the test'); }); }],
+    ['an unhandled rejection', ()=> { Promise.reject(new Error('boom from the test')); }],
+])
+{
+    test(`the export tool's Electron: ${kind} exits with code 1 and no dialog`, { timeout: 60000 }, async ()=>
+    {
+        const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'tools/export/electron.mjs'), 'about:blank'], cwd: ROOT });
+        const proc = app.process();
+        let stderr = '';
+        proc.stderr.on('data', (d)=> { stderr += d; });
+        const run = { exited: new Promise(r => proc.once('exit', (code)=> r(code))) };
+        try
+        {
+            await app.firstWindow();
+            await app.evaluate(throwIt).catch(()=> {});
+            assert.equal(await exitOf(run), 1);
+            assert.match(stderr, /boom from the test/);
+        }
+        finally { if (proc.exitCode === null) proc.kill('SIGKILL'); }
     });
 }
