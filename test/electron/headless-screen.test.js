@@ -59,21 +59,30 @@ test('closing a project with unsaved changes headless closes without a dialog', 
         {
             dialog.showMessageBoxSync = ()=> { process.getBuiltinModule('node:fs').writeFileSync(marker, ''); return 0; };
         }, marker);
+        // a new song from the New dialog isn't saved yet
         const dirty = async ()=>
         {
             const deadline = Date.now() + CLOSE_LIMIT_MS;
-            while (!await app.evaluate(({ Menu })=> !!Menu.getApplicationMenu()?.getMenuItemById('newTrack')))
+            while (!await app.evaluate(({ Menu })=> !!Menu.getApplicationMenu()?.getMenuItemById('new')))
             {
                 assert.ok(Date.now() < deadline, 'the menu bar was built');
                 await new Promise(r => setTimeout(r, 100));
             }
-            await app.evaluate(({ Menu })=> Menu.getApplicationMenu().getMenuItemById('newTrack').click());
+            // after a reload the bar can be the old page's for a moment, its click lost: click until the dialog opens
+            while (!await page.$('.dialog .actions button.primary'))
+            {
+                assert.ok(Date.now() < deadline, 'the New dialog opened');
+                await app.evaluate(({ Menu })=> Menu.getApplicationMenu().getMenuItemById('new').click());
+                await new Promise(r => setTimeout(r, 200));
+            }
+            await page.click('.dialog .actions button.primary');
+            await page.waitForFunction(()=> document.title.endsWith(' * · Music Generator'));
         };
-        await page.waitForFunction(()=> document.querySelector('.lane'));
+        await page.waitForFunction(()=> document.querySelector('.song'));
         await dirty();
         // a reload asks the same question as closing, and leaves the app running to read what it kept
         await page.reload();
-        await page.waitForFunction(()=> document.querySelector('.lane'));
+        await page.waitForFunction(()=> document.querySelector('.song'));
         const prompts = await app.evaluate(()=> globalThis.headlessPrompts.map(p => p.what.message ?? p.kind));
         assert.deepEqual(prompts, ['Close without saving?']);
         await dirty();

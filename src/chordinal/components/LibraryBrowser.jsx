@@ -1,19 +1,26 @@
-// The browser under the channel rack (Chordinal PRD §7): the instruments by General MIDI family, the drum kits, and the
-// projects (Open Recent and those in Documents/Chordinal/). Click an instrument or a kit to hear it, double-click to put
-// it on the selected track, or drag it onto a track or the channel rack.
+// The browser under the channel rack (Chordinal PRD §7): the instruments by General MIDI family, the drum kits, the
+// projects (Open Recent and those in Documents/Chordinal/), and the open project's whistled takes (§9.3). Click an
+// instrument or a kit to hear it, double-click to put it on the selected track, or drag it onto a track or the channel
+// rack. Click a take to read it onto the selected track at the playhead, or drag it onto a track.
 import { useEffect, useMemo, useState } from 'preact/hooks';
+import { signal } from '@preact/signals';
 import { soundfontLibrary } from '../../audio/soundfont-library.js';
 import { folderTitle, projectFolders } from '../../platform/project-folders.js';
-import { settings, setSettings, selected, projectName } from '../../ui/store.js';
+import { settings, setSettings, selected, selectedTrack, projectName, beat } from '../../ui/store.js';
+import { place } from '../../ui/place.js';
+import { dropTake, takesKept } from '../../ui/recording.js';
 import { assignPreset } from '../../ui/tracks.js';
 import { liveName } from '../../ui/live.js';
 import { preview } from '../../ui/preview.js';
-import { presetMenu } from '../../ui/context-menus.js';
-import { LibraryPicker } from '../../ui/components/Browser.jsx';
+import { presetMenu, takeMenu } from '../../ui/context-menus.js';
+import { LibraryPicker } from '../../ui/components/LibraryPicker.jsx';
 import { recent, openRecent } from '../files.js';
 import { instrumentGroups, kits } from '../rack.js';
 
-const TABS = [['instruments', 'Instruments'], ['kits', 'Kits'], ['projects', 'Projects']];
+const TABS = [['instruments', 'Instruments'], ['kits', 'Kits'], ['projects', 'Projects'], ['takes', 'Takes']];
+
+/** the open project's takes, as last listed */
+const takes = signal(/** @type {string[]} */ ([]));
 
 function Preset({ p })
 {
@@ -64,6 +71,28 @@ function Projects()
     );
 }
 
+function Takes()
+{
+    const name = projectName.value;
+    const kept = takesKept.value;
+    // a late answer for a project no longer shown is dropped
+    useEffect(()=> { let live = true; if (name) place.files.takes(name).then(t => { if (live) takes.value = t; }, ()=> {}); else takes.value = []; return ()=> { live = false; }; }, [name, kept]);
+    const track = selectedTrack.value;
+    if (!name) return <div class="list"><div class="empty">Save the project to keep its whistled takes.</div></div>;
+    return (
+        <>
+            <div class="foot">{track ? `Click to read a take onto ${track.name} at the playhead` : 'Select a track to read a take onto it'}</div>
+            <div class="list">
+                {takes.value.length ? takes.value.map(f => (
+                    <div class="item" draggable onDragStart={(e)=> e.dataTransfer?.setData('application/x-take', f)}
+                        onClick={()=> track && dropTake(track.id, f, beat.value)}
+                        onContextMenu={(e)=> { e.preventDefault(); takeMenu(f, beat.value); }}>{f}</div>
+                )) : <div class="empty">Takes you record (●) are kept here.</div>}
+            </div>
+        </>
+    );
+}
+
 export function LibraryBrowser()
 {
     const tab = TABS.some(([id])=> id === settings.value.browserTab) ? settings.value.browserTab : 'instruments';
@@ -72,7 +101,7 @@ export function LibraryBrowser()
             <div class="tabs">
                 {TABS.map(([id, label])=> <button class={tab === id ? 'on' : ''} onClick={()=> setSettings({ browserTab: id })}>{label}</button>)}
             </div>
-            {tab === 'projects' ? <Projects /> : <Presets kit={tab === 'kits'} />}
+            {tab === 'projects' ? <Projects /> : tab === 'takes' ? <Takes /> : <Presets kit={tab === 'kits'} />}
         </div>
     );
 }

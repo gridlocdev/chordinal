@@ -1,54 +1,36 @@
-// The app: loads the settings, opens the last project, wires musical typing and MIDI, and lays out the panels.
+// Music Generator (Chordinal PRD §9): writes songs and plays them. Loads the settings, opens the last song, and lays
+// out the window: the player across the top, the songs in projects/ at the left, and the open song. Editing a song is
+// Chordinal's: Open in Chordinal hands it over.
 //
-// The menu bar and the keys are in commands.js, the right-click menus in context-menus.js.
+// The menu bar is in menu-bar.js; New… is the shared New dialog, and saving the shared document code.
 import { render } from 'preact';
 import { effect } from '@preact/signals';
 import { audioEngine } from '../platform/audio-engine.js';
 import { projectFiles } from '../platform/project-files.js';
+import { typing } from '../platform/keys.js';
 import { registerFx } from '../daw/fx.js';
 import { HUMANIZE, humanizeFx } from '../composer/humanize-fx.js';
-import { settings, setSettings, loadSettings, project, dirty } from '../ui/store.js';
+import { settings, loadSettings, project, dirty } from '../ui/store.js';
 import { checkLibraries } from '../ui/libraries.js';
 import { openProject, newProject } from '../ui/document.js';
-import { startLive, connectMidi } from '../ui/live.js';
-import { startMusicGeneratorMenus } from './menu-bar.js';
-import { startEditorFollow } from '../ui/steps.js';
-import { handleKey } from '../ui/keys.js';
+import { toggle, seek } from '../ui/player.js';
 import { textMenu } from '../ui/context-menus.js';
-import { Transport } from '../ui/components/Transport.jsx';
-import { Browser } from '../ui/components/Browser.jsx';
-import { Arrange } from '../ui/components/Arrange.jsx';
-import { Editor } from '../ui/components/Editor.jsx';
+import { busy } from '../ui/commands.js';
 import { NewProject } from '../ui/components/NewProject.jsx';
 import { ExportDialog } from '../ui/components/ExportDialog.jsx';
 import { Ask } from '../ui/components/Ask.jsx';
-
-const EDITOR_H = [140, 0.8];        // px, and at most this much of the window
-
-function Split()
-{
-    const down = (e)=>
-    {
-        e.currentTarget.setPointerCapture(e.pointerId);
-        const startY = e.clientY, startH = settings.value.editorHeight;
-        const move = (m)=> setSettings({ editorHeight: Math.round(Math.max(EDITOR_H[0], Math.min(innerHeight * EDITOR_H[1], startH - (m.clientY - startY)))) });
-        const up = ()=> { removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); };
-        addEventListener('pointermove', move);
-        addEventListener('pointerup', up); addEventListener('pointercancel', up);
-    };
-    return <div class="split" onPointerDown={down} title="Drag to resize" />;
-}
+import { Player } from './components/Player.jsx';
+import { SongList } from './components/SongList.jsx';
+import { Song } from './components/Song.jsx';
+import { startMusicGeneratorMenus } from './menu-bar.js';
 
 function App()
 {
-    const s = settings.value;
     return (
-        <div class={`app ${s.browserOpen ? '' : 'no-browser'}`} style={{ '--editor-h': `${s.editorHeight}px` }}>
-            <Transport />
-            {s.browserOpen ? <Browser /> : <div />}
-            <Arrange />
-            <Split />
-            <Editor />
+        <div class="app music-generator">
+            <Player />
+            <SongList />
+            <Song />
             <NewProject />
             <ExportDialog />
             <Ask />
@@ -56,7 +38,13 @@ function App()
     );
 }
 
-addEventListener('keydown', (e)=> { if (handleKey(e)) e.preventDefault(); });
+// Space plays and stops, Return goes to the start; the rest is in the menus
+addEventListener('keydown', (e)=>
+{
+    if (typing() || busy() || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'Enter' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); seek(0); }
+});
 // text fields get the usual edit menu on a right-click
 addEventListener('contextmenu', (e)=>
 {
@@ -67,18 +55,15 @@ addEventListener('contextmenu', (e)=>
 });
 
 effect(()=> { document.title = `${project.value.title}${dirty.value ? ' *' : ''} · Music Generator`; });
-// closing the window with changes unsaved: the app asks first
+// closing the window with a song not saved: the app asks first
 addEventListener('beforeunload', (e)=> { if (dirty.value) { e.preventDefault(); e.returnValue = ''; } });
 
 registerFx(HUMANIZE, humanizeFx);
 await loadSettings();
 await checkLibraries();
 audioEngine.volume = settings.value.volume;
-startLive();
-connectMidi();
 const list = await projectFiles.list().catch(()=> []);
 const first = list.find(p => p.name === settings.value.project) ?? list[0];
 if (!first || !await openProject(first.name)) newProject();
 render(<App />, document.body);
 startMusicGeneratorMenus();
-startEditorFollow();

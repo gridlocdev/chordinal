@@ -70,6 +70,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
    - **Instruments**: the SoundFont libraries and the chip instruments, grouped by General MIDI family.
    - **Kits**: the drum kits.
    - **Projects**: the recent projects and the folder `Documents/Chordinal/`.
+   - **Takes**: the open project's whistled takes (§9.3), to read onto a track again.
 2. Clicking an instrument plays a short preview on middle C. Clicking a kit plays a kick, a snare and a closed hat.
 3. Later work adds the Synths, Effects and Samples tabs (§11).
 

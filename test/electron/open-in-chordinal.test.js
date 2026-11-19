@@ -32,7 +32,7 @@ async function launch(args)
     const app = await _electron.launch({ executablePath: electronPath, args: [...args.slice(0, 1), '--headless', ...args.slice(1)], cwd: ROOT });
     const page = await app.firstWindow();
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForFunction(()=> document.querySelector('.lane'));
+    await page.waitForFunction(()=> document.querySelector('.lane, .song'));
     return { app, page, proc: app.process() };
 }
 
@@ -55,6 +55,14 @@ test('Open in Chordinal copies the song into Documents/Chordinal/ and Chordinal 
         runs.push(mg);
         await until('the menu bar was built', ()=> mg.app.evaluate(({ Menu })=> !!Menu.getApplicationMenu()?.getMenuItemById('openInChordinal')));
         const title = (await mg.page.title()).replace(/ · Music Generator$/, '');
+
+        // §9.1: the window is the songs, the player and the song; nothing in it edits
+        assert.ok(await mg.page.$$eval('.songs .item', l => l.length) > 10, 'the shipped songs are listed');
+        assert.equal(await mg.page.textContent('.song h1'), title);
+        for (const gone of ['.arrange', '.editor', '.lane', '.transport .rec'])
+            assert.equal(await mg.page.$(gone), null, `no ${gone}`);
+        for (const id of ['newTrack', 'record', 'undo', 'newFromMelody'])
+            assert.equal(await mg.app.evaluate(({ Menu }, id)=> !!Menu.getApplicationMenu().getMenuItemById(id), id), false, `no ${id} in the menu bar`);
         const launches = ()=> mg.app.evaluate(()=> globalThis.headlessPrompts.filter(p => p.kind === 'launch').map(p => p.what));
         const open = async (n)=>
         {
@@ -68,8 +76,10 @@ test('Open in Chordinal copies the song into Documents/Chordinal/ and Chordinal 
         const dir = path.join(MG_DOCS, 'Chordinal', title);
         assert.deepEqual(first.args, [path.join(ROOT, 'electron', 'chordinal.js'), dir]);
         assert.equal(JSON.parse(await fs.readFile(path.join(dir, 'project.json'), 'utf8')).title, title);
-        // the name is taken the second time
-        assert.equal((await open(2)).args[1], `${dir} 2`);
+        // the name is taken the second time; the button does the same as the menu item
+        await mg.page.click('.transport button.primary');
+        await until('Chordinal was started again', async ()=> (await launches()).length === 2);
+        assert.equal((await launches())[1].args[1], `${dir} 2`);
         assert.match(await mg.page.textContent('.transport'), /Opened .* in Chordinal/);
         await quit(mg);
 

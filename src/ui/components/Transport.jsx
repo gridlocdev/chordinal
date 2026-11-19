@@ -11,7 +11,6 @@ import { project, dirty, beat, playing, status, settings, setSettings } from '..
 import { edit, save, saveAs } from '../document.js';
 import { play, stop, seek } from '../player.js';
 import { recording, record } from '../recording.js';
-import { newDialog as dialog } from '../dialogs.js';
 
 /** 'harmonicMinor' → 'harmonic minor' */
 export const modeName = (mode)=> mode.replace(/[A-Z]/g, c => ` ${c.toLowerCase()}`);
@@ -38,10 +37,9 @@ function Position()
 }
 
 /**
- * @param {{ onNew?: ()=> void, newLabel?: string }} props  what New does: Music Generator's New dialog (the default), or
- *   the app's own new project
+ * @param {{ onNew: ()=> void, newLabel?: string }} props  what New does: the app's own new project
  */
-export function Transport({ onNew = ()=> { dialog.value = true; }, newLabel = 'New…' })
+export function Transport({ onNew, newLabel = 'New' })
 {
     const p = project.value;
     const bpm = bpmNow.value, sig = sigNow.value, marker = markerNow.value;

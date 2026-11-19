@@ -1,12 +1,12 @@
 // The right-click menus, one for each thing that can be clicked: a clip, an empty stretch of a lane, a track's
-// header, the ruler, the chord track, a note, the piano roll's background, a mixer strip, and the browser's projects,
+// header, the ruler, the chord track, a note, the piano roll's background, a mixer strip, and the browser's
 // instruments and takes. The part clicked is selected first, so the menu's commands act on it.
 import { TRACK_COLORS, findClip, renameMarker, removeMarker, markerRange, isDrums } from '../daw/project.js';
 import { barAt } from '../daw/meter.js';
 import { appMenu } from '../platform/app-menu.js';
 import { cut as cutChord } from '../sketch/takes.js';
-import { project, projectName, selected, selectedClip, chordRange, settings, setSettings, picked } from './store.js';
-import { edit, openProject } from './document.js';
+import { project, selected, selectedClip, chordRange, settings, setSettings, picked } from './store.js';
+import { edit } from './document.js';
 import { seek } from './player.js';
 import { record, dropTake } from './recording.js';
 import { focus } from './focus.js';
@@ -233,14 +233,6 @@ export function stripMenu(trackId)
 
 // ── the browser ──────────────────────────────────────────────────────────────────────────────────────────────────────
 
-export function projectMenu(name)
-{
-    appMenu.popup([
-        { label: 'Open', enabled: name !== projectName.value, run: ()=> openProject(name) },
-        { label: 'Show in Finder', run: ()=> appMenu.reveal(`${name}/project.json`) },
-    ]);
-}
-
 export function presetMenu(preset)
 {
     const t = trackOf(selected.value);
@@ -256,7 +248,6 @@ export function takeMenu(file, at)
     appMenu.popup([
         { label: t ? `Read onto ${t.name} at the Playhead` : 'Read onto the Selected Track', enabled: !!t, run: ()=> dropTake(t.id, file, at) },
         { label: 'Read onto a New Track', run: ()=> { const id = addNewTrack({ instrument: { bank: 0, program: 73 }, after: selected.value }); dropTake(id, file, at); } },
-        { label: 'Show in Finder', run: ()=> appMenu.reveal(`${projectName.value}/takes/${file}`) },
     ]);
 }
 

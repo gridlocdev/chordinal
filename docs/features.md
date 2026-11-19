@@ -1,14 +1,22 @@
 # Features
 
-Music Generator is laid out like a DAW: a transport, a browser, an arrangement, a piano roll and a mixer. On top of that it composes, and it can turn whistling into notes.
+This repo makes two apps. **Music Generator** writes songs and plays them. **Chordinal** is a DAW laid out like one (a transport, a channel rack, a browser, an arrangement, a step grid, a piano roll and a mixer) where you change those songs or make your own, and where whistling turns into notes.
 
 ## Projects
 
-A project is a folder in `projects/` with a `project.json`: tracks, clips of notes, instruments, the mixer, tempo, meter, markers and a chord track. The 38 songs it ships with are projects you can open, edit and save.
+A project is a folder with a `project.json`: tracks, clips of notes, instruments, the mixer, tempo, meter, markers and a chord track. Music Generator keeps its songs in `projects/`, the 38 it ships with among them. Chordinal keeps projects anywhere, in `Documents/Chordinal/` unless you pick somewhere else. Both read the same file, so a song opens in either.
+
+## Music Generator
+
+The window is the songs at the left, a player across the top, and the open song: its sections along a bar you can click to move the playhead, and its tracks. **New…** writes a song (below), **Save** keeps it in `projects/`, and **Open in Chordinal** copies it into `Documents/Chordinal/<title>/` and opens it there to edit. If Chordinal isn't installed, the folder is shown in the Finder instead. Nothing in Music Generator edits a song.
+
+## Chordinal
+
+Everything from here on, except Composing and Humanize, is Chordinal's. The channel rack at the left lists the tracks: double-click one to edit it (a drum track opens the step grid), and drag instruments onto it from the browser below, where clicking an instrument or kit plays a preview. **Track ▸ Generate Part…** has the composer write one part (drums, bass, chords, pad, arpeggio, melody or countermelody) in a style you pick, over the chords already there, and **Generate Again** (`Cmd G`) writes it again from another seed.
 
 ## Composing
 
-**New…** writes a project from a feeling, a genre or one of the songs: melody, countermelody, arpeggio, chords, pad, bass and drums, written by rule. Each choice always comes out the same; **Roll** a seed for another song in that style, and type a seed back in to get it again.
+In Music Generator, **New…** writes a song from a feeling, a genre or one of the songs: melody, countermelody, arpeggio, chords, pad, bass and drums, written by rule. Each choice always comes out the same; **Roll** a seed for another song in that style, and type a seed back in to get it again.
 
 Twelve genre songs each tell a story, scene by scene: bossa nova, reggae, funk, synthwave, lo-fi hip hop, tango, country, celtic, chiptune, gospel, cinematic and blues, plus solo piano pieces with a left hand, rubato and ornaments. The game music loops; a boss fight switches into 7/4.
 
@@ -30,9 +38,9 @@ Make a clip a **pattern** and its copies stay linked: edit one, in the step grid
 
 ## Whistling
 
-Press record and whistle a melody over a click onto any track, vibrato included. Pick a stretch of the chord track and whistle a chord's notes to set the chord there. **New from melody** composes a band around the selected clip.
+**Track ▸ Record Melody** (or **●**, or `R`) and whistle a melody over a click onto any track, vibrato included. Pick a stretch of the chord track and whistle a chord's notes to set the chord there. **New from melody** composes a band around the selected clip.
 
-A saved project keeps its takes in `projects/<name>/takes/`, and an audio file dropped on a track is read the same way.
+A saved project keeps its takes in its folder's `takes/`, listed in the browser's **Takes** tab to read onto a track again, and an audio file dropped on a track is read the same way.
 
 ## Mixing
 

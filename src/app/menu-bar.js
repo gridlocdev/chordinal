@@ -1,21 +1,23 @@
-// Music Generator's menu bar: its File menu (the projects in projects/) and Help, around the menus both apps share.
+// Music Generator's menu bar (Chordinal PRD §9): File (New…, the songs in projects/, saving, Open in Chordinal and
+// exporting), the text-field Edit menu, Transport, View and Help. Editing a song is Chordinal's, so the shared Edit and
+// Track menus aren't here.
 import { projectName, projectList } from '../ui/store.js';
 import { openProject, watchProjects } from '../ui/document.js';
 import { item, busy } from '../ui/commands.js';
+import { startMenus } from '../ui/menu-bar.js';
 import { openInChordinal } from './open-in-chordinal.js';
-import { editMenu, trackMenu, transportMenu, viewMenu, startMenus } from '../ui/menu-bar.js';
 
 function menuBar()
 {
     const open = projectList.value.map(x => ({ label: x.title, radio: true, checked: x.name === projectName.value, run: ()=> openProject(x.name) }));
     return [
-        { label: 'File', submenu: [item('new'), item('open'), { label: 'Open Project', submenu: open.length ? open : [{ label: 'No projects', enabled: false }] }, '-',
+        { label: 'File', submenu: [item('new'), { label: 'Open Song', submenu: open.length ? open : [{ label: 'No songs', enabled: false }] }, '-',
             item('save'), item('saveAs'), item('revert'), '-',
-            { id: 'openInChordinal', label: 'Open in Chordinal', run: ()=> { if (!busy()) openInChordinal(); } }, '-', item('importMidi'), item('exportAudio'), item('exportMidi'), item('reveal')] },
-        editMenu(),
-        trackMenu(),
-        transportMenu(['-', item('newFromMelody')]),
-        viewMenu([item('browser'), '-']),
+            { id: 'openInChordinal', label: 'Open in Chordinal', run: ()=> { if (!busy()) openInChordinal(); } }, '-',
+            item('exportAudio'), item('exportMidi'), item('reveal')] },
+        { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, '-', { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
+        { label: 'Transport', submenu: [item('play'), item('start'), '-', item('metronome')] },
+        { label: 'View', submenu: [{ role: 'togglefullscreen' }, '-', { label: 'Developer', submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }] }] },
         { label: 'Help', submenu: [item('composing'), item('readme')] },
     ];
 }

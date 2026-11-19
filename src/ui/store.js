@@ -13,7 +13,7 @@ const DEFAULTS = {
     volume: 0.8,            // master volume
     octave: 4,              // musical typing's octave
     project: '',            // the project last opened, by folder name
-    browserTab: 'projects', // 'projects' | 'instruments' | 'takes'
+    browserTab: 'instruments', // Chordinal's browser: 'instruments' | 'kits' | 'projects' | 'takes'
     browserOpen: true,
     editorTab: 'roll',      // 'roll' | 'mixer' | 'grid'
     editorHeight: 300,      // px

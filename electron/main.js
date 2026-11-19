@@ -48,7 +48,6 @@ startShell({
     name: 'Music Generator',
     id: 'music-generator',
     page: 'index.html',
-    askMicrophone: true,
     async setup({ packaged, ipcMain, screen })
     {
         // the first run of an installed build: the written songs, as projects to open
