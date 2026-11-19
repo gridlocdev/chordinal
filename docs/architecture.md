@@ -43,6 +43,7 @@ The window has a transport bar at the top, a browser on the left (projects, inst
 | `src/daw/project.js` | the project model (see [the format](#project-files)), every edit as a pure function returning a new project (notes, clips, tracks, tempo, meter, mixer, inserting and deleting time), and the undo history: a list of earlier projects, with consecutive edits of the same kind (a fader drag) merged into one step |
 | `src/daw/project-format.js` | `project.json`: writing it with one compact line per note, reading it with a format and version check |
 | `src/daw/project-midi.js` | a project as a Standard MIDI File: a track each, drums on channel 10; and a MIDI file as a new project, or as tracks added to one |
+| `src/daw/steps.js`, `src/daw/gm-drums-data.js` | the step grid's model: step sizes, which notes are on a step or off the grid, turning steps on and off and accenting them, a drum track's rows; the General MIDI drum names |
 | `src/daw/meter.js` | bars from meter changes: bar lines, the bar a beat is in, beats per bar |
 | `src/daw/automation.js` | automation lanes: the value at a beat from keyframes |
 | `src/daw/fx.js` | MIDI FX: a registry of types (the app registers them) and `performProject(project, pass)`, which runs each track's notes through its FX for one pass round the loop, returning the notes and any events (a tape stop, a send swell) |
@@ -63,8 +64,9 @@ The window has a transport bar at the top, a browser on the left (projects, inst
 | `src/app/timeline.js` | tempo and meter: the whole song's, changes from a bar on, and the flags the ruler shows for them with their menu |
 | `src/app/context-menus.js` | the right-click menus, one per thing clicked, which select it first and are built from the commands and the actions below |
 | `src/app/tracks.js`, `src/app/notes.js`, `src/app/clipboard.js` | the actions on tracks and clips, on the piano roll's picked notes, and cut, copy, paste and duplicate for either |
+| `src/app/steps.js` | the step grid's actions (paint, accent, step size, rows, hearing a drum) and switching the editor between the piano roll and the step grid as clips are picked |
 | `src/app/focus.js`, `src/app/ask.js` | which pane the editing keys act on; an in-app question for a name or a yes (Electron has no `prompt`) |
-| `src/app/components/` | the views: `Transport`, `Browser`, `Arrange` (`Ruler`, `ChordLane`, a `TrackRow` per track, sharing `arrange-view.js`), `Editor` (`PianoRoll` or `Mixer`), `NewProject` (the New dialog), `Ask`; `canvas.js` is a canvas that redraws when the signals it reads change, the piano roll's parts are `roll-view.js` (what's shown, its geometry), `roll-draw.js` (drawing), `roll-input.js` (the pointer), `RollToolbar` and `RollPlayhead` |
+| `src/app/components/` | the views: `Transport`, `Browser`, `Arrange` (`Ruler`, `ChordLane`, a `TrackRow` per track, sharing `arrange-view.js`), `Editor` (`PianoRoll`, `Mixer` or `StepGrid`, whose geometry is in `grid-view.js`), `NewProject` (the New dialog), `Ask`; `canvas.js` is a canvas that redraws when the signals it reads change, the piano roll's parts are `roll-view.js` (what's shown, its geometry), `roll-draw.js` (drawing), `roll-input.js` (the pointer), `RollToolbar` and `RollPlayhead` |
 | `src/app/app.css` | the look: colour tokens and the panel grid |
 | `tools/compose.mjs` | composes a song in Node: prints the plan and melody, writes a `.mid` (`just compose`) |
 | `tools/make-projects.mjs` | writes the written songs as project files in `projects/` (`just projects`) |
@@ -91,14 +93,19 @@ The libraries live in `soundfonts/<folder>/`, ignored by git and downloaded by `
 A project is a folder, `projects/<name>/` (in the checkout, or `Documents/Music Generator/projects/` for a release build), holding `project.json` and, once whistled into, `takes/` (the takes' WAVs are ignored by git). The file:
 
 ```
-{ format: 'music-generator-project', version: 1, title, length (beats),
+{ format: 'music-generator-project', version: 1 | 2, title, length (beats),
   tempoMap: [{ beat, bpm, to? }], meters: [{ beat, sig }], key: { tonic, mode } | null,
   markers: [{ beat, name, meta? }], loop: { from, to } | null, groove: {…}, chords: [{ beat, beats, name, tones }],
   tracks: [{ id, name, color, instrument: { bank, program },
              mixer: { volumeDb, pan, mute, solo, lowCut, sends, autoPan, duck },
              fx: [{ type, …params }], automation: { tone?, reverb?, delay? },
-             clips: [{ id, start, beats, mute?, notes: [[beat, beats, key, vel, marks?], …] }] }] }
+             stepRows?: [key, …],
+             clips: [{ id, start, beats, mute?, step?, notes: [[beat, beats, key, vel, marks?], …] }
+                     | { id, start, pattern, mute? }] }],
+  patterns?: [{ id, name, beats, step?, notes }] }
 ```
+
+A project with no pattern clips is written as version 1, without `patterns`; one with pattern clips is version 2, and each pattern clip names its pattern instead of holding notes. The reader takes both. In memory every pattern clip carries its pattern's notes, length and step, and `project.patterns` holds only ids and names, so playback and export read `clip.notes` as before; `updateClip` copies an edit to the notes, length or step to the pattern's other clips.
 
 A beat is a quarter note; a note's beat is from its clip's start. `marker.meta`, `groove`, the FX params and a note's marks are opaque to the DAW: the Humanize FX reads them (a section's type and energy, swing, a track's role, a note's ornament). The reader takes version 1 only.
 

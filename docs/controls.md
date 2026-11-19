@@ -27,12 +27,16 @@
 | Insert or delete bars at the playhead (everything after moves) | Edit menu | right-click the ruler |
 | Change the tempo or meter from a bar on (a flag on the ruler shows each change) | | right-click the ruler, **Tempo Change Here…** or **Meter Change Here…**; right-click or double-click a flag to edit it, ramp to the next tempo, or remove it |
 | New, duplicate or delete a track; move it | `Alt Cmd N`, `Shift Cmd D`, `Cmd Delete`; `Alt Cmd ↑` `↓` | right-click its header |
-| Draw an empty clip | | double-click a track's lane |
+| Draw an empty clip (on a drum track, a new pattern) | | double-click a track's lane |
+| Make a clip a pattern, so its copies stay linked; make one copy unique again | `Cmd P`; Edit ▸ Make Unique | right-click the clip, **Make Pattern**, **Make Unique**, **Rename Pattern…** |
+| Turn drum steps on or off | | click a step in the step grid, drag to paint; `Shift` click accents a step |
+| Step size of a drum clip (1/8, 1/16, 1/32, 1/16 triplet) | | the step grid's **Step** menu |
+| Add or hide a drum row | | right-click a row in the step grid, **Add Row**, **Hide** |
 | Play the selected track's instrument | `A S D F G H J K L ; '` white keys, `W E T Y U O P` black keys | a MIDI keyboard, with its sustain pedal |
 | Octave down, up | `Z`, `X` | |
 | Show or hide the browser | `B` | |
 | Put an instrument on a track | | click it in the browser's Instruments tab, or drag it onto the track |
-| Piano roll, mixer | `Cmd 1`, `Cmd 2` | |
+| Piano roll, mixer, step grid | `Cmd 1`, `Cmd 2`, `Cmd 3` | |
 | Follow the playhead, show other tracks' notes in the piano roll | View menu | |
 
 Everything is also in the menu bar (File, Edit, Track, Transport, View), and right-clicking a clip, a lane, a track's header, the ruler, the chord track, a note, a mixer strip or anything in the browser shows what can be done to it: rename, colour, transpose, velocity, clip length, markers, tempo and meter, and more.

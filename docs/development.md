@@ -193,6 +193,8 @@ Two flags help while working on it:
   so a scripted `Meta+Z` does nothing). A right-click menu isn't shown; it is kept as
   `globalThis.contextMenu` in the main process, whose `items` a test can read and click.
 
+  Nothing else reaches the screen in a headless run either: closing or reloading with unsaved changes closes without asking, the file dialogs answer as if cancelled, and opening a doc, a link or the Finder does nothing. Each of these is kept in `globalThis.headlessPrompts` in the main process for a test to read (`electron/headless-screen.js`, tested in `test/electron/`). A test that launches the app kills it when done.
+
   Exports in a headless run: swap the save dialog for a stub in the main process, with
   `ipcMain.removeHandler('file:save')` and a new `ipcMain.handle('file:save', …)` that keeps the
   bytes, then run `exportAudio`, press Export in the dialog and read the WAV it was given. Stems go

@@ -20,3 +20,4 @@ Some questions the composing page answers:
 
 - [Development](development.md): setting up, checking your work, writing songs, composing from the command line, comparing versions by ear, release builds, and adding a sound library.
 - [Architecture](architecture.md): the code layout, its layer rules, and how projects and sound libraries load.
+- [Plans](plans/prd.md): the spec for patterns and the step grid, and the work planned after them.
