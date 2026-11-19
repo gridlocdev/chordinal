@@ -143,13 +143,14 @@ export const patternsOf = (p)=> p.patterns ?? [];
 
 export const findPattern = (p, id)=> patternsOf(p).find(x => x.id === id) ?? null;
 
-/** a pattern id not yet used, like 'p3' */
+/** a new pattern id, unique across projects and never reused, so a clip copied from another project, or from before
+ * an undo, can't join a pattern it was never part of (PRD §3.5) */
 function newPatternId(p)
 {
     const used = new Set(patternsOf(p).map(x => x.id));
-    let n = 1;
-    while (used.has(`p${n}`)) n++;
-    return `p${n}`;
+    let id;
+    do id = `p-${globalThis.crypto.randomUUID().slice(0, 8)}`; while (used.has(id));
+    return id;
 }
 
 /** the next free name for a pattern on a track: "Drums 1", "Drums 2" (PRD §3.4) */

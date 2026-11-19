@@ -29,8 +29,9 @@ const clipsOf = (p, id)=> p.tracks.find(t => t.id === id).clips;
 test('a pattern clip and its copies share notes, length and step (PRD §3.2, §3.3, §3.5)', ()=>
 {
     const { p, drums } = kit();
-    assert.deepEqual(p.patterns, [{ id: 'p1', name: 'Drums 1' }]);
-    assert.deepEqual(clipsOf(p, drums).map(c => [c.start, c.pattern]), [[0, 'p1'], [4, 'p1'], [8, 'p1']]);
+    const id = p.patterns[0].id;
+    assert.deepEqual(p.patterns, [{ id, name: 'Drums 1' }]);
+    assert.deepEqual(clipsOf(p, drums).map(c => [c.start, c.pattern]), [[0, id], [4, id], [8, id]]);
     const edited = updateClip(p, drums, clipsOf(p, drums)[1].id, c => ({ ...c, step: 0.125, notes: [...c.notes, { beat: 2, beats: 0.25, key: KICK, vel: 127 }] }));
     for (const c of clipsOf(edited, drums)) assert.deepEqual([c.notes.length, c.step, c.beats], [3, 0.125, 4]);
     assert.deepEqual(patternProblems(edited), []);
@@ -49,15 +50,16 @@ test('make unique, rename and cutting a pattern clip (PRD §3.6–3.8)', ()=>
     const after = updateClip(unique, drums, a.id, { notes: [] });
     assert.equal(findClip(after, drums, b.id).notes.length, 2, 'the unique clip no longer follows the pattern');
 
-    assert.equal(renamePattern(p, 'p1', 'Verse beat').patterns[0].name, 'Verse beat');
-    assert.equal(renamePattern(p, 'p1', '  '), p);
-    assert.equal(renamePattern(p, 'p1', 'Drums 1'), p);
+    assert.equal(renamePattern(p, p.patterns[0].id, 'Verse beat').patterns[0].name, 'Verse beat');
+    assert.equal(renamePattern(p, p.patterns[0].id, '  '), p);
+    assert.equal(renamePattern(p, p.patterns[0].id, 'Drums 1'), p);
 
+    const id = p.patterns[0].id;
     const split = splitAt(p, 6);
-    assert.deepEqual(clipsOf(split, drums).map(c => [c.start, c.beats, c.pattern ?? null]), [[0, 4, 'p1'], [4, 2, null], [6, 2, null], [8, 4, 'p1']]);
+    assert.deepEqual(clipsOf(split, drums).map(c => [c.start, c.beats, c.pattern ?? null]), [[0, 4, id], [4, 2, null], [6, 2, null], [8, 4, id]]);
     assert.equal(findClip(split, drums, 'c1').notes.length, 2, 'the other clips keep the whole pattern');
     const joined = joinClips(p, drums, clipsOf(p, drums).slice(0, 2).map(c => c.id));
-    assert.deepEqual(clipsOf(joined, drums).map(c => c.pattern ?? null), [null, 'p1']);
+    assert.deepEqual(clipsOf(joined, drums).map(c => c.pattern ?? null), [null, id]);
 });
 
 test('a project with patterns writes as version 2 and reads back the same (PRD §7)', ()=>
@@ -65,9 +67,10 @@ test('a project with patterns writes as version 2 and reads back the same (PRD �
     const { p, drums } = kit();
     const text = writeProject(p);
     const file = JSON.parse(text.replace(/\n/g, ''));
+    const id = p.patterns[0].id;
     assert.equal(file.version, 2);
-    assert.deepEqual(file.patterns.map(x => [x.id, x.name, x.beats, x.notes.length]), [['p1', 'Drums 1', 4, 2]]);
-    assert.deepEqual(file.tracks[0].clips[1], { id: clipsOf(p, drums)[1].id, start: 4, pattern: 'p1' });
+    assert.deepEqual(file.patterns.map(x => [x.id, x.name, x.beats, x.notes.length]), [[id, 'Drums 1', 4, 2]]);
+    assert.deepEqual(file.tracks[0].clips[1], { id: clipsOf(p, drums)[1].id, start: 4, pattern: id });
     assert.deepEqual(readProject(text), p);
     assert.match(text, /\[1,0\.25,38,100\]/, 'pattern notes keep the one-line form');
 
@@ -77,7 +80,7 @@ test('a project with patterns writes as version 2 and reads back the same (PRD �
     assert.equal(plain.patterns, undefined);
 
     const broken = text.replace('"patterns": [', '"unused": [');
-    assert.throws(()=> readProject(broken), /clip c1 plays pattern p1, which the project doesn't have/);
+    assert.throws(()=> readProject(broken), new RegExp(`clip c1 plays pattern ${id}, which the project doesn't have`));
     assert.throws(()=> readProject(JSON.stringify({ format: 'music-generator-project', version: 3 })), /version 3; this app reads versions 1 and 2/);
 });
 
@@ -172,3 +175,20 @@ function emptyProjectWith(trackId)
     const p = emptyProject();
     return { ...p, tracks: [{ ...makeTrack(p, { name: 'Drums' }), id: trackId }] };
 }
+
+test('a pattern clip copied from one project and pasted into another never joins an unrelated pattern (PRD §3.5)', ()=>
+{
+    const a = kit(), b = kit();
+    const copied = clipsOf(a.p, a.drums)[0];
+    assert.notEqual(a.p.patterns[0].id, b.p.patterns[0].id, 'every new pattern gets its own id');
+    const pasted = addClip(b.p, b.drums, { ...copied, id: 'pasted', start: 16, notes: [] });
+    assert.equal(findClip(pasted, b.drums, 'pasted').pattern, undefined, 'pasted as an ordinary clip');
+
+    // undo drops a pattern; the next one made must not reuse its id, or an old copy would join it
+    const { p, drums } = kit();
+    const old = p.patterns[0].id;
+    let q = clipsOf(p, drums).reduce((x, c)=> makeUnique(x, drums, c.id), p);
+    q = { ...q, patterns: [] };
+    q = makePattern(q, drums, 'c1', 'Drums 1');
+    assert.notEqual(q.patterns[0].id, old);
+});
