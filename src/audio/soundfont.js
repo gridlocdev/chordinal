@@ -14,7 +14,11 @@ const FAST_RELEASE = 0.01;      // seconds; for stolen, retriggered and choked v
 const BUFFER_BUDGET = 256e6;    // bytes of decoded Float32 samples kept across all fonts
 
 const fonts = new Map();        // url → { promise, listeners: Set<onProgress> }
-const active = [];              // every sounding voice, oldest first
+// every sounding voice, oldest first, per audio context: an export's offline context keeps its own, so its voices
+// neither steal the live ones nor stay listed after the render (where a note still sounding never ends)
+const voiceLists = new WeakMap();
+/** @param {BaseAudioContext} ctx */
+export const voicesIn = (ctx)=> { let list = voiceLists.get(ctx); if (!list) voiceLists.set(ctx, list = []); return list; };
 
 /**
  * Downloads and parses a .sf2 file once; later calls share the same load and all get progress. CHIP_URL is the
@@ -76,7 +80,8 @@ export function findPreset(font, bank, program)
  */
 export function createInstrument(font, preset, destination = audioEngine.output)
 {
-    const ctx = audioEngine.context;
+    const ctx = destination.context;
+    const active = voicesIn(ctx);
     const output = ctx.createGain();
     output.connect(destination);
     const held = new Map();         // key → voices started by that key
@@ -162,6 +167,7 @@ export function createInstrument(font, preset, destination = audioEngine.output)
 function startVoice(font, p, output, when = 0, moves = {})
 {
     const ctx = output.context;     // the instrument's own context: not the engine's, which is offline during a render
+    const active = voicesIn(ctx);
     const t = Math.max(ctx.currentTime, when);
     const source = ctx.createBufferSource();
     source.buffer = sampleBuffer(font, p.start, p.end, p.sampleRate);
