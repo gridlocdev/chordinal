@@ -38,6 +38,26 @@ async function render(p, instruments, from, to, tail, gains)
 }
 
 /**
+ * renders each of `count` stems and writes it before the next is rendered, so only one stem is held at a time. A
+ * normalized export needs one gain for them all, so it first renders every stem to find the loudest peak, then
+ * renders each again to write it.
+ * @param {{ count: number, render: (n: number)=> Promise<{ channels: Float32Array[], rate: number }>,
+ *   write: (n: number, bytes: Uint8Array)=> Promise<unknown>, normalized: boolean, say: (n: number, measuring: boolean)=> void }} o
+ */
+export async function writeStems({ count, render, write, normalized, say })
+{
+    let peak = 0;
+    if (normalized)
+        for (let n = 0; n < count; n++) { say(n, true); peak = Math.max(peak, peakOf((await render(n)).channels)); }
+    for (let n = 0; n < count; n++)
+    {
+        say(n, false);
+        const { channels, rate } = await render(n);
+        await write(n, encodeWavChannels(normalized ? normalize(channels, PEAK_DB, peak) : channels, rate));
+    }
+}
+
+/**
  * exports the project as audio
  * @param {{ range?: { from: number, to: number } | null, stems?: boolean, normalized?: boolean, tail?: number }} [options]
  *   range: the beats to export (the whole project without one); stems: each audible track into a folder of its own
@@ -75,23 +95,22 @@ async function exportAudio({ range = null, stems = false, normalized = false, ta
         if (!audible.length) { status.value = 'No track to export: none is heard in that range'; return; }
         const folder = await appMenu.chooseFolder(`${name} stems`);
         if (!folder) { status.value = ''; return; }
-        // every stem is rendered before any is written, so normalizing can use one gain for them all
-        const rendered = [];
-        for (const [n, i] of audible.entries())
-        {
-            status.value = `Bouncing ${p.tracks[i].name} (${n + 1} of ${audible.length})…`;
-            rendered.push({ i, ...await render(p, instruments, from, to, tail, gains.map((g, k)=> k === i ? g : { ...g, gain: 0 })) });
-        }
-        const peak = normalized ? Math.max(...rendered.map(r => peakOf(r.channels))) : 0;
         const used = new Set();
-        for (const { i, channels, rate } of rendered)
+        const names = audible.map(i =>
         {
             let file = `${name} - ${fileName(p.tracks[i].name)}`;
             for (let k = 2; used.has(file); k++) file = `${name} - ${fileName(p.tracks[i].name)} ${k}`;
             used.add(file);
-            await appMenu.writeInFolder(`${file}.wav`, encodeWavChannels(normalized ? normalize(channels, PEAK_DB, peak) : channels, rate));
-        }
-        status.value = `Exported ${rendered.length} tracks to ${folder}`;
+            return `${file}.wav`;
+        });
+        await writeStems({
+            count: audible.length,
+            render: (n)=> render(p, instruments, from, to, tail, gains.map((g, k)=> k === audible[n] ? g : { ...g, gain: 0 })),
+            write: (n, bytes)=> appMenu.writeInFolder(names[n], bytes),
+            normalized,
+            say: (n, measuring)=> { status.value = `${measuring ? 'Measuring' : 'Bouncing'} ${p.tracks[audible[n]].name} (${n + 1} of ${audible.length})…`; },
+        });
+        status.value = `Exported ${audible.length} tracks to ${folder}`;
     }
     catch (e) { status.value = `Couldn't export: ${e.message}`; }
 }
