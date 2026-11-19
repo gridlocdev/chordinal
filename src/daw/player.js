@@ -306,6 +306,7 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
             if (stopped) return;
             stopped = true;
             stopTicker();
+            for (const osc of clicks) osc.stop();
             for (const inst of instruments) inst.dispose();
             mixer.dispose();
         },
