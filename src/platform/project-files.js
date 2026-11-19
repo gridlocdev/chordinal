@@ -6,8 +6,11 @@ async function ok(res, what)
     return res;
 }
 
-/** a folder name for a title: 'Night Drive' → 'night-drive' */
-export const folderName = (title)=> title.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled';
+/** a folder name for a title, in the letters the desktop app accepts: 'Night Drive' → 'night-drive', 'Café' → 'cafe',
+ * and any other character written as its code point ('夜' → 'u591c'), so titles in other scripts keep apart */
+export const folderName = (title)=> String(title).normalize('NFKD').replace(/\p{M}+/gu, '').toLowerCase()
+    .replace(/[^\x00-\x7f]/gu, (c)=> `-u${c.codePointAt(0).toString(16)}-`)
+    .replace(/[^a-z0-9_-]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '') || 'untitled';
 
 export const projectFiles = {
     /** @returns {Promise<{ name: string, title: string }[]>} */
