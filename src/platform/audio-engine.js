@@ -53,9 +53,8 @@ export const audioEngine = {
         {
             let failed = null;
             const tick = start();
-            // a pause can only fall on a 128-sample block
-            for (let t = step; t < seconds; t += step)
-                off.suspend(Math.round(t * rate / 128) * 128 / rate).then(()=> { try { tick(); } finally { off.resume(); } }).catch(e => { failed ??= e; });
+            for (const t of renderPauses(seconds, rate, step))
+                off.suspend(t).then(()=> { try { tick(); } finally { off.resume(); } }).catch(e => { failed ??= e; });
             const buffer = await off.startRendering();
             if (failed) throw failed;
             return buffer;
@@ -63,6 +62,16 @@ export const audioEngine = {
         finally { [ctx, master, meter] = live; }
     },
 };
+
+/** the times an offline render of `seconds` pauses to schedule more, about every `step`: each on its own 128-sample
+ * block (the only place a pause can fall), and before the render's last block, since a pause there is refused */
+export function renderPauses(seconds, rate, step)
+{
+    const length = Math.ceil(seconds * rate), every = Math.max(128, Math.round(step * rate / 128) * 128);
+    const out = [];
+    for (let f = every; f < length - 128; f += every) out.push(f / rate);
+    return out;
+}
 
 const scratch = new WeakMap();     // analyser → its buffer, so a meter read every frame allocates nothing
 
