@@ -11,6 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { downloadLibrary } from '../tools/soundfont-download.mjs';
+import { settingsFile } from '../tools/settings-file.mjs';
 import { LIBRARIES } from '../src/audio/soundfont-catalog-data.js';
 import { installMenus } from './menus.js';
 import { screenCalls } from './headless-screen.js';
@@ -97,26 +98,10 @@ export function startShell(config)
     protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } }]);
 
     // ------------------------------------------------------------ settings
-    // The app hands over all its settings on every change; write it to a temporary file and swap it in,
-    // so a crash mid-write never leaves half a save.
-    let writing = Promise.resolve();
-    function writeSave(all)
-    {
-        const file = SAVE_FILE(), temp = file + '.tmp';
-        writing = writing.then(async ()=>
-        {
-            await fs.mkdir(path.dirname(file), { recursive: true });
-            await fs.writeFile(temp, JSON.stringify(all));
-            await fs.rename(temp, file);
-        }).catch((e)=> console.error('could not save', e));
-        return writing;
-    }
-    ipcMain.handle('save:load', async ()=>
-    {
-        try { return JSON.parse(await fs.readFile(SAVE_FILE(), 'utf8')); }
-        catch { return {}; }    // a first run, or a save that could not be read
-    });
-    ipcMain.handle('save:write', (event, all)=> writeSave(all));
+    // the page hands over all its settings on every change (tools/settings-file.mjs)
+    const settings = settingsFile(SAVE_FILE());
+    ipcMain.handle('save:load', ()=> settings.load().catch((e)=> { console.error('could not read the settings', e); return {}; }));
+    ipcMain.handle('save:write', (event, all)=> settings.write(all));
 
     // ------------------------------------------------------------ menus, files and the Finder
     installMenus(ipcMain, { headless: HEADLESS });
@@ -252,5 +237,5 @@ export function startShell(config)
         app.on('activate', ()=> { if (!BrowserWindow.getAllWindows().length) createWindow(); });
     });
     // finish any save in progress before quitting
-    app.on('window-all-closed', ()=> { writing.finally(()=> app.quit()); });
+    app.on('window-all-closed', ()=> { settings.written().finally(()=> app.quit()); });
 }
