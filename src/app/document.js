@@ -112,24 +112,41 @@ export async function openNew(p)
     return true;
 }
 
-/** saves to the project's folder, or asks for a name when it has none */
+/** saves to the project's folder, or asks for a name when it has none; saves run one at a time, in order, so an older
+ * one can never land after a newer one */
 export async function save()
 {
     if (!projectName.value) return saveAs();
-    const p = project.value;
+    return queueSave();
+}
+
+let saving = Promise.resolve(true);
+const queueSave = ()=> (saving = saving.then(saveNow, saveNow));
+
+/** @returns {Promise<boolean>} whether it saved */
+async function saveNow()
+{
+    const name = projectName.value, p = project.value;
+    if (!name) return false;
     try
     {
         const text = writeProject(p);
-        await projectFiles.write(projectName.value, text);
+        // the file changed on disk since it was read or written here (another app, a regenerated song): ask first
+        const current = onDisk === null ? null : await projectFiles.read(name).catch(()=> null);
+        if (current !== null && current !== onDisk && current !== text
+            && !await askYes(`projects/${name}/ changed on disk since it was opened. Replace it with this version?`, 'Replace')) return false;
+        await projectFiles.write(name, text);
         onDisk = text;
         saved.value = p;
-        status.value = `Saved projects/${projectName.value}/`;
+        status.value = `Saved projects/${name}/`;
         refreshProjects();
+        return true;
     }
-    catch (e) { status.value = e.message; }
+    catch (e) { status.value = `Couldn't save projects/${name}/: ${e.message}`; return false; }
 }
 
-/** saves under a new name: a new folder in projects/, or over one after asking */
+/** saves under a new name: a new folder in projects/, or over one after asking; the project takes the name only once
+ * it's saved there */
 export async function saveAs()
 {
     const title = await askText('Save the project as', project.value.title, 'Save');
@@ -138,7 +155,9 @@ export async function saveAs()
     const existing = await projectFiles.list().catch(()=> []);
     if (name !== projectName.value && existing.some(e => e.name === name) && !await askYes(`projects/${name} exists. Replace it?`, 'Replace')) return;
     edit(p => p.title === title ? p : { ...p, title });
+    const before = { name: projectName.value, onDisk };
     projectName.value = name;
-    setSettings({ project: name });
-    await save();
+    if (name !== before.name) onDisk = null;     // a new file, or one the user just agreed to replace
+    if (await queueSave()) setSettings({ project: name });
+    else if (projectName.value === name) { projectName.value = before.name; onDisk = before.onDisk; }
 }
