@@ -18,3 +18,28 @@ test('picked notes in a linked copy are where they were picked, once each (PRD Â
     const list = pickedNotes();
     assert.deepEqual(list.map(o => [o.clip.id, o.i, o.at]), [['c1', 1, 1], ['c2', 0, 16]]);
 });
+
+test('opening another project drops the picks, and picks left from elsewhere enable nothing', async ()=>
+{
+    const { canCopy } = await import('../../src/app/clipboard.js');
+    const { focus } = await import('../../src/app/focus.js');
+    const { openNew } = await import('../../src/app/document.js');
+    const { selectedClip } = await import('../../src/app/store.js');
+    globalThis.cancelAnimationFrame ??= ()=> {};
+    let p = emptyProject();
+    p = addTrack(p, { ...makeTrack(p, { name: 'Keys' }), id: 't1' });
+    hist.value = history(p);
+    selected.value = 't1';
+    selectedClip.value = null;
+    focus.value = 'roll';
+    // Duplicate would paste notes that aren't here, as a clip with no start
+    picked.value = new Set(['gone:0', 'gone:1']);
+    assert.equal(canCopy(), false, 'Copy and Duplicate stay off: those notes are not here');
+    const { asking, answer } = await import('../../src/app/ask.js');
+    const opened = openNew(emptyProject({ title: 'Other' }));
+    await new Promise(r => setTimeout(r, 0));
+    if (asking.value) answer('');     // discard this project's unsaved changes
+    await opened;
+    assert.equal(picked.value.size, 0);
+    assert.equal(focus.value, 'arrange');
+});

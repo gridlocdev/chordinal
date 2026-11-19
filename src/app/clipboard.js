@@ -6,13 +6,13 @@ import { addClip, updateClip, findClip, newId } from '../daw/project.js';
 import { project, selected, selectedClip, selectedTrack, beat, settings, picked } from './store.js';
 import { edit } from './document.js';
 import { focus } from './focus.js';
-import { pickedNotes, deletePicked, noteId } from './notes.js';
+import { pickedNotes, deletePicked, noteId, hasPicks } from './notes.js';
 import { deleteClip } from './tracks.js';
 
 /** { kind: 'clip', clip } or { kind: 'notes', notes, beats } */
 export const clipboard = signal(/** @type {any} */ (null));
 
-const noteMode = ()=> focus.value === 'roll' && picked.value.size > 0;
+const noteMode = ()=> focus.value === 'roll' && hasPicks();
 
 export const canCopy = ()=> noteMode() || (focus.value !== 'roll' && !!selectedClip.value);
 

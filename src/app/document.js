@@ -7,6 +7,7 @@ import { compose } from '../composer/compose.js';
 import { toProject } from '../composer/to-project.js';
 import { hist, project, projectName, projectList, saved, dirty, selected, selectedClip, picked, chordRange, beat, status, setSettings } from './store.js';
 import { stop } from './player.js';
+import { focus } from './focus.js';
 import { askText, askYes } from './ask.js';
 
 let mergeKey = null;
@@ -49,6 +50,8 @@ function show(p, name)
     projectName.value = name;
     selected.value = p.tracks[0]?.id ?? null;
     selectedClip.value = null;
+    picked.value = new Set();
+    focus.value = 'arrange';
     chordRange.value = null;
     beat.value = 0;
     status.value = '';

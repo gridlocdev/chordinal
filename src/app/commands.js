@@ -10,14 +10,14 @@ import { projectEnd, markerRange, addMarker, findClip, insertTime, deleteTime } 
 import { projectMidi } from '../daw/project-midi.js';
 import { cut as cutChord } from '../sketch/takes.js';
 import { project, projectName, dirty, hist, selected, selectedClip, selectedTrack, chordRange, beat, playing,
-    settings, setSettings, status, picked } from './store.js';
+    settings, setSettings, status } from './store.js';
 import { edit, undo, redo, save, saveAs, openProject } from './document.js';
 import { toggle, seek } from './player.js';
 import { record, recording, newFromMelody } from './recording.js';
 import { focus } from './focus.js';
 import { asking, askText } from './ask.js';
 import { pickedNotes, deletePicked, transposePicked, quantizePicked, pickAll, clearPicked, GRIDS, nudgePicked, humanizePicked,
-    scalePicked, reversePicked } from './notes.js';
+    scalePicked, reversePicked, hasPicks } from './notes.js';
 import { cut, copy, paste, duplicate, canCopy, clipboard } from './clipboard.js';
 import { addNewTrack, renameTrack, deleteTrack, duplicateTheTrack, moveTrackBy, toggleMute, toggleSolo, chooseInstrument,
     deleteClip, splitClipsAt, joinWithNext, nextClip, quantizeClip, loopOver, clipRange, arrangeZoom, arrangePpb, toggleClipMute, nudgeClip,
@@ -33,7 +33,7 @@ export const busy = ()=> !!(dialog.value || exportDialog.value || asking.value |
 
 // ── what the commands act on ─────────────────────────────────────────────────────────────────────────────────────────
 
-const inRoll = ()=> focus.value === 'roll' && picked.value.size > 0;
+const inRoll = ()=> focus.value === 'roll' && hasPicks();
 const clipSelected = ()=> focus.value !== 'roll' && !!selectedClip.value;
 
 /** Delete: the picked notes, the selected clip or the chords in the stretch picked, in the part last clicked */
@@ -54,7 +54,7 @@ export function deleteSelection()
     return true;
 }
 
-const canDelete = ()=> focus.value === 'roll' ? picked.value.size > 0 : focus.value === 'chords' ? !!chordRange.value : !!selectedClip.value;
+const canDelete = ()=> focus.value === 'roll' ? hasPicks() : focus.value === 'chords' ? !!chordRange.value : !!selectedClip.value;
 
 /** the stretch a loop is set to: the selection, else the section at the playhead, else four bars from its bar */
 export function selectionRange()

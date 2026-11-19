@@ -43,6 +43,9 @@ export function pickedNotes()
     });
 }
 
+/** whether any picked note is on the selected track now: picks left from another track or project don't count */
+export const hasPicks = ()=> picked.value.size > 0 && pickedNotes().length > 0;
+
 /**
  * Changes notes clip by clip: a map of clip id → (notes)=> notes.
  * @param {string} trackId
