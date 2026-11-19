@@ -44,6 +44,7 @@ contextBridge.exposeInMainWorld('projectFolders', {
     takes: (dir)=> ipcRenderer.invoke('folders:takes', dir),
     readTake: (dir, file)=> ipcRenderer.invoke('folders:readTake', dir, file),
     writeTake: (dir, file, bytes)=> ipcRenderer.invoke('folders:writeTake', dir, file, bytes),
+    library: ()=> ipcRenderer.invoke('folders:library'),
     reveal: (dir)=> ipcRenderer.invoke('folders:reveal', dir),
     pickOpen: ()=> ipcRenderer.invoke('folders:pickOpen'),
     pickSave: (name)=> ipcRenderer.invoke('folders:pickSave', name),

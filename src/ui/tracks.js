@@ -16,12 +16,12 @@ export const arrangePpb = signal(0);
 export const trackOf = (id)=> project.value.tracks.find(t => t.id === id) ?? null;
 
 /** a new track below the others (or below one), selected, with the browser open to pick its instrument */
-export function addNewTrack({ instrument = null, after = null } = {})
+export function addNewTrack({ instrument = null, after = null, name = '' } = {})
 {
     let id = '';
     edit(p =>
     {
-        const t = makeTrack(p, { name: `Track ${p.tracks.length + 1}`, ...(instrument && { instrument }) });
+        const t = makeTrack(p, { name: name || `Track ${p.tracks.length + 1}`, ...(instrument && { instrument }) });
         id = t.id;
         const at = after ? p.tracks.findIndex(x => x.id === after) + 1 : p.tracks.length;
         return addTrack(p, t, at || p.tracks.length);
@@ -65,6 +65,12 @@ export function duplicateTheTrack(trackId)
 }
 
 export const moveTrackBy = (trackId, by)=> edit(p => moveTrack(p, trackId, by));
+/** moves a track to a place in the list (0 is the top) */
+export function moveTrackTo(trackId, index)
+{
+    const from = project.value.tracks.findIndex(t => t.id === trackId);
+    if (from >= 0 && index !== from) moveTrackBy(trackId, index - from);
+}
 export const setTrackColor = (trackId, color)=> edit(p => updateTrack(p, trackId, { color }));
 export const toggleMute = (trackId)=> edit(p => setMixer(p, trackId, { mute: !trackOf(trackId)?.mixer.mute }));
 export const toggleSolo = (trackId)=> edit(p => setMixer(p, trackId, { solo: !trackOf(trackId)?.mixer.solo }));
@@ -75,14 +81,14 @@ export const setMix = (trackId, patch)=> edit(p => setMixer(p, trackId, patch));
 const NEW_CLIP_BARS = 4;
 
 /** an empty clip of a few bars from the bar a beat is in */
-export function newClipAt(trackId, beat)
+export function newClipAt(trackId, beat, bars = NEW_CLIP_BARS)
 {
     const meters = project.value.meters, start = barAt(meters, beat).start;
     let id = '';
     edit(p =>
     {
         id = newId(p, 'c');
-        const out = addClip(p, trackId, { id, start, beats: barAt(meters, start).beatsPerBar * NEW_CLIP_BARS, notes: [] });
+        const out = addClip(p, trackId, { id, start, beats: barAt(meters, start).beatsPerBar * bars, notes: [] });
         // PRD §3.4: on a drum track a drawn clip is a new pattern
         const t = out.tracks.find(x => x.id === trackId);
         return isDrums(t) ? makePattern(out, trackId, id, nextPatternName(out, t.name)) : out;

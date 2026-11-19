@@ -35,6 +35,7 @@ startShell({
         ipcMain.handle('folders:takes', (e, dir)=> folders.takes(dir));
         ipcMain.handle('folders:readTake', (e, dir, file)=> folders.readTake(dir, file));
         ipcMain.handle('folders:writeTake', (e, dir, file, bytes)=> folders.writeTake(dir, file, bytes));
+        ipcMain.handle('folders:library', ()=> folders.listIn(DEFAULT_FOLDER()));
         ipcMain.handle('folders:reveal', (e, dir)=> { screen.showInFolder(folders.fileToShow(dir)); });
         // Open…: a project folder, or its project.json
         ipcMain.handle('folders:pickOpen', async (e)=>

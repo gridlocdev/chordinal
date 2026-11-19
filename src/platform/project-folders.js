@@ -26,6 +26,8 @@ export const projectFolders = {
     recent: ()=> backend?.recent() ?? Promise.resolve([]),
     forget: (dir)=> backend?.forget(dir) ?? Promise.resolve(),
     clear: ()=> backend?.clear() ?? Promise.resolve(),
+    /** @returns {Promise<{ path: string, name: string }[]>} the projects in Documents/Chordinal/ */
+    library: ()=> backend?.library() ?? Promise.resolve([]),
     reveal: (dir)=> backend?.reveal(dir),
     /** asks for a project folder or its project.json; resolves to the folder, or '' when cancelled */
     pickOpen: ()=> backend?.pickOpen() ?? Promise.resolve(''),

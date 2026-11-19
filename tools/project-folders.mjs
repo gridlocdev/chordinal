@@ -60,6 +60,22 @@ export function projectFolders({ listFile })
             granted.add(d);
             return d;
         },
+        /** @returns {Promise<{ path: string, name: string }[]>} the projects directly inside a folder (Chordinal's own,
+         * in Documents), by name; the window may open each */
+        async listIn(parent)
+        {
+            const root = path.resolve(String(parent));
+            const entries = await fs.readdir(root, { withFileTypes: true }).catch(()=> []);
+            const found = [];
+            for (const e of entries)
+            {
+                const d = path.join(root, e.name);
+                if (!e.isDirectory() || !await exists(path.join(d, 'project.json'))) continue;
+                granted.add(d);
+                found.push({ path: d, name: e.name });
+            }
+            return found.sort((a, b)=> a.name.localeCompare(b.name));
+        },
         /** a project opened or saved goes to the top of Open Recent */
         async used(dir)
         {

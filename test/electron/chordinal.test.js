@@ -118,3 +118,57 @@ test('Chordinal starts on a new project, saves it to a chosen folder, asks befor
         await fs.rm(tmp, { recursive: true, force: true });
     }
 });
+
+test('the left panel: the channel rack above the browser, a row\'s double-click, B, and the divider', { skip: !existsSync(path.join(ROOT, 'dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
+{
+    await fs.rm(DATA, { recursive: true, force: true });
+    await fs.rm(DOCS, { recursive: true, force: true });
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'chordinal-'));
+    const marker = path.join(tmp, 'dialog-shown');
+    let run = null;
+    try
+    {
+        run = await launch(marker);
+        const { page } = run;
+        // §6.1: a row per track, in track order
+        assert.deepEqual(await page.$$eval('.rack .row .name', l => l.map(x => x.textContent)), ['Drums', 'Grand Piano']);
+
+        // §6.2: double-clicking the drum row makes a pattern at the playhead and opens the step grid
+        await page.dblclick('.rack .row:first-child .names');
+        await until('the step grid is open', async ()=> await page.textContent('.editor .tabs button.on') === 'Step Grid');
+
+        // §6.4: + Add Drums
+        await page.click('.rack .add button:last-child');
+        assert.equal(await page.$$eval('.rack .row', l => l.length), 3);
+
+        // §7.1: the tabs
+        await page.click('.left .tabs button:nth-child(2)');
+        assert.ok((await page.$$eval('.left .browser .item', l => l.map(x => x.textContent))).some(n => n.startsWith('Standard')), 'the kits are listed');
+        await page.click('.left .tabs button:nth-child(1)');
+        assert.equal(await page.textContent('.left .browser .group'), 'Piano');
+
+        // §5.2: the divider drags, and B hides and shows the panel
+        const box = await page.locator('.left .divider').boundingBox();
+        const before = (await page.locator('.rack').boundingBox()).height;
+        await page.mouse.move(box.x + 20, box.y + 2);
+        await page.mouse.down();
+        await page.mouse.move(box.x + 20, box.y + 62, { steps: 4 });
+        await page.mouse.up();
+        assert.equal(Math.round((await page.locator('.rack').boundingBox()).height - before), 60);
+        await page.click('.arrange');
+        await page.keyboard.press('b');
+        await until('the panel is hidden', async ()=> !await page.$('.left'));
+        await page.keyboard.press('b');
+        await until('the panel is back', async ()=> !!await page.$('.left'));
+        await run.app.evaluate(({ BrowserWindow })=> BrowserWindow.getAllWindows()[0].webContents.send('doc:closing'));
+        await page.waitForSelector('.dialog.ask');
+        await page.click('.dialog.ask button.other');
+        await until('the app quit', ()=> run.proc.exitCode !== null);
+        assert.equal(existsSync(marker), false, 'no native dialog was asked for');
+    }
+    finally
+    {
+        if (run && run.proc.exitCode === null) run.proc.kill('SIGKILL');
+        await fs.rm(tmp, { recursive: true, force: true });
+    }
+});

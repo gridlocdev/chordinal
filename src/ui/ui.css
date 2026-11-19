@@ -181,3 +181,28 @@ input[type=range] { accent-color: var(--accent); }
 .dialog .seed label { flex: 1; display: flex; gap: 8px; align-items: center; }
 .dialog .seed input { flex: 1; min-width: 0; }
 .dialog.ask p { margin: 0; }
+
+/* ── Chordinal's left panel: the channel rack above the browser ──────────────────────────────────────────────────── */
+.left { grid-area: browser; display: grid; grid-template-rows: var(--rack-h, 220px) 5px minmax(0, 1fr); position: relative; min-height: 0; min-width: 0;
+    background: var(--panel); border-right: 1px solid var(--line); }
+.left .browser { grid-area: auto; border-right: 0; }
+.left .divider { cursor: row-resize; background: var(--line-soft); }
+.left .edge { position: absolute; top: 0; bottom: 0; right: -3px; width: 6px; cursor: col-resize; z-index: 2; }
+.left .item.missing { color: var(--faint); }
+.rack { display: flex; flex-direction: column; min-height: 0; }
+.rack .rows { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.rack .row { display: grid; grid-template-columns: 6px minmax(0, 1fr) auto auto; gap: 0 8px; align-items: center; padding: 3px 8px 3px 0;
+    border-bottom: 1px solid var(--line-soft); cursor: pointer; }
+.rack .row:hover { background: var(--panel-2); }
+.rack .row.on { background: var(--raised); }
+.rack .row.drop, .rack .below.drop { outline: 1px dashed var(--accent); outline-offset: -2px; }
+.rack .swatch { align-self: stretch; background: var(--track); }
+.rack .names { display: flex; flex-direction: column; min-width: 0; }
+.rack .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rack .inst { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rack .ms { display: flex; gap: 3px; }
+.rack .below { flex: 1; min-height: 28px; color: var(--muted); padding: 8px 12px; }
+.rack .add { display: flex; gap: 6px; padding: 6px 8px; border-top: 1px solid var(--line-soft); }
+.rack .add button { flex: 1; font-size: 12px; padding: 3px 6px; }
+.knob { width: 22px; height: 22px; border-radius: 50%; background: var(--panel-2); border: 1px solid var(--line); position: relative; cursor: ns-resize; touch-action: none; }
+.knob .mark { position: absolute; left: 50%; top: 2px; bottom: 50%; width: 2px; margin-left: -1px; background: var(--accent); transform-origin: 50% 100%; }

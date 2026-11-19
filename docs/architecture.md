@@ -1,6 +1,6 @@
 # Architecture
 
-A desktop app (Electron) with a DAW-style UI in [Preact](https://preactjs.com) and [signals](https://preactjs.com/guide/v10/signals). Two apps share it (`docs/plans/chordinal-prd.md` §3): Music Generator, whose `src/app/main.jsx` esbuild bundles into `dist/app.js` for `index.html`, and Chordinal, whose `src/chordinal/main.jsx` becomes `dist/chordinal.js` for `chordinal.html` (`just build` makes both). Each holds only its app's shell, layout, File menu and files; the views and actions are in `src/ui/`, shared. Everything below `src/ui/` is plain ES modules with no DOM in the music logic, so the tools in `tools/` and the tests in `test/` run it in Node as it is.
+A desktop app (Electron) with a DAW-style UI in [Preact](https://preactjs.com) and [signals](https://preactjs.com/guide/v10/signals). Two apps share it (`docs/plans/chordinal-prd.md` §3): Music Generator, whose `src/app/main.jsx` esbuild bundles into `dist/app.js` for `index.html`, and Chordinal, whose `src/chordinal/main.jsx` becomes `dist/chordinal.js` for `chordinal.html` (`just build` makes both). Each holds only its app's shell, layout, File menu and files, and Chordinal its left panel (the channel rack above the browser, `src/chordinal/components/`, with their logic in `src/chordinal/rack.js`); the views and actions are in `src/ui/`, shared. Everything below `src/ui/` is plain ES modules with no DOM in the music logic, so the tools in `tools/` and the tests in `test/` run it in Node as it is.
 
 ## This app
 

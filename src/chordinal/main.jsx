@@ -1,6 +1,6 @@
 // Chordinal: a DAW for making music by hand (Chordinal PRD). Loads the settings, reopens the last project or starts a
 // new one, wires musical typing and MIDI, and lays out the window: the transport across the top, the arrangement, and
-// the editor below it. The left panel (channel rack and browser) comes next (§5).
+// the left panel (channel rack above the browser), and the editor below the arrangement (§5).
 //
 // Its File menu is in menu-bar.js, its files in files.js; everything else is shared with Music Generator (src/ui/).
 import { render } from 'preact';
@@ -18,6 +18,7 @@ import { Arrange } from '../ui/components/Arrange.jsx';
 import { Editor } from '../ui/components/Editor.jsx';
 import { ExportDialog } from '../ui/components/ExportDialog.jsx';
 import { Ask } from '../ui/components/Ask.jsx';
+import { LeftPanel } from './components/LeftPanel.jsx';
 import { useProjectFolders, startUp, watchWindow, newSong } from './files.js';
 import { startChordinalMenus } from './menu-bar.js';
 
@@ -40,9 +41,10 @@ function Split()
 function App()
 {
     return (
-        <div class="app no-browser chordinal" style={{ '--editor-h': `${settings.value.editorHeight}px` }}>
+        <div class={`app chordinal ${settings.value.browserOpen ? '' : 'no-browser'}`}
+            style={{ '--editor-h': `${settings.value.editorHeight}px`, '--browser-w': `${settings.value.leftWidth}px` }}>
             <Transport onNew={newSong} newLabel="New" />
-            <div />
+            {settings.value.browserOpen && <LeftPanel />}
             <Arrange />
             <Split />
             <Editor />

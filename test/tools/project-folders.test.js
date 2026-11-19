@@ -70,3 +70,14 @@ test('takes are kept in the folder\'s takes/, by safe names only', ()=> scratch(
     assert.deepEqual([...await folders.readTake(a, 'take-1.wav')], [1, 2, 3]);
     await assert.rejects(folders.writeTake(a, '../../evil.wav', new Uint8Array([1])), /not a take/);
 }));
+
+test('the projects in a folder are listed by name, and each can be opened', ()=> scratch(async (root, folders)=>
+{
+    await folders.load();
+    const home = path.join(root, 'Chordinal');
+    for (const name of ['Beta', 'Alpha']) { await fs.mkdir(path.join(home, name), { recursive: true }); await fs.writeFile(path.join(home, name, 'project.json'), `"${name}"`); }
+    await fs.mkdir(path.join(home, 'Not a project'));
+    assert.deepEqual((await folders.listIn(home)).map(p => p.name), ['Alpha', 'Beta']);
+    assert.equal(await folders.read(path.join(home, 'Beta')), '"Beta"');
+    assert.deepEqual(await folders.listIn(path.join(root, 'missing')), []);
+}));

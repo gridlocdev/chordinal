@@ -17,6 +17,8 @@ const DEFAULTS = {
     browserOpen: true,
     editorTab: 'roll',      // 'roll' | 'mixer' | 'grid'
     editorHeight: 300,      // px
+    leftWidth: 260,         // px: Chordinal's left panel
+    rackHeight: 220,        // px: Chordinal's channel rack, above the browser
     grid: 0.25,             // the piano roll's snap, in beats
     click: true,            // a click while recording, after the count-in
     metronome: false,       // a click while playing
