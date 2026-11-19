@@ -186,7 +186,24 @@ test('deleting time drops what was in it', ()=>
     const q = deleteTime(p, 4, 8);
     assert.deepEqual(trackNotes(q.tracks[0]).map(n => n.beat), [0, 4]);
     assert.deepEqual(q.markers.map(m => m.name), ['A', 'C']);
-    assert.deepEqual(q.tempoMap, [{ beat: 0, bpm: 100 }]);
+    assert.deepEqual(q.tempoMap, [{ beat: 0, bpm: 100 }, { beat: 4, bpm: 120 }],
+        'the music after the stretch keeps the tempo it had');
+});
+
+test('deleting bars that hold a tempo or meter change keeps it for what follows', ()=>
+{
+    let p = emptyProject({ bars: 8 });
+    p = { ...p, tempoMap: [{ beat: 0, bpm: 100 }, { beat: 6, bpm: 120 }], meters: [{ beat: 0, num: 4, den: 4 }, { beat: 4, num: 3, den: 4 }] };
+    const q = deleteTime(p, 4, 8);
+    assert.deepEqual(q.tempoMap, [{ beat: 0, bpm: 100 }, { beat: 4, bpm: 120 }]);
+    assert.deepEqual(q.meters, [{ beat: 0, num: 4, den: 4 }, { beat: 4, num: 3, den: 4 }]);
+    // a change already at the stretch's end wins over one inside it
+    const r = deleteTime({ ...p, tempoMap: [...p.tempoMap, { beat: 8, bpm: 90 }] }, 4, 8);
+    assert.deepEqual(r.tempoMap, [{ beat: 0, bpm: 100 }, { beat: 4, bpm: 90 }]);
+    // deleting from the start keeps the last change as the opening one
+    const s = deleteTime(p, 0, 8);
+    assert.deepEqual(s.tempoMap, [{ beat: 0, bpm: 120 }]);
+    assert.deepEqual(s.meters, [{ beat: 0, num: 3, den: 4 }]);
 });
 
 test('a muted clip is not played', ()=>

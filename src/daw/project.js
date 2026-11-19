@@ -404,6 +404,17 @@ export function insertTime(p, at, beats)
 }
 
 /** the time from one beat to another taken out: what was in it goes, what was after moves back */
+/** a tempo map or meter list with the changes inside [from, to) taken out; the last of them moves to `to`, so what
+ * follows the stretch keeps the tempo or meter it had, unless a change is already there */
+function carryChanges(list, from, to)
+{
+    const inside = (b)=> b >= from - 1e-9 && b < to - 1e-9;
+    const last = list.findLast(x => inside(x.beat));
+    const kept = list.filter(x => !inside(x.beat));
+    if (!last || kept.some(x => Math.abs(x.beat - to) < 1e-9)) return kept.length ? kept : [last];
+    return [...kept, { ...last, beat: to }].sort((a, b)=> a.beat - b.beat);
+}
+
 export function deleteTime(p, from, to)
 {
     if (to <= from) return p;
@@ -413,8 +424,8 @@ export function deleteTime(p, from, to)
         ...q,
         chords: splitChords(splitChords(q.chords, from), to).filter(c => !inside(c.beat)),
         markers: q.markers.filter(m => !inside(m.beat)),
-        tempoMap: q.tempoMap.filter((x, i)=> i === 0 || !inside(x.beat)),
-        meters: q.meters.filter((x, i)=> i === 0 || !inside(x.beat)),
+        tempoMap: carryChanges(q.tempoMap, from, to),
+        meters: carryChanges(q.meters, from, to),
         // a loop end inside the stretch comes back to its start
         loop: q.loop && { from: inside(q.loop.from) ? to : q.loop.from, to: inside(q.loop.to) ? from + len : q.loop.to },
         tracks: q.tracks.map(t => ({
@@ -424,7 +435,9 @@ export function deleteTime(p, from, to)
         })),
     };
     const out = shiftFrom(q, to, -len);
-    return { ...out, length: Math.max(0, p.length - Math.max(0, Math.min(p.length, to) - from)), loop: out.loop && out.loop.to - out.loop.from > 1e-9 ? out.loop : null };
+    // shiftFrom keeps the first change where it is; after deleting from the start, it opens the project again
+    const opening = (list)=> list.map((x, i)=> i === 0 ? { ...x, beat: 0 } : x);
+    return { ...out, tempoMap: opening(out.tempoMap), meters: opening(out.meters), length: Math.max(0, p.length - Math.max(0, Math.min(p.length, to) - from)), loop: out.loop && out.loop.to - out.loop.from > 1e-9 ? out.loop : null };
 }
 
 // ── history ─────────────────────────────────────────────────────────────────────────────────────────────────────────
