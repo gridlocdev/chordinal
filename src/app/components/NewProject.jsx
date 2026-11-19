@@ -2,14 +2,11 @@
 // picks by a seed, so one choice always writes the same song; a seed of your own (or a rolled one) writes another in
 // the same style, named after it so it can be written again.
 import { useState } from 'preact/hooks';
-import { signal } from '@preact/signals';
 import { CATALOG } from '../../composer/catalog.js';
 import { EMOTIONS } from '../../composer/composer-data.js';
 import { GENRES } from '../../composer/genre-data.js';
 import { newProject } from '../document.js';
-
-/** whether the dialog is open */
-export const dialog = signal(false);
+import { newDialog as dialog } from '../dialogs.js';
 
 const KINDS = [['empty', 'Empty'], ['feeling', 'Feeling'], ['genre', 'Genre'], ['song', 'Song']];
 const cap = (s)=> `${s[0].toUpperCase()}${s.slice(1)}`;

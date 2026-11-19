@@ -26,7 +26,7 @@ import { exportDialog } from './bounce.js';
 import { importMidi } from './midi-import.js';
 import { audioEngine } from '../platform/audio-engine.js';
 import { askTempo, askMeter } from './timeline.js';
-import { dialog } from './components/NewProject.jsx';
+import { newDialog as dialog } from './dialogs.js';
 
 /** a dialog is open: commands wait */
 export const busy = ()=> !!(dialog.value || exportDialog.value || asking.value || audioEngine.rendering);

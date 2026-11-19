@@ -10,7 +10,7 @@ import { openProject } from '../document.js';
 import { dropTake, takesKept } from '../recording.js';
 import { liveName } from '../live.js';
 import { assignPreset } from '../tracks.js';
-import { dialog } from './NewProject.jsx';
+import { newDialog as dialog } from '../dialogs.js';
 import { projectMenu, presetMenu, takeMenu } from '../context-menus.js';
 
 const TABS = [['projects', 'Projects'], ['instruments', 'Instruments'], ['takes', 'Takes']];

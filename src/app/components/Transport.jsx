@@ -11,7 +11,7 @@ import { project, dirty, beat, playing, status, settings, setSettings } from '..
 import { edit, save, saveAs } from '../document.js';
 import { play, stop, seek } from '../player.js';
 import { recording, record } from '../recording.js';
-import { dialog } from './NewProject.jsx';
+import { newDialog as dialog } from '../dialogs.js';
 
 /** 'harmonicMinor' → 'harmonic minor' */
 export const modeName = (mode)=> mode.replace(/[A-Z]/g, c => ` ${c.toLowerCase()}`);
