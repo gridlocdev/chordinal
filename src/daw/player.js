@@ -63,7 +63,7 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
         reverb: t.mixer.sends.reverb, delay: t.mixer.sends.delay, autoPan: t.mixer.autoPan }));
     strips.forEach((s, i)=> { s.user.gain.value = dbToGain(tracks[i].mixer.volumeDb); });
     // a meter on each strip, after its fader and pan
-    const meters = strips.map(s => { const a = new AnalyserNode(ctx, { fftSize: 512 }); s.panner.connect(a); return a; });
+    const meters = strips.map(s => { const a = new AnalyserNode(ctx, { fftSize: 512 }); s.panner.output.connect(a); return a; });
     const makeInstruments = ()=> instrumentsOf.map((b, i)=> createInstrument(b.font, b.preset, strips[i].input));
     let instruments = makeInstruments();
 

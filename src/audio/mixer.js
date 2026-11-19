@@ -26,6 +26,26 @@ export const delayTimes = (map)=> tempoSteps(map).map(({ beat, bpm })=> ({ beat,
 
 let impulse = null;             // built once; every project's reverb shares it
 
+const PAN_POINTS = 1025;
+/**
+ * The pan law: the gains on the left and right channels at `pan` (-1..1). Constant power, so a centred mono part (the
+ * same on both sides) is as loud panned anywhere: 1 and 1 in the middle, √2 and 0 hard left. Each side only scales its
+ * own channel, never adds the other into it.
+ */
+export function panGains(pan)
+{
+    const angle = (Math.max(-1, Math.min(1, pan)) + 1) * Math.PI / 4;
+    return [Math.SQRT2 * Math.cos(angle), Math.SQRT2 * Math.sin(angle)];
+}
+/** the pan law as two wave-shaper curves over -1..1, for the left and right gains */
+export const panCurves = ()=>
+{
+    const left = new Float32Array(PAN_POINTS), right = new Float32Array(PAN_POINTS);
+    for (let i = 0; i < PAN_POINTS; i++) [left[i], right[i]] = panGains(i / (PAN_POINTS - 1) * 2 - 1);
+    return [left, right];
+};
+let curves = null;
+
 /** @param {{ tempo: number }} opts */
 export function createMixer({ tempo })
 {
@@ -36,7 +56,7 @@ export function createMixer({ tempo })
         impulse = new AudioBuffer({ length: channels[0].length, numberOfChannels: 2, sampleRate: ctx.sampleRate });
         channels.forEach((d, i)=> impulse.copyToChannel(d, i));
     }
-    const nodes = [], lfos = [];
+    const nodes = [], sources = [];      // sources: the LFOs and the pan controls, stopped on dispose
     const node = (n)=> (nodes.push(n), n);
     // a slow sine into a parameter, on top of its own value
     const lfo = (param, rate, depth)=>
@@ -44,7 +64,25 @@ export function createMixer({ tempo })
         const osc = node(new OscillatorNode(ctx, { frequency: rate }));
         osc.connect(node(new GainNode(ctx, { gain: depth }))).connect(param);
         osc.start();
-        lfos.push(osc);
+        sources.push(osc);
+    };
+
+    // a stereo pan by panGains: `pan` is an AudioParam (-1..1) that automation and the auto-pan LFO move
+    curves ??= panCurves();
+    const pan2 = (value)=>
+    {
+        const input = node(new ChannelSplitterNode(ctx, { numberOfOutputs: 2 }));
+        const output = node(new ChannelMergerNode(ctx, { numberOfInputs: 2 }));
+        const control = node(new ConstantSourceNode(ctx, { offset: value }));
+        for (const side of [0, 1])
+        {
+            const gain = node(new GainNode(ctx, { gain: 0 }));
+            control.connect(node(new WaveShaperNode(ctx, { curve: curves[side] }))).connect(gain.gain);
+            input.connect(gain, side).connect(output, 0, side);
+        }
+        control.start();
+        sources.push(control);
+        return { input, output, pan: control.offset };
     };
 
     const bus = node(new GainNode(ctx, { gain: dbToGain(MIX_BUS_DB) }));
@@ -69,20 +107,21 @@ export function createMixer({ tempo })
          */
         channel({ volumeDb = -6, pan = 0, lowCut = 20, reverb = 0, delay: delaySend = 0, autoPan = null } = {})
         {
-            // always stereo: a strip whose voices are all centred (unpanned, mono) would otherwise run mono, and its
-            // panner pans mono with equal power, 3 dB quieter than the same notes beside one panned voice
+            // always stereo: a strip whose voices are all centred (unpanned, mono) would otherwise run mono, and the
+            // pan would only find a left channel
             const input = node(new GainNode(ctx, { channelCount: 2, channelCountMode: 'explicit' }));
             const user = node(new GainNode(ctx));
             const tone = node(new BiquadFilterNode(ctx, { type: 'lowpass', frequency: OPEN_TONE, Q: 0 }));
             const level = dbToGain(volumeDb);
             const fader = node(new GainNode(ctx, { gain: level }));
-            const panner = node(new StereoPannerNode(ctx, { pan }));
+            const panner = pan2(pan);
             const reverbSend = node(new GainNode(ctx, { gain: reverb }));
             const delaySendGain = node(new GainNode(ctx, { gain: delaySend }));
             input.connect(user).connect(node(new BiquadFilterNode(ctx, { type: 'highpass', frequency: lowCut })))
-                .connect(tone).connect(fader).connect(panner).connect(bus);
-            panner.connect(reverbSend).connect(reverbIn);
-            panner.connect(delaySendGain).connect(delayIn);
+                .connect(tone).connect(fader).connect(panner.input);
+            panner.output.connect(bus);
+            panner.output.connect(reverbSend).connect(reverbIn);
+            panner.output.connect(delaySendGain).connect(delayIn);
             if (autoPan) lfo(panner.pan, autoPan.rate, autoPan.depth);
             return { input, user, tone, fader, panner, pan, reverbSend, delaySend: delaySendGain, level };
         },
@@ -99,7 +138,7 @@ export function createMixer({ tempo })
             bus.gain.cancelScheduledValues(now);
             bus.gain.setValueAtTime(bus.gain.value, now);
             bus.gain.linearRampToValueAtTime(0, now + fade);
-            setTimeout(()=> { for (const o of lfos) o.stop(); for (const n of nodes) n.disconnect(); }, fade * 1000 + 50);
+            setTimeout(()=> { for (const o of sources) o.stop(); for (const n of nodes) n.disconnect(); }, fade * 1000 + 50);
         },
     };
 }
