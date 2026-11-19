@@ -37,6 +37,13 @@ export function heldAt(played, tracks, beat)
 }
 
 /**
+ * Whether a note's note-off should release its key: not when a later note on the same key has retriggered it, or the
+ * earlier note's end would cut the later one short.
+ * @param {Map<string, { n?: any }>} sounding
+ */
+export const ownsKey = (sounding, id, n)=> { const s = sounding.get(id); return !s?.n || s.n === n; };
+
+/**
  * Starts playing. Returns a handle: the position in beats, seek(beat), setMix(channels), levels() and stop().
  * @param {import('./project.js').Project} project
  * @param {{ font: any, preset: any }[]} instrumentsOf  from loadInstruments, one per track
@@ -185,7 +192,7 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
         for (const { i, n } of heldAt(passData(seg.pass).played, tracks, beat))
         {
             instruments[i].noteOn(n.key, n.vel, at, n);
-            sounding.set(`${i}:${n.key}`, { i, key: n.key });
+            sounding.set(`${i}:${n.key}`, { i, key: n.key, n });
             if (!n.held) carried.add(n);
         }
     };
@@ -214,10 +221,14 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
                 if (at >= limit) break;
                 if (mine) carried.delete(e.n);
                 const inst = instruments[e.i], id = `${e.i}:${e.n.key}`;
-                if (!e.on) { inst.noteOff(e.n.key, false, at); sounding.delete(id); continue; }
+                if (!e.on)
+                {
+                    if (ownsKey(sounding, id, e.n)) { inst.noteOff(e.n.key, false, at); sounding.delete(id); }
+                    continue;
+                }
                 if (e.n.glideFrom === undefined || !inst.glide(e.n.glideFrom, e.n.key, at, GLIDE_SECONDS)) inst.noteOn(e.n.key, e.n.vel, at, e.n);
                 else sounding.delete(`${e.i}:${e.n.glideFrom}`);
-                sounding.set(id, { i: e.i, key: e.n.key });
+                sounding.set(id, { i: e.i, key: e.n.key, n: e.n });
             }
             for (; nextDuck < duckBeats.length && duckBeats[nextDuck] < seg.until - 1e-9 && timeOf(seg, duckBeats[nextDuck]) < limit; nextDuck++)
                 duck(duckBeats[nextDuck], timeOf(seg, duckBeats[nextDuck]));
