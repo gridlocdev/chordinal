@@ -18,3 +18,25 @@ test('an edit while playing restarts playback when it changes what is heard (met
     const louder = updateTrack(p, id, t => ({ ...t, mixer: { ...t.mixer, volumeDb: -3 } }));
     assert.equal(heardDifferently(p, louder), false, 'a fader plays on without a restart');
 });
+
+test('moving a send or the low cut while playing glides there without a restart; auto-pan still restarts', ()=>
+{
+    let p = emptyProject({ bars: 4 });
+    p = addTrack(p, makeTrack(p, { name: 'Keys' }));
+    const id = p.tracks[0].id;
+    const mixer = (patch)=> updateTrack(p, id, t => ({ ...t, mixer: { ...t.mixer, ...patch } }));
+    assert.equal(heardDifferently(p, mixer({ sends: { reverb: 0.5, delay: 0.2 } })), false, 'sends');
+    assert.equal(heardDifferently(p, mixer({ lowCut: 200 })), false, 'low cut');
+    assert.equal(heardDifferently(p, mixer({ autoPan: { rate: 1, depth: 0.5 } })), true, 'auto-pan');
+});
+
+test('the mix handed to the player carries each track\'s sends and low cut', async ()=>
+{
+    const { mix, hist } = await import('../../src/ui/store.js');
+    const { history, setMixer } = await import('../../src/daw/project.js');
+    let p = emptyProject({ bars: 4 });
+    p = addTrack(p, makeTrack(p, { name: 'Keys' }));
+    p = setMixer(p, p.tracks[0].id, { sends: { reverb: 0.4, delay: 0.1 }, lowCut: 120 });
+    hist.value = history(p);
+    assert.deepEqual({ ...mix.value[0], gain: undefined }, { gain: undefined, pan: 0, reverb: 0.4, delay: 0.1, lowCut: 120 });
+});

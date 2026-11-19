@@ -117,13 +117,14 @@ export function createMixer({ tempo })
             const panner = pan2(pan);
             const reverbSend = node(new GainNode(ctx, { gain: reverb }));
             const delaySendGain = node(new GainNode(ctx, { gain: delaySend }));
-            input.connect(user).connect(node(new BiquadFilterNode(ctx, { type: 'highpass', frequency: lowCut })))
+            const lowCutFilter = node(new BiquadFilterNode(ctx, { type: 'highpass', frequency: lowCut }));
+            input.connect(user).connect(lowCutFilter)
                 .connect(tone).connect(fader).connect(panner.input);
             panner.output.connect(bus);
             panner.output.connect(reverbSend).connect(reverbIn);
             panner.output.connect(delaySendGain).connect(delayIn);
             if (autoPan) lfo(panner.pan, autoPan.rate, autoPan.depth);
-            return { input, user, tone, fader, panner, pan, reverbSend, delaySend: delaySendGain, level };
+            return { input, user, lowCut: lowCutFilter, tone, fader, panner, pan, reverbSend, delaySend: delaySendGain, level };
         },
         /** the delay's time, `seconds`, from `at` (a quick glide, so the echoes don't jump), dropping later changes */
         delayAt(seconds, at)

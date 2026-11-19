@@ -62,6 +62,8 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
     const strips = tracks.map(t => mixer.channel({ volumeDb: 0, pan: t.mixer.pan, lowCut: t.mixer.lowCut,
         reverb: t.mixer.sends.reverb, delay: t.mixer.sends.delay, autoPan: t.mixer.autoPan }));
     strips.forEach((s, i)=> { s.user.gain.value = dbToGain(tracks[i].mixer.volumeDb); });
+    // what setMix last set, so it only touches the sends and low cuts that changed
+    const mixed = tracks.map(t => ({ reverb: t.mixer.sends.reverb, delay: t.mixer.sends.delay, lowCut: t.mixer.lowCut }));
     // a meter on each strip, after its fader and pan
     const meters = strips.map(s => { const a = new AnalyserNode(ctx, { fftSize: 512 }); s.panner.output.connect(a); return a; });
     const makeInstruments = ()=> instrumentsOf.map((b, i)=> createInstrument(b.font, b.preset, strips[i].input));
@@ -150,7 +152,7 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
         {
             const i = tracks.findIndex(t => t.id === e.track);
             if (i < 0) return;
-            const g = strips[i].delaySend.gain, base = tracks[i].mixer.sends.delay;
+            const g = strips[i].delaySend.gain, base = mixed[i].delay;
             g.setValueAtTime(base, at);
             g.linearRampToValueAtTime(e.send, at + (timeOf(s, e.beat + e.beats) - at) * 0.5);
             g.linearRampToValueAtTime(base, timeOf(s, e.beat + e.beats + 1));
@@ -279,7 +281,7 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
             {
                 if (tracks[i].automation.delay?.length) return;
                 s.delaySend.gain.cancelScheduledValues(0);
-                s.delaySend.gain.setValueAtTime(tracks[i].mixer.sends.delay, now);
+                s.delaySend.gain.setValueAtTime(mixed[i].delay, now);
             });
             seg = { at: now, from: beat, until: end, pass: current().pass };
             segments.length = 0;
@@ -290,19 +292,25 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
             schedule();
         },
         /**
-         * The mixer's settings, one per track: gain (0 mutes) and pan (−1..1). Glides there over a few milliseconds
-         * so nothing clicks.
-         * @param {{ gain: number, pan: number }[]} channels
+         * The mixer's settings, one per track: gain (0 mutes), pan (−1..1), and the sends and low cut where they
+         * changed (a send an automation lane moves is left to the lane). Glides there over a few milliseconds so
+         * nothing clicks.
+         * @param {{ gain: number, pan: number, reverb?: number, delay?: number, lowCut?: number }[]} channels
          */
         setMix(channels)
         {
             const now = ctx.currentTime;
+            const glide = (param, value)=> { param.cancelScheduledValues(now); param.setTargetAtTime(value, now, 0.01); };
             channels.forEach((c, i)=>
             {
-                const s = strips[i];
+                const s = strips[i], was = mixed[i] ?? {};
                 if (!s || !c) return;
                 s.user.gain.setTargetAtTime(c.gain, now, 0.01);
                 s.panner.pan.setTargetAtTime(Math.max(-1, Math.min(1, c.pan)), now, 0.01);
+                if (c.reverb !== undefined && c.reverb !== was.reverb && !tracks[i].automation.reverb?.length) glide(s.reverbSend.gain, c.reverb);
+                if (c.delay !== undefined && c.delay !== was.delay && !tracks[i].automation.delay?.length) glide(s.delaySend.gain, c.delay);
+                if (c.lowCut !== undefined && c.lowCut !== was.lowCut) glide(s.lowCut.frequency, c.lowCut);
+                mixed[i] = c;
             });
         },
         /** each track's level now, its peak 0..1 */

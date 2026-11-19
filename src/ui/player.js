@@ -1,5 +1,5 @@
 // Plays the open project: loads its instruments, starts it from the playhead, follows it with the playhead, keeps the
-// mixer's faders and pans on its channels, and starts again from where it is when an edit changes what's heard.
+// mixer's faders, pans, sends and low cuts on its channels, and starts again from where it is when an edit changes what's heard.
 import { effect } from '@preact/signals';
 import { loadInstruments } from '../daw/instruments.js';
 import { playProject } from '../daw/player.js';
@@ -89,11 +89,11 @@ export function reload()
     if (playing.value) play();
 }
 
-const MIX_ONLY = ['volumeDb', 'pan', 'mute', 'solo'];
+const MIX_ONLY = ['volumeDb', 'pan', 'mute', 'solo', 'lowCut', 'sends'];
 // what playback hears besides the tracks: the tempo, loop and end, and what Humanize reads (sections, meter, key,
 // chords, and the title as its seed)
 const HEARD = ['tempoMap', 'loop', 'markers', 'groove', 'meters', 'key', 'chords', 'length', 'title'];
-/** whether an edit changed more than the faders, pans, mutes and solos, which play on without a restart */
+/** whether an edit changed more than the faders, pans, mutes, solos, sends and low cuts, which play on without a restart */
 export function heardDifferently(a, b)
 {
     if (a.tracks.length !== b.tracks.length || HEARD.some(k => a[k] !== b[k])) return true;

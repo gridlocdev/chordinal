@@ -85,7 +85,8 @@ export const mix = computed(()=>
 {
     const tracks = project.value.tracks;
     const soloed = tracks.some(t => t.mixer.solo);
-    return tracks.map(({ mixer: m })=> ({ gain: m.mute || (soloed && !m.solo) || m.volumeDb <= FADER_FLOOR_DB ? 0 : dbToGain(m.volumeDb), pan: m.pan }));
+    return tracks.map(({ mixer: m })=> ({ gain: m.mute || (soloed && !m.solo) || m.volumeDb <= FADER_FLOOR_DB ? 0 : dbToGain(m.volumeDb), pan: m.pan,
+        reverb: m.sends.reverb, delay: m.sends.delay, lowCut: m.lowCut }));
 });
 
 // ── the transport ────────────────────────────────────────────────────────────────────────────────────────────────────
