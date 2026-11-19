@@ -7,7 +7,7 @@ import { edit } from '../document.js';
 import { seek } from '../player.js';
 import { press, release } from '../live.js';
 import { focus } from '../focus.js';
-import { noteId, notesOf, changeNotes } from '../notes.js';
+import { noteId, notesOf, changeNotes, canonicalClip, isPicked, pickedNotes } from '../notes.js';
 import { noteMenu, rollMenu } from '../context-menus.js';
 import { GUTTER, STRIP, PPB, VEL_H, EDGE, band, view, geometry, snap } from './roll-view.js';
 
@@ -48,7 +48,7 @@ export function down(e, p, track)
         const setVel = (m)=>
         {
             const x = m.clientX - r.left, vel = Math.round(Math.max(1, Math.min(127, (r.bottom - 2 - m.clientY) / (VEL_H - 6) * 127)));
-            const near = all.filter(o => Math.abs(G.x(o.at) - x) <= 4 && (!picked.value.size || picked.value.has(noteId(o.clip.id, o.i))));
+            const near = all.filter(o => Math.abs(G.x(o.at) - x) <= 4 && (!picked.value.size || isPicked(track, o.clip.id, o.i)));
             if (!near.length) return;
             const ids = new Set(near.map(o => noteId(o.clip.id, o.i)));
             changeNotes(track.id, new Map([...new Set(near.map(o => o.clip.id))].map(c => [c, (notes)=> notes.map((n, i)=> ids.has(noteId(c, i)) ? { ...n, vel } : n)])), 'velocity');
@@ -112,7 +112,9 @@ export function down(e, p, track)
     }
     // what the picked notes were at the start of the drag, to move or resize from
     const startTrack = selectedTrack.value;
-    const before = new Map(notesOf(startTrack).filter(o => picked.value.has(noteId(o.clip.id, o.i))).map(o => [noteId(o.clip.id, o.i), o]));
+    // once per note of a pattern, however many of its clips it was picked in (PRD §3.3)
+    // (edited through the pattern's first clip, but snapped where it was picked)
+    const before = new Map(pickedNotes().map(o => { const cid = canonicalClip(startTrack, o.clip.id); return [noteId(cid, o.i), { ...o, cid }]; }));
     let sounding = grabbed.n.key;
     const move = (m)=>
     {
@@ -120,7 +122,7 @@ export function down(e, p, track)
         const changes = new Map();
         for (const [id, o] of before)
         {
-            const [c, i] = [o.clip.id, o.i];
+            const [c, i] = [o.cid, o.i];
             const fn = changes.get(c) ?? ((notes)=> notes);
             changes.set(c, (notes)=> fn(notes).map((n, k)=>
             {

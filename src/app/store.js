@@ -15,7 +15,7 @@ const DEFAULTS = {
     project: '',            // the project last opened, by folder name
     browserTab: 'projects', // 'projects' | 'instruments' | 'takes'
     browserOpen: true,
-    editorTab: 'roll',      // 'roll' | 'mixer'
+    editorTab: 'roll',      // 'roll' | 'mixer' | 'grid'
     editorHeight: 300,      // px
     grid: 0.25,             // the piano roll's snap, in beats
     click: true,            // a click while recording, after the count-in

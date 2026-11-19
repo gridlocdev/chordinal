@@ -93,7 +93,18 @@ export function addTrack(p, track, index = p.tracks.length)
 export const removeTrack = (p, id)=> ({ ...p, tracks: p.tracks.filter(t => t.id !== id)
     .map(t => t.mixer.duck?.from === id ? { ...t, mixer: { ...t.mixer, duck: null } } : t) });
 
-export const addClip = (p, trackId, clip)=> updateTrack(p, trackId, t => ({ ...t, clips: [...t.clips, clip].sort((a, b)=> a.start - b.start) }));
+/** adds a clip; a pattern clip takes its pattern's notes, length and step from the clips already playing it, and one
+ * of a pattern the project doesn't have is added as an ordinary clip (PRD §3.5) */
+export function addClip(p, trackId, clip)
+{
+    let added = clip;
+    if (clip.pattern)
+    {
+        const sibling = p.tracks.flatMap(t => t.clips).find(c => c.pattern === clip.pattern && c.id !== clip.id);
+        added = !findPattern(p, clip.pattern) ? unlinked(clip) : sibling ? withShared(clip, sibling) : clip;
+    }
+    return updateTrack(p, trackId, t => ({ ...t, clips: [...t.clips, added].sort((a, b)=> a.start - b.start) }));
+}
 
 /** changes a clip; a change to a pattern clip's notes, length or step goes to every clip of its pattern (PRD §3.3) */
 export function updateClip(p, trackId, clipId, patch)

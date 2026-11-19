@@ -2,7 +2,8 @@
 import { signal } from '@preact/signals';
 import { barAt } from '../daw/meter.js';
 import { makeTrack, addTrack, removeTrack, updateTrack, setMixer, moveTrack, duplicateTrack, addClip, updateClip, removeClip,
-    findClip, joinClips, splitAt, newId, setLoop, quantizeNotes, humanizeNotes, scaleNotes, reverseNotes } from '../daw/project.js';
+    findClip, joinClips, splitAt, newId, setLoop, quantizeNotes, humanizeNotes, scaleNotes, reverseNotes, isDrums, makePattern, makeUnique,
+    renamePattern, nextPatternName, findPattern } from '../daw/project.js';
 import { project, selected, selectedClip, settings, setSettings, picked } from './store.js';
 import { edit } from './document.js';
 import { askText } from './ask.js';
@@ -78,9 +79,35 @@ export function newClipAt(trackId, beat)
 {
     const meters = project.value.meters, start = barAt(meters, beat).start;
     let id = '';
-    edit(p => { id = newId(p, 'c'); return addClip(p, trackId, { id, start, beats: barAt(meters, start).beatsPerBar * NEW_CLIP_BARS, notes: [] }); });
+    edit(p =>
+    {
+        id = newId(p, 'c');
+        const out = addClip(p, trackId, { id, start, beats: barAt(meters, start).beatsPerBar * NEW_CLIP_BARS, notes: [] });
+        // PRD §3.4: on a drum track a drawn clip is a new pattern
+        const t = out.tracks.find(x => x.id === trackId);
+        return isDrums(t) ? makePattern(out, trackId, id, nextPatternName(out, t.name)) : out;
+    });
     selected.value = trackId;
     selectedClip.value = { track: trackId, clip: id };
+}
+
+// ── patterns (PRD §3) ────────────────────────────────────────────────────────────────────────────────────────────────
+
+export const patternOf = (trackId, clipId)=> findClip(project.value, trackId, clipId)?.pattern ?? null;
+
+export function makePatternOf(trackId, clipId)
+{
+    const t = trackOf(trackId);
+    if (t) edit(p => makePattern(p, trackId, clipId, nextPatternName(p, t.name)));
+}
+
+export const makeUniqueOf = (trackId, clipId)=> edit(p => makeUnique(p, trackId, clipId));
+
+export async function renamePatternOf(trackId, clipId)
+{
+    const pattern = findPattern(project.value, patternOf(trackId, clipId));
+    const name = pattern && await askText('Pattern name', pattern.name, 'Rename');
+    if (name) edit(p => renamePattern(p, pattern.id, name));
 }
 
 export function deleteClip(trackId, clipId)

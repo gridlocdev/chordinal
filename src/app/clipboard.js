@@ -93,7 +93,7 @@ function placeNotes(notes, beats, trackId, at)
         return addClip(q, trackId, { id, start, beats: last.start + last.beatsPerBar - start, notes: notes.map(n => ({ ...n, beat: n.beat + at - start })) });
     });
     selected.value = trackId;
-    selectedClip.value = { track: trackId, clip: id };
     focus.value = 'roll';
+    selectedClip.value = { track: trackId, clip: id };
     picked.value = new Set(notes.map((_, i)=> noteId(id, from + i)));
 }

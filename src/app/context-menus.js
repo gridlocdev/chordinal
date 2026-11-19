@@ -1,7 +1,7 @@
 // The right-click menus, one for each thing that can be clicked: a clip, an empty stretch of a lane, a track's
 // header, the ruler, the chord track, a note, the piano roll's background, a mixer strip, and the browser's projects,
 // instruments and takes. The part clicked is selected first, so the menu's commands act on it.
-import { TRACK_COLORS, findClip, renameMarker, removeMarker, markerRange } from '../daw/project.js';
+import { TRACK_COLORS, findClip, renameMarker, removeMarker, markerRange, isDrums } from '../daw/project.js';
 import { barAt } from '../daw/meter.js';
 import { appMenu } from '../platform/app-menu.js';
 import { cut as cutChord } from '../sketch/takes.js';
@@ -15,7 +15,7 @@ import { pickedNotes, setVelocity, legatoPicked, pickKey, transposePicked, human
 import { paste, clipboard } from './clipboard.js';
 import { trackOf, addNewTrack, assignPreset, chooseInstrument, renameTrack, deleteTrack, duplicateTheTrack, moveTrackBy, setTrackColor,
     toggleMute, toggleSolo, setMix, newClipAt, deleteClip, splitClipsAt, joinWithNext, nextClip, setClipBars, quantizeClip,
-    transposeClip, loopOver, clipRange, toggleClipMute, humanizeClip, scaleClip, reverseClip } from './tracks.js';
+    transposeClip, loopOver, clipRange, toggleClipMute, humanizeClip, scaleClip, reverseClip, makePatternOf, makeUniqueOf, renamePatternOf } from './tracks.js';
 import { item, snapItems, addMarkerAt, COMMANDS } from './commands.js';
 import { askTempo, askMeter, askTempoChange, askMeterChange } from './timeline.js';
 
@@ -65,13 +65,14 @@ function trackItems(trackId)
 export function clipMenu(trackId, clipId, at)
 {
     selected.value = trackId;
-    selectedClip.value = { track: trackId, clip: clipId };
     focus.value = 'arrange';
+    selectedClip.value = { track: trackId, clip: clipId };
     const c = findClip(project.value, trackId, clipId);
     const bars = c ? c.beats / barAt(project.value.meters, c.start).beatsPerBar : 0;
     const inside = c && at > c.start + 1e-6 && at < c.start + c.beats - 1e-6;
     appMenu.popup([
         { label: 'Open in Piano Roll', run: ()=> setSettings({ editorTab: 'roll' }) },
+        ...(isDrums(trackOf(trackId)) ? [{ label: 'Open in Step Grid', run: ()=> setSettings({ editorTab: 'grid' }) }] : []),
         '-',
         item('cut'), item('copy'), item('paste', { label: 'Paste at Playhead' }), item('duplicate'), item('delete'),
         '-',
@@ -79,6 +80,9 @@ export function clipMenu(trackId, clipId, at)
         item('split'),
         { label: 'Join with Next Clip', enabled: !!nextClip(trackId, clipId), run: ()=> joinWithNext(trackId, clipId) },
         { label: 'Mute Clip', checked: !!c?.mute, run: ()=> toggleClipMute(trackId, clipId) },
+        '-',
+        ...(c?.pattern ? [{ label: 'Rename Pattern…', run: ()=> renamePatternOf(trackId, clipId) }, { label: 'Make Unique', run: ()=> makeUniqueOf(trackId, clipId) }]
+            : [{ label: 'Make Pattern', accelerator: 'CmdOrCtrl+P', run: ()=> makePatternOf(trackId, clipId) }]),
         '-',
         { label: 'Quantize Notes', run: ()=> quantizeClip(trackId, clipId) },
         { label: 'Humanize', run: ()=> humanizeClip(trackId, clipId) },

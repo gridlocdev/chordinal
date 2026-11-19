@@ -7,7 +7,7 @@ import { useState } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import { barAt } from '../../daw/meter.js';
 import { presetFor } from '../../daw/instruments.js';
-import { updateClip, moveClip, newId } from '../../daw/project.js';
+import { updateClip, moveClip, newId, isDrums, findPattern } from '../../daw/project.js';
 import { project, selected, selectedClip, beat, settings, setSettings } from '../store.js';
 import { edit } from '../document.js';
 import { recording, dropAudio, dropTake } from '../recording.js';
@@ -47,6 +47,17 @@ function Lane({ track, beats, ppb })
             g.fillStyle = rgba(track.color, 0.7);
             g.fillRect(a, 2, b - a, 12);
             if (on) { g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.roundRect(a + 0.5, 2.5, b - a - 1, h - 5, 4); g.stroke(); }
+            // PRD §3.10: a pattern clip shows its pattern's name and a link mark
+            const pattern = c.pattern && findPattern(project.value, c.pattern);
+            if (pattern && b - a > 24)
+            {
+                g.save();
+                g.beginPath(); g.rect(a, 0, b - a - 4, h); g.clip();
+                g.fillStyle = '#16161a';
+                g.textAlign = 'left';
+                g.fillText(`⧉ ${pattern.name}`, a + 4, 8);
+                g.restore();
+            }
             g.fillStyle = rgba(track.color, 0.95);
             g.save();
             g.beginPath(); g.rect(a, 0, b - a, h); g.clip();
@@ -119,7 +130,7 @@ function Lane({ track, beats, ppb })
     const dblclick = (e)=>
     {
         const b = beatAt(e), c = clipAt(b);
-        if (c) setSettings({ editorTab: 'roll' });
+        if (c) setSettings({ editorTab: isDrums(track) ? 'grid' : 'roll' });
         else newClipAt(track.id, b);
     };
 

@@ -156,3 +156,19 @@ test('seeded random edits keep every pattern\'s clips alike and survive a save (
             p.tracks.map(t => t.clips.map(c => [c.id, c.start, Math.round(c.beats * 1e4) / 1e4, c.pattern ?? null])), `seed ${seed}: clips read back`);
     }
 });
+
+test('a pasted pattern clip follows its pattern, or is ordinary where the pattern is missing (PRD §3.5)', ()=>
+{
+    const { p, drums } = kit();
+    const stale = { ...clipsOf(p, drums)[0], id: 'c9', start: 20, notes: [] };
+    const pasted = addClip(p, drums, stale);
+    assert.equal(findClip(pasted, drums, 'c9').notes.length, 2, 'the pattern\'s notes, not the clipboard\'s');
+    const elsewhere = addClip(emptyProjectWith(drums), drums, stale);
+    assert.equal(findClip(elsewhere, drums, 'c9').pattern, undefined);
+});
+
+function emptyProjectWith(trackId)
+{
+    const p = emptyProject();
+    return { ...p, tracks: [{ ...makeTrack(p, { name: 'Drums' }), id: trackId }] };
+}

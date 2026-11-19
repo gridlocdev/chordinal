@@ -21,7 +21,7 @@ import { pickedNotes, deletePicked, transposePicked, quantizePicked, pickAll, cl
 import { cut, copy, paste, duplicate, canCopy, clipboard } from './clipboard.js';
 import { addNewTrack, renameTrack, deleteTrack, duplicateTheTrack, moveTrackBy, toggleMute, toggleSolo, chooseInstrument,
     deleteClip, splitClipsAt, joinWithNext, nextClip, quantizeClip, loopOver, clipRange, arrangeZoom, arrangePpb, toggleClipMute, nudgeClip,
-    humanizeClip, scaleClip, reverseClip } from './tracks.js';
+    humanizeClip, scaleClip, reverseClip, makePatternOf, makeUniqueOf, patternOf } from './tracks.js';
 import { exportDialog } from './bounce.js';
 import { importMidi } from './midi-import.js';
 import { audioEngine } from '../platform/audio-engine.js';
@@ -175,6 +175,10 @@ export const COMMANDS = {
     reverse: { label: 'Reverse', enabled: ()=> inRoll() || clipSelected(), run: onSelection(reversePicked, reverseClip) },
     muteClip: { label: 'Mute Clip', shown: 'M', enabled: ()=> !!selectedClip.value, checked: clipMuted,
         run: ()=> toggleClipMute(selectedClip.value.track, selectedClip.value.clip) },
+    makePattern: { label: 'Make Pattern', accelerator: 'CmdOrCtrl+P', enabled: ()=> !!selectedClip.value && !patternOf(selectedClip.value.track, selectedClip.value.clip),
+        run: ()=> makePatternOf(selectedClip.value.track, selectedClip.value.clip) },
+    makeUnique: { label: 'Make Unique', enabled: ()=> !!selectedClip.value && !!patternOf(selectedClip.value.track, selectedClip.value.clip),
+        run: ()=> makeUniqueOf(selectedClip.value.track, selectedClip.value.clip) },
     insertBars: { label: 'Insert Bars at Playhead…', run: ()=> changeBars(true) },
     deleteBars: { label: 'Delete Bars at Playhead…', run: ()=> changeBars(false) },
     // Track
@@ -212,6 +216,7 @@ export const COMMANDS = {
     browser: { label: 'Browser', shown: 'B', run: ()=> setSettings({ browserOpen: !settings.value.browserOpen }), checked: ()=> settings.value.browserOpen },
     roll: { label: 'Piano Roll', accelerator: 'CmdOrCtrl+1', radio: true, run: ()=> setSettings({ editorTab: 'roll' }), checked: ()=> settings.value.editorTab === 'roll' },
     mixer: { label: 'Mixer', accelerator: 'CmdOrCtrl+2', radio: true, run: ()=> setSettings({ editorTab: 'mixer' }), checked: ()=> settings.value.editorTab === 'mixer' },
+    stepGrid: { label: 'Step Grid', accelerator: 'CmdOrCtrl+3', radio: true, run: ()=> setSettings({ editorTab: 'grid' }), checked: ()=> settings.value.editorTab === 'grid' },
     zoomIn: { label: 'Zoom In', accelerator: 'CmdOrCtrl+=', run: ()=> zoomBy(ZOOM) },
     zoomOut: { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', run: ()=> zoomBy(1 / ZOOM) },
     fit: { label: 'Zoom to Fit', accelerator: 'CmdOrCtrl+0', run: ()=> { arrangeZoom.value = 0; } },

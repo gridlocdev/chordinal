@@ -12,8 +12,36 @@ export const noteId = (clip, i)=> `${clip}:${i}`;
 /** a track's notes with where they are: clip, index, and the beat in the project */
 export const notesOf = (track)=> track ? track.clips.flatMap(c => c.notes.map((n, i)=> ({ n, i, clip: c, at: c.start + n.beat })).filter(x => x.n.beat < x.clip.beats)) : [];
 
-/** the picked notes on the selected track, where they are */
-export const pickedNotes = ()=> notesOf(selectedTrack.value).filter(o => picked.value.has(noteId(o.clip.id, o.i)));
+/** the first clip on the track that plays the same pattern, or the clip itself: the clips of a pattern share their
+ * notes, so an edit to picked notes goes through that one clip once, and every clip of the pattern follows (PRD §3.3) */
+export function canonicalClip(track, clipId)
+{
+    const c = track?.clips.find(x => x.id === clipId);
+    return c?.pattern ? track.clips.find(x => x.pattern === c.pattern).id : clipId;
+}
+
+/** note ids with each clip replaced by its canonical clip, so a note picked in two linked clips is changed once */
+export function canonicalIds(track, ids)
+{
+    return new Set([...ids].map(id => { const [c, i] = id.split(':'); return noteId(canonicalClip(track, c), Number(i)); }));
+}
+
+/** whether a note is picked, here or in a clip linked to this one */
+export const isPicked = (track, clipId, i, ids = canonicalIds(track, picked.value))=> ids.has(noteId(canonicalClip(track, clipId), i));
+
+/** the picked notes on the selected track, where they were picked, once each (a note picked in two linked clips counts once, at the first) */
+export function pickedNotes()
+{
+    const t = selectedTrack.value, seen = new Set();
+    return notesOf(t).filter(o =>
+    {
+        if (!picked.value.has(noteId(o.clip.id, o.i))) return false;
+        const id = noteId(canonicalClip(t, o.clip.id), o.i);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+    });
+}
 
 /**
  * Changes notes clip by clip: a map of clip id → (notes)=> notes.
@@ -34,7 +62,7 @@ export function changeNotes(trackId, changes, merge = null)
 /** changes each picked note with fn(note) */
 function mapPicked(fn, merge = null)
 {
-    const t = selectedTrack.value, ids = picked.value;
+    const t = selectedTrack.value, ids = canonicalIds(t, picked.value);
     if (!t || !ids.size) return false;
     const clips = new Set([...ids].map(id => id.split(':')[0]));
     changeNotes(t.id, new Map([...clips].map(c => [c, (notes)=> notes.map((n, i)=> ids.has(noteId(c, i)) ? fn(n) : n)])), merge);
@@ -46,7 +74,7 @@ export function deletePicked()
     const t = selectedTrack.value;
     if (!t || !picked.value.size) return false;
     const byClip = new Map();
-    for (const id of picked.value) { const [c, i] = id.split(':'); byClip.set(c, [...(byClip.get(c) ?? []), Number(i)]); }
+    for (const id of canonicalIds(t, picked.value)) { const [c, i] = id.split(':'); byClip.set(c, [...(byClip.get(c) ?? []), Number(i)]); }
     changeNotes(t.id, new Map([...byClip].map(([c, list])=> [c, (notes)=> notes.filter((_, i)=> !list.includes(i))])));
     picked.value = new Set();
     return true;
@@ -61,7 +89,7 @@ export const quantizePicked = ()=> mapPicked(n => quantizeNotes([n], settings.va
 /** each picked note held until the next note starts, in its clip */
 export function legatoPicked()
 {
-    const t = selectedTrack.value, ids = picked.value;
+    const t = selectedTrack.value, ids = canonicalIds(t, picked.value);
     if (!t || !ids.size) return false;
     const clips = new Set([...ids].map(id => id.split(':')[0]));
     changeNotes(t.id, new Map([...clips].map(c => [c, (notes)=> notes.map((n, i)=>
@@ -93,7 +121,7 @@ export const nudgePicked = (by)=> mapPicked(n => ({ ...n, beat: Math.max(0, n.be
 /** fn(notes, from, to) on the picked notes of each clip, given the stretch they span in it */
 function mapPickedTogether(fn)
 {
-    const t = selectedTrack.value, ids = picked.value;
+    const t = selectedTrack.value, ids = canonicalIds(t, picked.value);
     if (!t || !ids.size) return false;
     const clips = new Set([...ids].map(id => id.split(':')[0]));
     changeNotes(t.id, new Map([...clips].map(c => [c, (notes)=>

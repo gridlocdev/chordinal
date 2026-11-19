@@ -5,7 +5,7 @@ import { noteName } from '../../lib/notes.js';
 import { barLines } from '../../daw/meter.js';
 import { settings, selectedClip, picked } from '../store.js';
 import { held } from '../live.js';
-import { noteId, notesOf } from '../notes.js';
+import { notesOf, canonicalIds, isPicked } from '../notes.js';
 import { rgba } from './canvas.js';
 import { GUTTER, STRIP, LANE_H, VEL_H, band, geometry } from './roll-view.js';
 
@@ -96,12 +96,12 @@ export function drawRoll(g, w, h, p, track)
     // notes, and their velocities below
     g.fillStyle = 'rgba(255,255,255,.04)';
     g.fillRect(GUTTER, G.bottom, w, VEL_H);
-    const on = picked.value;
+    const on = canonicalIds(track, picked.value);
     for (const { n, i, clip, at: b0 } of notesOf(track))
     {
         const a = G.x(b0), b = G.x(b0 + Math.min(n.beats, clip.beats - n.beat));
         if (b < GUTTER || a > w) continue;
-        const sel = on.has(noteId(clip.id, i)), y = G.L.y(n.key);
+        const sel = isPicked(track, clip.id, i, on), y = G.L.y(n.key);
         // a note above or below the keys shown has only its velocity drawn
         if (y >= G.top - 1 && y < G.bottom)
         {
