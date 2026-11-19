@@ -37,7 +37,11 @@ function Position()
     return <span class="pos">{position(project.value.meters, beat.value)}</span>;
 }
 
-export function Transport()
+/**
+ * @param {{ onNew?: ()=> void, newLabel?: string }} props  what New does: Music Generator's New dialog (the default), or
+ *   the app's own new project
+ */
+export function Transport({ onNew = ()=> { dialog.value = true; }, newLabel = 'New…' })
 {
     const p = project.value;
     const bpm = bpmNow.value, sig = sigNow.value, marker = markerNow.value;
@@ -63,7 +67,7 @@ export function Transport()
             </div>
             <div class="title">{p.title}{dirty.value ? ' *' : ''}</div>
             <div class="buttons file">
-                <button title="New project (Cmd+N)" onClick={()=> { dialog.value = true; }}>New…</button>
+                <button title="New project (Cmd+N)" onClick={onNew}>{newLabel}</button>
                 <button title="Save (Cmd+S)" onClick={save}>Save</button>
                 <button title="Save as (Shift+Cmd+S)" onClick={saveAs}>Save as…</button>
             </div>

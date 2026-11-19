@@ -1,6 +1,6 @@
-// The question the app is asking, if any: a line of text or yes or no, with Enter and Escape.
+// The question the app is asking, if any: a line of text, yes or no, or a choice, with Enter and Escape.
 import { useEffect, useRef } from 'preact/hooks';
-import { asking, answer } from '../ask.js';
+import { asking, answer, OTHER } from '../ask.js';
 
 export function Ask()
 {
@@ -17,6 +17,7 @@ export function Ask()
                 <p>{a.text}</p>
                 {a.value !== null && <input ref={input} value={a.value} />}
                 <div class="actions">
+                    {a.other && <button class="other" onClick={()=> answer(OTHER)}>{a.other}</button>}
                     <button onClick={()=> answer(null)}>Cancel</button>
                     <button ref={ok} class="primary" onClick={done}>{a.yes}</button>
                 </div>

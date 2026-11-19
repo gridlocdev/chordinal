@@ -11,7 +11,7 @@ import { settings, setSettings, loadSettings, project, dirty } from '../ui/store
 import { checkLibraries } from '../ui/libraries.js';
 import { openProject, newProject } from '../ui/document.js';
 import { startLive, connectMidi } from '../ui/live.js';
-import { startMenus } from '../ui/menu-bar.js';
+import { startMusicGeneratorMenus } from './menu-bar.js';
 import { startEditorFollow } from '../ui/steps.js';
 import { handleKey } from '../ui/keys.js';
 import { textMenu } from '../ui/context-menus.js';
@@ -80,5 +80,5 @@ const list = await projectFiles.list().catch(()=> []);
 const first = list.find(p => p.name === settings.value.project) ?? list[0];
 if (!first || !await openProject(first.name)) newProject();
 render(<App />, document.body);
-startMenus();
+startMusicGeneratorMenus();
 startEditorFollow();

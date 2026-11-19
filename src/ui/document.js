@@ -1,5 +1,6 @@
 // The open project as a document: opening, saving, starting a new one (empty, or made by the composer from a feeling,
-// a genre or one of its songs), and every edit, each a step undo can take back.
+// a genre or one of its songs), and every edit, each a step undo can take back. Where projects are kept, and how Save
+// As and the unsaved-changes question go, is the app's own (place.js).
 import { projectFiles, folderName } from '../platform/project-files.js';
 import { emptyProject, history, commit, undo as undoStep, redo as redoStep } from '../daw/project.js';
 import { readProject, writeProject } from '../daw/project-format.js';
@@ -9,6 +10,7 @@ import { hist, project, projectName, projectList, saved, dirty, selected, select
 import { stop } from './player.js';
 import { focus } from './focus.js';
 import { askText, askYes } from './ask.js';
+import { place } from './place.js';
 
 let mergeKey = null;
 /** the open project's file as last read or written, to tell when it changes on disk */
@@ -40,13 +42,13 @@ function keepSelection()
     if (c && !p.tracks.find(t => t.id === c.track)?.clips.some(x => x.id === c.clip)) selectedClip.value = null;
 }
 
-/** puts a project in the window, stopped at its start */
-function show(p, name)
+/** puts a project in the window, stopped at its start; a project with no name has unsaved changes unless `clean` */
+function show(p, name, clean = false)
 {
     stop();
     mergeKey = null;
     hist.value = history(p);
-    saved.value = name ? p : null;
+    saved.value = name || clean ? p : null;
     projectName.value = name;
     selected.value = p.tracks[0]?.id ?? null;
     selectedClip.value = null;
@@ -77,7 +79,7 @@ export function watchProjects()
         await refreshProjects();
         const name = projectName.value;
         if (!name || dirty.value || !projectList.value.some(p => p.name === name)) return;
-        const text = await projectFiles.read(name).catch(()=> null);
+        const text = await place.files.read(name).catch(()=> null);
         // an edit made, or another project opened, while it was read is kept: no reload over it
         if (!text || text === onDisk || dirty.value || projectName.value !== name) return;
         try { show(readProject(text), name); onDisk = text; status.value = `Reloaded projects/${name}/: it changed on disk`; }
@@ -85,19 +87,27 @@ export function watchProjects()
     });
 }
 
-const discardOk = async ()=> !dirty.value || askYes(`Discard the changes to “${project.value.title}”?`, 'Discard');
+/** whether the unsaved changes, if any, may go: the app's question (Save, Don't Save or Cancel), or Discard or Cancel */
+export async function discardOk()
+{
+    if (!dirty.value) return true;
+    if (!place.askDiscard) return askYes(`Discard the changes to “${project.value.title}”?`, 'Discard');
+    const answer = await place.askDiscard(project.value.title);
+    return answer === 'discard' || (answer === 'save' && await save());
+}
 
 export async function openProject(name)
 {
     if (!await discardOk()) return false;
     try
     {
-        const text = await projectFiles.read(name);
+        const text = await place.files.read(name);
         show(readProject(text), name);
         onDisk = text;
+        place.opened?.(name);
         return true;
     }
-    catch (e) { status.value = `Couldn't open projects/${name}: ${e.message}`; return false; }
+    catch (e) { status.value = `Couldn't open ${place.where(name)}: ${e.message}`; return false; }
 }
 
 /** a new project, not saved yet: empty, or from a generator spec (a feeling, a genre, a song's spec, a whistled sketch) */
@@ -108,16 +118,18 @@ export async function newProject({ title = 'Untitled', spec = null, bpm = 120, s
     show(p, '');
 }
 
-/** a project made elsewhere (an imported file), opened as a new one, not saved yet */
-export async function openNew(p)
+/** a project made elsewhere (an imported file), opened as a new one, not saved yet; `clean` when it has nothing worth
+ * asking about until it's changed (Chordinal's empty new project) */
+export async function openNew(p, { clean = false } = {})
 {
     if (!await discardOk()) return false;
-    show(p, '');
+    show(p, '', clean);
     return true;
 }
 
 /** saves to the project's folder, or asks for a name when it has none; saves run one at a time, in order, so an older
- * one can never land after a newer one */
+ * one can never land after a newer one
+ * @returns {Promise<boolean>} whether it saved */
 export async function save()
 {
     if (!projectName.value) return saveAs();
@@ -136,32 +148,42 @@ async function saveNow()
     {
         const text = writeProject(p);
         // the file changed on disk since it was read or written here (another app, a regenerated song): ask first
-        const current = onDisk === null ? null : await projectFiles.read(name).catch(()=> null);
+        const current = onDisk === null ? null : await place.files.read(name).catch(()=> null);
         if (current !== null && current !== onDisk && current !== text
-            && !await askYes(`projects/${name}/ changed on disk since it was opened. Replace it with this version?`, 'Replace')) return false;
-        await projectFiles.write(name, text);
+            && !await askYes(`${place.where(name)} changed on disk since it was opened. Replace it with this version?`, 'Replace')) return false;
+        await place.files.write(name, text);
         onDisk = text;
         saved.value = p;
-        status.value = `Saved projects/${name}/`;
-        refreshProjects();
+        status.value = `Saved ${place.where(name)}`;
+        (place.saved ?? refreshProjects)(name);
         return true;
     }
-    catch (e) { status.value = `Couldn't save projects/${name}/: ${e.message}`; return false; }
+    catch (e) { status.value = `Couldn't save ${place.where(name)}: ${e.message}`; return false; }
 }
 
-/** saves under a new name: a new folder in projects/, or over one after asking; the project takes the name only once
- * it's saved there */
+/** Music Generator's Save As: a name for a folder in projects/, asking before replacing one */
+async function chooseProjectName(title, current)
+{
+    const typed = await askText('Save the project as', title, 'Save');
+    if (!typed) return null;
+    const name = folderName(typed);
+    const existing = await projectFiles.list().catch(()=> []);
+    if (name !== current && existing.some(e => e.name === name) && !await askYes(`projects/${name} exists. Replace it?`, 'Replace')) return null;
+    return { name, title: typed };
+}
+
+/** saves under a new name (the app's place asks where); the project takes the name only once it's saved there
+ * @returns {Promise<boolean>} whether it saved */
 export async function saveAs()
 {
-    const title = await askText('Save the project as', project.value.title, 'Save');
-    if (!title) return;
-    const name = folderName(title);
-    const existing = await projectFiles.list().catch(()=> []);
-    if (name !== projectName.value && existing.some(e => e.name === name) && !await askYes(`projects/${name} exists. Replace it?`, 'Replace')) return;
+    const chosen = await (place.chooseName ?? chooseProjectName)(project.value.title, projectName.value);
+    if (!chosen) return false;
+    const { name, title } = chosen;
     edit(p => p.title === title ? p : { ...p, title });
     const before = { name: projectName.value, onDisk };
     projectName.value = name;
     if (name !== before.name) onDisk = null;     // a new file, or one the user just agreed to replace
-    if (await queueSave()) setSettings({ project: name });
-    else if (projectName.value === name) { projectName.value = before.name; onDisk = before.onDisk; }
+    if (await queueSave()) { setSettings({ project: name }); return true; }
+    if (projectName.value === name) { projectName.value = before.name; onDisk = before.onDisk; }
+    return false;
 }

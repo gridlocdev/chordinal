@@ -13,7 +13,7 @@ const TAKE = /^\/projects\/([\w-]+)\/takes\/([\w-]+\.wav)$/;
 const TAKES = /^\/projects\/([\w-]+)\/takes\/$/;
 const LIST = /^\/projects\/?$/;
 
-async function writeAtomic(file, bytes)
+export async function writeAtomic(file, bytes)
 {
     await fs.mkdir(path.dirname(file), { recursive: true });
     // a temporary name of its own, so two saves at once don't write into each other's file

@@ -28,6 +28,9 @@ export const settings = signal(DEFAULTS);
 
 export const setSettings = (patch)=> { settings.value = { ...settings.value, ...patch }; };
 
+/** writes the settings now, not a moment after the last change: before the window closes */
+export const saveSettingsNow = ()=> storage.save(settings.value);
+
 export async function loadSettings()
 {
     const saved = await storage.load();

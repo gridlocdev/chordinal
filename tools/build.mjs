@@ -1,4 +1,5 @@
-// Bundles the app's UI (src/app/main.jsx and everything it imports) into dist/app.js for the desktop app to load.
+// Bundles each app's UI (src/app/main.jsx, src/chordinal/main.jsx and everything they import) into dist/app.js and
+// dist/chordinal.js, for the desktop apps (index.html, chordinal.html) to load.
 //   node tools/build.mjs           build once
 //   node tools/build.mjs --check   bundle without writing, to find errors (`just check`)
 //   node tools/build.mjs --watch   rebuild on every change; the app reloads its window when dist/ changes (`just dev`)
@@ -8,8 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const options = {
-    entryPoints: [path.join(root, 'src/app/main.jsx')],
-    outfile: path.join(root, 'dist/app.js'),
+    entryPoints: { app: path.join(root, 'src/app/main.jsx'), chordinal: path.join(root, 'src/chordinal/main.jsx') },
+    outdir: path.join(root, 'dist'),
     bundle: true,
     format: 'esm',
     target: 'chrome140',

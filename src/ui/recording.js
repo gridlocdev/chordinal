@@ -7,7 +7,7 @@
 // round them.
 import { signal } from '@preact/signals';
 import { mic } from '../platform/mic.js';
-import { projectFiles } from '../platform/project-files.js';
+import { place } from './place.js';
 import { trackPitch } from '../lib/pitch-track.js';
 import { freeNotes, guessKeys } from '../lib/transcribe.js';
 import { guessChords, nameChord } from '../lib/chord-guess.js';
@@ -70,9 +70,9 @@ async function keepAudio(take)
 {
     const name = projectName.value;
     if (!name) return '';
-    const files = await projectFiles.takes(name).catch(()=> []);
+    const files = await place.files.takes(name).catch(()=> []);
     const n = Math.max(0, ...files.map(f => Number(/^take-(\d+)\.wav$/.exec(f)?.[1] ?? 0))) + 1;
-    await projectFiles.writeTake(name, `take-${n}.wav`, encodeWav(take.samples, take.rate));
+    await place.files.writeTake(name, `take-${n}.wav`, encodeWav(take.samples, take.rate));
     takesKept.value++;
     return `take-${n}.wav`;
 }
@@ -172,7 +172,7 @@ export async function dropTake(trackId, file, at)
 {
     const name = projectName.value;
     if (!name) return;
-    const bytes = await projectFiles.readTake(name, file).catch(e => { status.value = e.message; return null; });
+    const bytes = await place.files.readTake(name, file).catch(e => { status.value = e.message; return null; });
     if (bytes) await dropAudio(trackId, [new File([bytes], file, { type: 'audio/wav' })], at);
 }
 

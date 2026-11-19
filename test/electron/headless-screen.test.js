@@ -32,6 +32,16 @@ test('a headless run shows no dialog, Finder window or other app, and keeps what
     assert.deepEqual(globalThis.headlessPrompts.map(p => p.kind), ['saveDialog', 'openDialog', 'askToClose', 'openPath', 'openExternal', 'showInFolder']);
 });
 
+test('a headless test can queue what a dialog answers, once', async ()=>
+{
+    const s = screenCalls({ headless: true, ...forbidden() });
+    globalThis.headlessAnswers.saveDialog.push('/tmp/Song');
+    globalThis.headlessAnswers.openDialog.push('/tmp/Other/project.json');
+    assert.deepEqual(await s.saveDialog(null, {}), { canceled: false, filePath: '/tmp/Song' });
+    assert.deepEqual(await s.saveDialog(null, {}), { canceled: true, filePath: '' });
+    assert.deepEqual(await s.openDialog(null, {}), { canceled: false, filePaths: ['/tmp/Other/project.json'] });
+});
+
 test('closing a project with unsaved changes headless closes without a dialog', { skip: !existsSync(path.join(ROOT, 'dist/app.js')) && 'run just build first' }, async ()=>
 {
     const tmp = await mkdtemp(path.join(os.tmpdir(), 'mg-close-'));

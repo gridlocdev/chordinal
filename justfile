@@ -11,7 +11,7 @@ deps:
     @[ -d node_modules/preact ] && [ -d node_modules/esbuild ] && [ -d node_modules/electron ] || npm install
     @[ -f node_modules/electron/path.txt ] || node node_modules/electron/install.js
 
-# bundle the UI (src/app/main.jsx) into dist/app.js
+# bundle each app's UI (src/app/main.jsx, src/chordinal/main.jsx) into dist/app.js and dist/chordinal.js
 build: deps
     node tools/build.mjs
 
@@ -23,6 +23,15 @@ app: build
         open -W -n node_modules/electron/dist/Electron.app --args "$PWD"
     else
         npx electron .
+    fi
+
+# build and run Chordinal, the DAW for making music by hand: its projects are folders anywhere (Documents/Chordinal/ by default)
+chordinal: build
+    #!/usr/bin/env sh
+    if [ "$(uname)" = Darwin ]; then
+        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/electron/chordinal.js"
+    else
+        npx electron electron/chordinal.js
     fi
 
 # run it while working on it: rebuilds on every change and reloads the window

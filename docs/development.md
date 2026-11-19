@@ -15,8 +15,9 @@ You need Node.js, Python 3 and [just](https://github.com/casey/just).
 ```bash
 just deps        # install the pinned Preact, signals, esbuild and Electron into node_modules
 just soundfonts  # download GeneralUser GS, FluidR3_GM and MuseScore_General into soundfonts/
-just build       # bundle src/app/main.jsx into dist/app.js
-just app         # build, then run it in its own window
+just build       # bundle src/app/main.jsx and src/chordinal/main.jsx into dist/
+just app         # build, then run Music Generator in its own window
+just chordinal   # build, then run Chordinal
 just dev         # rebuild on every change and reload the window
 just install     # install it as an app: ~/Applications/Music Generator.app on macOS
 ```
@@ -159,7 +160,7 @@ http://localhost:8010/tools/ab/ (or the next free port) that renders every song 
 and with your checkout, side by side, so you can hear what a change did. It shows each render's
 length, peak and loudness, has a blind mode, and saves the WAVs in `.ab/out/`, which git ignores.
 
-### The desktop app
+### The desktop apps
 
 `just app` runs the checkout in Electron. `just install` (`tools/install-app.sh`) makes it an app you
 open from the Dock: on macOS a copy of the Electron in `node_modules`, renamed to Music Generator with its own
@@ -168,8 +169,8 @@ what's checked out (as last built), with its `soundfonts/` and `projects/`. On L
 `~/.local/share/applications`. Run it again after moving the checkout or updating Electron. To share
 it, make a release build (below).
 
-`electron/main.js` serves the repository on a private `app://game/` origin, lets that origin (and
-nothing else) use the microphone, and answers the `projects/` requests (`tools/project-files.mjs`: list the projects, save one, keep and list its takes). The
+`electron/shell.js` serves the repository on a private `app://game/` origin and lets that origin (and
+nothing else) use the microphone, for both apps. Music Generator's `electron/main.js` answers the `projects/` requests (`tools/project-files.mjs`: list the projects, save one, keep and list its takes). The
 settings (library, panel sizes, browser tab, last project, grid) go to `save.json` in Electron's user data
 folder through `electron/preload.cjs`. On macOS `just app` starts Electron with `open`, so the
 microphone prompt is for the app and not for the terminal. If you refused it, turn on Electron (or
@@ -180,7 +181,9 @@ The app icon is drawn by hand in `assets/icon.svg`: a tile on Apple's icon grid 
 for the macOS app, which `just install` copies into the bundle, and `icon.ico` and `icon.png` for
 Windows and Linux. The rendered files are committed, so only a change to the SVG needs Inkscape.
 
-Two flags help while working on it:
+`just chordinal` runs Chordinal from the same checkout (`electron/chordinal.js`). Its projects are folders anywhere on disk, saved in `Documents/Chordinal/` unless you pick somewhere else, and its settings and Open Recent are in its own user data folder (`Chordinal`), apart from Music Generator's.
+
+Two flags help while working on either:
 
 - `--dev` (what `just dev` passes) reloads the window whenever `dist/` changes.
 - `--headless` shows no window and mutes the audio, asks for no microphone, and keeps its settings
@@ -193,7 +196,7 @@ Two flags help while working on it:
   so a scripted `Meta+Z` does nothing). A right-click menu isn't shown; it is kept as
   `globalThis.contextMenu` in the main process, whose `items` a test can read and click.
 
-  Nothing else reaches the screen in a headless run either: closing or reloading with unsaved changes closes without asking, the file dialogs answer as if cancelled, and opening a doc, a link or the Finder does nothing. Each of these is kept in `globalThis.headlessPrompts` in the main process for a test to read (`electron/headless-screen.js`, tested in `test/electron/`). A test that launches the app kills it when done.
+  Nothing else reaches the screen in a headless run either: closing or reloading with unsaved changes closes without asking (Chordinal asks in its own window, which a test answers by clicking), the file dialogs answer as if cancelled unless a test queued an answer in `globalThis.headlessAnswers` (`{ saveDialog: [path], openDialog: [path] }`) in the main process, and opening a doc, a link or the Finder does nothing. Each of these is kept in `globalThis.headlessPrompts` in the main process for a test to read (`electron/headless-screen.js`, tested in `test/electron/`). A test that launches the app kills it when done.
 
   Exports in a headless run: swap the save dialog for a stub in the main process, with
   `ipcMain.removeHandler('file:save')` and a new `ipcMain.handle('file:save', …)` that keeps the
@@ -217,7 +220,7 @@ asar), plus, as resources, every `projects/*/project.json` and `soundfonts/Gener
 (downloaded first if it's missing).
 
 A release build keeps its files in other places than the checkout (`app.isPackaged` in
-`electron/main.js`):
+`electron/shell.js` and `electron/main.js`):
 
 - projects are in `Documents/Music Generator/projects`, copied from the bundled ones the first
   time it opens (if that folder isn't there);
@@ -240,7 +243,7 @@ to a draft release on GitHub; check it and publish it there.
 Add it to `COMMANDS` in `src/ui/commands.js` with a label, an `accelerator` (a Cmd shortcut the
 menu bar answers) or `shown` (a plain key the page answers, which still types in a text field; never one of
 the musical-typing letters `A`–`L`, `;`, `'`, `W E T Y U O P`, `Z`, `X`), and
-`enabled`/`checked` if it has them; then put `item('id')` in the menu bar in `menuBar()` (`src/ui/menu-bar.js`) and in any
+`enabled`/`checked` if it has them; then put `item('id')` in the shared menus in `src/ui/menu-bar.js` (or an app's File menu in `src/app/menu-bar.js` or `src/chordinal/menu-bar.js`) and in any
 right-click menu in `src/ui/context-menus.js` it belongs in.
 
 ## SoundFont libraries
