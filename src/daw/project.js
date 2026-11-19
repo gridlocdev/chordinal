@@ -77,8 +77,24 @@ export const projectEnd = (p)=> Math.max(p.length, ...p.tracks.flatMap(t => t.cl
 
 const patchOf = (x, patch)=> typeof patch === 'function' ? patch(x) : { ...x, ...patch };
 
-/** changes a track: a patch object, or a function from the old track to the new */
-export const updateTrack = (p, id, patch)=> ({ ...p, tracks: p.tracks.map(t => t.id === id ? patchOf(t, patch) : t) });
+/** whether a patch changed nothing: the same fields holding the same values */
+const unchanged = (a, b)=> a === b || (Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(k => a[k] === b[k]));
+
+/** changes a track: a patch object, or a function from the old track to the new; one that changes nothing gives back
+ * the same project, so it's no undo step (PRD §6.1) */
+export function updateTrack(p, id, patch)
+{
+    let changed = false;
+    const tracks = p.tracks.map(t =>
+    {
+        if (t.id !== id) return t;
+        const next = patchOf(t, patch);
+        if (unchanged(t, next)) return t;
+        changed = true;
+        return next;
+    });
+    return changed ? { ...p, tracks } : p;
+}
 
 export const setMixer = (p, id, patch)=> updateTrack(p, id, t => ({ ...t, mixer: { ...t.mixer, ...patch } }));
 
@@ -110,10 +126,12 @@ export function addClip(p, trackId, clip)
 export function updateClip(p, trackId, clipId, patch)
 {
     const old = findClip(p, trackId, clipId);
-    let next = null;
+    if (!old) return p;
+    const next = patchOf(old, patch);
+    if (unchanged(old, next)) return p;     // no undo step (PRD §6.1)
     const out = updateTrack(p, trackId, t =>
-        ({ ...t, clips: t.clips.map(c => c.id === clipId ? (next = patchOf(c, patch)) : c).sort((a, b)=> a.start - b.start) }));
-    if (!old || !next?.pattern || next.pattern !== old.pattern || LINKED.every(k => next[k] === old[k])) return out;
+        ({ ...t, clips: t.clips.map(c => c.id === clipId ? next : c).sort((a, b)=> a.start - b.start) }));
+    if (!next.pattern || next.pattern !== old.pattern || LINKED.every(k => next[k] === old[k])) return out;
     return spreadPattern(out, next);
 }
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { insertTime, deleteTime, humanizeNotes, scaleNotes, reverseNotes, updateClip, emptyProject, makeTrack, addTrack, addClip, moveClip, splitAt, removeTrack, setMixer, setTempo, setTempoAt, removeTempoChange, setMeterAt, removeMeterChange, trackNotes,
+import { updateTrack, findClip, insertTime, deleteTime, humanizeNotes, scaleNotes, reverseNotes, updateClip, emptyProject, makeTrack, addTrack, addClip, moveClip, splitAt, removeTrack, setMixer, setTempo, setTempoAt, removeTempoChange, setMeterAt, removeMeterChange, trackNotes,
     history, commit, undo, redo, newId, setLoop, addMarker, renameMarker, removeMarker, markerRange, moveTrack, duplicateTrack,
     joinClips, quantizeNotes } from '../../src/daw/project.js';
 import { writeProject, readProject } from '../../src/daw/project-format.js';
@@ -280,4 +280,18 @@ test('MIDI tracks dropped into a project start at the bar of the drop', ()=>
     assert.equal(p.tracks.length, 1);
     assert.deepEqual(p.tracks[0].clips.map(c => [c.start, c.beats, c.notes[0].beat]), [[4, 8, 1]]);
     assert.equal(p.length, 12);
+});
+
+test('an edit that changes nothing gives back the same project, so it is no undo step (PRD §6.1)', ()=>
+{
+    let p = emptyProject();
+    p = addTrack(p, makeTrack(p, { name: 'Keys' }));
+    const id = p.tracks[0].id;
+    p = addClip(p, id, { id: 'c1', start: 4, beats: 4, notes: [] });
+    assert.equal(updateClip(p, id, 'c1', { start: 4 }), p);
+    assert.equal(updateClip(p, id, 'c1', c => ({ ...c })), p);
+    assert.equal(updateClip(p, id, 'missing', { start: 8 }), p);
+    assert.equal(updateTrack(p, id, { name: 'Keys' }), p);
+    assert.notEqual(updateClip(p, id, 'c1', { start: 8 }), p);
+    assert.equal(findClip(updateClip(p, id, 'c1', { start: 8 }), id, 'c1').start, 8);
 });
