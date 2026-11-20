@@ -6,11 +6,12 @@ import { findPattern, isDrums } from '../../daw/project.js';
 import { STEP_SIZES, stepOf, stepCount, gridRows, cell, drumName, ACCENT_VELOCITY } from '../../daw/steps.js';
 import { GM_DRUMS } from '../../daw/gm-drums-data.js';
 import { appMenu } from '../../platform/app-menu.js';
-import { project, beat, playing } from '../store.js';
+import { useComputed } from '@preact/signals';
+import { project } from '../store.js';
 import { focus } from '../focus.js';
-import { gridTarget, paintStep, accentStep, setStepSize, addGridRow, hideGridRow, previewStep } from '../steps.js';
+import { gridTarget, playingStep, paintStep, accentStep, setStepSize, addGridRow, hideGridRow, previewStep } from '../steps.js';
 import { useCanvas, rgba } from './canvas.js';
-import { gridGeometry, lineKind, playheadStep, betweenCells, GRID_GUTTER } from './grid-view.js';
+import { gridGeometry, lineKind, betweenCells, GRID_GUTTER } from './grid-view.js';
 
 const FONT = '11px -apple-system, system-ui, sans-serif';
 const C = {
@@ -19,13 +20,11 @@ const C = {
     label: '#9898a4', offGrid: 'rgba(200,200,210,.45)', playhead: 'rgba(255,90,90,.18)',
 };
 
-function drawGrid(g, w, h, track, clip)
+function drawGrid(g, w, h, track, clip, now)
 {
     const rows = gridRows(track, clip), step = stepOf(clip), steps = stepCount(clip);
     const G = gridGeometry(w, h, rows.length, steps);
     const p = project.value;
-    const linked = clip.pattern ? p.tracks.flatMap(t => t.clips).filter(c => c.pattern === clip.pattern) : [clip];
-    const now = playing.value ? playheadStep(linked, beat.value, step, steps) : -1;
     g.font = FONT;
     g.textBaseline = 'middle';
     rows.forEach((key, r)=>
@@ -138,7 +137,8 @@ function Toolbar({ track, clip })
 
 function Grid({ track, clip })
 {
-    const ref = useCanvas((g, w, h)=> drawGrid(g, w, h, track, clip));
+    const now = useComputed(()=> playingStep(clip));
+    const ref = useCanvas((g, w, h)=> drawGrid(g, w, h, track, clip, now.value));
     return (
         <div class="roll" onPointerDown={(e)=> down(e, track, clip)} onContextMenu={(e)=> menu(e, track, clip)}><canvas ref={ref} /></div>
     );

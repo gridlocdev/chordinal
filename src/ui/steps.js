@@ -2,13 +2,26 @@
 // preview sound, and switching the editor between the piano roll and the grid as drum clips are selected.
 import { effect } from '@preact/signals';
 import { findClip, updateClip, updateTrack, isDrums } from '../daw/project.js';
-import { stepOf, setStep, toggleAccent, addRow, hideRow } from '../daw/steps.js';
-import { project, selectedClip, settings, setSettings, playing, picked } from './store.js';
+import { stepOf, stepCount, setStep, toggleAccent, addRow, hideRow } from '../daw/steps.js';
+import { project, selectedClip, settings, setSettings, playing, picked, beat } from './store.js';
+import { playheadStep } from './components/grid-view.js';
 import { focus } from './focus.js';
 import { edit } from './document.js';
 import { press, release } from './live.js';
 
 const PREVIEW_MS = 250;     // how long a step's sound is held when it's turned on while stopped
+
+/**
+ * the step of `clip` the playhead is on, or −1 when stopped or outside it. Read inside a computed, its value changes
+ * once a step, so the grid redraws on each step rather than on every frame of playback.
+ */
+export function playingStep(clip)
+{
+    if (!playing.value || !clip) return -1;
+    const p = project.value;
+    const linked = clip.pattern ? p.tracks.flatMap(t => t.clips).filter(c => c.pattern === clip.pattern) : [clip];
+    return playheadStep(linked, beat.value, stepOf(clip), stepCount(clip));
+}
 
 /** the selected clip and its track, or nulls */
 export function gridTarget()
