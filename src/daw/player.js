@@ -10,9 +10,8 @@ import { startTicker } from '../platform/ticker.js';
 import { createInstrument } from '../audio/soundfont.js';
 import { createMixer, dbToGain, delayTimes } from '../audio/mixer.js';
 import { beatToSeconds, secondsToBeat } from '../lib/tempo-map.js';
-import { trackNotes, projectEnd, isDrums } from './project.js';
-import { performProject } from './fx.js';
-import { valueAt } from './automation.js';
+import { projectEnd } from './project.js';
+import { passEvents, duckPlan, scheduleLane, playClick, heldAt, ownsKey } from './play-parts.js';
 import { clickBeats } from './meter.js';
 
 const LOOKAHEAD = 0.2;          // seconds of notes handed to Web Audio ahead of time
@@ -22,26 +21,7 @@ const SWITCH_LEAD = 0.5;        // seconds before the loop's end that the next p
 const PICKUP_BEATS = 1;         // how far before its grid a played note can sound (anticipation, drift)
 const GLIDE_SECONDS = 0.08;     // a slide from one note into the next
 const DUCK = { seconds: 0.1, attack: 0.01 };     // a duck's dip and recovery
-const CLICK = { bar: 1760, beat: 1320, seconds: 0.05, gain: 0.3 };  // the metronome: pitches of a bar's first beat and the rest
 
-/**
- * The notes sounding at a beat that started before it, which a start or a jump there has to restart: not drums, since
- * a hit restarted mid-ring would sound like a new one.
- * @param {any[][]} played each track's played notes
- * @returns {{ i: number, n: any }[]}
- */
-export function heldAt(played, tracks, beat)
-{
-    return played.flatMap((notes, i)=> isDrums(tracks[i]) ? [] :
-        notes.filter(n => n.grid < beat && n.beat < beat && n.beat + n.beats > beat).map(n => ({ i, n })));
-}
-
-/**
- * Whether a note's note-off should release its key: not when a later note on the same key has retriggered it, or the
- * earlier note's end would cut the later one short.
- * @param {Map<string, { n?: any }>} sounding
- */
-export const ownsKey = (sounding, id, n)=> { const s = sounding.get(id); return !s?.n || s.n === n; };
 
 /**
  * Starts playing. Returns a handle: the position in beats, seek(beat), setMix(channels), levels() and stop().
@@ -75,29 +55,14 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
     {
         if (!passes.has(pass))
         {
-            const { tracks: played, events: fxEvents } = performProject(project, pass);
-            // note-offs sort before note-ons on the same beat, so a repeated key is released before it restarts.
-            // A held note has no off: the next note glides on from it.
-            const events = played.flatMap((notes, i)=> notes.flatMap(n => [
-                { beat: n.beat, on: true, i, n },
-                ...(n.held ? [] : [{ beat: n.beat + n.beats, on: false, i, n }]),
-            ])).sort((a, b)=> a.beat - b.beat || +a.on - +b.on);
-            passes.set(pass, { played, events, fx: [...fxEvents].sort((a, b)=> a.beat - b.beat) });
+            passes.set(pass, passEvents(project, pass));
             if (passes.size > 3) passes.delete(passes.keys().next().value);
         }
         return passes.get(pass);
     };
 
     // each track's ducks: the beats of its source track's notes on the duck's keys, far enough apart to come back up
-    const ducks = tracks.map(t =>
-    {
-        const d = t.mixer.duck, source = d && tracks.find(s => s.id === d.from);
-        if (!source) return [];
-        const out = [];
-        for (const b of [...new Set(trackNotes(source).filter(n => d.keys.includes(n.key)).map(n => n.beat))].sort((a, b)=> a - b))
-            if (!out.length || secs(b) - secs(out.at(-1)) >= DUCK.seconds) out.push(b);
-        return out;
-    });
+    const ducks = duckPlan(tracks, secs, DUCK.seconds);
     const duckBeats = [...new Set(ducks.flat())].sort((a, b)=> a - b);
 
     // A segment plays from beat `from`, starting at audio time `at`, until beat `until`: the notes whose grid (where
@@ -126,20 +91,7 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
             const lanes = tracks[i].automation;
             const params = [[strip.tone.frequency, lanes.tone], [strip.reverbSend.gain, lanes.reverb], [strip.delaySend.gain, lanes.delay]];
             for (const [param, keyframes] of params)
-            {
-                if (!keyframes?.length) continue;
-                // just after s.at, so the last segment's ramp ending at s.at isn't dropped short of its target
-                param.cancelScheduledValues(s.at + 0.001);
-                param.setValueAtTime(valueAt(keyframes, s.from), Math.max(ctx.currentTime, s.at));
-                for (const f of keyframes)
-                {
-                    if (f.beat <= s.from || f.beat > s.until) continue;
-                    const t = timeOf(s, f.beat);
-                    if (f.curve === 'exp') param.exponentialRampToValueAtTime(f.value, t);
-                    else if (f.curve === 'linear') param.linearRampToValueAtTime(f.value, t);
-                    else param.setValueAtTime(f.value, t);
-                }
-            }
+                if (keyframes?.length) scheduleLane(param, keyframes, s, (b)=> timeOf(s, b), ctx.currentTime);
         });
     };
 
@@ -163,15 +115,9 @@ export function playProject(project, instrumentsOf, { from = 0, until = null, mi
     const clickList = click ? clickBeats(project.meters, 0, end) : [];
     const tick = ({ first }, at)=>
     {
-        const osc = new OscillatorNode(ctx, { frequency: first ? CLICK.bar : CLICK.beat });
-        const env = new GainNode(ctx, { gain: 0 });
-        env.gain.setValueAtTime(CLICK.gain, at);
-        env.gain.exponentialRampToValueAtTime(0.001, at + CLICK.seconds);
-        osc.connect(env).connect(audioEngine.output);
-        osc.start(at);
-        osc.stop(at + CLICK.seconds);
+        const osc = playClick(ctx, audioEngine.output, first, at);
         clicks.add(osc);
-        osc.onended = ()=> { env.disconnect(); clicks.delete(osc); };
+        osc.addEventListener('ended', ()=> clicks.delete(osc));
     };
     const clicks = new Set();         // metronome clicks scheduled and not yet over, so a seek can take them back
 
