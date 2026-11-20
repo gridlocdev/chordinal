@@ -42,7 +42,7 @@ Chordinal's window has a transport bar at the top, the channel rack above a brow
 | `src/audio/chip-instruments-data.js` | the chip instruments and kits (waves, layers, envelopes, filters), their banks, and the one each part falls back to; `soundfont.js` builds them for the url `chip:` and every library lists them |
 | `src/audio/soundfont-library.js` | the library in use, switched in the browser's Instruments tab; projects load their instruments from it |
 | `src/daw/project.js` | the project model (see [the format](#project-files)), every edit as a pure function returning a new project (notes, clips, tracks, tempo, meter, mixer, inserting and deleting time), and the undo history: a list of earlier projects, with consecutive edits of the same kind (a fader drag) merged into one step |
-| `src/daw/project-format.js` | `project.json`: writing it with one compact line per note, reading it with a format and version check |
+| `src/daw/project-format.js` | `project.json`: writing it with one compact line per note, reading it with a format and version check and a check that every track, clip, note, tempo and meter can be played, in a fixed key order so a save changes only what changed |
 | `src/daw/project-midi.js` | a project as a Standard MIDI File: a track each, drums on channel 10; and a MIDI file as a new project, or as tracks added to one |
 | `src/daw/steps.js`, `src/daw/gm-drums-data.js` | the step grid's model: step sizes, which notes are on a step or off the grid, turning steps on and off and accenting them, a drum track's rows; the General MIDI drum names |
 | `src/daw/meter.js` | bars from meter changes: bar lines, the bar a beat is in, beats per bar |
