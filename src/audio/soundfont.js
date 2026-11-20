@@ -13,7 +13,9 @@ const MIN_ATTACK = 0.002;       // seconds; an instant attack clicks
 const FAST_RELEASE = 0.01;      // seconds; for stolen, retriggered and choked voices
 const BUFFER_BUDGET = 256e6;    // bytes of decoded Float32 samples kept across all fonts
 
-const fonts = new Map();        // url → { promise, listeners: Set<onProgress> }
+const FONT_BUDGET = 400e6;      // bytes of loaded .sf2 samples kept across all fonts; the least recently asked for go first
+
+const fonts = new Map();        // url → { promise, listeners: Set<onProgress>, bytes? }, least recently asked for first
 // every sounding voice, oldest first, per audio context: an export's offline context keeps its own, so its voices
 // neither steal the live ones nor stay listed after the render (where a note still sounding never ends)
 const voiceLists = new WeakMap();
@@ -29,7 +31,8 @@ export const voicesIn = (ctx)=> { let list = voiceLists.get(ctx); if (!list) voi
 export function loadSoundFont(url, onProgress)
 {
     let load = fonts.get(url);
-    if (!load)
+    if (load) { fonts.delete(url); fonts.set(url, load); }     // re-insert as most recently asked for
+    else
     {
         const listeners = new Set();
         const promise = url === CHIP_URL
@@ -37,10 +40,30 @@ export function loadSoundFont(url, onProgress)
             : download(url, (loaded, total)=> { for (const fn of listeners) fn(loaded, total); })
             .then(buffer => ({ url, ...parseSf2(buffer) }));
         promise.catch(()=> fonts.delete(url)).finally(()=> listeners.clear());   // a failed load can be retried
-        fonts.set(url, load = { promise, listeners });
+        fonts.set(url, load = { promise, listeners, bytes: undefined });
+        const entry = load;
+        promise.then(font => { entry.bytes = font.sampleData?.byteLength ?? 0; trimFonts(fonts, FONT_BUDGET, url); }, ()=> {});
     }
     if (onProgress) load.listeners.add(onProgress);
     return load.promise;
+}
+
+/**
+ * drops the least recently asked for loaded fonts from `cache` until their samples fit `budget` bytes, never `keep`.
+ * An instrument made from a dropped font keeps it until it goes; asking for it again downloads it again.
+ * @param {Map<string, { bytes?: number }>} cache
+ */
+export function trimFonts(cache, budget, keep)
+{
+    let total = 0;
+    for (const e of cache.values()) total += e.bytes ?? 0;
+    for (const [url, e] of cache)
+    {
+        if (total <= budget) break;
+        if (url === keep || e.bytes === undefined) continue;
+        cache.delete(url);
+        total -= e.bytes;
+    }
 }
 
 async function download(url, onProgress)

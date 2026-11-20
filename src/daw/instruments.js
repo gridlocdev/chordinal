@@ -1,5 +1,5 @@
 // Finds and loads the instruments a project's tracks play: each track's SoundFont preset from the current library, and
-// the .sf2 files they live in, downloaded once and shared.
+// the .sf2 files they live in, downloaded once and shared (soundfont.js lets the least recently used go past a memory budget).
 import { soundfontLibrary } from '../audio/soundfont-library.js';
 import { loadSoundFont, findPreset } from '../audio/soundfont.js';
 
