@@ -1,8 +1,10 @@
-// A track's row in the arrangement: its header (name, instrument, mute, solo) and its lane of clips.
+// A track's row in the arrangement: its header (colour, name, instrument, mute, solo and a volume knob) and its lane of
+// clips. Click a header to select the track, double-click it to open the track's editor, double-click the name to
+// rename it; drag headers to reorder the tracks; drop an instrument on a track to play it there. Right-click a header
+// for more (Delete Track among them).
 //
 // Clips: drag to move (to another track too), Alt-drag to copy, drag the right edge to resize, double-click empty
-// space for a new clip; they snap to bars, or to beats with Shift. Drop an instrument on a track to play it there, or
-// audio files to read them as notes.
+// space for a new clip; they snap to bars, or to beats with Shift. Drop audio files on a lane to read them as notes.
 import { useState } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import { barAt } from '../../daw/meter.js';
@@ -13,10 +15,12 @@ import { edit } from '../document.js';
 import { recording, dropAudio, dropTake } from '../recording.js';
 import { isMidi, dropMidi } from '../midi-import.js';
 import { focus } from '../focus.js';
-import { assignPreset, renameTrack, deleteTrack, toggleMute, toggleSolo, newClipAt } from '../tracks.js';
+import { renameTrack, toggleMute, toggleSolo, newClipAt, moveTrackTo } from '../tracks.js';
 import { clipMenu, laneMenu, trackMenu } from '../context-menus.js';
 import { useCanvas, rgba } from './canvas.js';
 import { px, snapTo } from './arrange-view.js';
+import { Knob } from './Knob.jsx';
+import { palette, alpha } from '../theme.js';
 
 const EDGE = 6;                 // px at a clip's right edge that resize it
 /** a clip being dragged: { track, clip, mode: 'move'|'resize', start, beats, to, copy } */
@@ -34,7 +38,7 @@ function Lane({ track, beats, ppb })
         const lo = keys.length ? Math.min(...keys) - 1 : 59, hi = keys.length ? Math.max(...keys) + 1 : 61;
         const top = 16, inner = h - top - 5, noteH = Math.max(1.5, Math.min(4, inner / (hi - lo + 1)));
         const y = (k)=> top + (hi - k) / Math.max(1, hi - lo) * (inner - noteH);
-        const d = drag.value, sel = selectedClip.value;
+        const d = drag.value, sel = selectedClip.value, t = palette.value;
         g.font = '11px -apple-system, system-ui, sans-serif';
         g.textBaseline = 'middle';
         const draw = (c, start, len, ghost)=>
@@ -42,18 +46,22 @@ function Lane({ track, beats, ppb })
             const a = start * ppb + 1, b = (start + len) * ppb - 1;
             const on = sel?.track === track.id && sel.clip === c.id;
             g.globalAlpha = ghost ? 0.5 : c.mute ? 0.35 : 1;
-            g.fillStyle = rgba(track.color, on ? 0.3 : 0.18);
-            g.beginPath(); g.roundRect(a, 2, b - a, h - 4, 4); g.fill();
-            g.fillStyle = rgba(track.color, 0.7);
+            g.fillStyle = rgba(track.color, on ? 0.32 : 0.2);
+            g.beginPath(); g.roundRect(a, 2, b - a, h - 4, 5); g.fill();
+            g.save();
+            g.beginPath(); g.roundRect(a, 2, b - a, h - 4, 5); g.clip();
+            g.fillStyle = rgba(track.color, on ? 0.95 : 0.75);
             g.fillRect(a, 2, b - a, 12);
-            if (on) { g.strokeStyle = '#fff'; g.lineWidth = 1; g.beginPath(); g.roundRect(a + 0.5, 2.5, b - a - 1, h - 5, 4); g.stroke(); }
+            g.restore();
+            g.strokeStyle = on ? t.text : rgba(track.color, 0.55); g.lineWidth = on ? 1.5 : 1;
+            g.beginPath(); g.roundRect(a + 0.5, 2.5, b - a - 1, h - 5, 5); g.stroke();
             // PRD §3.10: a pattern clip shows its pattern's name and a link mark
             const pattern = c.pattern && findPattern(project.value, c.pattern);
             if (pattern && b - a > 24)
             {
                 g.save();
                 g.beginPath(); g.rect(a, 0, b - a - 4, h); g.clip();
-                g.fillStyle = '#16161a';
+                g.fillStyle = t['clip-text'];
                 g.textAlign = 'left';
                 g.fillText(`⧉ ${pattern.name}`, a + 4, 8);
                 g.restore();
@@ -75,9 +83,9 @@ function Lane({ track, beats, ppb })
         if (rec)
         {
             const now = Math.max(rec.start, beat.value);
-            g.fillStyle = 'rgba(255,90,90,.18)';
+            g.fillStyle = alpha(t.rec, 0.18);
             g.fillRect(rec.start * ppb, 2, (now - rec.start) * ppb, h - 4);
-            g.fillStyle = 'rgba(255,90,90,.9)';
+            g.fillStyle = alpha(t.rec, 0.9);
             for (const n of recNotes) g.fillRect((rec.start + n.beat) * ppb, y(n.key), Math.max(1, n.beats * ppb - 1), noteH);
         }
     });
@@ -164,26 +172,39 @@ function Lane({ track, beats, ppb })
     );
 }
 
-const isPreset = (e)=> e.dataTransfer?.types.includes('application/x-preset');
+export const PRESET = 'application/x-preset', TRACK = 'application/x-track';
+export const carries = (e, type)=> !!e.dataTransfer?.types.includes(type);
 
-export function TrackRow({ track, beats, ppb })
+/**
+ * @param {{ track: any, index: number, beats: number, ppb: number, onOpen: (id: string)=> void,
+ *   onInstrument: (id: string, preset: any)=> void }} props  what a double-click and a dropped instrument do: the app's own
+ */
+export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument })
 {
     const [drop, setDrop] = useState(false);
+    const [dragging, setDragging] = useState(false);
     settings.value.library;
     const m = track.mixer;
+    const over = (e)=> { if (carries(e, PRESET) || carries(e, TRACK)) { e.preventDefault(); setDrop(true); } };
+    const dropped = (e)=>
+    {
+        setDrop(false);
+        if (carries(e, PRESET)) { e.preventDefault(); onInstrument(track.id, JSON.parse(e.dataTransfer.getData(PRESET))); }
+        else if (carries(e, TRACK)) { e.preventDefault(); moveTrackTo(e.dataTransfer.getData(TRACK), index); }
+    };
     return (
-        <div class={`track ${selected.value === track.id ? 'on' : ''} ${drop ? 'drop' : ''}`} data-id={track.id} style={{ '--track': rgba(track.color) }}
-            onDragOver={(e)=> { if (isPreset(e)) { e.preventDefault(); setDrop(true); } }}
-            onDragLeave={()=> setDrop(false)}
-            onDrop={(e)=> { setDrop(false); if (!isPreset(e)) return; e.preventDefault(); assignPreset(track.id, JSON.parse(e.dataTransfer.getData('application/x-preset'))); }}>
-            <div class="head" onClick={()=> { selected.value = track.id; }} onContextMenu={(e)=> { e.preventDefault(); trackMenu(track.id); }}>
-                <span class="name" onDblClick={()=> renameTrack(track.id)} title="Double-click to rename">{track.name}</span>
+        <div class={`track ${selected.value === track.id ? 'on' : ''} ${drop ? 'drop' : ''} ${dragging ? 'dragging' : ''}`} data-id={track.id}
+            style={{ '--track': rgba(track.color) }} onDragOver={over} onDragLeave={()=> setDrop(false)} onDrop={dropped}>
+            <div class="head" draggable onDragStart={(e)=> { e.dataTransfer?.setData(TRACK, track.id); setDragging(true); }} onDragEnd={()=> setDragging(false)}
+                onClick={()=> { selected.value = track.id; }} onDblClick={()=> onOpen(track.id)}
+                onContextMenu={(e)=> { e.preventDefault(); trackMenu(track.id); }}>
+                <span class="name" onDblClick={(e)=> { e.stopPropagation(); renameTrack(track.id); }} title="Double-click to rename">{track.name}</span>
                 <span class="inst">{presetFor(track.instrument.bank, track.instrument.program).name}</span>
-                <div class="ms" onClick={(e)=> e.stopPropagation()}>
+                <div class="ms" onClick={(e)=> e.stopPropagation()} onDblClick={(e)=> e.stopPropagation()}>
                     <button class={`mute ${m.mute ? 'on' : ''}`} title="Mute" onClick={()=> toggleMute(track.id)}>M</button>
                     <button class={`solo ${m.solo ? 'on' : ''}`} title="Solo" onClick={()=> toggleSolo(track.id)}>S</button>
-                    <button class="del" title="Delete the track" onClick={()=> deleteTrack(track.id)}>×</button>
                 </div>
+                <Knob track={track} />
             </div>
             <Lane track={track} beats={beats} ppb={ppb} />
         </div>

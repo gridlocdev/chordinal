@@ -51,6 +51,7 @@
 | Put an instrument on a track | | click it in the browser's Instruments tab, or drag it onto the track |
 | Piano roll, mixer, step grid | `Cmd 1`, `Cmd 2`, `Cmd 3` | |
 | Follow the playhead, show other tracks' notes in the piano roll | View menu | |
+| Light, dark, or follow the system | View ▸ Theme | |
 
 Everything is also in the menu bar (File, Edit, Track, Transport, View), and right-clicking a clip, a lane, a track's header, the ruler, the chord track, a note, a mixer strip or anything in the browser shows what can be done to it: rename, colour, transpose, velocity, clip length, markers, tempo and meter, and more.
 

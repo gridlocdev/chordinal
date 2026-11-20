@@ -7,7 +7,7 @@ import { project } from '../store.js';
 import { recording } from '../recording.js';
 import { arrangeZoom as zoom } from '../tracks.js';
 
-export const HEAD_W = 200;
+export const HEAD_W = 232;
 export const ZOOM = [0.5, 120];        // px per beat
 const ROOM = 32;                       // beats of empty space after the end, to add clips in
 /** the arrangement's width for lanes, px */

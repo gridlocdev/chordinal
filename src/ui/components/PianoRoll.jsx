@@ -4,7 +4,7 @@
 // length; drag a note to move it, its right edge to resize it; Shift-click adds to the selection, Shift-drag on empty
 // space picks the notes in a rectangle; other tracks' notes show faintly behind; Delete removes,
 // ↑ ↓ transpose (Shift: an octave), Cmd+A selects the clip's notes. Drag in the velocity strip to set velocity.
-// Right-click a note or the background for more. Everything snaps to the grid picked in the toolbar; hold Alt to place
+// Right-click a note or the background for more. Everything snaps to the grid picked in the toolbar (RollToolbar, in the editor's bar); hold Alt to place
 // freely. The wheel scrolls (Shift: across), Cmd/Ctrl + wheel zooms.
 import { useEffect } from 'preact/hooks';
 import { project, selected, selectedTrack, picked } from '../store.js';
@@ -12,7 +12,6 @@ import { useCanvas } from './canvas.js';
 import { view } from './roll-view.js';
 import { drawRoll } from './roll-draw.js';
 import { wheel, down, hover, menu } from './roll-input.js';
-import { RollToolbar } from './RollToolbar.jsx';
 import { RollPlayhead } from './RollPlayhead.jsx';
 
 function Roll()
@@ -38,10 +37,5 @@ function Roll()
 export function PianoRoll()
 {
     selected.value;
-    return (
-        <>
-            <RollToolbar />
-            <Roll />
-        </>
-    );
+    return <Roll />;
 }

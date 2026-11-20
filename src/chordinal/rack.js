@@ -1,5 +1,5 @@
-// What the channel rack and the browser do (Chordinal PRD §6, §7), apart from how they look: the instruments grouped
-// by General MIDI family, the kits, opening a track's editor from its row, and adding tracks.
+// What the track headers and the browser do (Chordinal PRD §6, §7), apart from how they look: the instruments grouped
+// by General MIDI family, the kits, opening a track's editor from its header, and adding tracks.
 import { beat, selected, selectedClip, setSettings } from '../ui/store.js';
 import { addNewTrack, newClipAt, assignPreset, trackOf } from '../ui/tracks.js';
 import { isDrums } from '../daw/project.js';
@@ -23,7 +23,7 @@ export function instrumentGroups(presets)
 /** the drum kits */
 export const kits = (presets)=> presets.filter(isKit);
 
-/** a row's double-click (§6.2): selects the track and opens its editor, first making a clip at the playhead if it has
+/** a track header's double-click (§6.2): selects the track and opens its editor, first making a clip at the playhead if it has
  * none there (a 1-bar pattern on a drum track) */
 export function openTrack(trackId)
 {
@@ -43,7 +43,7 @@ export const addInstrumentTrack = ()=> addNewTrack({ after: selected.value });
 /** + Add Drums (§6.4): a drum track with the Standard kit */
 export const addDrumTrack = ()=> addNewTrack({ instrument: STANDARD_KIT, after: selected.value, name: 'Drums' });
 
-/** an instrument dropped on a row sets that track's; dropped below the rows, it adds a track with it (§6.3) */
+/** an instrument dropped on a track sets that track's; dropped below the tracks, it adds a track with it (§6.3) */
 export function dropInstrument(trackId, preset)
 {
     const instrument = { bank: preset.bank, program: preset.program };

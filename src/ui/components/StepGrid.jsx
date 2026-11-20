@@ -11,20 +11,22 @@ import { project } from '../store.js';
 import { focus } from '../focus.js';
 import { gridTarget, playingStep, paintStep, accentStep, setStepSize, addGridRow, hideGridRow, previewStep } from '../steps.js';
 import { useCanvas, rgba } from './canvas.js';
+import { palette, alpha } from '../theme.js';
 import { gridGeometry, lineKind, betweenCells, GRID_GUTTER } from './grid-view.js';
 
 const FONT = '11px -apple-system, system-ui, sans-serif';
-const C = {
-    row: 'rgba(255,255,255,.03)', rowAlt: 'rgba(255,255,255,.055)', cell: 'rgba(255,255,255,.07)',
-    step: 'rgba(0,0,0,.35)', beat: 'rgba(255,255,255,.12)', bar: 'rgba(255,255,255,.3)',
-    label: '#9898a4', offGrid: 'rgba(200,200,210,.45)', playhead: 'rgba(255,90,90,.18)',
-};
+/** the grid's colours, from the theme's */
+const colours = (t)=> ({
+    row: t['grid-lane'], rowAlt: t['grid-key'], cell: t['grid-key'], gutter: t.panel,
+    step: t['grid-lane'], beat: t['grid-beat'], bar: t['grid-bar'],
+    label: t.muted, offGrid: t.faint, playhead: alpha(t.rec, 0.16), accent: t.text,
+});
 
 function drawGrid(g, w, h, track, clip, now)
 {
     const rows = gridRows(track, clip), step = stepOf(clip), steps = stepCount(clip);
     const G = gridGeometry(w, h, rows.length, steps);
-    const p = project.value;
+    const C = colours(palette.value);
     g.font = FONT;
     g.textBaseline = 'middle';
     rows.forEach((key, r)=>
@@ -32,6 +34,8 @@ function drawGrid(g, w, h, track, clip, now)
         const y = G.y(r);
         g.fillStyle = r % 2 ? C.rowAlt : C.row;
         g.fillRect(0, y, w, G.rowH - 1);
+        g.fillStyle = C.gutter;
+        g.fillRect(0, y, GRID_GUTTER - 4, G.rowH - 1);
         g.fillStyle = C.label;
         g.textAlign = 'left';
         g.fillText(drumName(key), 8, y + G.rowH / 2, GRID_GUTTER - 14);
@@ -39,8 +43,8 @@ function drawGrid(g, w, h, track, clip, now)
         {
             const x = G.x(i), { on, off } = cell(clip.notes, key, i, step);
             g.fillStyle = on ? rgba(track.color, 0.35 + 0.65 * Math.min(1, on.vel / ACCENT_VELOCITY)) : C.cell;
-            g.fillRect(x + 1, y + 2, G.colW - 2, G.rowH - 5);
-            if (on?.vel >= ACCENT_VELOCITY) { g.fillStyle = '#fff'; g.fillRect(x + 1, y + 2, G.colW - 2, 2); }
+            g.beginPath(); g.roundRect(x + 1.5, y + 2, G.colW - 3, G.rowH - 5, 3); g.fill();
+            if (on?.vel >= ACCENT_VELOCITY) { g.fillStyle = C.accent; g.fillRect(x + 3, y + 3, G.colW - 6, 2); }
             g.fillStyle = C.offGrid;
             for (const n of off) g.fillRect(x + (n.beat / step - i) * G.colW, y + G.rowH / 2 - 2, Math.max(2, G.colW / 4), 4);
         }
@@ -117,8 +121,10 @@ function menu(e, track, clip)
     ]);
 }
 
-function Toolbar({ track, clip })
+/** the step grid's toolbar, in the editor's bar: the step size and what's shown */
+export function GridToolbar()
 {
+    const { track, clip } = gridTarget();
     const pattern = clip && findPattern(project.value, clip.pattern);
     return (
         <div class="toolbar">
@@ -149,10 +155,5 @@ export function StepGrid()
     const { track, clip } = gridTarget();
     // PRD §4.3: the messages for no clip and for a melodic track
     const hint = !clip ? 'Select a clip to edit its steps.' : !isDrums(track) ? 'The step grid edits drum tracks. Use the piano roll for this track.' : '';
-    return (
-        <>
-            <Toolbar track={track} clip={clip} />
-            {hint ? <div class="hint">{hint}</div> : <Grid track={track} clip={clip} />}
-        </>
-    );
+    return hint ? <div class="hint">{hint}</div> : <Grid track={track} clip={clip} />;
 }

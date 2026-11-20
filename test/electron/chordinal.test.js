@@ -119,7 +119,7 @@ test('Chordinal starts on a new project, saves it to a chosen folder, asks befor
     }
 });
 
-test('the left panel: the channel rack above the browser, a row\'s double-click, B, and the divider', { skip: !existsSync(path.join(ROOT, 'dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
+test('the track headers and the browser: a header\'s double-click, + Drums, the tabs, the edge and B', { skip: !existsSync(path.join(ROOT, 'dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
 {
     await fs.rm(DATA, { recursive: true, force: true });
     await fs.rm(DOCS, { recursive: true, force: true });
@@ -130,16 +130,17 @@ test('the left panel: the channel rack above the browser, a row\'s double-click,
     {
         run = await launch(marker);
         const { page } = run;
-        // §6.1: a row per track, in track order
-        assert.deepEqual(await page.$$eval('.rack .row .name', l => l.map(x => x.textContent)), ['Drums', 'Grand Piano']);
+        // §6.1: a header per track, in track order, with a volume knob
+        assert.deepEqual(await page.$$eval('.track[data-id] .head .name', l => l.map(x => x.textContent)), ['Drums', 'Grand Piano']);
+        assert.equal(await page.$$eval('.track[data-id] .head .knob', l => l.length), 2);
 
-        // §6.2: double-clicking the drum row makes a pattern at the playhead and opens the step grid
-        await page.dblclick('.rack .row:first-child .names');
+        // §6.2: double-clicking the drum track's header makes a pattern at the playhead and opens the step grid
+        await page.dblclick('.track[data-id] >> nth=0 >> .head .inst');
         await until('the step grid is open', async ()=> await page.textContent('.editor .tabs button.on') === 'Step Grid');
 
         // §6.4: + Add Drums
-        await page.click('.rack .add button:last-child');
-        assert.equal(await page.$$eval('.rack .row', l => l.length), 3);
+        await page.click('.add-track button:has-text("Drums")');
+        assert.equal(await page.$$eval('.track[data-id]', l => l.length), 3);
 
         // §8: Generate Part… on the new drum track: a pattern of drums, then Generate Again (⌘G) in its place
         await run.click('generatePart');
@@ -155,36 +156,36 @@ test('the left panel: the channel rack above the browser, a row\'s double-click,
         assert.equal(await page.$('.dialog.generate'), null);
 
         // §7.1: the tabs
-        await page.click('.left .tabs button:nth-child(2)');
-        assert.ok((await page.$$eval('.left .browser .item', l => l.map(x => x.textContent))).some(n => n.startsWith('Standard')), 'the kits are listed');
-        await page.click('.left .tabs button:nth-child(1)');
-        assert.equal(await page.textContent('.left .browser .group'), 'Piano');
+        await page.click('.side-panel .tabs button:nth-child(2)');
+        assert.ok((await page.$$eval('.side-panel .browser .item', l => l.map(x => x.textContent))).some(n => n.startsWith('Standard')), 'the kits are listed');
+        await page.click('.side-panel .tabs button:nth-child(1)');
+        assert.equal(await page.textContent('.side-panel .browser .group'), 'Piano');
 
-        // §5.2: the divider drags, and B hides and shows the panel
-        const box = await page.locator('.left .divider').boundingBox();
-        const before = (await page.locator('.rack').boundingBox()).height;
-        await page.mouse.move(box.x + 20, box.y + 2);
+        // §5.2: the right edge drags, and B hides and shows the panel
+        const box = await page.locator('.side-panel .edge').boundingBox();
+        const before = (await page.locator('.side-panel').boundingBox()).width;
+        await page.mouse.move(box.x + 3, box.y + 200);
         await page.mouse.down();
-        await page.mouse.move(box.x + 20, box.y + 62, { steps: 4 });
+        await page.mouse.move(box.x + 63, box.y + 200, { steps: 4 });
         await page.mouse.up();
-        assert.equal(Math.round((await page.locator('.rack').boundingBox()).height - before), 60);
+        assert.equal(Math.round((await page.locator('.side-panel').boundingBox()).width - before), 60);
         await page.click('.arrange');
         await page.keyboard.press('b');
-        await until('the panel is hidden', async ()=> !await page.$('.left'));
+        await until('the panel is hidden', async ()=> !await page.$('.side-panel'));
         await page.keyboard.press('b');
-        await until('the panel is back', async ()=> !!await page.$('.left'));
+        await until('the panel is back', async ()=> !!await page.$('.side-panel'));
         // while the piano roll has the focus its letters play notes, so B doesn't hide the panel until the arrangement is clicked
         await page.click('.editor .tabs button:has-text("Piano Roll")');
         await page.waitForSelector('.roll');
         await page.click('.roll', { position: { x: 5, y: 5 } });
         await page.keyboard.press('b');
         await new Promise(r => setTimeout(r, 300));
-        assert.ok(await page.$('.left'), 'B played a note instead of hiding the panel');
+        assert.ok(await page.$('.side-panel'), 'B played a note instead of hiding the panel');
         await page.click('.arrange');
         await page.keyboard.press('b');
-        await until('the panel is hidden again', async ()=> !await page.$('.left'));
+        await until('the panel is hidden again', async ()=> !await page.$('.side-panel'));
         await page.keyboard.press('b');
-        await until('the panel is back again', async ()=> !!await page.$('.left'));
+        await until('the panel is back again', async ()=> !!await page.$('.side-panel'));
         // §9.3: whistling is Chordinal's: Record Melody on a track, Whistle a Chord once a stretch of the chord track is picked
         // (neither is clicked: a headless run never opens the microphone)
         const menuItem = (id)=> run.app.evaluate(({ Menu }, id)=> { const m = Menu.getApplicationMenu().getMenuItemById(id); return m && { enabled: m.enabled }; }, id);

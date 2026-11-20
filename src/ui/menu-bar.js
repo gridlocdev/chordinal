@@ -23,7 +23,8 @@ export const transportMenu = (more = [])=> ({ label: 'Transport', submenu: [item
 
 /** @param {any[]} first  the app's own items at the top (its panels) */
 export const viewMenu = (first = [])=> ({ label: 'View', submenu: [...first, item('roll'), item('mixer'), item('stepGrid'), '-',
-    item('zoomIn'), item('zoomOut'), item('fit'), '-', item('follow'), item('ghosts'), { role: 'togglefullscreen' }, '-',
+    item('zoomIn'), item('zoomOut'), item('fit'), '-', item('follow'), item('ghosts'), '-',
+    { label: 'Theme', submenu: [item('themeSystem'), item('themeLight'), item('themeDark')] }, { role: 'togglefullscreen' }, '-',
     { label: 'Developer', submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }] }] });
 
 /**

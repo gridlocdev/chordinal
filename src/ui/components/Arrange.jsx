@@ -1,12 +1,13 @@
-// The arrangement: a ruler of bars and markers, the chord track, then a row per track. Cmd/Ctrl + wheel zooms. While
+// The arrangement: a ruler of bars and markers, the chord track, then a row per track, and below them + Track and
+// + Drums and a place to drop an instrument (or a track's header, to move it last). Cmd/Ctrl + wheel zooms. While
 // playing, the view scrolls to keep the playhead in sight (Follow Playhead).
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { project, chordRange, beat, playing, settings } from '../store.js';
-import { arrangeZoom as zoom, arrangePpb, addNewTrack } from '../tracks.js';
+import { arrangeZoom as zoom, arrangePpb, moveTrackTo } from '../tracks.js';
 import { HEAD_W, ZOOM, width, px, span, fitted } from './arrange-view.js';
 import { Ruler } from './Ruler.jsx';
 import { ChordLane } from './ChordLane.jsx';
-import { TrackRow } from './TrackRow.jsx';
+import { TrackRow, PRESET, TRACK, carries } from './TrackRow.jsx';
 
 // The parts that move with the playhead read `beat` in components of their own, so a frame of playback re-renders
 // them and not the lanes.
@@ -32,7 +33,35 @@ function Playhead({ ppb, scroller })
     return <div class="playhead" style={{ left: px(HEAD_W + now * ppb) }} />;
 }
 
-export function Arrange()
+/** below the tracks: add one, or drop an instrument for a new track with it, or a header to move that track last */
+function AddTrack({ actions })
+{
+    const [drop, setDrop] = useState(false);
+    const tracks = project.value.tracks;
+    return (
+        <div class={`add-track ${drop ? 'drop' : ''}`}
+            onDragOver={(e)=> { if (carries(e, PRESET) || carries(e, TRACK)) { e.preventDefault(); setDrop(true); } }}
+            onDragLeave={()=> setDrop(false)}
+            onDrop={(e)=>
+            {
+                setDrop(false);
+                if (carries(e, PRESET)) { e.preventDefault(); actions.instrument(null, JSON.parse(e.dataTransfer.getData(PRESET))); }
+                else if (carries(e, TRACK)) { e.preventDefault(); moveTrackTo(e.dataTransfer.getData(TRACK), tracks.length - 1); }
+            }}>
+            <div class="buttons">
+                <button onClick={actions.addTrack} title="Add an instrument track (⌥⌘N)">+ Track</button>
+                <button onClick={actions.addDrums} title="Add a drum track with the Standard kit">+ Drums</button>
+            </div>
+            <div class="hint">{tracks.length ? 'Drop an instrument here for a new track' : 'No tracks yet: add one, or drop an instrument here'}</div>
+        </div>
+    );
+}
+
+/**
+ * @param {{ actions: { open: (id: string)=> void, instrument: (id: string|null, preset: any)=> void, addTrack: ()=> void,
+ *   addDrums: ()=> void } }} props  what the app does when a track is opened, an instrument dropped and a track added
+ */
+export function Arrange({ actions })
 {
     const scroller = useRef(/** @type {HTMLDivElement|null} */ (null));
     const p = project.value;
@@ -84,8 +113,8 @@ export function Arrange()
                         </div>
                         <ChordLane beats={beats} ppb={ppb} />
                     </div>
-                    {p.tracks.map(t => <TrackRow key={t.id} track={t} beats={beats} ppb={ppb} />)}
-                    <div class="add-track"><button onClick={()=> addNewTrack()} title="Add a track">+ Track</button></div>
+                    {p.tracks.map((t, i)=> <TrackRow key={t.id} track={t} index={i} beats={beats} ppb={ppb} onOpen={actions.open} onInstrument={actions.instrument} />)}
+                    <AddTrack actions={actions} />
                     <Playhead ppb={ppb} scroller={scroller} />
                 </div>
             </div>

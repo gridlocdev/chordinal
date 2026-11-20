@@ -1,6 +1,6 @@
 // Chordinal: a DAW for making music by hand (Chordinal PRD). Loads the settings, reopens the last project or starts a
-// new one, wires musical typing and MIDI, and lays out the window: the transport across the top, the arrangement, and
-// the left panel (channel rack above the browser), and the editor below the arrangement (§5).
+// new one, wires musical typing and MIDI, and lays out the window: the transport across the top, the browser on the
+// left, the arrangement (whose track headers carry each track's mute, solo and volume), and the editor below it (§5).
 //
 // Its File menu is in menu-bar.js, its files in files.js; everything else is shared with Music Generator (src/ui/).
 import { render } from 'preact';
@@ -8,6 +8,7 @@ import { audioEngine } from '../platform/audio-engine.js';
 import { registerFx } from '../daw/fx.js';
 import { HUMANIZE, humanizeFx } from '../composer/humanize-fx.js';
 import { settings, setSettings, loadSettings } from '../ui/store.js';
+import { startTheme } from '../ui/theme.js';
 import { checkLibraries } from '../ui/libraries.js';
 import { startLive, connectMidi } from '../ui/live.js';
 import { startEditorFollow } from '../ui/steps.js';
@@ -18,7 +19,8 @@ import { Arrange } from '../ui/components/Arrange.jsx';
 import { Editor } from '../ui/components/Editor.jsx';
 import { ExportDialog } from '../ui/components/ExportDialog.jsx';
 import { Ask } from '../ui/components/Ask.jsx';
-import { LeftPanel } from './components/LeftPanel.jsx';
+import { SidePanel } from './components/SidePanel.jsx';
+import { openTrack, addInstrumentTrack, addDrumTrack, dropInstrument } from './rack.js';
 import { GeneratePart } from './components/GeneratePart.jsx';
 import { openGenerate } from './generate.js';
 import { recordMelody } from './whistle.js';
@@ -26,6 +28,8 @@ import { useProjectFolders, startUp, watchWindow, newSong } from './files.js';
 import { startChordinalMenus } from './menu-bar.js';
 
 const EDITOR_H = [140, 0.8];        // px, and at most this much of the window
+/** what the arrangement's track headers and its foot do here (§6) */
+const TRACK_ACTIONS = { open: openTrack, instrument: dropInstrument, addTrack: addInstrumentTrack, addDrums: addDrumTrack };
 
 function Split()
 {
@@ -47,8 +51,8 @@ function App()
         <div class={`app chordinal ${settings.value.browserOpen ? '' : 'no-browser'}`}
             style={{ '--editor-h': `${settings.value.editorHeight}px`, '--browser-w': `${settings.value.leftWidth}px` }}>
             <Transport onNew={newSong} newLabel="New" />
-            {settings.value.browserOpen && <LeftPanel />}
-            <Arrange />
+            {settings.value.browserOpen && <SidePanel />}
+            <Arrange actions={TRACK_ACTIONS} />
             <Split />
             <Editor />
             <ExportDialog />
@@ -72,6 +76,7 @@ useProjectFolders();
 setTrackItems(trackId => [{ label: 'Generate Part…', run: ()=> openGenerate(trackId) }, { label: 'Record Melody', run: ()=> recordMelody(trackId) }]);
 registerFx(HUMANIZE, humanizeFx);
 await loadSettings();
+startTheme();
 await checkLibraries();
 audioEngine.volume = settings.value.volume;
 startLive();

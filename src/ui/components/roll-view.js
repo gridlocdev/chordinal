@@ -3,7 +3,7 @@
 import { signal } from '@preact/signals';
 import { settings } from '../store.js';
 
-export const GUTTER = 46;       // px of note names at the left
+export const GUTTER = 52;       // px of keyboard at the left
 export const STRIP = 26;        // px of chord names above the lanes
 export const PPB = [4, 400];
 export const LANE_H = 12;

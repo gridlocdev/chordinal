@@ -48,21 +48,22 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 ## §5 The window
 
 1. One window, docked, laid out like this:
-   - Transport across the top.
-   - Left panel: the channel rack (§6) above the browser (§7).
-   - Centre: the arrangement (tracks, clips, ruler, markers, chord track).
-   - Bottom: the editor, with tabs Piano Roll, Step Grid and Mixer (`Cmd 1`, `Cmd 3`, `Cmd 2`).
-2. The divider between the channel rack and the browser, and the left panel's width, are draggable. Both are saved in Chordinal's settings. `B` hides and shows the left panel.
+   - Across the top: the browser's toggle, the project's title (a dot while there are changes to save) and what's loading on the left; the transport buttons and a display (bar and beat, tempo, meter, key, section) in the middle; New, Save, Save as and the master volume on the right.
+   - Left: the browser (§7).
+   - Centre: the arrangement (ruler, markers, chord track, and a row per track whose header is the track's channel, §6).
+   - Bottom: the editor, with tabs Piano Roll, Mixer and Step Grid (`Cmd 1`, `Cmd 2`, `Cmd 3`). The tabs and the open view's toolbar share one bar.
+2. The browser's width and the editor's height are draggable. Both are saved in Chordinal's settings. `B` hides and shows the browser.
 3. Tab switching follows `prd.md` §4.2.
+4. The look has a dark and a light theme. **View ▸ Theme** picks System (follows the OS), Light or Dark; the choice is saved in the settings. Motion stops when the OS asks for reduced motion, and the focused control has a visible ring.
 
-## §6 The channel rack
+## §6 The track headers
 
-1. The rack has one row per track, in track order. Each row has the track's colour, name and instrument name, mute and solo buttons, and a volume knob. Double-clicking the knob resets it to 0 dB.
-2. Clicking a row selects the track. Double-clicking opens its editor: the step grid for drums, the piano roll otherwise. If the track has no clip at the playhead, it first makes one, a 1-bar pattern on drum tracks.
-3. Dropping an instrument from the browser on a row sets that track's instrument. Dropping it on the empty space below the rows adds a track with it.
-4. **+ Add Track** (`Alt Cmd N`) adds an instrument track. **+ Add Drums** adds a drum track with the Standard kit.
-5. Right-clicking a row shows the track menu, the same menu as the arrangement's track header.
-6. Rows can be dragged into a new order, which reorders the tracks.
+1. Each track's row in the arrangement starts with its header: the track's colour, name and instrument name, mute and solo buttons, and a volume knob. Double-clicking the knob resets it to 0 dB. The tracks are listed once, here; there is no separate rack.
+2. Clicking a header selects the track. Double-clicking opens its editor: the step grid for drums, the piano roll otherwise. If the track has no clip at the playhead, it first makes one, a 1-bar pattern on drum tracks. Double-clicking the name renames the track.
+3. Dropping an instrument from the browser on a track sets its instrument. Dropping it below the tracks adds a track with it.
+4. Below the tracks, **+ Track** (`Alt Cmd N`) adds an instrument track and **+ Drums** adds a drum track with the Standard kit.
+5. Right-clicking a header shows the track menu, Delete Track among it.
+6. Headers can be dragged into a new order, which reorders the tracks; dropped below the tracks, a header moves its track last.
 
 ## §7 The browser
 
@@ -76,7 +77,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 
 ## §8 Generate Part…
 
-1. **Track ▸ Generate Part…** (and the channel rack and track header right-click menus) opens a dialog. Choose:
+1. **Track ▸ Generate Part…** (and the track header's right-click menu) opens a dialog. Choose:
    - **Part**: drums, bass, chords, pad, arpeggio, melody or countermelody. The default comes from the track: drums on a drum track, melody otherwise.
    - **Style**: the composer's feelings and genres.
    - **Seed**: shown, with **Roll** to pick another.
@@ -97,7 +98,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 ## §10 Patterns and the step grid
 
 1. As `prd.md` §3 and §4, unchanged: per-track clips, linked pattern clips, and a drum step grid.
-2. The channel rack's double-click (§6.2) is the FL-style way in. The arrangement's double-click on a drum lane (`prd.md` §3.4) still works.
+2. A track header's double-click (§6.2) is the FL-style way in. The arrangement's double-click on a drum lane (`prd.md` §3.4) still works.
 
 ## §11 Later work, in order
 
@@ -107,7 +108,7 @@ Each gets its own interview and PRD section before it's built.
    - Each mixer channel gets an insert chain: EQ (3 bands), compressor, distortion, chorus, delay and reverb, reordered by drag and bypassed per effect.
    - A subtractive synth: two oscillators, noise, a filter with its own envelope, an amp envelope, an LFO and glide, with presets.
    - Synths and effects are saved in the project. The browser gains Synths and Effects tabs.
-2. **Melodic step grid and per-step settings**: rows from the project's key over an octave range, a velocity lane, per-step length, probability and swing, and a strip of steps per drum row inline in the channel rack.
+2. **Melodic step grid and per-step settings**: rows from the project's key over an octave range, a velocity lane, per-step length, probability and swing, and a strip of steps per drum row inline in the arrangement.
 3. **Audio tracks and samples**:
    - Record from a microphone, or drop audio files onto audio tracks, kept in the project folder.
    - Drum rows can play a one-shot sample (drop a `.wav` on a row) instead of a kit sound.
@@ -122,7 +123,7 @@ Each gets its own interview and PRD section before it's built.
 
 ## Decisions
 
-1. The channel rack shows no inline steps in 1.0. Double-clicking a row opens the step grid (§6.2). Inline steps come with the melodic grid (§11.2).
+1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid (§11.2).
 2. The slimmed Music Generator plays a song and opens it in Chordinal. It shows no piano roll (§9.1).
 3. Whistling lives in Chordinal only (§9.3).
 

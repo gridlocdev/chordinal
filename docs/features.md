@@ -1,6 +1,6 @@
 # Features
 
-This repo makes two apps. **Music Generator** writes songs and plays them. **Chordinal** is a DAW laid out like one (a transport, a channel rack, a browser, an arrangement, a step grid, a piano roll and a mixer) where you change those songs or make your own, and where whistling turns into notes.
+This repo makes two apps. **Music Generator** writes songs and plays them. **Chordinal** is a DAW laid out like one (a transport, a browser, an arrangement, a step grid, a piano roll and a mixer), in a dark or a light theme, where you change those songs or make your own, and where whistling turns into notes.
 
 ## Projects
 
@@ -12,7 +12,7 @@ The window is the songs at the left, a player across the top, and the open song:
 
 ## Chordinal
 
-Everything from here on, except Composing and Humanize, is Chordinal's. The channel rack at the left lists the tracks: double-click one to edit it (a drum track opens the step grid), and drag instruments onto it from the browser below, where clicking an instrument or kit plays a preview. **Track ▸ Generate Part…** has the composer write one part (drums, bass, chords, pad, arpeggio, melody or countermelody) in a style you pick, over the chords already there, and **Generate Again** (`Cmd G`) writes it again from another seed.
+Everything from here on, except Composing and Humanize, is Chordinal's. Each track's header in the arrangement has its mute, solo and a volume knob: double-click it to edit the track (a drum track opens the step grid), drag it to reorder, and drag instruments onto it from the browser at the left, where clicking an instrument or kit plays a preview. **Track ▸ Generate Part…** has the composer write one part (drums, bass, chords, pad, arpeggio, melody or countermelody) in a style you pick, over the chords already there, and **Generate Again** (`Cmd G`) writes it again from another seed.
 
 ## Composing
 
