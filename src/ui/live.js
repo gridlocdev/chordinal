@@ -19,6 +19,12 @@ export const held = signal(/** @type {Set<number>} */ (new Set()));
 /** the instrument musical typing plays, by name */
 export const liveName = signal('');
 
+/** told of every key pressed and released on the computer keyboard or a MIDI keyboard, with its context time */
+const players = new Set();
+/** @param {(e: { key: number, vel?: number, on: boolean, time: number })=> void} fn  @returns {()=> void} stops telling it */
+export function onPlayed(fn) { players.add(fn); return ()=> players.delete(fn); }
+const played = (key, on, vel)=> { const time = audioEngine.context.currentTime; for (const fn of players) fn({ key, on, vel, time }); };
+
 let instrument = null;
 let loading = 0;
 let pedal = false;
@@ -69,6 +75,7 @@ export function release(key)
 function releaseAll()
 {
     for (const key of [...down.keys()]) { down.set(key, 1); release(key); }
+    for (const key of typed.values()) played(key, false);
     typed.clear();
 }
 
@@ -98,6 +105,7 @@ export function startLive()
         const key = octaveC(settings.value.octave) + NOTE_KEYS[e.code];
         typed.set(e.code, key);
         press(key);
+        played(key, true, KEY_VELOCITY);
     });
     addEventListener('keyup', (e)=>
     {
@@ -105,13 +113,14 @@ export function startLive()
         if (key === undefined) return;
         typed.delete(e.code);
         release(key);
+        played(key, false);
     });
     // keys held when the window loses focus never come up
     addEventListener('blur', releaseAll);
     midi.on(m =>
     {
-        if (m.type === 'noteon') press(m.key, m.velocity);
-        else if (m.type === 'noteoff') release(m.key);
+        if (m.type === 'noteon') { press(m.key, m.velocity); played(m.key, true, m.velocity); }
+        else if (m.type === 'noteoff') { release(m.key); played(m.key, false); }
         else if (m.controller === SUSTAIN_CC) { pedal = m.value >= 64; instrument?.setSustain(pedal); }
     });
 }

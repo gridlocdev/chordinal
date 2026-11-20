@@ -1,12 +1,14 @@
 // Whistled takes, read: a melody take's notes off its pitch frames and its key, and the chords over a melody (the
-// ones whistled, and ones guessed for the stretches between). Pure apart from mutating the take it is given.
+// ones whistled, and ones guessed for the stretches between). Played takes too: keys played during a take, put into
+// the clip they were played over. Pure apart from mutating the take it is given.
 //
 // A melody take: { kind: 'melody', samples, rate, frames, tempo, meter, downbeat,
 //   notes, origin, gridTempo, offset, key, chords: [{ beat, beats, notes, symbol, others }], guesses }
 import { transcribe, tuningOffset, smoothPitch, noteStarts, clickGrid, guessKeys } from '../lib/transcribe.js';
 import { guessChords, nameChord } from '../lib/chord-guess.js';
 import { pitchClass } from '../lib/music-theory.js';
-import { beatsPerBar } from '../daw/meter.js';
+import { beatsPerBar, barAt } from '../daw/meter.js';
+import { addClip, updateClip, newId } from '../daw/project.js';
 
 const sameKey = (a, b)=> a?.tonic === b?.tonic && a?.mode === b?.mode;
 const end = (list)=> Math.max(0, ...list.map(x => x.beat + x.beats));
@@ -76,4 +78,57 @@ export function cut(c, a, b)
     if (c.beat < a) out.push({ ...c, beats: a - c.beat });
     if (c.beat + c.beats > b) out.push({ ...c, beat: b, beats: c.beat + c.beats - b });
     return out;
+}
+
+// ── played takes ────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Keys played during a take (the computer keyboard or a MIDI keyboard) as notes: each press paired with its release,
+ * at beats from the take's first bar line. Notes still held at `endBeat` end there; ones that end before beat 0 (in
+ * the count-in) are dropped, and ones started in it begin at 0.
+ * @param {{ key: number, vel?: number, on: boolean, beat: number }[]} events  in the order played
+ */
+export function playedNotes(events, endBeat)
+{
+    const open = new Map(), notes = [];
+    const close = (key, beat)=>
+    {
+        const n = open.get(key);
+        open.delete(key);
+        if (!n || beat <= 0) return;
+        const from = Math.max(0, n.beat);
+        if (beat > from) notes.push({ beat: from, beats: beat - from, key, vel: n.vel });
+    };
+    for (const e of events)
+    {
+        if (e.on) { close(e.key, e.beat); open.set(e.key, { beat: e.beat, vel: Math.round(e.vel ?? 100) }); }
+        else close(e.key, e.beat);
+    }
+    for (const key of [...open.keys()]) close(key, endBeat);
+    return notes.sort((a, b)=> a.beat - b.beat || a.key - b.key);
+}
+
+/**
+ * Played notes from a take that started at beat `start` put on a track: into the clip there (the selected one if it
+ * covers `start`, else any that does), which every clip of its pattern then shares and which grows by whole bars to
+ * hold them; else into a new clip from `start`. Returns the project and the clip's id.
+ * @param {{ beat: number, beats: number, key: number, vel: number }[]} notes  beats from `start`
+ * @param {string|null} [selectedId]
+ */
+export function recordInto(p, trackId, start, notes, selectedId = null)
+{
+    const track = p.tracks.find(t => t.id === trackId);
+    const covers = (c)=> start >= c.start - 1e-9 && start < c.start + c.beats - 1e-9;
+    const clip = track?.clips.find(c => c.id === selectedId && covers(c)) ?? track?.clips.find(covers);
+    const bars = (from, beats)=> { const bpb = barAt(p.meters, from).beatsPerBar; return Math.max(1, Math.ceil(beats / bpb - 1e-6)) * bpb; };
+    if (!clip)
+    {
+        const id = newId(p, 'c');
+        return { project: addClip(p, trackId, { id, start, beats: bars(start, end(notes)), notes }), clip: id };
+    }
+    const shift = start - clip.start;
+    const added = notes.map(n => ({ ...n, beat: n.beat + shift }));
+    const beats = Math.max(clip.beats, bars(clip.start, end(added)));
+    const next = updateClip(p, trackId, clip.id, c => ({ ...c, beats, notes: [...c.notes, ...added].sort((a, b)=> a.beat - b.beat || a.key - b.key) }));
+    return { project: next, clip: clip.id };
 }

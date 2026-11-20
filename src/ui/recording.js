@@ -1,5 +1,7 @@
 // Whistle to MIDI: ● (or R) records a whistled melody into a new clip on the selected track, from the bar the playhead
-// is in, with a bar's count-in and a click at the project's tempo. With a stretch of the chord track picked, it
+// is in, with a bar's count-in and a click at the project's tempo. Keys played meanwhile, on the computer keyboard or
+// a MIDI keyboard, are recorded instead of the whistle, into the clip the take starts in (the selected one first;
+// a pattern's other clips share them), and need no microphone. With a stretch of the chord track picked, it
 // records a chord instead: an arpeggio whistled freely, named and put on the chord track. Audio files dropped on a
 // track are read the same way. A saved project keeps its takes' audio in projects/<name>/takes/.
 //
@@ -16,8 +18,11 @@ import { encodeWav } from '../lib/wav.js';
 import { bpmAt } from '../lib/tempo-map.js';
 import { barAt, meterAt, beatsPerBar } from '../daw/meter.js';
 import { makeTrack, addTrack, addClip, newId, findClip } from '../daw/project.js';
-import { startRecording, takeBlock, updateRecording, stopRecording } from '../sketch/recorder.js';
-import { analyse, chordsOf, cut } from '../sketch/takes.js';
+import { startRecording, takeBlock, updateRecording, stopRecording, keyBeat } from '../sketch/recorder.js';
+import { analyse, chordsOf, cut, playedNotes, recordInto } from '../sketch/takes.js';
+import { audioEngine } from '../platform/audio-engine.js';
+import { onPlayed } from './live.js';
+import { takingKeys } from './focus.js';
 import { sketchSection, sketchSpec } from '../sketch/sketch-spec.js';
 import { project, projectName, selected, selectedClip, chordRange, beat, status, settings } from './store.js';
 import { edit, newProject } from './document.js';
@@ -65,6 +70,15 @@ function placeTake(trackId, start, take, label)
     status.value = `${notes.length} notes from ${label}`;
 }
 
+/** notes played on the keys during a take: into the clip under its start (the selected one first), else a new clip */
+function placePlayed(trackId, start, notes)
+{
+    let clip = '';
+    edit(p => { const out = recordInto(p, trackId, start, notes, selectedClip.value?.track === trackId ? selectedClip.value.clip : null); clip = out.clip; return out.project; });
+    selectedClip.value = { track: trackId, clip };
+    status.value = `${notes.length} played note${notes.length === 1 ? '' : 's'} recorded`;
+}
+
 /** keeps a take's audio beside a saved project */
 async function keepAudio(take)
 {
@@ -85,24 +99,31 @@ export async function record()
     if (recording.value) { finish(); return; }
     // nothing plays while recording: the band leaking into the mic would be heard as notes
     stop();
+    const range = chordRange.value;
+    const kind = range ? 'chord' : 'melody';
+    let heard = '';
     try
     {
         if (!mic.on) await mic.start((samples, time)=> recording.value && takeBlock(recording.value.rec, samples, time));
     }
     catch (e)
     {
-        status.value = `No microphone: ${e.message}. You can still drop audio files on a track.`;
-        return;
+        // a melody can still be played on the keys; a chord is only ever whistled
+        heard = `No microphone: ${e.message}.`;
+        if (kind === 'chord' || !hasAudio()) { status.value = `${heard} You can still drop audio files on a track.`; return; }
     }
     if (recording.value) return;
     const p = project.value;
-    const range = chordRange.value;
-    const kind = range ? 'chord' : 'melody';
     const at = range ? range.beat : barAt(p.meters, beat.value).start;
     const track = kind === 'melody' ? targetTrack() : null;
     const rec = startRecording({ kind, tempo: Math.round(bpmAt(p.tempoMap, at)), meter: meterAt(p.meters, at).sig, click: settings.value.click });
-    recording.value = { kind, track, start: at, range, rec };
-    status.value = kind === 'chord' ? 'Whistle the chord as an arpeggio, then press ● again' : 'Recording…';
+    // keys played during a melody take (the computer keyboard or a MIDI keyboard) are kept, at their beats in it
+    const played = [];
+    const unhear = kind === 'melody' ? onPlayed(e => played.push({ ...e, beat: keyBeat(rec, e.time, audioEngine.context.outputLatency || 0) })) : ()=> {};
+    takingKeys.value = kind === 'melody';
+    recording.value = { kind, track, start: at, range, rec, played, unhear, mic: !heard };
+    const doing = heard ? `${heard} Recording the keys you play…` : 'Recording…';
+    status.value = kind === 'chord' ? 'Whistle the chord as an arpeggio, then press ● again' : doing;
     const step = ()=>
     {
         const r = recording.value;
@@ -110,10 +131,17 @@ export async function record()
         if (!updateRecording(r.rec)) { finish(); return; }
         // the playhead follows the take as heard, from its bar once the count-in is over
         if (r.kind === 'melody') beat.value = r.start + Math.max(0, (r.rec.playhead - r.rec.origin) / r.rec.beatSec);
-        status.value = r.rec.countIn ? `Count-in: ${r.rec.countIn}` : r.kind === 'chord' ? status.value : 'Recording…';
+        status.value = r.rec.countIn ? `Count-in: ${r.rec.countIn}` : r.kind === 'chord' ? status.value : doing;
         frame = requestAnimationFrame(step);
     };
     step();
+}
+
+/** whether there's any sound at all to time a take on (none where Web Audio is missing) */
+function hasAudio()
+{
+    try { return !!audioEngine.context; }
+    catch { return false; }
 }
 
 /** stops recording and reads the take */
@@ -123,6 +151,12 @@ export async function finish()
     if (!r) return;
     cancelAnimationFrame(frame);
     recording.value = null;
+    takingKeys.value = false;
+    r.unhear();
+    // keys played win over the mic, which heard them clicking
+    const notes = r.kind === 'melody' ? playedNotes(r.played, keyBeat(r.rec, audioEngine.context.currentTime, audioEngine.context.outputLatency || 0)) : [];
+    if (notes.length) { placePlayed(r.track, r.start, notes); return; }
+    if (!r.mic) { status.value = 'No keys were played in that take.'; return; }
     const take = stopRecording(r.rec);
     if (!take) { status.value = 'That take was too short to read.'; return; }
     if (r.kind === 'chord') chordTake(take, r.range);

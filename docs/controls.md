@@ -25,7 +25,7 @@
 | Undo, redo | `Cmd Z`, `Shift Cmd Z` | |
 | Cut, copy, paste, duplicate (notes or a clip) | `Cmd X`, `Cmd C`, `Cmd V` (at the playhead), `Cmd D` | right-click, **Paste Here** |
 | Loop | `C` loops the selection (or the section at the playhead), `Cmd U` moves the loop to it | drag along the ruler; right-click a clip, a marker or the ruler |
-| Record a melody on the selected track | `R` starts and stops | **●** |
+| Record a melody on the selected track (whistled, or played on the keys or a MIDI keyboard) | `R` starts and stops | **●** |
 | Set a chord | drag over the chord track, then `R` and whistle its notes | |
 | Draw a note | | click empty space in the piano roll; `Alt` turns off the grid |
 | Move or resize a note | `↑` `↓` transpose, with `Shift` an octave | drag it, or drag its right edge |

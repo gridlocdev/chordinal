@@ -27,6 +27,10 @@ export function startRecording({ kind, tempo, meter, click })
     };
 }
 
+/** the beat in a melody take, from its first bar line, of a key played at context time `time`: the player hears the
+ * click `outputLatency` late and plays along to that */
+export const keyBeat = (r, time, outputLatency = 0)=> (time - outputLatency - r.start) / r.beatSec - r.countBeats;
+
 /** a block from the mic, kept from the moment the count-in starts */
 export function takeBlock(r, samples, time)
 {

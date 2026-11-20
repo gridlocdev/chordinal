@@ -38,7 +38,7 @@ Make a clip a **pattern** and its copies stay linked: edit one, in the step grid
 
 ## Whistling
 
-**Track ▸ Record Melody** (or **●**, or `R`) and whistle a melody over a click onto any track, vibrato included. Pick a stretch of the chord track and whistle a chord's notes to set the chord there. **New from melody** composes a band around the selected clip.
+**Track ▸ Record Melody** (or **●**, or `R`) and whistle a melody over a click onto any track, vibrato included. Or play it on the letter keys or a MIDI keyboard during the take, with no microphone needed: the notes go into the clip the take starts in (the selected one first, so every clip of its pattern gets them, growing it to fit), or into a new clip if there's none. Pick a stretch of the chord track and whistle a chord's notes to set the chord there. **New from melody** composes a band around the selected clip.
 
 A saved project keeps its takes in its folder's `takes/`, listed in the browser's **Takes** tab to read onto a track again, and an audio file dropped on a track is read the same way.
 

@@ -1,6 +1,7 @@
 // With no menu bar (the browser), the page answers the Cmd shortcuts itself; while a text field has focus, the ones
 // marked `field` are left to the field, so Cmd+Backspace deletes text there instead of the selected track. While the
 // piano roll has the focus its letters play notes, so the plain-letter commands (B, C, M, Q, R) wait until it hasn't.
+// While a take records, the letters play wherever the focus is, and R still stops the take.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -13,7 +14,7 @@ globalThis.document = { activeElement: null };
 const { handleKey } = await import('../../src/ui/keys.js');
 const { COMMANDS } = await import('../../src/ui/commands.js');
 const { hist, selected, settings, setSettings } = await import('../../src/ui/store.js');
-const { focus, musicalTyping } = await import('../../src/ui/focus.js');
+const { focus, musicalTyping, takingKeys } = await import('../../src/ui/focus.js');
 const { emptyProject, addTrack, makeTrack } = await import('../../src/daw/project.js');
 const { history } = await import('../../src/daw/history.js');
 
@@ -63,4 +64,25 @@ test('the letters play notes only while the piano roll is showing and focused, a
     assert.equal(musicalTyping(), false, 'the roll is not showing');
     assert.equal(handleKey(key('KeyB')), true);
     assert.equal(settings.value.browserOpen, false);
+});
+
+test('while a take records, the letters play notes wherever the focus is, and R still reaches Record', ()=>
+{
+    document.activeElement = null;
+    setSettings({ editorTab: 'mixer', browserOpen: false });
+    focus.value = 'arrange';
+    takingKeys.value = true;
+    try
+    {
+        assert.equal(musicalTyping(), true);
+        assert.equal(handleKey(key('KeyB')), false, 'B is a note during the take');
+        assert.equal(settings.value.browserOpen, false);
+        const record = COMMANDS.record.run;
+        let stopped = 0;
+        COMMANDS.record.run = ()=> { stopped++; };
+        try { assert.equal(handleKey(key('KeyR')), true); }
+        finally { COMMANDS.record.run = record; }
+        assert.equal(stopped, 1);
+    }
+    finally { takingKeys.value = false; }
 });
