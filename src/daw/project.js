@@ -259,8 +259,10 @@ export function splitAt(p, beat, trackId = null)
 export function setTempo(p, bpm)
 {
     const k = bpm / p.tempoMap[0].bpm;
-    const round = (x)=> Math.round(x * k * 100) / 100;
-    return { ...p, tempoMap: p.tempoMap.map(s => ({ ...s, bpm: round(s.bpm), ...(s.to !== undefined ? { to: round(s.to) } : {}) })) };
+    // the first tempo is the one asked for; the rest scale with it, kept fine enough that changing the tempo back and
+    // forth doesn't drift them (rounding them to hundredths did)
+    const scale = (x)=> Math.round(x * k * 1e6) / 1e6;
+    return { ...p, tempoMap: p.tempoMap.map((s, i)=> ({ ...s, bpm: i === 0 ? bpm : scale(s.bpm), ...(s.to !== undefined ? { to: scale(s.to) } : {}) })) };
 }
 
 /** the meter from the start, until the first change after it */
