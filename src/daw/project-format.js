@@ -11,6 +11,8 @@ export const VERSION = 1;
 export const PATTERN_VERSION = 2;
 
 const NOTE = ['beat', 'beats', 'key', 'vel'];
+/** the order a project's settings are written in, before its patterns and tracks; any others follow */
+const ORDER = ['title', 'length', 'tempoMap', 'meters', 'key', 'markers', 'loop', 'groove', 'chords'];
 const round = (x)=> Math.round(x * 1e4) / 1e4;
 
 /** @param {import('./project.js').Project} project */
@@ -30,7 +32,11 @@ export function writeProject(project)
     const firstClip = new Map();
     for (const t of project.tracks) for (const c of t.clips) if (c.pattern && !firstClip.has(c.pattern)) firstClip.set(c.pattern, c);
     const used = patterns.filter(x => firstClip.has(x.id));
-    const body = { format: FORMAT, version: used.length ? PATTERN_VERSION : VERSION, ...rest,
+    // a fixed order, whatever order the project's keys are in, so opening and saving a project changes nothing
+    const { tracks: _tracks, ...settings } = rest;
+    const ordered = Object.fromEntries([...ORDER.filter(k => k in settings), ...Object.keys(settings).filter(k => !ORDER.includes(k))]
+        .map(k => [k, settings[k]]));
+    const body = { format: FORMAT, version: used.length ? PATTERN_VERSION : VERSION, ...ordered,
         ...(used.length && { patterns: used.map(x =>
         {
             const c = firstClip.get(x.id);
