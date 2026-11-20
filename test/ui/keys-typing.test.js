@@ -14,7 +14,8 @@ const { handleKey } = await import('../../src/ui/keys.js');
 const { COMMANDS } = await import('../../src/ui/commands.js');
 const { hist, selected, settings, setSettings } = await import('../../src/ui/store.js');
 const { focus, musicalTyping } = await import('../../src/ui/focus.js');
-const { emptyProject, history, addTrack, makeTrack } = await import('../../src/daw/project.js');
+const { emptyProject, addTrack, makeTrack } = await import('../../src/daw/project.js');
+const { history } = await import('../../src/daw/history.js');
 
 const key = (code, mods = {})=> ({ code, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, repeat: false, ...mods });
 

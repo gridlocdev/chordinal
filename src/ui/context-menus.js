@@ -1,7 +1,8 @@
 // The right-click menus, one for each thing that can be clicked: a clip, an empty stretch of a lane, a track's
 // header, the ruler, the chord track, a note, the piano roll's background, a mixer strip, and the browser's
 // instruments and takes. The part clicked is selected first, so the menu's commands act on it.
-import { TRACK_COLORS, findClip, renameMarker, removeMarker, markerRange, isDrums } from '../daw/project.js';
+import { TRACK_COLORS, findClip, isDrums } from '../daw/project.js';
+import { renameMarker, removeMarker, markerRange } from '../daw/timeline.js';
 import { barAt } from '../daw/meter.js';
 import { appMenu } from '../platform/app-menu.js';
 import { cut as cutChord } from '../sketch/takes.js';

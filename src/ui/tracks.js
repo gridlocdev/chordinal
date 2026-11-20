@@ -1,9 +1,11 @@
 // What can be done to tracks and clips from the arrangement, the mixer and the menus. Each is one undo step.
 import { signal } from '@preact/signals';
 import { barAt } from '../daw/meter.js';
-import { makeTrack, addTrack, removeTrack, updateTrack, setMixer, moveTrack, duplicateTrack, addClip, updateClip, removeClip,
-    findClip, joinClips, splitAt, newId, setLoop, quantizeNotes, humanizeNotes, scaleNotes, reverseNotes, isDrums, makePattern, makeUnique,
-    renamePattern, nextPatternName, findPattern } from '../daw/project.js';
+import { makeTrack, addTrack, removeTrack, updateTrack, setMixer, moveTrack, duplicateTrack, addClip, updateClip,
+    removeClip, findClip, joinClips, splitAt, newId, isDrums, makePattern, makeUnique, renamePattern,
+    nextPatternName, findPattern } from '../daw/project.js';
+import { setLoop } from '../daw/timeline.js';
+import { quantizeNotes, humanizeNotes, scaleNotes, reverseNotes } from '../daw/note-edits.js';
 import { project, selected, selectedClip, settings, setSettings, picked } from './store.js';
 import { edit } from './document.js';
 import { askText } from './ask.js';

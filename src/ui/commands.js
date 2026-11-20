@@ -6,7 +6,8 @@
 // selected clip in the arrangement, or the stretch picked on the chord track.
 import { appMenu } from '../platform/app-menu.js';
 import { barAt, barLines } from '../daw/meter.js';
-import { projectEnd, markerRange, addMarker, findClip, insertTime, deleteTime } from '../daw/project.js';
+import { projectEnd, findClip } from '../daw/project.js';
+import { markerRange, addMarker, insertTime, deleteTime } from '../daw/timeline.js';
 import { projectMidi } from '../daw/project-midi.js';
 import { cut as cutChord } from '../sketch/takes.js';
 import { project, projectName, dirty, hist, selected, selectedClip, selectedTrack, chordRange, beat, playing,

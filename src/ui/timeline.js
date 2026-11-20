@@ -1,7 +1,7 @@
 // Tempo and meter over the timeline: the whole song's tempo and opening meter, changes at a bar, and the flags the
 // ruler shows for them.
 import { barAt, meterAt, beatsPerBar } from '../daw/meter.js';
-import { setTempo, setMeter, setTempoAt, removeTempoChange, setMeterAt, removeMeterChange } from '../daw/project.js';
+import { setTempo, setMeter, setTempoAt, removeTempoChange, setMeterAt, removeMeterChange } from '../daw/timeline.js';
 import { bpmAt } from '../lib/tempo-map.js';
 import { appMenu } from '../platform/app-menu.js';
 import { project, beat } from './store.js';

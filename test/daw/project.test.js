@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { updateTrack, findClip, insertTime, deleteTime, humanizeNotes, scaleNotes, reverseNotes, updateClip, emptyProject, makeTrack, addTrack, addClip, moveClip, splitAt, removeTrack, setMixer, setTempo, setTempoAt, removeTempoChange, setMeterAt, removeMeterChange, trackNotes,
-    history, commit, undo, redo, newId, setLoop, addMarker, renameMarker, removeMarker, markerRange, moveTrack, duplicateTrack,
-    joinClips, quantizeNotes } from '../../src/daw/project.js';
+import { updateTrack, findClip, updateClip, emptyProject, makeTrack, addTrack, addClip, moveClip, splitAt,
+    removeTrack, setMixer, trackNotes, newId, moveTrack, duplicateTrack, joinClips } from '../../src/daw/project.js';
+import { insertTime, deleteTime, setTempo, setTempoAt, removeTempoChange, setMeterAt, removeMeterChange, setLoop,
+    addMarker, renameMarker, removeMarker, markerRange } from '../../src/daw/timeline.js';
+import { humanizeNotes, scaleNotes, reverseNotes, quantizeNotes } from '../../src/daw/note-edits.js';
+import { history, commit, undo, redo } from '../../src/daw/history.js';
 import { writeProject, readProject } from '../../src/daw/project-format.js';
 import { projectMidi, midiProject, addMidiTracks } from '../../src/daw/project-midi.js';
 import { barAt, barLines, beatsPerBar, snap } from '../../src/daw/meter.js';

@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { item } from '../../src/ui/commands.js';
 import { exportDialog } from '../../src/ui/bounce.js';
 import { hist } from '../../src/ui/store.js';
-import { emptyProject, makeTrack, addTrack, history } from '../../src/daw/project.js';
+import { emptyProject, makeTrack, addTrack } from '../../src/daw/project.js';
+import { history } from '../../src/daw/history.js';
 
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { hist, selected, picked } from '../../src/ui/store.js';
-import { history } from '../../src/daw/project.js';
+import { history } from '../../src/daw/history.js';
 import { pickedNotes } from '../../src/ui/notes.js';
 import { emptyProject, makeTrack, addTrack, addClip, makePattern } from '../../src/daw/project.js';
 

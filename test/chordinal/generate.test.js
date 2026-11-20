@@ -8,7 +8,9 @@ globalThis.cancelAnimationFrame ??= ()=> {};
 const { generatePart, rangeChoices, defaultPart, canAgain } = await import('../../src/chordinal/generate.js');
 const { hist, project, selected, selectedClip, chordRange } = await import('../../src/ui/store.js');
 const { undo } = await import('../../src/ui/document.js');
-const { emptyProject, history, addTrack, makeTrack, addClip, findPattern, setLoop, updateClip } = await import('../../src/daw/project.js');
+const { emptyProject, addTrack, makeTrack, addClip, findPattern, updateClip } = await import('../../src/daw/project.js');
+const { history } = await import('../../src/daw/history.js');
+const { setLoop } = await import('../../src/daw/timeline.js');
 const { edit } = await import('../../src/ui/document.js');
 
 function start({ tracks = [['Drums', 128], ['Keys', 0]], key = { tonic: 0, mode: 'major' }, chords = [] } = {})

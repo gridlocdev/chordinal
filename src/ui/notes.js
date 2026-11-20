@@ -1,6 +1,7 @@
 // The notes picked in the piano roll, on the selected track, and what can be done to them: delete, transpose, quantize,
 // set velocity, make legato, nudge, humanize, change speed, reverse. Each is one undo step.
-import { updateClip, quantizeNotes, humanizeNotes, scaleNotes, reverseNotes } from '../daw/project.js';
+import { updateClip } from '../daw/project.js';
+import { quantizeNotes, humanizeNotes, scaleNotes, reverseNotes } from '../daw/note-edits.js';
 import { selectedTrack, selectedClip, settings, picked } from './store.js';
 import { edit } from './document.js';
 

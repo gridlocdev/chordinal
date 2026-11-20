@@ -2,7 +2,8 @@
 // a genre or one of its songs), and every edit, each a step undo can take back. Where projects are kept, and how Save
 // As and the unsaved-changes question go, is the app's own (place.js).
 import { projectFiles, folderName } from '../platform/project-files.js';
-import { emptyProject, history, commit, undo as undoStep, redo as redoStep } from '../daw/project.js';
+import { emptyProject } from '../daw/project.js';
+import { history, commit, undo as undoStep, redo as redoStep } from '../daw/history.js';
 import { readProject, writeProject } from '../daw/project-format.js';
 import { compose } from '../composer/compose.js';
 import { toProject } from '../composer/to-project.js';

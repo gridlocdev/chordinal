@@ -274,7 +274,7 @@ The interface lives in `src/ui/`: the state as signals in `store.js`, what the c
 `document.js` (open, save, New and `edit`), `player.js`, `recording.js` and `live.js`, and the
 views in `components/`. A view reads signals and calls actions; it doesn't touch the audio engine or
 the composer itself. Every change to the project goes through `edit(p => …)` with one of the pure
-edits in `src/daw/project.js`, so it can be undone; add a new edit there, with a test. DAW logic that isn't about
+edits in `src/daw/` (`project.js`, `timeline.js`, `note-edits.js`), so it can be undone; add a new edit there, with a test. DAW logic that isn't about
 songs goes in `src/daw/`; music logic goes in `src/composer/` or `src/sketch/`, which know nothing of the interface and don't import each other,
 and content goes in a `*-data.js` file with a test. Show a control only when there is code behind
 it. The full rules are in [architecture.md](architecture.md#rules).

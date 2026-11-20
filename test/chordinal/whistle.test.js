@@ -8,7 +8,8 @@ globalThis.cancelAnimationFrame ??= ()=> {};
 
 const { recordMelody, whistleChord } = await import('../../src/chordinal/whistle.js');
 const { hist, project, selected, chordRange, status } = await import('../../src/ui/store.js');
-const { emptyProject, history, addTrack, makeTrack } = await import('../../src/daw/project.js');
+const { emptyProject, addTrack, makeTrack } = await import('../../src/daw/project.js');
+const { history } = await import('../../src/daw/history.js');
 
 function start()
 {

@@ -10,7 +10,8 @@ const { previewNotes } = await import('../../src/ui/preview.js');
 const { moveTrackTo } = await import('../../src/ui/tracks.js');
 const { soundfontLibrary } = await import('../../src/audio/soundfont-library.js');
 const { hist, project, selected, selectedClip, beat, settings } = await import('../../src/ui/store.js');
-const { emptyProject, history, addTrack, makeTrack, addClip, findPattern } = await import('../../src/daw/project.js');
+const { emptyProject, addTrack, makeTrack, addClip, findPattern } = await import('../../src/daw/project.js');
+const { history } = await import('../../src/daw/history.js');
 
 /** a project with these tracks ([name, bank]), nothing selected, the playhead at the start */
 function start(tracks)

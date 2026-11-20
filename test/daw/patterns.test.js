@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { emptyProject, makeTrack, addTrack, addClip, updateClip, removeClip, moveClip, splitAt, joinClips, insertTime, deleteTime,
-    duplicateTrack, findClip, makePattern, makeUnique, renamePattern, nextPatternName, patternProblems, trackNotes, scaleNotes,
-    history, commit } from '../../src/daw/project.js';
+import { emptyProject, makeTrack, addTrack, addClip, updateClip, removeClip, moveClip, splitAt, joinClips,
+    duplicateTrack, findClip, makePattern, makeUnique, renamePattern, nextPatternName, patternProblems, trackNotes } from '../../src/daw/project.js';
+import { insertTime, deleteTime } from '../../src/daw/timeline.js';
+import { scaleNotes } from '../../src/daw/note-edits.js';
+import { history, commit } from '../../src/daw/history.js';
 import { writeProject, readProject } from '../../src/daw/project-format.js';
 import { compose } from '../../src/composer/compose.js';
 import { toProject } from '../../src/composer/to-project.js';

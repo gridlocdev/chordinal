@@ -2,7 +2,8 @@
 // every scaled tempo to hundredths, so after 30 changes a ramp's 141 had drifted to 141.01).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { emptyProject, setTempo, setTempoAt } from '../../src/daw/project.js';
+import { emptyProject } from '../../src/daw/project.js';
+import { setTempo, setTempoAt } from '../../src/daw/timeline.js';
 
 test('changing the base tempo many times, then back, leaves the other tempos as they were', ()=>
 {

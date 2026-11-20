@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { hist, selected, project } from '../../src/ui/store.js';
-import { history, emptyProject, makeTrack, addTrack } from '../../src/daw/project.js';
+import { emptyProject, makeTrack, addTrack } from '../../src/daw/project.js';
+import { history } from '../../src/daw/history.js';
 import { undo } from '../../src/ui/document.js';
 import { down } from '../../src/ui/components/roll-input.js';
 

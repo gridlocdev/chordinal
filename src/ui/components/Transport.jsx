@@ -4,7 +4,7 @@
 import { computed } from '@preact/signals';
 import { audioEngine } from '../../platform/audio-engine.js';
 import { barAt, meterAt, beatsPerBar } from '../../daw/meter.js';
-import { setTempo, setMeter } from '../../daw/project.js';
+import { setTempo, setMeter } from '../../daw/timeline.js';
 import { bpmAt } from '../../lib/tempo-map.js';
 import { noteName } from '../../lib/notes.js';
 import { project, dirty, beat, playing, status, settings, setSettings } from '../store.js';

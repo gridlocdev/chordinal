@@ -4,7 +4,8 @@ import { signal, computed, effect } from '@preact/signals';
 import { storage } from '../platform/storage.js';
 import { dbToGain } from '../audio/mixer.js';
 import { soundfontLibrary } from '../audio/soundfont-library.js';
-import { emptyProject, history } from '../daw/project.js';
+import { emptyProject } from '../daw/project.js';
+import { history } from '../daw/history.js';
 
 // ── settings, saved between runs ─────────────────────────────────────────────────────────────────────────────────────
 
