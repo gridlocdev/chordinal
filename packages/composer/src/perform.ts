@@ -1,0 +1,504 @@
+// A score's performance: what a player adds to the written notes. Passes run in a fixed order so they don't fight:
+//   detail  ear candy (ear-candy.ts), ghost notes on the snare and bass, softer inner notes in quick runs,
+//           phrases that swell and taper, +1 scoops into phrase endings and a section's last chord,
+//           slides between notes on instruments that bend, vibrato that arrives late on held notes
+//   feel    swing as one time warp over every part, then timing that breathes on top (drums and bass hold the grid),
+//           and the genre's pocket: parts that sit behind or ahead of the beat (lo-fi's lazy snare), tighter or looser
+// Pure and deterministic like compose(): a hash stands in for the dice. `pass` counts the times round a loop, so
+// every pass gets its own small details while the written music stays the same.
+// The score stays on the grid for the view and the MIDI file; the Humanize MIDI FX (humanize-fx.ts) runs this.
+import { hash } from '@chordinal/lib';
+import { EXPRESSION, CHIP } from './performance-data.ts';
+import { DRUM_KEYS } from './patterns-data.ts';
+import { beatToSeconds, bpmAt } from '@chordinal/lib';
+import { clamp, compound, swingTime, swingAmount, sectionAt as sectionOf } from './meter.ts';
+import { meterOf } from './meter-patterns.ts';
+import { METERS } from './patterns-data.ts';
+import { planEarCandy } from './ear-candy.ts';
+import { EAR_CANDY } from './ear-candy-data.ts';
+import { genreProfile } from './plan.ts';
+import type { TempoSegment } from '@chordinal/lib';
+import type { Note, PitchMoves, PlayedNote, Vibrato } from '@chordinal/daw';
+import type { Candy } from './ear-candy.ts';
+import type { Score, ScoreNote, ScoreTrack } from './compose.ts';
+import type { Style } from './song-craft-data.ts';
+
+/**
+ * A performed note.
+ *   grid: where the note belongs, before anticipation, swing and drift moved it; a loop or a jump to a beat plays the
+ *   notes whose grid is at or after it, even those that sound a little before it.
+ *   glideFrom: slide into this note from that key on the same voice; held: no note-off, the next note glides on from it;
+ *   program: play this note on another program of the part's bank (a chip part changing pulse width);
+ *   mono: this note cuts whatever its part is still sounding (a chip channel)
+ */
+type NoteMarks = Omit<ScoreNote, 'key' | 'beat' | 'beats' | 'vel' | 'anticipates' | 'vibrato'> & {
+  ghost?: boolean;
+  candy?: boolean;
+};
+export type PerformedNote = PlayedNote & PitchMoves & NoteMarks;
+
+/** a note on its way through the passes: a `~` mark (vibrato: true) is still to be played as vibrato */
+type WorkingNote = Note &
+  Omit<PitchMoves, 'vibrato'> &
+  NoteMarks & {
+    grid: number;
+    glideFrom?: number;
+    held?: boolean;
+    mono?: boolean;
+    program?: number;
+    vibrato?: true | Vibrato;
+  };
+
+/** the section settings a performance reads */
+export interface PerformSection {
+  type: string;
+  beat: number;
+  beats: number;
+  beatsPerBar: number;
+  energy: number;
+  meter: string;
+  tonic: number;
+}
+
+/** a part as a performance reads it */
+export interface PerformTrack {
+  role: string;
+  program: number;
+  bank: number;
+  notes: ScoreNote[];
+}
+
+/** the score shape perform() and planEarCandy() read: a composed Score, or one rebuilt from a project */
+export interface PerformScore {
+  title: string;
+  tempoMap: TempoSegment[];
+  sections: PerformSection[];
+  tracks: PerformTrack[];
+  chords: { beat: number; beats: number; tones: number[] }[];
+  beats: number;
+  swing: number;
+  swingSub: number;
+  style?: Partial<Style>;
+  seed: string;
+  sound?: string;
+  genre: string;
+}
+
+type Unit = (...parts: (string | number)[]) => number;
+type SectionOf = (beat: number) => PerformSection;
+type SpbAt = (beat: number) => number;
+
+/**
+ * pass: which time round a loop (0 the first); candy: the pass's ear candy, when the caller has already planned it.
+ * Returns one list per track, sorted by start.
+ */
+export function perform(
+  score: PerformScore,
+  pass = 0,
+  candy: Candy[] = planEarCandy(score, pass),
+): PerformedNote[][] {
+  const spbAt = (beat: number): number => 60 / bpmAt(score.tempoMap, beat); // seconds per beat where a note is
+  // 0..1, the same every time; beats are rounded first, so a note read back from a project file rolls the same
+  const unit: Unit = (...parts) =>
+    hash(score.title, pass, ...parts.map((p) => (typeof p === 'number' ? Math.round(p * 1000) : p))) /
+    2 ** 32;
+  const style: Partial<Style> = score.style ?? {};
+  const sectionAt: SectionOf = (beat) => sectionOf(score.sections, beat);
+  // the genre's pocket: how far behind (or, below 0, ahead of) the beat each part sits, and how tight it plays
+  const { pocket = {}, tight = 1 } = genreProfile(score.genre).feel ?? {};
+  const pocketOf: Partial<Record<string, number>> = pocket;
+  return score.tracks.map((t) => {
+    let notes = t.notes.map(({ anticipates, ...n }): WorkingNote => ({ ...n, grid: anticipates ?? n.beat }));
+    const melodic = t.bank < 128;
+    notes = withCandy(notes, t, candy, score);
+    if (t.role === 'drums') addSnareGhosts(notes, score, unit, sectionAt, style.ghosts ?? 0);
+    if (t.role === 'bass') addBassGhosts(notes, unit, sectionAt, style.ghosts ?? 0);
+    notes.sort((a, b) => a.beat - b.beat || a.key - b.key);
+    if (EXPRESSION.run.roles.includes(t.role)) shapeRuns(notes);
+    const { roles, follow, swell } = EXPRESSION.phrase,
+      more = (style.swell ?? 1) - 1;
+    const ends = roles.includes(t.role) ? shapePhrases(notes, sectionAt, swell * (style.swell ?? 1)) : [];
+    const followed = follow[t.role];
+    if (followed && more > 0) shapePhrases(notes, sectionAt, swell * more * followed, 0);
+    if (melodic && EXPRESSION.scoop.roles.includes(t.role) && bends(t.program))
+      addScoops(notes, t.role, ends, score, unit, style.scoops ?? 0);
+    if (score.swing) swing(notes, score, sectionAt);
+    if (EXPRESSION.glide.roles.includes(t.role) && EXPRESSION.glide.programs.includes(t.program) && melodic)
+      addGlides(notes, sectionAt, unit, t.role);
+    if (score.sound === 'chip' && CHIP.timbre.roles.includes(t.role) && melodic)
+      changeTimbre(notes, t.program, sectionAt);
+    addVibrato(notes, t, score, sectionAt, spbAt, unit, melodic);
+    const jitter = ((EXPRESSION.jitterMs[t.role] ?? 0) * tight) / 1000; // in seconds
+    // a drum kit's snare can lie back on its own (a lazy backbeat) while the kick holds the grid
+    const late = (n: WorkingNote): number =>
+      ((t.role === 'drums' && n.key === DRUM_KEYS.snare ? pocketOf.snare : null) ?? pocketOf[t.role] ?? 0) /
+      1000;
+    if (jitter || Object.keys(pocketOf).length)
+      for (const n of notes) {
+        const shift = ((unit(t.role, 'time', n.beat, n.key) * 2 - 1) * jitter + late(n)) / spbAt(n.beat);
+        n.beat = Math.max(0, n.beat + shift);
+        if (!n.held) n.beats = Math.max(0.05, n.beats - Math.max(0, shift));
+      }
+    notes.sort((a, b) => a.beat - b.beat || a.key - b.key);
+    if (score.sound === 'chip' && melodic) addFallsAndZaps(notes, t.role, sectionAt, spbAt, unit);
+    if (score.sound === 'chip' && CHIP.staccato.roles.includes(t.role)) chopShortNotes(notes, spbAt);
+    if (score.sound === 'chip' && CHIP.mono.roles.includes(t.role)) for (const n of notes) n.mono = true;
+    for (const n of notes)
+      if (n.cycle)
+        n.arp = { steps: n.cycle, seconds: CHIP.arp.frames / 60, until: n.beats * spbAt(n.beat) + 0.5 };
+    return endBeforeRepeats(notes);
+  });
+}
+
+// late vibrato on held notes of the voices that sing. A section with notes marked `~` (a hand-written or whistled
+// melody) is played as marked instead: those notes vibrate, on any melodic instrument and whatever their length, at
+// the style's vibrato (a whistled take's rate and depth, from `just whistle`), and the rest of that section's notes don't
+// Every `~` mark is played or dropped here, so no note leaves with vibrato: true.
+function addVibrato(
+  notes: WorkingNote[],
+  t: PerformTrack,
+  score: PerformScore,
+  sectionAt: SectionOf,
+  spbAt: SpbAt,
+  unit: Unit,
+  melodic: boolean,
+): asserts notes is PerformedNote[] {
+  const vib = score.sound === 'chip' ? { ...EXPRESSION.vibrato, ...CHIP.vibrato } : EXPRESSION.vibrato;
+  const marked = new Set(notes.filter((n) => n.vibrato === true).map((n) => sectionAt(n.beat)));
+  const own = { ...vib, ...score.style?.vibrato };
+  const auto = vib.roles.includes(t.role) && vib.programs.includes(t.program) && melodic;
+  for (const n of notes) {
+    if (marked.has(sectionAt(n.beat))) {
+      if (n.vibrato === true && melodic)
+        n.vibrato = { rate: own.rate, cents: own.cents, delay: own.delay, ramp: own.ramp };
+      else delete n.vibrato;
+    } else if (auto && n.beats * spbAt(n.beat) >= vib.minSeconds)
+      n.vibrato = {
+        rate: vib.rate + (unit(t.role, 'vib', n.beat) * 2 - 1) * vib.rateSpread,
+        cents: vib.cents,
+        delay: vib.delay,
+        ramp: vib.ramp,
+      };
+  }
+}
+
+const bends = (program: number): boolean =>
+  EXPRESSION.scoop.programs.some(([lo, hi]) => program >= lo && program <= hi);
+
+// the ear candy that's notes: a section's first chord rising an octave into place, a high accent, a flourish of
+// the chord above the bar's last beat; and the notes a tape stop swallows
+function withCandy(
+  notes: WorkingNote[],
+  t: PerformTrack,
+  candy: Candy[],
+  score: PerformScore,
+): WorkingNote[] {
+  const secs = (b: number): number => beatToSeconds(score.tempoMap, b);
+  const out = notes.filter(
+    (n) =>
+      !candy.some(
+        (c) =>
+          c.kind === 'tapeStop' && n.beat < c.beat - 1e-9 && secs(c.beat) - secs(n.beat) <= c.seconds + 1e-9,
+      ),
+  );
+  for (const c of candy) {
+    if (c.kind === 'riser' && c.roles.includes(t.role))
+      for (const n of out)
+        if (Math.abs(n.beat - c.beat) < 1e-6)
+          n.scoop = { cents: EAR_CANDY.riser.cents, seconds: EAR_CANDY.riser.seconds };
+    if (c.kind === 'accent' && c.role === t.role)
+      out.push({
+        key: c.key,
+        beat: c.beat,
+        grid: c.beat,
+        beats: EAR_CANDY.accent.beats,
+        vel: EAR_CANDY.accent.vel,
+        candy: true,
+      });
+    if (c.kind === 'flourish' && c.role === t.role)
+      c.keys.forEach((key, i) => {
+        const beat = c.beat + i * EAR_CANDY.flourish.step;
+        out.push({
+          key,
+          beat,
+          grid: beat,
+          beats: EAR_CANDY.flourish.step,
+          vel: EAR_CANDY.flourish.vel,
+          candy: true,
+        });
+      });
+  }
+  return out;
+}
+
+// quiet, short snare hits a sixteenth either side of each backbeat, in sections loud enough to groove
+function addSnareGhosts(
+  notes: WorkingNote[],
+  score: PerformScore,
+  unit: Unit,
+  sectionAt: SectionOf,
+  amount: number,
+): void {
+  const G = EXPRESSION.ghost;
+  if (!amount) return;
+  const snare = DRUM_KEYS.snare;
+  const taken = new Set(notes.filter((n) => n.key === snare).map((n) => Math.round(n.beat * 4)));
+  for (const n of notes.filter((n) => n.key === snare && n.vel >= 60))
+    for (const d of [-1, 1]) {
+      const step = Math.round(n.beat * 4) + d,
+        beat = step / 4;
+      if (
+        beat < 0 ||
+        beat >= score.beats - G.snare.beats ||
+        taken.has(step) ||
+        sectionAt(beat).energy < G.minEnergy
+      )
+        continue;
+      if (unit('ghost', step) >= G.snare.chance * amount) continue;
+      taken.add(step);
+      const [lo, hi] = G.snare.vel;
+      notes.push({
+        key: snare,
+        beat,
+        grid: beat,
+        beats: G.snare.beats,
+        vel: Math.round(lo + (hi - lo) * unit('gv', step)),
+        ghost: true,
+      });
+    }
+}
+
+// a dead note a sixteenth before a bass note, where the line has a gap
+function addBassGhosts(notes: WorkingNote[], unit: Unit, sectionAt: SectionOf, amount: number): void {
+  const G = EXPRESSION.ghost;
+  if (!amount) return;
+  const sorted = [...notes].sort((a, b) => a.beat - b.beat);
+  sorted.forEach((n, i) => {
+    const at = n.beat - 0.25,
+      before = sorted[i - 1];
+    if (
+      at < 0 ||
+      (before && before.beat + before.beats > at - 1e-9) ||
+      sectionAt(n.beat).energy < G.minEnergy
+    )
+      return;
+    if (unit('bass-ghost', n.beat) >= G.bass.chance * amount) return;
+    const [lo, hi] = G.bass.vel;
+    notes.push({
+      key: n.key,
+      beat: at,
+      grid: at,
+      beats: G.bass.beats,
+      vel: Math.round(lo + (hi - lo) * unit('bgv', n.beat)),
+      ghost: true,
+    });
+  });
+}
+
+// in a quick run of notes all moving one way, the inner notes are softer than the first and the last
+function shapeRuns(notes: WorkingNote[]): void {
+  const R = EXPRESSION.run;
+  let run: WorkingNote[] = [];
+  const soften = () => {
+    if (run.length >= R.minNotes) for (const n of run.slice(1, -1)) n.vel = clamp(n.vel - R.inner, 1, 127);
+  };
+  for (const n of notes) {
+    const a = run.at(-2),
+      b = run.at(-1);
+    const quick = !!b && n.beat - b.beat > 1e-9 && n.beat - b.beat <= R.maxGapBeats + 1e-9 && n.key !== b.key;
+    if (quick && (!a || Math.sign(b.key - a.key) === Math.sign(n.key - b.key))) {
+      run.push(n);
+      continue;
+    }
+    soften();
+    run = quick ? [b, n] : [n]; // a turn starts the next run on the note it turns on
+  }
+  soften();
+}
+
+// a crescendo across each phrase of a section, and a softer last note, so the line breathes like a sung one.
+// Returns each phrase's last note.
+function shapePhrases(
+  notes: WorkingNote[],
+  sectionAt: SectionOf,
+  swell: number,
+  taper = EXPRESSION.phrase.taper,
+): WorkingNote[] {
+  const { bars } = EXPRESSION.phrase;
+  const last = new Map<string, WorkingNote>();
+  for (const n of notes) {
+    const s = sectionAt(n.beat);
+    const span = bars * s.beatsPerBar;
+    const phrase = Math.floor((n.beat - s.beat) / span);
+    const at = (n.beat - s.beat - phrase * span) / span;
+    n.vel = clamp(Math.round(n.vel + swell * (at - 0.5)), 1, 127);
+    const id = `${s.beat}:${phrase}`;
+    const before = last.get(id);
+    if (!before || before.beat < n.beat) last.set(id, n);
+  }
+  for (const n of last.values()) n.vel = clamp(n.vel - taper, 1, 127);
+  return [...last.values()];
+}
+
+// the +1 trick: start a semitone low and slide up. On the melody's phrase endings; on the chords' last chord of a section.
+// The notes of a chord scoop together.
+function addScoops(
+  notes: WorkingNote[],
+  role: string,
+  ends: WorkingNote[],
+  score: PerformScore,
+  unit: Unit,
+  chance: number,
+): void {
+  if (!chance) return;
+  const S = EXPRESSION.scoop;
+  const targets =
+    role === 'lead' || role === 'counter'
+      ? ends
+      : score.sections.flatMap((s) => {
+          const c = score.chords.findLast((c) => c.beat < s.beat + s.beats - 1e-9 && c.beat >= s.beat);
+          return c ? notes.filter((n) => Math.abs(n.beat - c.beat) < 1e-6) : [];
+        });
+  for (const n of targets) {
+    if (n.glideFrom !== undefined || n.scoop || unit(role, 'scoop', n.beat) >= chance) continue;
+    n.scoop = {
+      cents: S.cents,
+      seconds: S.seconds[0] + (S.seconds[1] - S.seconds[0]) * unit('scoop-len', n.beat),
+    };
+  }
+}
+
+// swing: one warp of time for every part, starts and ends alike, counted from the start of each note's section so a
+// section of an odd number of eighths (7/8) can't turn the swing around; compound meters already move in threes
+function swing(
+  notes: { beat: number; beats: number }[],
+  score: { swing: number; swingSub: number },
+  sectionAt: SectionOf,
+): void {
+  const amount = swingAmount(score.swing);
+  for (const n of notes) {
+    const s = sectionAt(n.beat);
+    // a meter the composer has no pattern for (one set by hand, like 9/8) plays straight
+    if (!METERS[s.meter] || compound(meterOf(s.meter))) continue;
+    const start = s.beat + swingTime(n.beat - s.beat, amount, score.swingSub);
+    const end = s.beat + swingTime(n.beat + n.beats - s.beat, amount, score.swingSub);
+    n.beat = start;
+    n.beats = Math.max(0.05, end - start);
+  }
+}
+
+/** The score with its swing applied and nothing else, for a file that should sound like the song (a MIDI export). */
+export function swungTracks(score: Score): ScoreTrack[] {
+  if (!score.swing) return score.tracks;
+  return score.tracks.map((t) => {
+    const notes = t.notes.map((n) => ({ key: n.key, beat: n.beat, beats: n.beats, vel: n.vel }));
+    swing(notes, score, (beat) => sectionOf(score.sections, beat));
+    return { ...t, notes };
+  });
+}
+
+// a note must end before the same key sounds again (after drifting, or in a fill of overlapping drum hits),
+// or its note-off would cut the new note short. Two of the same key at once become one, the louder and longer.
+function endBeforeRepeats<N extends WorkingNote>(notes: N[]): N[] {
+  const next = new Map<number, N>(),
+    merged = new Set<N>();
+  for (let i = notes.length - 1; i >= 0; i--) {
+    const n = notes[i]!,
+      after = next.get(n.key);
+    if (after && !n.held && after.beat - n.beat < 1e-6 && after.glideFrom === undefined) {
+      after.vel = Math.max(after.vel, n.vel);
+      after.beats = Math.max(after.beats, n.beats);
+      merged.add(n);
+      continue;
+    }
+    if (after && !n.held && n.beat + n.beats > after.beat) n.beats = Math.max(1e-3, after.beat - n.beat);
+    next.set(n.key, n);
+  }
+  return merged.size ? notes.filter((n) => !merged.has(n)) : notes;
+}
+
+// a chip part falls off the end of a phrase, and zaps (a blip down from above) into the next one outside quiet sections
+function addFallsAndZaps(
+  notes: WorkingNote[],
+  role: string,
+  sectionAt: SectionOf,
+  spbAt: SpbAt,
+  unit: Unit,
+): void {
+  const F = CHIP.fall,
+    Z = CHIP.zap;
+  const falls = F.roles.includes(role),
+    zaps = Z.roles.includes(role);
+  if (!falls && !zaps) return;
+  notes.forEach((n, i) => {
+    const before = notes.slice(0, i).findLast((m) => m.beat < n.beat - 1e-9),
+      after = notes[i + 1];
+    const seconds = n.beats * spbAt(n.beat);
+    if (
+      falls &&
+      !n.held &&
+      (!after || after.beat - (n.beat + n.beats) >= F.rest - 1e-9) &&
+      seconds >= F.minSeconds &&
+      unit(role, 'fall', n.key, n.grid) < F.chance
+    )
+      n.fall = { cents: F.cents, seconds: F.seconds, at: seconds - F.seconds };
+    if (
+      zaps &&
+      !n.scoop &&
+      n.glideFrom === undefined &&
+      (!before || n.beat - (before.beat + before.beats) >= Z.rest - 1e-9) &&
+      sectionAt(n.grid).energy >= Z.minEnergy &&
+      unit(role, 'zap', n.key, n.grid) < Z.chance
+    )
+      n.scoop = { cents: Z.cents, seconds: Z.seconds };
+  });
+}
+
+// a chip part's quick notes are cut short, the gap that makes a tracker line bounce; not those slid into or out of,
+// nor an arpeggio's shimmer or a falling note, which need their length
+function chopShortNotes(notes: WorkingNote[], spbAt: SpbAt): void {
+  const S = CHIP.staccato;
+  for (const n of notes)
+    if (n.beats <= S.maxBeats + 1e-9 && !n.held && n.glideFrom === undefined && !n.cycle && !n.fall)
+      n.beats = Math.min(n.beats, Math.max(n.beats * S.gate, S.minSeconds / spbAt(n.beat)));
+}
+
+// a chip part's pulse width follows the section: one step darker when it's quiet, one brighter at its loudest
+function changeTimbre(notes: WorkingNote[], program: number, sectionAt: SectionOf): void {
+  const T = CHIP.timbre,
+    group = T.groups.find((g) => g.includes(program));
+  if (!group) return;
+  for (const n of notes) {
+    const { energy } = sectionAt(n.grid);
+    const step = energy < T.darker ? -1 : energy >= T.brighter ? 1 : 0;
+    const to = group[clamp(group.indexOf(program) + step, 0, group.length - 1)]!;
+    if (to !== program) n.program = to;
+  }
+}
+
+// marks notes to slide into from the one before; that one is then held into it rather than released
+function addGlides(notes: WorkingNote[], sectionAt: SectionOf, unit: Unit, role: string): void {
+  const g = EXPRESSION.glide;
+  for (let i = 1; i < notes.length; i++) {
+    const a = notes[i - 1]!,
+      b = notes[i]!;
+    const interval = Math.abs(b.key - a.key);
+    const gap = b.beat - (a.beat + a.beats);
+    const s = sectionAt(b.beat);
+    const downbeat = Math.abs(((b.beat - s.beat) / s.beatsPerBar) % 1) < 1e-9;
+    if (
+      interval < 1 ||
+      interval > g.maxInterval ||
+      gap < -1e-9 ||
+      gap > g.maxGapBeats ||
+      a.beats < g.minBeats ||
+      downbeat ||
+      b.scoop
+    )
+      continue;
+    if (unit(role, 'glide', b.beat) >= g.chance) continue;
+    a.held = true;
+    a.beats = b.beat - a.beat;
+    b.glideFrom = a.key;
+  }
+}

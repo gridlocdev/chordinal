@@ -1,0 +1,479 @@
+// Chiptune songs in different moods: each plays the chip instruments (sound: 'chip') and picks its own from
+// audio/chip-instruments-data.js, from the raw NES pulses and triangle to the softer modern voices and the sample
+// channel's bass and kit. Content only, imports nothing but its type. Format: docs/composing.md, "The song spec".
+//
+// Chip programs: leads 80 pulse 25%, 81 saw, 82 thin pulse 12.5%, 83 hollow square, 84 PWM, 85 soft triangle,
+// 86/87 raw NES pulse 25%/50%; 46 pluck; 90 PWM pad; bass 38 NES triangle, 39 pulse, 33 DPCM; kits 0 chip, 1 NES, 2 DPCM.
+import type { WrittenSong } from './plan.ts';
+export const CHIP_SONGS: WrittenSong[] = [
+  {
+    id: 'meadow-dash',
+    title: 'Meadow Dash',
+    genre: 'Overworld',
+    story: 'World 1-1. Blue sky, a row of question blocks, and nothing to fear yet. Run right.',
+    sound: 'chip',
+    emotion: 'joyful',
+    key: 'G',
+    mode: 'major',
+    tempo: 144,
+    groove: 'rock',
+    comp: 'eighths',
+    arp: 'chip',
+    legato: 0.7,
+    dynamics: 0.75,
+    loop: true,
+    band: { lead: 86, counter: 87, arp: 87, chords: null, pad: null, bass: 38, drums: 1 }, // the bare 2A03
+    form: ['intro', 'verse', 'chorus', 'verse', 'chorus', 'bridge'],
+    sections: {
+      intro: { progression: 'I IVadd9 V I' },
+      verse: { progression: 'I vi7 IV V7sus4', contour: 'plateau', density: 1.3 },
+      chorus: { progression: 'IV V iii7 vi IV iv I I', answer: true }, // the minor iv, a sigh before home
+      bridge: { progression: 'vi IV II7 V', energy: 0.55, contour: 'rise' },
+    },
+    scenes: {
+      intro: 'PRESS START.',
+      'verse 1': 'Stomp, stomp, coin.',
+      'chorus 1': 'A pipe! Down we go… no, onwards.',
+      bridge: 'A row of floating platforms over a pit.',
+    },
+  },
+  {
+    id: 'crystal-depths',
+    title: 'Crystal Depths',
+    genre: 'Dungeon',
+    story: 'A cave lit by glowing crystals. Something drips; something else breathes. Explore carefully.',
+    sound: 'chip',
+    emotion: 'mysterious',
+    key: 'E',
+    mode: 'phrygian',
+    tempo: 100,
+    groove: 'halftime',
+    comp: 'sustain',
+    arp: 'threes',
+    legato: 0.6,
+    dynamics: 0.55,
+    loop: true,
+    band: { lead: 82, counter: 85, arp: 46, chords: null, pad: 90, bass: 38, drums: 1 },
+    form: ['intro', 'verse', 'chorus', 'verse', 'bridge', 'chorus'],
+    sections: {
+      intro: { progression: 'i IImaj7 i IImaj7', mute: ['drums'] },
+      verse: { progression: 'i II VII i', contour: 'valley', density: 0.8 },
+      chorus: { progression: 'iv7 II i VII', counter: 'contrary' },
+      bridge: { progression: 'VImaj7 VII i i', energy: 0.35, texture: 'solo' },
+    },
+    scenes: {
+      intro: 'The torch gutters out. The crystals glow on their own.',
+      bridge: 'A narrow ledge over black water.',
+    },
+  },
+  {
+    id: 'save-point-lullaby',
+    title: 'Save Point Lullaby',
+    genre: 'Save room',
+    story: 'A small room with a glowing book, a bed, and no monsters. The music box plays while you rest.',
+    sound: 'chip',
+    emotion: 'serene',
+    key: 'F',
+    mode: 'major',
+    tempo: 76,
+    groove: 'waltz',
+    comp: 'waltz',
+    arp: 'updown',
+    legato: 0.95,
+    dynamics: 0.4,
+    ritardando: true,
+    band: { lead: 85, counter: 83, arp: 46, chords: null, pad: 90, bass: 38, drums: null }, // soft modern voices, no drums
+    form: 'AABA',
+    sections: {
+      intro: { progression: 'I IV I V' },
+      A: { progression: 'Imaj7 vi7 IVmaj7 V', contour: 'arch' },
+      B: { progression: 'IVmaj7 iii7 ii7 V7sus4', counter: 'harmony' },
+      outro: { progression: 'IVmaj7 iv I:2' },
+    },
+    scenes: {
+      intro: 'HP restored.',
+      B: 'Outside, the rain. Inside, the fire.',
+      outro: 'Game saved.',
+    },
+  },
+  {
+    id: 'neon-skyway',
+    title: 'Neon Skyway',
+    genre: 'Shoot-’em-up',
+    story:
+      'Stage 4: a city of light at full throttle. Enemy waves from every side, and the boss is somewhere ahead.',
+    sound: 'chip',
+    emotion: 'tense',
+    key: 'A',
+    mode: 'minor',
+    tempo: 168,
+    groove: 'dance',
+    comp: 'upbeats',
+    arp: 'tracker',
+    extend: [{ how: 'sus4', chance: 0.2 }],
+    legato: 0.7,
+    dynamics: 0.85,
+    push: 4,
+    band: { lead: 84, counter: 81, arp: 80, chords: null, pad: null, bass: 39, drums: 0 }, // PWM and saw over the modern kit
+    form: ['intro', 'verse', 'chorus', 'verse', 'chorus', 'breakdown', 'chorus', 'outro'],
+    sections: {
+      intro: { progression: 'i i VI VII', energy: 0.65 },
+      verse: { progression: 'i VII VI V', density: 1.5, contour: 'plateau' },
+      chorus: { progression: 'VI VII i III VI bII V V' }, // the Neapolitan before the turn
+      breakdown: { progression: 'iv7 iv7 VImaj7 V7sus4', energy: 0.45 },
+      outro: { progression: 'VI VII i:2', energy: 0.8 },
+    },
+    scenes: {
+      intro: 'LAUNCH.',
+      'chorus 1': 'Wave after wave.',
+      breakdown: 'Into the tunnel. Weapons charging.',
+      'chorus 3': 'Full power!',
+      outro: 'WARNING: BOSS APPROACHING.',
+    },
+  },
+  {
+    id: 'pixel-bazaar',
+    title: 'Pixel Bazaar',
+    genre: 'Town',
+    story:
+      'The market square: a shopkeeper who won’t haggle, a cat on a barrel, and a potion you can’t afford.',
+    sound: 'chip',
+    emotion: 'playful',
+    key: 'Bb',
+    mode: 'major',
+    tempo: 112,
+    groove: 'bounce',
+    swing: 0.62,
+    comp: 'offbeat',
+    arp: 'broken',
+    legato: 0.6,
+    dynamics: 0.65,
+    loop: true,
+    band: { lead: 87, counter: 82, arp: 46, chords: null, pad: null, bass: 33, drums: 2 }, // the sample channel's bass and kit
+    form: ['intro', 'verse', 'chorus', 'verse', 'chorus', 'bridge'],
+    sections: {
+      intro: { progression: 'I vi ii V' },
+      verse: { progression: 'I VI7 ii7 V7', answer: true },
+      chorus: { progression: 'IVmaj7 iv6 Imaj7 VI7 ii7 V7 I I' },
+      bridge: { progression: 'iii7 VI7 ii7 V7', energy: 0.5 },
+    },
+    scenes: {
+      intro: 'Welcome! Buy something, will ya?',
+      bridge: 'The cat knocks over a barrel.',
+    },
+  },
+  {
+    id: 'continue-question',
+    title: 'Continue?',
+    genre: 'Game over',
+    story: 'The screen goes dark, the countdown starts at nine, and the hero lies still. One more try?',
+    sound: 'chip',
+    emotion: 'melancholy',
+    key: 'D',
+    mode: 'harmonicMinor',
+    tempo: 68,
+    groove: 'ballad',
+    comp: 'sustain',
+    arp: 'tracker',
+    legato: 0.9,
+    dynamics: 0.45,
+    ritardando: true,
+    band: { lead: 80, counter: 85, arp: 83, chords: null, pad: 90, bass: 38, drums: null },
+    form: ['intro', 'verse', 'chorus', 'outro'],
+    sections: {
+      intro: { progression: 'i iv V i', texture: 'solo' },
+      verse: { progression: 'i VImaj7 iv7 V7', contour: 'fall' },
+      chorus: { progression: 'iv7 i/3 VI V7sus4', energy: 0.6 },
+      outro: { progression: 'iv V I:2', energy: 0.3 },
+    },
+    scenes: {
+      intro: 'GAME OVER',
+      verse: 'Nine… eight… seven…',
+      chorus: 'The hero’s hand twitches.',
+      outro: 'CONTINUE? ▶ YES',
+    },
+  },
+  {
+    id: 'clocktower-core',
+    title: 'Clocktower Core',
+    genre: 'Boss fight',
+    story:
+      'The heart of the tower: a clockwork guardian among grinding brass gears, its pendulum as long as a bridge. ' +
+      'Every phase you win knocks a gear loose, and the clock runs faster and stranger until midnight.',
+    sound: 'chip',
+    emotion: 'tense',
+    key: 'D',
+    mode: 'minor',
+    tempo: 152,
+    groove: 'rock',
+    arp: 'tracker',
+    style: { dim7: 0.05, earCandy: 0.6, syncopation: 0.35 }, // cinematic, the emotion's, with more ear candy and push
+    legato: 0.75,
+    dynamics: 0.85,
+    push: 3,
+    ritardando: true,
+    band: { lead: 86, counter: 87, arp: 82, chords: null, pad: 90, bass: 33, drums: 2 }, // NES pulses, a thin ticking arp, the sample channel's bass and kit
+    form: ['intro', 'verse', 'pre', 'chorus', 'post', 'link', 'A', 'breakdown', 'build', 'drop', 'outro'],
+    names: {
+      verse: 'Phase one',
+      pre: 'Gears slip',
+      chorus: 'Clockwork Heart',
+      post: 'Tick, tock',
+      link: 'A gear breaks loose',
+      A: 'Phase two',
+      breakdown: 'Time stops',
+      build: 'Mainspring',
+      drop: 'Overclock',
+      outro: 'Midnight',
+    },
+    sections: {
+      // five beats to the bar: a clock that doesn't tick evenly, over a tolling tonic and the Neapolitan
+      intro: { meter: '5/4', progression: 'i bII i bII', pedal: 1, mute: ['drums'], energy: 0.45 },
+      verse: { progression: 'i VI iv7 V7', counter: 'contrary', density: 1.2 },
+      // the gears slip a half beat every bar, and the chords come twice as fast
+      pre: { meter: '7/8', progression: 'iv V bVI V', energy: 0.7 },
+      chorus: {
+        progression: 'i VI III VII7 i VImaj7 iv V7',
+        endOn: 'dominant',
+        energy: 0.88,
+        melody:
+          '1:0.5 3:0.5 5 3:0.5 5:0.5 8 | 8:0.5 6:0.5 8 6:0.5 8:0.5 10 | 10:0.5 9:0.5 10:0.5 12:0.5 10 7 | 9:1.5 7:0.5 9:2 | 1:0.5 3:0.5 5 3:0.5 5:0.5 8 | 8:0.5 6:0.5 8 6:0.5 8:0.5 10 | 11:0.5 10:0.5 8:0.5 6:0.5 8 4 | 5:0.5 #7:0.5 9:0.5 #7:0.5 5:2',
+      },
+      post: { progression: 'bVImaj7 bVII7 i i', counter: 'harmony' },
+      // a minor third up and into phrygian: 2 + 3 + 2, the escapement catching
+      A: {
+        meter: '7/4c',
+        transpose: 3,
+        mode: 'phrygian',
+        progression: 'i bII i VII',
+        answer: true,
+        energy: 0.8,
+      },
+      // the pendulum stops mid-swing: a music-box waltz, alone
+      breakdown: { meter: '3/4', transpose: 3, progression: 'VI bII VI V', texture: 'solo', energy: 0.35 },
+      build: { progression: 'iv V', bars: 4, tempo: 164 },
+      // the hook again, a whole step up and at full speed
+      drop: {
+        progression: 'i VImaj7 III VII7 i VI V7 i',
+        transpose: 2,
+        tempo: 176,
+        feel: 'double',
+        bars: 8,
+        melody:
+          '1:0.5 3:0.5 5 3:0.5 5:0.5 8 | 8:0.5 6:0.5 8 6:0.5 8:0.5 10 | 10:0.5 9:0.5 10:0.5 12:0.5 10 7 | 9:1.5 7:0.5 9:2 | 1:0.5 3:0.5 5 3:0.5 5:0.5 8 | 8:0.5 6:0.5 8 6:0.5 8:0.5 10 | 9:0.5 #7:0.5 5 #7:0.5 9:0.5 12 | 8:3 r',
+      },
+      outro: { meter: '5/4', transpose: 2, tempo: 176, progression: 'iv V i:2' },
+    },
+    scenes: {
+      intro: 'TICK… TOCK… The great clock face opens.',
+      verse: 'The pendulum sweeps the floor. Jump it.',
+      pre: 'The gears slip a tooth.',
+      chorus: 'Its heart is exposed: hit it!',
+      link: 'CLANG. A gear falls into the dark.',
+      A: 'Phase two: the hands spin backwards.',
+      breakdown: 'Time stops. Only the music box plays.',
+      build: 'The mainspring winds tighter…',
+      drop: 'OVERCLOCK! Everything at double speed.',
+      outro: 'The clock strikes twelve. And stops.',
+    },
+  },
+  {
+    id: 'lanterns-on-the-lake',
+    title: 'Lanterns on the Lake',
+    genre: 'Love theme',
+    story:
+      'A festival at dusk: paper lanterns drift over a lake, and two travellers keep ending up at the same rail. ' +
+      'A dance, a misunderstanding, and one lantern launched by two pairs of hands.',
+    sound: 'chip',
+    emotion: 'tender',
+    key: 'Eb',
+    mode: 'major',
+    tempo: 84,
+    groove: 'waltz',
+    arp: 'updown',
+    style: { scoops: 0.4, earCandy: 0.35 }, // gentle, the emotion's, with more slides into notes and a little more sparkle
+    legato: 0.9,
+    dynamics: 0.55,
+    lift: true,
+    ritardando: true,
+    band: { lead: 83, counter: 85, arp: 46, chords: null, pad: 90, bass: 38, drums: 0 }, // hollow square and soft triangle, a harp-like pluck
+    form: ['intro', 'verse', 'pre', 'chorus', 'verse', 'pre', 'chorus', 'bridge', 'chorus', 'outro'],
+    names: {
+      verse: 'Across the rail',
+      pre: 'Closer',
+      chorus: 'Under the lanterns',
+      bridge: 'The wind',
+      outro: 'One lantern',
+    },
+    sections: {
+      // a music box: the pluck and the lead alone, rising into a suspended dominant
+      intro: { progression: 'Imaj7 IVmaj7 Imaj7 V7sus4', mute: ['drums', 'bass'] },
+      // the borrowed minor iv: the sigh of a glance held a moment too long
+      verse: { progression: 'Imaj7 iii7 IVmaj7 iv', mute: ['drums'] },
+      // the bass climbs a step a bar toward the chorus
+      pre: { progression: 'ii iii IV V7sus4', counter: 'contrary' },
+      // the lanterns rise in arpeggios, a sequence a sixth apart, over a Pachelbel bass walking down
+      chorus: {
+        progression: 'I V/7 vi iii IV I/3 V7 I',
+        counter: 'harmony',
+        melody: '3 5 8 | 7:2 5 | 6 8 10 | 10:2 7 | 8:1.5 6:0.5 4 | 5 3 5 | 9:2 7 | 8:3',
+      },
+      // the wind takes their lantern: C minor, and the two voices talk over each other
+      bridge: { progression: 'i VI iv V', transpose: -3, mode: 'minor', answer: true, mute: ['drums'] },
+      // the amen with the borrowed iv, slowing to a stop
+      outro: { progression: 'IV iv I:2', mute: ['drums'] },
+    },
+    scenes: {
+      intro: 'Dusk. The first lanterns are lit.',
+      'verse 1': 'Across the rail, a stranger is watching the same lantern.',
+      'pre 1': 'A step closer. Then another.',
+      'chorus 1': 'Under the lanterns, a dance.',
+      'verse 2': 'Names, and a laugh over a burnt lantern.',
+      'chorus 2': 'The whole lake glows.',
+      bridge: 'A gust of wind. Their lantern tears free, and a word comes out wrong.',
+      'chorus 3': 'One more lantern, launched together.',
+      outro: 'It rises until it is a star.',
+    },
+  },
+  {
+    id: 'waltz-of-the-lit-windows',
+    title: 'Waltz of the Lit Windows',
+    genre: 'Haunted ballroom',
+    story:
+      'A mansion on the hill, every window glowing amber at midnight. Nobody has lived there for a century, ' +
+      'and someone is still dancing in the ballroom. The door is open. Go in.',
+    sound: 'chip',
+    emotion: 'mysterious',
+    key: 'E',
+    mode: 'harmonicMinor',
+    tempo: 108,
+    groove: 'waltz',
+    comp: 'waltz',
+    arp: 'updown',
+    style: { scoops: 0.3, earCandy: 0.45, dim7: 0.12, secondary: 0.1 }, // the ghosts glide into their notes; a ballroom's chromatic steps
+    legato: 0.85,
+    dynamics: 0.55,
+    loop: true,
+    band: { lead: 85, counter: 83, arp: 46, chords: null, pad: 90, bass: 38, drums: 0 }, // soft triangle and hollow square, a music-box pluck, a PWM mist
+    form: ['intro', 'verse', 'chorus', 'verse', 'bridge', 'chorus'],
+    names: { verse: 'The open door', chorus: 'The dance', bridge: 'The floor tilts' },
+    sections: {
+      // the music box alone, over a tonic that won't move
+      intro: { progression: 'i iv7 i V7', pedal: 1, mute: ['drums', 'lead'], energy: 0.35 },
+      verse: { progression: 'i VImaj7 iv7 V7', contour: 'valley', counter: 'contrary', energy: 0.5 },
+      // the waltz itself: harmonic minor's raised seventh pulls hard at every V
+      chorus: {
+        progression: 'i iv V7 i VImaj7 iv V7 i',
+        counter: 'harmony',
+        energy: 0.7,
+        melody:
+          '5:1.5 4:0.5 3 | 4 6 8 | 7:1.5 6:0.5 5 | 3:2 r | 8:1.5 6:0.5 3 | 4:0.5 6:0.5 8 11 | 9:0.5 7:0.5 5 2 | 1:3',
+      },
+      // five beats to the bar: a step that shouldn't be there, as if the room leans
+      bridge: {
+        meter: '5/4',
+        progression: 'VImaj7 bIImaj7 VI V7',
+        answer: true,
+        energy: 0.4,
+        mute: ['drums'],
+        endOn: 'dominant',
+      },
+    },
+    scenes: {
+      intro: 'Midnight. Every window is lit.',
+      'verse 1': 'The front door swings open on its own.',
+      'chorus 1': 'In the ballroom, couples made of mist.',
+      'verse 2': 'A portrait’s eyes follow you up the stairs.',
+      bridge: 'The floor tilts. The chandelier sways, though there is no wind.',
+      'chorus 2': 'A cold hand takes yours. One more dance.',
+    },
+  },
+  {
+    id: 'creaking-halls',
+    title: 'Creaking Halls',
+    genre: 'Haunted house',
+    story:
+      'The upstairs corridors of the same mansion, candles out. Every board creaks, and something is walking ' +
+      'a few steps behind, stopping when you stop.',
+    sound: 'chip',
+    emotion: 'tense',
+    key: 'E',
+    mode: 'phrygian',
+    meter: '7/8',
+    tempo: 96,
+    groove: 'halftime',
+    comp: 'sustain',
+    arp: 'threes',
+    extend: [{ how: 'sevenths', chance: 0.3 }], // dark minor sevenths in the dust
+    legato: 0.6,
+    dynamics: 0.6,
+    loop: true,
+    band: { lead: 82, counter: 85, arp: 46, chords: null, pad: 90, bass: 38, drums: 1 }, // a thin 12.5% pulse, the NES triangle and kit
+    form: ['intro', 'verse', 'chorus', 'verse', 'bridge', 'chorus'],
+    names: { verse: 'The corridor', chorus: 'Footsteps', bridge: 'Hold your breath' },
+    sections: {
+      // a tolling tonic and the flat second: seven beats that trip on the last one, like a step that isn't yours
+      intro: { progression: 'i bII i bII', pedal: 1, mute: ['drums'], energy: 0.35 },
+      verse: { progression: 'i bIImaj7 vii i', contour: 'valley', density: 0.8, energy: 0.5 },
+      chorus: { progression: 'iv7 bII i vii7', counter: 'contrary', energy: 0.72 },
+      // everything stops but the pulse, alone over the pedal
+      bridge: {
+        progression: 'VImaj7 VI bIImaj7 bII',
+        pedal: 1,
+        texture: 'solo',
+        energy: 0.3,
+        endOn: 'dominant',
+      },
+    },
+    scenes: {
+      intro: 'The candles go out.',
+      'verse 1': 'A long corridor of doors. Creak. Creak.',
+      'chorus 1': 'Footsteps behind you. They stop when you stop.',
+      'verse 2': 'One of the doors is open now.',
+      bridge: 'Hold your breath.',
+      'chorus 2': 'Run.',
+    },
+  },
+  {
+    id: 'spook-swing',
+    title: 'Spook Swing',
+    genre: 'Halloween',
+    story:
+      'The same mansion on Halloween night, and the ghosts are throwing a party: sheets with eyeholes, a skeleton ' +
+      'on the piano, pumpkins grinning in every window. Everyone is invited, alive or not.',
+    sound: 'chip',
+    emotion: 'playful',
+    key: 'E',
+    mode: 'minor',
+    tempo: 120,
+    groove: 'bounce',
+    swing: 0.6,
+    comp: 'offbeat',
+    arp: 'broken',
+    legato: 0.6,
+    dynamics: 0.7,
+    loop: true,
+    band: { lead: 87, counter: 82, arp: 46, chords: null, pad: null, bass: 33, drums: 2 }, // the NES pulse over the sample channel's bass and kit
+    form: ['intro', 'verse', 'chorus', 'verse', 'chorus', 'bridge'],
+    names: { verse: 'Trick', chorus: 'Treat', bridge: 'The skeleton’s solo' },
+    sections: {
+      intro: { progression: 'i6 iv6 V7 i6', energy: 0.5 },
+      verse: { progression: 'i6 iv6 i6 V7', answer: true, energy: 0.6 },
+      chorus: { progression: 'VI7 V7 i6 i6 iv6 V7 i6 V7', energy: 0.8 },
+      // a walking bass under a chromatic turn, and the pulse showing off
+      bridge: {
+        progression: 'iv6 iv6 i6 i6 bII7 bII7 V7 V7',
+        energy: 0.65,
+        counter: 'contrary',
+        endOn: 'dominant',
+      },
+    },
+    scenes: {
+      intro: 'Knock, knock.',
+      'verse 1': 'The door is opened by a sheet with two eyeholes.',
+      'chorus 1': 'The whole house is dancing.',
+      bridge: 'The skeleton takes a solo on the piano.',
+      'chorus 2': 'Even the portraits tap their feet.',
+    },
+  },
+];

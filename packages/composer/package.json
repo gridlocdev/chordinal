@@ -6,7 +6,7 @@
   "description": "The part composer: songs, genres, harmony and melody, written as projects",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.ts"
   },
   "sideEffects": false,
   "dependencies": {
