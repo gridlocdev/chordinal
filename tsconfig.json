@@ -8,5 +8,18 @@
     "types": ["node"]
   },
   "include": ["vitest.config.ts"],
-  "references": []
+  "references": [
+    {
+      "path": "packages/lib"
+    },
+    {
+      "path": "packages/lib/test"
+    },
+    {
+      "path": "packages/audio"
+    },
+    {
+      "path": "packages/audio/test"
+    }
+  ]
 }

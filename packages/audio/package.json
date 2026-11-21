@@ -6,7 +6,10 @@
   "description": "The SoundFont libraries and chip instruments, as data",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.ts"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "dependencies": {
+    "@chordinal/lib": "workspace:*"
+  }
 }

@@ -16,3 +16,4 @@ docs
 *.jsx
 *.mjs
 *.cjs
+packages/audio/src/soundfont-catalog-data.ts

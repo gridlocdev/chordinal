@@ -6,7 +6,7 @@
   "description": "Music theory, MIDI, WAV, SF2 and pitch tracking: pure functions",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.ts"
   },
   "sideEffects": false
 }

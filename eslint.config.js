@@ -11,7 +11,7 @@ const DEEP_IMPORTS = {
 /** what each package may import: the layers, low to high */
 const LAYERS = {
   lib: [],
-  audio: [],
+  audio: ['lib'],
   daw: ['lib'],
   composer: ['lib', 'audio', 'daw'],
   sketch: ['lib', 'daw'],
