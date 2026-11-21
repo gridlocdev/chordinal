@@ -29,3 +29,6 @@ build/
 
 # release builds; `just package` makes them
 release/
+
+# TypeScript build info
+*.tsbuildinfo

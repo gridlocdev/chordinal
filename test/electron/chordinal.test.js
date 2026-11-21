@@ -27,7 +27,7 @@ async function until(what, fn)
 
 async function launch(marker)
 {
-    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'apps/desktop/src/chordinal.js'), '--headless'], cwd: ROOT });
+    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'apps/desktop/dist/chordinal.js'), '--headless'], cwd: ROOT });
     const page = await app.firstWindow();
     await page.waitForLoadState('domcontentloaded');
     // if the headless gate ever breaks, a native dialog still stays off the screen: it leaves a marker and answers

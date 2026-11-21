@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { randomBytes } from 'node:crypto';
-import { downloadLibrary } from '../../apps/desktop/src/soundfont-download.mjs';
+import { downloadLibrary } from '../../apps/desktop/src/soundfont-download.ts';
 
 const pad = (s, n)=> Buffer.from(String(s).padEnd(n, ' '), 'latin1');
 

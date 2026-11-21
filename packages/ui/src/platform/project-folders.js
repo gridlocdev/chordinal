@@ -1,5 +1,5 @@
 // Chordinal's projects (Chordinal PRD §4): folders anywhere on disk, each named by its path, reached through the
-// desktop app (electron/chordinal.js), which lets the page reach only folders the user picked or has in Open Recent.
+// desktop app (apps/desktop/src/chordinal.ts), which lets the page reach only folders the user picked or has in Open Recent.
 const backend = /** @type {any} */ (globalThis).projectFolders;
 const none = ()=> Promise.reject(new Error('project folders need the Chordinal desktop app'));
 

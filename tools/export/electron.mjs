@@ -1,7 +1,7 @@
 // The browser for tools/export.mjs: Electron with no window on screen, loading the export page it's given.
 // Quits when the page's window closes; tools/export.mjs ends it once the page is done. An error nothing caught exits
 // with code 1 instead of showing Electron's error dialog.
-import { exitOnUncaughtErrors } from '../../apps/desktop/src/headless-errors.js';
+import { exitOnUncaughtErrors } from '../../apps/desktop/src/headless-errors.ts';
 import { app, BrowserWindow } from 'electron';
 
 exitOnUncaughtErrors();

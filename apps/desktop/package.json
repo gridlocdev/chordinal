@@ -8,8 +8,8 @@
   "author": "gridlocdev",
   "homepage": "https://github.com/gridlocdev/chordinal",
   "license": "MIT",
-  "main": "src/chordinal.js",
-  "dependencies": {
+  "main": "dist/chordinal.js",
+  "devDependencies": {
     "@chordinal/audio": "workspace:*"
   }
 }

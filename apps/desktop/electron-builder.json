@@ -6,7 +6,7 @@
     "output": "../../release/chordinal",
     "buildResources": "assets/icon"
   },
-  "files": ["src/**", "assets/icon/icon.png", "package.json"],
+  "files": ["dist/**", "!dist/**/*.map", "!dist/types/**", "assets/icon/icon.png", "package.json"],
   "extraResources": [
     {
       "from": "../web/dist",
@@ -84,6 +84,6 @@
   "extraMetadata": {
     "name": "chordinal",
     "productName": "Chordinal",
-    "main": "src/chordinal.js"
+    "main": "dist/chordinal.js"
   }
 }

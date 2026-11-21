@@ -13,7 +13,7 @@
   "packageManager": "pnpm@10.29.2",
   "scripts": {
     "build": "node tools/build.mjs",
-    "test": "node --test",
+    "test": "node --test 'test/**/*.test.js' && vitest run",
     "check": "just check"
   },
   "devDependencies": {

@@ -20,9 +20,9 @@ build: deps
 chordinal: build
     #!/usr/bin/env sh
     if [ "$(uname)" = Darwin ]; then
-        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/apps/desktop/src/chordinal.js"
+        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/apps/desktop/dist/chordinal.js"
     else
-        npx electron apps/desktop/src/chordinal.js
+        npx electron apps/desktop/dist/chordinal.js
     fi
 
 # run it while working on it: rebuilds on every change and reloads the window
@@ -32,9 +32,9 @@ dev: build
     node tools/build.mjs --watch & watcher=$!
     trap 'kill $watcher' EXIT INT TERM
     if [ "$(uname)" = Darwin ]; then
-        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/apps/desktop/src/chordinal.js" --dev
+        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/apps/desktop/dist/chordinal.js" --dev
     else
-        npx electron apps/desktop/src/chordinal.js --dev
+        npx electron apps/desktop/dist/chordinal.js --dev
     fi
 
 # everything a commit must pass: formatting, lint (with the layer rules), types, the page's bundle and the tests
@@ -42,13 +42,13 @@ check: deps
     npx prettier --check .
     npx eslint .
     npx tsc -b
-    node tools/build.mjs --check
-    node --test
+    node tools/build.mjs
+    node --test 'test/**/*.test.js'
     npx vitest run
 
 # run the tests: node --test for the JavaScript, Vitest for the TypeScript
-test:
-    node --test
+test: build
+    node --test 'test/**/*.test.js'
     npx vitest run
 
 # report how an NSF file's songs are built (keep the files in reference/, which git ignores)
