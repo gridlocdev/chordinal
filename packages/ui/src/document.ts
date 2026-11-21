@@ -43,6 +43,16 @@ export interface NewProjectOptions {
 }
 
 let mergeKey: string | null = null;
+/** the saves, and the opens that replace the project, one at a time in the order they were asked for: a save on its way
+ * lands before another project takes the window, so its result can't be taken for the new one's */
+let turn: Promise<unknown> = Promise.resolve();
+/** counts the projects put in the window: a save asked for one that another has replaced by its turn doesn't run */
+let shown = 0;
+function inTurn<T>(task: () => Promise<T>): Promise<T> {
+  const next = turn.then(task, task);
+  turn = next.catch(() => undefined);
+  return next;
+}
 /** the open project's relation to where it's kept: its version token there, a save on its way, a conflict */
 let session: SaveState = NEW;
 
@@ -82,6 +92,7 @@ function keepSelection(): void {
 
 /** puts a project in the window, stopped at its start; a project with no name has unsaved changes unless `clean` */
 function show(p: Project, name: string, clean = false): void {
+  shown++;
   stop();
   mergeKey = null;
   hist.value = history(p);
@@ -108,18 +119,20 @@ export async function discardOk(): Promise<boolean> {
 
 export async function openProject(name: string): Promise<boolean> {
   if (!(await discardOk())) return false;
-  try {
-    const { text, version } = await place.files.read(name);
-    const file = classifyFile(text);
-    if (file.kind !== 'project') throw new Error(file.message);
-    show(file.project, name);
-    session = step(session, { type: 'opened', version });
-    place.opened?.(name);
-    return true;
-  } catch (e) {
-    status.value = `Couldn't open ${place.where(name)}: ${errorText(e)}`;
-    return false;
-  }
+  return inTurn(async () => {
+    try {
+      const { text, version } = await place.files.read(name);
+      const file = classifyFile(text);
+      if (file.kind !== 'project') throw new Error(file.message);
+      show(file.project, name);
+      session = step(session, { type: 'opened', version });
+      place.opened?.(name);
+      return true;
+    } catch (e) {
+      status.value = `Couldn't open ${place.where(name)}: ${errorText(e)}`;
+      return false;
+    }
+  });
 }
 
 /** a new project, not saved yet: empty, or from a generator spec (a feeling, a genre, a song's spec, a whistled sketch) */
@@ -134,26 +147,26 @@ export async function newProject({
   const p = spec
     ? { ...toProject(compose({ ...spec, title })), title }
     : emptyProject({ title, bpm, sig, bars });
-  show(p, '');
+  await inTurn(async () => show(p, ''));
 }
 
 /** a project made elsewhere (an imported file), opened as a new one, not saved yet; `clean` when it has nothing worth
  * asking about until it's changed (Chordinal's empty new project) */
 export async function openNew(p: Project, { clean = false }: { clean?: boolean } = {}): Promise<boolean> {
   if (!(await discardOk())) return false;
-  show(p, '', clean);
-  return true;
+  return inTurn(async () => {
+    show(p, '', clean);
+    return true;
+  });
 }
 
 /** saves to the project's folder, or asks for a name when it has none; saves run one at a time, in order, so an older
  * one can never land after a newer one. Resolves to whether it saved. */
 export async function save(): Promise<boolean> {
   if (!projectName.value) return saveAs();
-  return queueSave();
+  const at = shown;
+  return inTurn(async () => at === shown && saveNow());
 }
-
-let saving: Promise<boolean> = Promise.resolve(true);
-const queueSave = () => (saving = saving.then(saveNow, saveNow));
 
 /** resolves to whether it saved */
 async function saveNow(): Promise<boolean> {
@@ -211,21 +224,30 @@ async function copyTakes(from: string, to: string): Promise<void> {
 /** saves under a new name (the app's place asks where); the project takes the name only once it's saved there.
  * Resolves to whether it saved. */
 export async function saveAs(): Promise<boolean> {
+  const at = shown;
   const chosen = await place.chooseName(project.value.title, projectName.value);
+  if (at !== shown) return false;
   if (!chosen) return false;
   const { name, title } = chosen;
   edit((p) => (p.title === title ? p : { ...p, title }));
-  const before = { name: projectName.value, session };
-  projectName.value = name;
-  if (name !== before.name) session = step(session, { type: 'savedAs' }); // a new place, or one the user agreed to replace
-  if (await queueSave()) {
+  let before = '';
+  // The move to the new place waits its turn behind the saves already on their way: made at once, those would land
+  // under the new name and hand the old place's token to it. A new place, or one the user agreed to replace, starts
+  // with no token; if the save fails, the project goes back to the old place as it was.
+  const done = await inTurn(async () => {
+    if (at !== shown) return false;
+    before = projectName.value;
+    const left = session;
+    projectName.value = name;
+    if (name !== before) session = step(session, { type: 'savedAs' });
+    if (await saveNow()) return true;
+    projectName.value = before;
+    session = left;
+    return false;
+  });
+  if (done) {
     setSettings({ project: name });
-    if (before.name && name !== before.name) await copyTakes(before.name, name);
-    return true;
+    if (before && name !== before) await copyTakes(before, name);
   }
-  if (projectName.value === name) {
-    projectName.value = before.name;
-    session = before.session;
-  }
-  return false;
+  return done;
 }

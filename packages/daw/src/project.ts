@@ -232,8 +232,13 @@ export function updateTrack(p: Project, id: string, patch: Patch<Track>): Projec
   return changed ? { ...p, tracks } : p;
 }
 
-export const setMixer = (p: Project, id: string, patch: Partial<Mixer>): Project =>
-  updateTrack(p, id, (t) => ({ ...t, mixer: { ...t.mixer, ...patch } }));
+/** changes a track's mixer; one that changes nothing gives back the same project, so it's no undo step */
+export function setMixer(p: Project, id: string, patch: Partial<Mixer>): Project {
+  return updateTrack(p, id, (t) => {
+    const mixer = { ...t.mixer, ...patch };
+    return unchanged(t.mixer, mixer) ? t : { ...t, mixer };
+  });
+}
 
 export function addTrack(p: Project, track: Track, index: number = p.tracks.length): Project {
   const tracks = [...p.tracks];
@@ -335,18 +340,24 @@ function newPatternId(p: Project): string {
 
 /** the next free name for a pattern on a track: "Drums 1", "Drums 2" (PRD §3.4) */
 export function nextPatternName(p: Project, base: string): string {
-  const names = new Set(patternsOf(p).map((x) => x.name));
+  const names = new Set(patternsOf(p).map((x) => x.name)),
+    stem = base.trim();
+  const name = (n: number) => `${stem} ${n}`.trim();
   let n = 1;
-  while (names.has(`${base} ${n}`)) n++;
-  return `${base} ${n}`;
+  while (names.has(name(n))) n++;
+  return name(n);
 }
 
-/** an ordinary clip turned into the only clip of a new pattern (PRD §3.4); a pattern clip is left as it is */
+/** an ordinary clip turned into the only clip of a new pattern (PRD §3.4); a pattern clip is left as it is. The name is
+ * kept trimmed, as renamePattern keeps it, and an empty one becomes "Pattern 1" or the next free number. */
 export function makePattern(p: Project, trackId: string, clipId: string, name: string): Project {
   const clip = findClip(p, trackId, clipId);
   if (!clip || clip.pattern) return p;
-  const id = newPatternId(p);
-  return updateClip({ ...p, patterns: [...patternsOf(p), { id, name }] }, trackId, clipId, { pattern: id });
+  const id = newPatternId(p),
+    clean = name.trim() || nextPatternName(p, 'Pattern');
+  return updateClip({ ...p, patterns: [...patternsOf(p), { id, name: clean }] }, trackId, clipId, {
+    pattern: id,
+  });
 }
 
 /** a pattern clip turned into an ordinary clip with the same notes (PRD §3.6) */
@@ -426,7 +437,9 @@ export function splitAt(p: Project, beat: number, trackId: string | null = null)
         id: newId(out, 'c'),
         start: beat,
         beats: c.beats - cut,
-        notes: c.notes.filter((n) => n.beat >= cut - 1e-9).map((n) => ({ ...n, beat: n.beat - cut })),
+        notes: c.notes
+          .filter((n) => n.beat >= cut - 1e-9)
+          .map((n) => ({ ...n, beat: Math.max(0, n.beat - cut) })), // a note on the cut starts at 0, not at -1e-16
       };
       out = addClip(
         updateClip(out, t.id, c.id, () => left),

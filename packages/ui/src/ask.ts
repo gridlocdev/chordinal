@@ -21,15 +21,24 @@ export interface Question {
 /** the question showing, or null */
 export const asking: Signal<Question | null> = signal(null);
 
+/** questions put while another was showing, first first: each shows once the one before it is answered, so a question
+ * that comes up meanwhile (a save's conflict while Open asks about unsaved changes) never replaces one still waiting */
+const waiting: Question[] = [];
+
+function put(question: Question): void {
+  if (asking.value) waiting.push(question);
+  else asking.value = question;
+}
+
 /** resolves to the text entered, or null when cancelled */
 export const askText = (text: string, value = '', yes = 'OK'): Promise<string | null> =>
   new Promise((resolve) => {
-    asking.value = { text, value, yes, resolve: (v) => resolve(typeof v === 'symbol' ? null : v) };
+    put({ text, value, yes, resolve: (v) => resolve(typeof v === 'symbol' ? null : v) });
   });
 
 export const askYes = (text: string, yes = 'OK'): Promise<boolean> =>
   new Promise((resolve) => {
-    asking.value = { text, value: null, yes, resolve: (v) => resolve(v !== null) };
+    put({ text, value: null, yes, resolve: (v) => resolve(v !== null) });
   });
 
 /**
@@ -38,18 +47,19 @@ export const askYes = (text: string, yes = 'OK'): Promise<boolean> =>
  */
 export const askChoice = (text: string, yes: string, other: string): Promise<'yes' | 'other' | null> =>
   new Promise((resolve) => {
-    asking.value = {
+    put({
       text,
       value: null,
       yes,
       other,
       resolve: (v) => resolve(v === null ? null : v === OTHER ? 'other' : 'yes'),
-    };
+    });
   });
 
-/** answers the question showing: its text, '' for yes, OTHER for a choice's second button, or null to cancel */
+/** answers the question showing: its text, '' for yes, OTHER for a choice's second button, or null to cancel; the
+ * next question waiting shows */
 export function answer(v: Answer): void {
   const a = asking.value;
-  asking.value = null;
+  asking.value = waiting.shift() ?? null;
   a?.resolve(v);
 }

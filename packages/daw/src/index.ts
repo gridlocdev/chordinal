@@ -2,6 +2,7 @@ export * from './automation.ts';
 export * from './fx.ts';
 export * from './gm-drums-data.ts';
 export * from './history.ts';
+export * from './invariants.ts';
 export * from './meter.ts';
 export * from './note-edits.ts';
 export * from './play-parts.ts';
