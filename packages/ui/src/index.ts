@@ -1,44 +1,249 @@
-export * from './ask.ts';
-export * from './bounce.ts';
-export * from './clipboard.ts';
-export * from './commands.ts';
-export * from './context-menus.ts';
-export * from './dialogs.ts';
-export * from './document.ts';
-export * from './focus.ts';
-export * from './keys.ts';
-export * from './libraries.ts';
-export * from './live.ts';
-export * from './menu-bar.ts';
-export * from './midi-import.ts';
-export * from './notes.ts';
-export * from './place.ts';
-export * from './platform/app-menu.ts';
-export * from './platform/keys.ts';
-export * from './platform/midi.ts';
-export * from './platform/project-folders.ts';
-export * from './platform/soundfonts.ts';
-export * from './platform/storage.ts';
-export * from './player.ts';
-export * from './preview.ts';
-export * from './recording.ts';
-export * from './steps.ts';
-export * from './store.ts';
-export * from './theme.ts';
-export * from './timeline.ts';
-export * from './tracks.ts';
-export * from './components/arrange-view.ts';
-export * from './components/canvas.ts';
-export * from './components/grid-view.ts';
-export * from './components/roll-draw.ts';
-export * from './components/roll-input.ts';
-export * from './components/roll-view.ts';
-export * from './components/roll-edit.ts';
-export * from './components/drag-data.ts';
-export * from './store/project-store.ts';
-export * from './store/memory-store.ts';
-export * from './store/browser-store.ts';
-export * from './store/native-store.ts';
-export * from './store/save-session.ts';
-export * from './store/classify-file.ts';
-export * from './commands/index.ts';
+export { OTHER, answer, askChoice, askText, askYes, asking } from './ask.ts';
+export type { Answer, Question } from './ask.ts';
+export { TAIL, bounce, exportDialog, writeStems } from './bounce.ts';
+export type { BounceOptions, Rendered, StemWriter } from './bounce.ts';
+export { canCopy, clipboard, copy, cut, duplicate, paste } from './clipboard.ts';
+export type { ClipboardContent } from './clipboard.ts';
+export { addMarkerAt, busy, catalog, deleteSelection, item, selectionRange, snapItems } from './commands.ts';
+export {
+  chordMenu,
+  clipMenu,
+  laneMenu,
+  noteMenu,
+  presetMenu,
+  rollMenu,
+  rulerMenu,
+  setTrackItems,
+  stripMenu,
+  takeMenu,
+  textMenu,
+  trackContextMenu,
+} from './context-menus.ts';
+export { appDialog, overlay, toggleOverlay } from './dialogs.ts';
+export type { Overlay } from './dialogs.ts';
+export { discardOk, edit, newProject, openNew, openProject, redo, save, saveAs, undo } from './document.ts';
+export type { NewProjectOptions } from './document.ts';
+export { focus, musicalTyping, takingKeys } from './focus.ts';
+export type { FocusPart } from './focus.ts';
+export { handleKey } from './keys.ts';
+export { checkLibraries, chooseLibrary, downloadLibrary } from './libraries.ts';
+export { connectMidi, held, liveName, onPlayed, press, release, startLive } from './live.ts';
+export type { PlayedKey } from './live.ts';
+export { editMenu, startMenus, trackMenu, transportMenu, viewMenu } from './menu-bar.ts';
+export type { Menu } from './menu-bar.ts';
+export { dropMidi, importMidi, isMidi } from './midi-import.ts';
+export {
+  GRIDS,
+  canonicalClip,
+  canonicalIds,
+  changeNotes,
+  clearPicked,
+  deletePicked,
+  hasPicks,
+  humanizePicked,
+  isPicked,
+  legatoPicked,
+  noteId,
+  notesOf,
+  nudgePicked,
+  pickAll,
+  pickKey,
+  pickedNotes,
+  quantizePicked,
+  reversePicked,
+  scalePicked,
+  setVelocity,
+  transposePicked,
+} from './notes.ts';
+export type { GridChoice, PlacedNote } from './notes.ts';
+export { place, setPlace } from './place.ts';
+export type { Place } from './place.ts';
+export { appMenu } from './platform/app-menu.ts';
+export type { MenuEntry, MenuItem, OpenedFile } from './platform/app-menu.ts';
+export { NOTE_KEYS, OCTAVE_KEYS, typing } from './platform/keys.ts';
+export { midi } from './platform/midi.ts';
+export type { MidiMessage } from './platform/midi.ts';
+export { docWindow, folderTitle, onDisk, projectFolders, projectStore } from './platform/project-folders.ts';
+export { soundfonts } from './platform/soundfonts.ts';
+export { SETTINGS_KEY, browserStorage, storage } from './platform/storage.ts';
+export { heardDifferently, play, reload, seek, stop, toggle } from './player.ts';
+export { preview, previewNotes } from './preview.ts';
+export type { PreviewNote, PreviewPreset } from './preview.ts';
+export { dropAudio, dropTake, finish, newFromMelody, record, recording, takesKept } from './recording.ts';
+export type { RecordedKey, Take } from './recording.ts';
+export {
+  accentStep,
+  addGridRow,
+  gridTarget,
+  hideGridRow,
+  paintStep,
+  playingStep,
+  previewStep,
+  setStepSize,
+  startEditorFollow,
+} from './steps.ts';
+export {
+  FADER_FLOOR_DB,
+  beat,
+  chordRange,
+  dirty,
+  exporting,
+  hist,
+  installedLibraries,
+  levels,
+  libraryDownload,
+  loadSettings,
+  mix,
+  picked,
+  playing,
+  project,
+  projectName,
+  saveSettingsNow,
+  saved,
+  selected,
+  selectedClip,
+  selectedTrack,
+  setSettings,
+  settings,
+  status,
+} from './store.ts';
+export type {
+  BrowserTab,
+  ChordRange,
+  ClipRef,
+  EditorTab,
+  Levels,
+  LibraryDownload,
+  Settings,
+  ThemeChoice,
+} from './store.ts';
+export { alpha, palette, shownTheme, startTheme } from './theme.ts';
+export type { Palette, Token } from './theme.ts';
+export {
+  askMeter,
+  askMeterChange,
+  askTempo,
+  askTempoChange,
+  editFlag,
+  flagMenu,
+  timelineFlags,
+} from './timeline.ts';
+export type { TimelineFlag } from './timeline.ts';
+export {
+  addNewTrack,
+  arrangePpb,
+  arrangeZoom,
+  assignPreset,
+  chooseInstrument,
+  clipRange,
+  deleteClip,
+  deleteTrack,
+  duplicateTheTrack,
+  humanizeClip,
+  joinWithNext,
+  loopOver,
+  makePatternOf,
+  makeUniqueOf,
+  moveTrackBy,
+  moveTrackTo,
+  newClipAt,
+  nextClip,
+  nudgeClip,
+  patternOf,
+  quantizeClip,
+  renamePatternOf,
+  renameTrack,
+  reverseClip,
+  scaleClip,
+  setClipBars,
+  setMix,
+  setTrackColor,
+  splitClipsAt,
+  toggleClipMute,
+  toggleMute,
+  toggleSolo,
+  trackOf,
+  transposeClip,
+} from './tracks.ts';
+export type { InstrumentRef } from './tracks.ts';
+export {
+  HEAD_W,
+  ZOOM,
+  fitted,
+  fittedPpb,
+  px,
+  snapTo,
+  snapToBar,
+  span,
+  width,
+} from './components/arrange-view.ts';
+export { rgba, useCanvas } from './components/canvas.ts';
+export type { Draw } from './components/canvas.ts';
+export {
+  GRID_GUTTER,
+  ROW_H,
+  betweenCells,
+  gridGeometry,
+  lineKind,
+  playheadStep,
+} from './components/grid-view.ts';
+export type { GridCell, GridGeometry, LineKind } from './components/grid-view.ts';
+export { drawRoll } from './components/roll-draw.ts';
+export { down, hover, menu, wheel } from './components/roll-input.ts';
+export type { RollMove, RollPress, RollTarget } from './components/roll-input.ts';
+export {
+  EDGE,
+  GUTTER,
+  LANE_H,
+  PPB,
+  STRIP,
+  VEL_H,
+  band,
+  geometry,
+  rollGeometry,
+  snap,
+  snapToGrid,
+  view,
+} from './components/roll-view.ts';
+export type { Lanes, RollGeometry, RollPoint, RollView } from './components/roll-view.ts';
+export { dragNote, notesInBand, velocityAt } from './components/roll-edit.ts';
+export type { NoteDrag } from './components/roll-edit.ts';
+export { PRESET, TRACK, carries, readPreset, writePreset } from './components/drag-data.ts';
+export type { DroppedPreset } from './components/drag-data.ts';
+export { ConflictError, TAKE_NAME } from './store/project-store.ts';
+export type { ProjectStore, Stored, Version } from './store/project-store.ts';
+export { memoryStore } from './store/memory-store.ts';
+export type { MemoryStore } from './store/memory-store.ts';
+export { browserStore } from './store/browser-store.ts';
+export type { KeyValue } from './store/browser-store.ts';
+export { nativeStore } from './store/native-store.ts';
+export type { FoldersBridge } from './store/native-store.ts';
+export { NEW, expectedOf, step } from './store/save-session.ts';
+export type { SaveEvent, SaveState } from './store/save-session.ts';
+export { classifyFile } from './store/classify-file.ts';
+export type { FileKind } from './store/classify-file.ts';
+export {
+  CommandCatalog,
+  GROUPS,
+  compact,
+  eventKey,
+  formatShortcut,
+  inOrder,
+  isMac,
+  listStep,
+  matchKind,
+  menuAnswers,
+  parseShortcut,
+  toAccelerator,
+  typesText,
+} from './commands/index.ts';
+export type {
+  Command,
+  CommandGroup,
+  CommandMenuItem,
+  CommandSpec,
+  KeyContext,
+  KeyPress,
+  Shortcut,
+  TextEdit,
+} from './commands/index.ts';

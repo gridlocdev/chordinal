@@ -200,6 +200,8 @@ const FIXES: Record<string, string> = {
     "Keys reach the app in one place: apps/web/src/main.tsx sends them to handleKey (packages/ui/src/keys.ts), and live.ts plays the piano roll's notes. Add a command with a shortcut to the catalog (packages/ui/src/commands.ts) instead of a listener.",
   'command ids':
     'A command named by id (item(), catalog.get, catalog.run, catalog.menuItem) must be registered in the catalog: new CommandCatalog([…]) in packages/ui/src/commands.ts, or catalog.add([…]). Fix the id, or register the command.',
+  'named exports':
+    "An index file names what it exports (export { a, b } from './x.ts', export type { T } from './x.ts'), so a package's surface is written down and two modules can't quietly export the same name. Replace export * with the names other packages use.",
   'type escapes':
     'No any, @ts-ignore, @ts-expect-error, @ts-nocheck or eslint-disable. Give the value its type (unknown, then narrow it), or fix what the checker or the lint found. If one is truly needed, add it to test/architecture-exceptions.json with the reason.',
 };
@@ -211,6 +213,19 @@ function findBreaks(): Break[] {
   const out: Break[] = [];
   const add = (rule: string, s: Source, line: number, what: string) =>
     out.push({ rule, path: s.path, line, what });
+
+  // export * hides what a package exports
+  for (const s of sources) {
+    if (!s.isSrc) continue;
+    for (const st of s.file.statements)
+      if (ts.isExportDeclaration(st) && !st.exportClause && st.moduleSpecifier)
+        add(
+          'named exports',
+          s,
+          s.file.getLineAndCharacterOfPosition(st.getStart()).line + 1,
+          st.getText(s.file),
+        );
+  }
 
   // the registered command ids
   const registered = new Set<string>();

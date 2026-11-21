@@ -1,4 +1,13 @@
-export * from './chip-instruments-data.ts';
-export * from './soundfont-catalog-data.ts';
-export * from './soundfont-libraries-data.ts';
-export * from './soundfont-library.ts';
+export {
+  CHIP_BANK,
+  CHIP_INSTRUMENTS,
+  CHIP_KITS,
+  CHIP_KIT_BANK,
+  CHIP_ROLES,
+  CHIP_URL,
+} from './chip-instruments-data.ts';
+export { LIBRARIES } from './soundfont-catalog-data.ts';
+export { LIBRARY_SOURCES } from './soundfont-libraries-data.ts';
+export type { Library, LibraryFile, LibrarySource, PresetInfo } from './soundfont-libraries-data.ts';
+export { soundfontLibrary } from './soundfont-library.ts';
+export type { LibraryPreset } from './soundfont-library.ts';
