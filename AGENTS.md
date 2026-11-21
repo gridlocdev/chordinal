@@ -8,5 +8,5 @@ This app follows the layered layout in `docs/architecture.md`. Read it before ad
 - `composer` and `sketch` hold the music logic and know nothing of the UI, and don't import each other. `ui` is the Preact UI: signals in `packages/ui/src/store.js`, actions in `packages/ui/src/*.js`, views in `packages/ui/src/components/`. `apps/web/src/` holds the app's shell: start-up, its menus, its files (New, Open, Open Recent, Save As to any folder) and its browser (`apps/web/src/rack.js` and `apps/web/src/components/`). Where projects are kept is set in `packages/ui/src/place.js` at start-up.
 - The engine (`lib`, `audio`, `daw`, `composer`, `sketch`) imports no DOM, Node or Preact.
 - Content (songs, tables, tuning) goes in `*-data.js` files.
-- The page is bundled by esbuild into `apps/web/dist/` (`just build`); the packages also run as-is in Node for the tools and tests.
+- The page is built by Vite into `apps/web/dist/` and the desktop main process by esbuild (`just build`); the packages also run as-is in Node for the tools and tests.
 - After changes run `just check` (prettier, eslint with the layer rules, tsc, the bundle and the tests).

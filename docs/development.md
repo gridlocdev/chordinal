@@ -1,19 +1,13 @@
 # Development
 
-Chordinal is an Electron app. Its interface is [Preact](https://preactjs.com) with
-[signals](https://preactjs.com/guide/v10/signals/), written in JSX and bundled by
-[esbuild](https://esbuild.github.io) into `dist/chordinal.js`. Everything under the interface (the
-composer, the whistle transcription, the SoundFont 2 parser and the Web Audio sampler, all written
-from scratch) is plain JavaScript ES modules that also run as they are in Node, for the tools and
-tests. The rules in `AGENTS.md` at the repository root apply to everyone working on it, and the
-code layout and its layer rules are in [architecture.md](architecture.md).
+Chordinal is an Electron app. Its interface is [Preact](https://preactjs.com) with [signals](https://preactjs.com/guide/v10/signals/), built by [Vite](https://vite.dev) into `apps/web/dist/`; esbuild bundles the desktop main process. Everything under the interface (the composer, the whistle transcription, the SoundFont 2 parser and the Web Audio sampler, all written from scratch) is TypeScript or JavaScript ES modules that also run as they are in Node, for the tools and tests. The rules in `AGENTS.md` at the repository root apply to everyone working on it, and the code layout and its layer rules are in [architecture.md](architecture.md).
 
 ## Getting set up
 
 You need Node.js, Python 3 and [just](https://github.com/casey/just).
 
 ```bash
-just deps        # pnpm install: the pinned Preact, signals, esbuild, Electron and dev tools
+just deps        # pnpm install: the pinned Preact, signals, Vite, esbuild, Electron and dev tools
 just soundfonts  # download GeneralUser GS, FluidR3_GM and MuseScore_General into soundfonts/
 just build       # bundle apps/web/src/main.jsx into apps/web/dist/
 just chordinal   # build, then run Chordinal in its own window

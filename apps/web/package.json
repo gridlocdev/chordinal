@@ -6,13 +6,17 @@
   "description": "Chordinal's page: the window's layout, menus, files and browser",
   "license": "MIT",
   "dependencies": {
-    "@chordinal/lib": "workspace:*",
     "@chordinal/audio": "workspace:*",
-    "@chordinal/daw": "workspace:*",
     "@chordinal/composer": "workspace:*",
+    "@chordinal/daw": "workspace:*",
+    "@chordinal/lib": "workspace:*",
     "@chordinal/playback": "workspace:*",
     "@chordinal/ui": "workspace:*",
     "@preact/signals": "2.11.4",
     "preact": "11.2.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "2.10.6",
+    "vite": "8.3.5"
   }
 }
