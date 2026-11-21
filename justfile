@@ -294,4 +294,3 @@ alias web := preview-web
 alias package := package-desktop
 alias install := install-desktop
 alias deps := setup
-alias whistle := transcribe
