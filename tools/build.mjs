@@ -5,7 +5,7 @@
 //   node tools/build.mjs           build once
 //   node tools/build.mjs --cli     build the CLI only (`just cli`, `just compose`, `just export`)
 //   node tools/build.mjs --check   bundle without writing, to find errors (`just check`)
-//   node tools/build.mjs --watch   rebuild on every change; the app reloads its window when the page changes (`just dev`)
+//   node tools/build.mjs --watch   rebuild on every change; the app reloads its window when the page changes (`just run-desktop-watch`)
 import * as esbuild from 'esbuild';
 import path from 'node:path';
 import { createRequire } from 'node:module';

@@ -20,7 +20,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 
 ## §3 One app, one repo
 
-1. Chordinal is the repo's one Electron entry, page bundle, menu bar, settings file and package: `apps/web/src/main.jsx`, built by `just build`, run by `just chordinal`.
+1. Chordinal is the repo's one Electron entry, page bundle, menu bar, settings file and package: `apps/web/src/main.jsx`, built by `just build`, run by `just run-desktop`.
 2. Shared code:
    - `packages/ui/` holds the views and actions: the arrangement, piano roll, step grid, mixer, transport, browser parts, store, document, commands, clipboard and context menus.
    - `apps/web/` holds only the app's shell, layout, menus and app-only commands.

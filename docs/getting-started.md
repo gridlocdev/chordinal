@@ -40,9 +40,9 @@ If you'd rather build from source, you need Node.js and [just](https://github.co
 
 ```bash
 just soundfonts  # download the three libraries, about 400 MB
-just install     # install it as an app: ~/Applications/Chordinal.app on macOS
-just chordinal   # or just open it in its own window, without installing
-just package     # make the downloads above for this system, in release/
+just install-desktop  # install it as an app: ~/Applications/Chordinal.app on macOS
+just run-desktop      # or just open it in its own window, without installing
+just package-desktop  # make the downloads above for this system, in release/
 ```
 
-The app made by `just install` runs the project folder itself, so it uses its sound libraries and picks up your changes the next time they open (run `just build` first). More detail is in the [development guide](development.md).
+The app made by `just install-desktop` runs the project folder itself, so it uses its sound libraries and picks up your changes the next time they open (run `just build` first). More detail is in the [development guide](development.md).

@@ -1,131 +1,186 @@
-# list recipes
+# Chordinal — run `just` to list recipes.
+set shell := ["bash", "-cu"]
+
+app_name := "Chordinal"
+electron_app := "node_modules/electron/dist/Electron.app"
+entry := "apps/desktop/dist/chordinal.js"
+
 default:
-    @just --list
+    @just --list --unsorted
 
-# install the desktop app (~/Applications/Chordinal.app on macOS) that runs this checkout
-install: build
-    bash tools/install-app.sh
+# ── Run (dev) ─────────────────────────────────────────────────────────────
 
-# install the workspace's pinned packages (pnpm) and Electron
-deps:
-    @[ -d node_modules/preact ] && [ -d node_modules/esbuild ] && [ -d node_modules/electron ] && [ -d node_modules/typescript ] || pnpm install
-    @[ -f node_modules/electron/path.txt ] || node node_modules/electron/install.js
-
-# build the page (apps/web/src/main.tsx) into apps/web/dist/
-build: deps
-    node tools/build.mjs
-
-# on macOS it starts through `open`, so macOS asks for the microphone for the app, not for the terminal
-# build and run Chordinal, the DAW for making music by hand: its projects are folders anywhere (Documents/Chordinal/ by default)
-chordinal: build
-    #!/usr/bin/env sh
+# On macOS it starts through `open`, so the microphone prompt names the app, not the terminal.
+# Desktop app in its own window (builds first). Projects are folders anywhere, Documents/Chordinal/ by default.
+[group('run')]
+run-desktop: build
+    #!/usr/bin/env bash
+    set -euo pipefail
     if [ "$(uname)" = Darwin ]; then
-        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/apps/desktop/dist/chordinal.js"
+        open -W -n "{{ electron_app }}" --args "$PWD/{{ entry }}"
     else
-        npx electron apps/desktop/dist/chordinal.js
+        npx electron "{{ entry }}"
     fi
 
-# run it while working on it: rebuilds on every change and reloads the window
-dev: build
+# Desktop app in dev mode: rebuilds on every change and reloads the window.
+[group('run')]
+run-desktop-watch: build
     #!/usr/bin/env bash
     set -euo pipefail
     node tools/build.mjs --watch & watcher=$!
     trap 'kill $watcher' EXIT INT TERM
     if [ "$(uname)" = Darwin ]; then
-        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/apps/desktop/dist/chordinal.js" --dev
+        open -W -n "{{ electron_app }}" --args "$PWD/{{ entry }}" --dev
     else
-        npx electron apps/desktop/dist/chordinal.js --dev
+        npx electron "{{ entry }}" --dev
     fi
 
-# everything a commit must pass: formatting, lint (with the layer rules), types, the page's bundle, the tests and the browser scenarios
-check: deps
-    npx prettier --check .
-    npx eslint .
-    npx tsc -b
-    node tools/build.mjs
-    node --test 'test/**/*.test.js'
-    npx vitest run
-    pnpm exec playwright test -c e2e/playwright.config.ts
+# The built page in your web browser, with soundfonts/ (http://127.0.0.1:8020 or the next free port). Ctrl-C stops it.
+[group('run')]
+preview-web: build
+    node tools/serve-web.mjs
 
-# run the tests: node --test for the JavaScript, Vitest for the TypeScript
-test: build
-    node --test 'test/**/*.test.js'
-    npx vitest run
+# Another repo runs it as: just -f <chordinal>/justfile cli render tools/music/songs.js music --data src/audio/tracks-data.js
+# Run the chordinal CLI (`just cli help` lists its commands; paths resolve from where you run it; quoting is kept).
+[group('run')]
+[no-cd]
+[positional-arguments]
+cli *args: _deps
+    @node "{{ justfile_directory() }}/tools/build.mjs" --cli
+    node "{{ justfile_directory() }}/apps/cli/dist/chordinal.mjs" "$@"
 
-# run the browser scenarios: the browser build in headless, muted Chromium (results in .e2e-results/)
-# e.g. just e2e   ·   just e2e drums   ·   SEED=4 just e2e random-ui
+# ── Build and package ─────────────────────────────────────────────────────
+
+# Build everything: the page (apps/web/dist), the desktop app (apps/desktop/dist) and the CLI (apps/cli/dist).
+[group('build')]
+build: _deps
+    pnpm build
+
+# Build the CLI only.
+[group('build')]
+build-cli: _deps
+    node tools/build.mjs --cli
+
+# Regenerate the app icon files in apps/desktop/assets/icon from icon.svg (needs Inkscape; .icns needs macOS).
+[group('build')]
+icons:
+    bash tools/make-icons.sh apps/desktop/assets/icon.svg apps/desktop/assets/icon --work build/chordinal-icons
+
+# It comes with GeneralUser GS (downloaded first if missing); the app downloads the other libraries itself.
+# Package the desktop app for this OS into release/chordinal (macOS .dmg and .zip, Windows installer, Linux .flatpak).
+[group('build')]
+package-desktop: build
+    bash tools/fetch-soundfonts.sh generaluser
+    cd apps/desktop && npx electron-builder --config electron-builder.json --publish never
+
+# It runs the checkout's code and soundfonts/, so changes show up the next time it opens; run it again after moving the checkout.
+# Install an app that runs this checkout: ~/Applications/Chordinal.app on macOS, a launcher on Linux.
+[group('build')]
+install-desktop: build
+    bash tools/install-app.sh
+
+# ── Quality ───────────────────────────────────────────────────────────────
+
+# Everything CI checks: format, lint, typecheck, build, tests and browser scenarios.
+[group('quality')]
+check: _deps
+    pnpm check
+
+# With no arguments it also runs node --test (test/, with the headless Electron tests); arguments go to Vitest alone.
+# Run the tests once (pass a file or -t "name" to narrow them).
+[group('quality')]
+[positional-arguments]
+test *args: build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ $# -eq 0 ]; then node --test 'test/**/*.test.js'; fi
+    pnpm vitest run "$@"
+
+# Run the Vitest tests in watch mode.
+[group('quality')]
+test-watch *args: _deps
+    pnpm vitest {{ args }}
+
+# Lint with ESLint.
+[group('quality')]
+lint: _deps
+    pnpm lint
+
+# Typecheck every package.
+[group('quality')]
+typecheck: _deps
+    pnpm typecheck
+
+# Format every file.
+[group('quality')]
+fmt: _deps
+    pnpm format
+
+# Check formatting without changing anything.
+[group('quality')]
+fmt-check: _deps
+    pnpm format:check
+
+# Architecture rules only: layers, the pure engine, the bridge, the store, keys, command ids, exports. Part of `check`.
+[group('quality')]
+check-arch: _deps
+    pnpm vitest run test/architecture.test.ts
+
+# Random-operation tests on many seeds (SEED=<n> just fuzz repeats one; SEED_BASE picks where to start).
+[group('quality')]
+fuzz runs="500": _deps
+    RUNS={{ runs }} pnpm vitest run -t random --testTimeout=0
+
+# `"$@"` keeps quoting, so `just e2e -g "two words"` stays one pattern.
+# Browser scenarios against the built page in headless, muted Chromium (just e2e drums · SEED=4 just e2e random-ui).
+[group('quality')]
 [positional-arguments]
 e2e *args: build
     pnpm exec playwright test -c e2e/playwright.config.ts "$@"
 
-# run Chordinal in your web browser: serves the page and soundfonts/ on 127.0.0.1 (port 8020 or the next free one)
-web: build
-    node tools/serve-web.mjs
-
-# drive the browser build headless and print what happened (see e2e/drive.ts for the steps)
-# e.g. just drive cmd:Mixer shot:mixer   ·   just drive --dark aria
+# Drive the page headlessly for a quick look: just drive cmd:Mixer shot:mixer · just drive --dark aria
+[group('quality')]
 [positional-arguments]
 drive *steps: build
     node e2e/drive.ts "$@"
 
-# report how an NSF file's songs are built (keep the files in reference/, which git ignores)
-nsf file *songs:
-    node tools/nsf-report.mjs {{file}} {{songs}}
+# Long random runs on new seeds, on this machine: before a release, or while you're away. No CI.
+[group('quality')]
+soak runs="1000": build
+    #!/usr/bin/env bash
+    # Not -e: a failure in the unit half still runs random use, and the recipe fails at the end.
+    set -uo pipefail
+    status=0
+    base=$(date +%s)
+    echo "Seeds start at $base (SEED=<n> replays one)."
+    RUNS={{ runs }} SEED_BASE=$base pnpm vitest run -t random --testTimeout=0 --silent=passed-only || status=1
+    # Its own folder: a replay or the next soak clears .e2e-results, not this run's screenshots and traces.
+    echo "Random-use failures keep their screenshots and traces in .e2e-soak/$base."
+    RUNS=25 SEED_BASE=$base pnpm exec playwright test -c e2e/playwright.config.ts -g random --output=".e2e-soak/$base" || status=1
+    exit $status
 
-# report how recorded game music's lead moves (any file ffmpeg reads; keep them in reference/)
-audio +files:
-    node tools/audio-report.mjs {{files}}
+# Desktop tests: the built Electron app, headless (no window, no Dock icon), each file on a throwaway profile.
+[group('quality')]
+e2e-desktop: build
+    node --test 'test/electron/*.test.js'
 
-# transcribe a whistled melody into a section's `melody:` notation (any file ffmpeg reads, or a folder of them)
-# e.g. just whistle scratch/hook.m4a --tempo 60 --meter 3/4   ·   --key Eb --mode major to skip the key guess
-whistle +args:
-    node tools/whistle.mjs {{args}}
+# ── Music ─────────────────────────────────────────────────────────────────
 
-# rebuild src/audio/soundfont-catalog-data.js after adding or replacing .sf2 files (libraries: src/audio/soundfont-libraries-data.js)
-catalog:
-    node tools/sf2-catalog.mjs
+# e.g. just compose first-light --melody --midi first-light.mid · just compose feel:tender --project scratch/tender
+# Compose a song without the app: its plan, optionally its melody, a .mid file and a project folder.
+[group('music')]
+[positional-arguments]
+compose *args: build-cli
+    node apps/cli/dist/chordinal.mjs compose "$@"
 
-# apps/desktop/assets/icon.svg goes to apps/desktop/assets/icon/; needs Inkscape
-# render the app's icon as icon.icns, icon.ico and icon.png
-icons:
-    bash tools/make-icons.sh apps/desktop/assets/icon.svg apps/desktop/assets/icon --work build/chordinal-icons
-
-# into release/chordinal/ (macOS: .dmg and .zip; Windows: installer; Linux: .flatpak)
-# it comes with GeneralUser GS (downloaded first if missing); the other libraries are downloaded in the app
-# build the installable app for this OS
-package: build
-    bash tools/fetch-soundfonts.sh generaluser
-    cd apps/desktop && npx electron-builder --config electron-builder.json --publish never
-
-# download the openly licensed SoundFont libraries into soundfonts/ (all, or those named); ones already there are skipped
-# e.g. just soundfonts   ·   just soundfonts generaluser
-soundfonts *ids:
-    bash tools/fetch-soundfonts.sh {{ids}}
-
-# compose a song without the app: print its plan, optionally its melody, a .mid file and a project folder
-# e.g. just compose first-light --melody --midi first-light.mid   ·   just compose feel:tender --project scratch/tender
-compose *args: deps
-    @node tools/build.mjs --cli
-    node apps/cli/dist/chordinal.mjs compose {{args}}
-
-# report how alike the harmony is: each genre's triads, colours and cadences, then the written songs' shared progressions
-# e.g. just harmony   ·   just harmony first-light lighthouse
-harmony *songs:
-    node tools/harmony-report.mjs {{songs}}
-
-# write the written songs as project files in projects/ (all of them, or the ones named); overwrites edits made in the app
-# e.g. just projects   ·   just projects first-light
-projects *songs:
-    node tools/make-projects.mjs {{songs}}
-
-# export songs from projects/ to export/<name>.mid and .wav (all of them without names); --mp3 adds an MP3 (ffmpeg)
-# e.g. just export   ·   just export first-light creaking-halls --mp3   ·   just export --library fluidr3
-export *args: deps
+# e.g. just export · just export first-light creaking-halls --mp3 · just export --library fluidr3
+# Export songs from projects/ to export/<name>.mid and .wav (all without names); --mp3 adds an MP3 (ffmpeg).
+[group('music')]
+[positional-arguments]
+export *args: build-cli
     #!/usr/bin/env bash
     set -euo pipefail
-    node tools/build.mjs --cli
     folders=() options=()
-    set -- {{args}}
     while [ $# -gt 0 ]; do
         case "$1" in
             --library) options+=("$1" "${2:-}"); shift; [ $# -gt 0 ] && shift ;;
@@ -139,14 +194,87 @@ export *args: deps
     fi
     node apps/cli/dist/chordinal.mjs export "${folders[@]}" --out export ${options[@]+"${options[@]}"}
 
-# e.g. just -f ~/src/apps/music-generator/justfile cli render tools/music/songs.js music --data src/audio/tracks-data.js
-# run Chordinal's command-line tool (`cli help` lists its commands) in the folder you're in, so paths are yours
-[no-cd]
-cli *args: deps
-    @node "{{justfile_directory()}}/tools/build.mjs" --cli
-    node "{{justfile_directory()}}/apps/cli/dist/chordinal.mjs" {{args}}
+# e.g. just projects · just projects first-light
+# Write the written songs as project files in projects/ (all, or the ones named); overwrites edits made in the app.
+[group('music')]
+[positional-arguments]
+projects *songs:
+    node tools/make-projects.mjs "$@"
 
-# A/B listening: render each song with an older commit and with this checkout, side by side
-# e.g. just ab   ·   just ab a913205   (then open the URL it prints; port 8010 or the next free one)
-ab rev="main": deps
-    node tools/ab-server.mjs {{rev}}
+# e.g. just harmony · just harmony first-light lighthouse
+# Report how alike the harmony is: each genre's triads, colours and cadences, then the songs' shared progressions.
+[group('music')]
+[positional-arguments]
+harmony *songs:
+    node tools/harmony-report.mjs "$@"
+
+# e.g. just whistle scratch/hook.m4a --tempo 60 --meter 3/4 · --key Eb --mode major to skip the key guess
+# Transcribe a whistled melody into a section's `melody:` notation (any file ffmpeg reads, or a folder of them).
+[group('music')]
+[positional-arguments]
+whistle +args:
+    node tools/whistle.mjs "$@"
+
+# Report how an NSF file's songs are built (keep the files in reference/, which git ignores).
+[group('music')]
+[positional-arguments]
+nsf file *songs:
+    node tools/nsf-report.mjs "$@"
+
+# Report how recorded game music's lead moves (any file ffmpeg reads; keep them in reference/).
+[group('music')]
+[positional-arguments]
+audio +files:
+    node tools/audio-report.mjs "$@"
+
+# Rebuild the SoundFont catalog after adding or replacing .sf2 files (packages/audio/src/soundfont-*-data.ts).
+[group('music')]
+catalog:
+    node tools/sf2-catalog.mjs
+
+# e.g. just ab · just ab a913205 (then open the URL it prints; port 8010 or the next free one)
+# A/B listening: render each song with an older commit and with this checkout, side by side.
+[group('music')]
+ab rev="main": _deps
+    node tools/ab-server.mjs {{ rev }}
+
+# ── Housekeeping ──────────────────────────────────────────────────────────
+
+# Install dependencies (pnpm via corepack) and Electron's binary.
+[group('housekeeping')]
+setup:
+    corepack enable
+    pnpm install
+    @[ -f node_modules/electron/path.txt ] || node node_modules/electron/install.js
+
+# e.g. just soundfonts · just soundfonts generaluser
+# Download the openly licensed SoundFont libraries into soundfonts/ (all, or those named; ones there are skipped).
+[group('housekeeping')]
+[positional-arguments]
+soundfonts *ids:
+    bash tools/fetch-soundfonts.sh "$@"
+
+# Remove build output.
+[group('housekeeping')]
+clean:
+    rm -rf apps/web/dist apps/desktop/dist apps/cli/dist packages/*/dist build release .e2e-results .e2e-soak
+    find . -name '*.tsbuildinfo' -not -path '*/node_modules/*' -delete
+
+# Remove build output and every node_modules (run `just setup` after).
+[group('housekeeping')]
+clean-all: clean
+    find . -name node_modules -type d -prune -exec rm -rf {} +
+
+# Install on first use: every recipe that runs code depends on this, so a fresh clone needs no `just setup`.
+[private]
+_deps:
+    @[ -d node_modules/preact ] && [ -d node_modules/esbuild ] && [ -d node_modules/electron ] && [ -d node_modules/typescript ] || pnpm install
+    @[ -f node_modules/electron/path.txt ] || node node_modules/electron/install.js
+
+# Earlier names, kept so nothing that uses them breaks.
+alias chordinal := run-desktop
+alias dev := run-desktop-watch
+alias web := preview-web
+alias package := package-desktop
+alias install := install-desktop
+alias deps := setup

@@ -13,8 +13,13 @@
   "packageManager": "pnpm@10.29.2",
   "scripts": {
     "build": "node tools/build.mjs",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "node --test 'test/**/*.test.js' && vitest run",
-    "check": "just check"
+    "e2e": "playwright test -c e2e/playwright.config.ts",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm e2e"
   },
   "devDependencies": {
     "@chordinal/audio": "workspace:*",

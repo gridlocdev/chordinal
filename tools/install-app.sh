@@ -46,7 +46,7 @@ EOF
     echo "installed $dest"
     ;;
 *)
-    echo "run the app with: just chordinal" >&2
+    echo "run the app with: just run-desktop" >&2
     exit 1
     ;;
 esac

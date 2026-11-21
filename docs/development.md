@@ -7,16 +7,15 @@ Chordinal is an Electron app. Its interface is [Preact](https://preactjs.com) wi
 You need Node.js, Python 3 and [just](https://github.com/casey/just).
 
 ```bash
-just deps        # pnpm install: the pinned Preact, signals, Vite, esbuild, Electron and dev tools
-just soundfonts  # download GeneralUser GS, FluidR3_GM and MuseScore_General into soundfonts/
-just build       # bundle apps/web/src/main.tsx into apps/web/dist/
-just chordinal   # build, then run Chordinal in its own window
-just dev         # rebuild on every change and reload the window
-just install     # install it as an app: ~/Applications/Chordinal.app on macOS
+just setup              # pnpm install: the pinned Preact, signals, Vite, esbuild, Electron and dev tools
+just soundfonts         # download GeneralUser GS, FluidR3_GM and MuseScore_General into soundfonts/
+just build              # bundle apps/web/src/main.tsx into apps/web/dist/
+just run-desktop        # build, then run Chordinal in its own window
+just run-desktop-watch  # rebuild on every change and reload the window
+just install-desktop    # install it as an app: ~/Applications/Chordinal.app on macOS
 ```
 
-`just build`, `just chordinal`, `just dev` and `just install` run `just deps` first if anything is
-missing. `dist/` is ignored by git.
+`just build`, `just run-desktop`, `just run-desktop-watch` and `just install-desktop` install the dependencies first if anything is missing. `dist/` is ignored by git.
 
 ## Checking your work
 
@@ -29,7 +28,7 @@ just test    # node --test: the tests in test/ for lib/ and *-data.js files
 
 ### In a browser
 
-`just web` builds the page and serves it with the SoundFont libraries in `soundfonts/` at http://127.0.0.1:8020/ (or the next free port). Without the desktop app the page keeps its projects and settings in the browser (IndexedDB and localStorage).
+`just preview-web` builds the page and serves it with the SoundFont libraries in `soundfonts/` at http://127.0.0.1:8020/ (or the next free port). Without the desktop app the page keeps its projects and settings in the browser (IndexedDB and localStorage).
 
 ### Browser scenarios
 
@@ -176,15 +175,15 @@ length, peak and loudness, has a blind mode, and saves the WAVs in `.ab/out/`, w
 
 ### The desktop app
 
-`just chordinal` builds the page and the main process, then runs Chordinal from the checkout in Electron. The main process (`apps/desktop/src/chordinal.ts` and what it imports) is bundled by `tools/build.mjs` into `apps/desktop/dist/chordinal.js`, and its preload into `dist/preload.cjs`: a packaged app can't run TypeScript from `node_modules`, and a sandboxed preload can't load other files. Every IPC handler goes through `apps/desktop/src/ipc.ts`, which refuses a message from any frame that isn't the app's own page on `app://game/`. `just install` (`tools/install-app.sh`) makes it an app you open from the Dock: on macOS a copy of the Electron in `node_modules`, renamed to Chordinal with its own bundle id and icon, whose only code is a stub that loads `apps/desktop/dist/chordinal.js` from the checkout, so it always runs what's checked out (as last built), with its `soundfonts/`. On Linux it adds a launcher to `~/.local/share/applications`. Run it again after moving the checkout or updating Electron. To share it, make release builds (below).
+`just run-desktop` builds the page and the main process, then runs Chordinal from the checkout in Electron. The main process (`apps/desktop/src/chordinal.ts` and what it imports) is bundled by `tools/build.mjs` into `apps/desktop/dist/chordinal.js`, and its preload into `dist/preload.cjs`: a packaged app can't run TypeScript from `node_modules`, and a sandboxed preload can't load other files. Every IPC handler goes through `apps/desktop/src/ipc.ts`, which refuses a message from any frame that isn't the app's own page on `app://game/`. `just install-desktop` (`tools/install-app.sh`) makes it an app you open from the Dock: on macOS a copy of the Electron in `node_modules`, renamed to Chordinal with its own bundle id and icon, whose only code is a stub that loads `apps/desktop/dist/chordinal.js` from the checkout, so it always runs what's checked out (as last built), with its `soundfonts/`. On Linux it adds a launcher to `~/.local/share/applications`. Run it again after moving the checkout or updating Electron. To share it, make release builds (below).
 
-`apps/desktop/src/shell.ts` serves the repository on a private `app://game/` origin and lets that origin (and nothing else) use the microphone. The settings (library, panel sizes, browser tab, last project, grid, theme) go to `save.json` in Electron's user data folder (`Chordinal`) through `apps/desktop/src/preload.ts`, beside Open Recent. Projects are folders anywhere on disk, saved in `Documents/Chordinal/` unless you pick somewhere else. On macOS `just chordinal` starts Electron with `open`, so the microphone prompt is for the app and not for the terminal. If you refused it, turn on Electron (or Chordinal, for the installed app) under System Settings → Privacy & Security → Microphone.
+`apps/desktop/src/shell.ts` serves the repository on a private `app://game/` origin and lets that origin (and nothing else) use the microphone. The settings (library, panel sizes, browser tab, last project, grid, theme) go to `save.json` in Electron's user data folder (`Chordinal`) through `apps/desktop/src/preload.ts`, beside Open Recent. Projects are folders anywhere on disk, saved in `Documents/Chordinal/` unless you pick somewhere else. On macOS `just run-desktop` starts Electron with `open`, so the microphone prompt is for the app and not for the terminal. If you refused it, turn on Electron (or Chordinal, for the installed app) under System Settings → Privacy & Security → Microphone.
 
-The icon is drawn by hand in `apps/desktop/assets/icon.svg`, a tile on Apple's icon grid with a white glyph. `just icons` (`tools/make-icons.sh`, needs Inkscape) renders it into `assets/chordinal-icon/`: `icon.icns` for the macOS app, which `just install` copies into the bundle, and `icon.ico` and `icon.png` for Windows and Linux (`icon` in the app's entry picks its window's). The rendered files are committed, so only a change to the SVG needs Inkscape.
+The icon is drawn by hand in `apps/desktop/assets/icon.svg`, a tile on Apple's icon grid with a white glyph. `just icons` (`tools/make-icons.sh`, needs Inkscape) renders it into `assets/chordinal-icon/`: `icon.icns` for the macOS app, which `just install-desktop` copies into the bundle, and `icon.ico` and `icon.png` for Windows and Linux (`icon` in the app's entry picks its window's). The rendered files are committed, so only a change to the SVG needs Inkscape.
 
 Two flags help while working on it:
 
-- `--dev` (what `just dev` passes) reloads the window whenever `dist/` changes.
+- `--dev` (what `just run-desktop-watch` passes) reloads the window whenever `dist/` changes.
 - `--headless` shows no window and mutes the audio, asks for no microphone, and keeps its settings
   in a temporary folder. Use it for scripted UI tests (for example with Playwright's `_electron`),
   so they don't play sound or change your settings.
@@ -205,7 +204,7 @@ Two flags help while working on it:
 
 ### Release builds
 
-`just package` builds the installable app for this OS with electron-builder, from `apps/desktop/electron-builder.json`, into `release/chordinal/`. On macOS it is a `.dmg` and a `.zip` for Apple silicon and for Intel, ad-hoc signed and not notarized; on Windows an NSIS installer; on Linux a `.flatpak` bundle. The Flatpak needs `flatpak` and `flatpak-builder` and the Flathub remote (`flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo`), from which it installs the freedesktop runtime and the Electron base app it's built on (version `flatpak.runtimeVersion`). It may use Wayland or X11, the GPU, the network (downloads), PulseAudio or PipeWire (sound and the microphone), and the home folder, since projects can be anywhere. Its settings and downloaded libraries go in `~/.var/app/<app id>/`. It carries `dist/`, `src/`, `electron/`, the docs and the tools its main process uses, unpacked (no asar), plus, as a resource, `soundfonts/GeneralUser-GS/` (downloaded first if it's missing). `test/tools/packaging.test.js` follows the app's imports from its entry and page and fails when a file it loads isn't in the config's `files`.
+`just package-desktop` builds the installable app for this OS with electron-builder, from `apps/desktop/electron-builder.json`, into `release/chordinal/`. On macOS it is a `.dmg` and a `.zip` for Apple silicon and for Intel, ad-hoc signed and not notarized; on Windows an NSIS installer; on Linux a `.flatpak` bundle. The Flatpak needs `flatpak` and `flatpak-builder` and the Flathub remote (`flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo`), from which it installs the freedesktop runtime and the Electron base app it's built on (version `flatpak.runtimeVersion`). It may use Wayland or X11, the GPU, the network (downloads), PulseAudio or PipeWire (sound and the microphone), and the home folder, since projects can be anywhere. Its settings and downloaded libraries go in `~/.var/app/<app id>/`. It carries `dist/`, `src/`, `electron/`, the docs and the tools its main process uses, unpacked (no asar), plus, as a resource, `soundfonts/GeneralUser-GS/` (downloaded first if it's missing). `test/tools/packaging.test.js` follows the app's imports from its entry and page and fails when a file it loads isn't in the config's `files`.
 
 A release build takes its SoundFonts from the app's resources, then from `soundfonts/` in Electron's user data folder, where the Instruments tab's **Download** puts FluidR3_GM and MuseScore_General (`apps/desktop/src/soundfont-download.ts`: the same sources as `tools/fetch-soundfonts.sh`, read as they stream in, into a temporary folder renamed when done; `app.isPackaged` in `apps/desktop/src/shell.ts`).
 
@@ -228,7 +227,7 @@ Add it to `COMMANDS` in `packages/ui/src/commands.ts` with a label, an `accelera
 `soundfonts/` is ignored by git; `just soundfonts` runs `tools/fetch-soundfonts.sh`, which
 downloads every library (or the ones named, like `just soundfonts generaluser`) that isn't on disk
 yet, with its license file next to its `.sf2`. The deploy runs the same script, and so does
-`just package`, for GeneralUser GS only. A release build downloads the other two itself
+`just package-desktop`, for GeneralUser GS only. A release build downloads the other two itself
 (`apps/desktop/src/soundfont-download.ts`). The libraries and their folders are listed in
 `packages/audio/src/soundfont-libraries-data.ts`.
 

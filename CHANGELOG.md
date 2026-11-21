@@ -6,7 +6,7 @@
 
 - Projects open as they are: the project format hasn't changed.
 - Your settings and recent projects are kept: the app keeps its data in the same place.
-- If you built and installed the app from a checkout (`just install`), run `just install` again: the app now starts from `apps/desktop/dist/chordinal.js`.
+- If you built and installed the app from a checkout (`just install-desktop`), run `just install-desktop` again: the app now starts from `apps/desktop/dist/chordinal.js`.
 - Music Generator, the older song player, is gone. Its songs are still there: the command line's `compose <song>` composes one as MIDI or as a Chordinal project.
 
 ### What's new

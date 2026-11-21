@@ -61,7 +61,7 @@ const PAGE = `<!doctype html>
 /** where Chordinal's Electron is: from this checkout's node_modules, wherever the CLI is run from */
 function electronPath(): string {
   const found: unknown = createRequire(import.meta.url)('electron');
-  if (typeof found !== 'string') throw new Error("can't find Electron in this checkout: run `just deps`");
+  if (typeof found !== 'string') throw new Error("can't find Electron in this checkout: run `just setup`");
   return found;
 }
 
