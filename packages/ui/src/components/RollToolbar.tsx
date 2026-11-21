@@ -1,9 +1,9 @@
-// The piano roll's toolbar: the snap grid, the track and clip shown, the click and New from melody.
+// The piano roll's toolbar: the snap grid, the track and clip shown, the click and New from Melody.
 import { barAt } from '@chordinal/daw';
 import { findClip } from '@chordinal/daw';
 import { project, selectedClip, selectedTrack, settings, setSettings } from '../store.ts';
 import { GRIDS } from '../notes.ts';
-import { newFromMelody } from '../recording.ts';
+import { newFromMelody } from '../melody-song.ts';
 
 export function RollToolbar() {
   const t = selectedTrack.value,
@@ -42,7 +42,7 @@ export function RollToolbar() {
         onClick={newFromMelody}
         title="A new project composed round the selected clip's melody and the chords over it"
       >
-        New from melody
+        New from Melody…
       </button>
     </div>
   );

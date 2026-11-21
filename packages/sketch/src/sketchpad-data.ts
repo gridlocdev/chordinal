@@ -1,5 +1,5 @@
 // Recording a whistled take: its count-in and length, how it is read as it comes in, the click, and the band a
-// melody is composed for by New from melody.
+// melody is composed for when it's heard alone.
 
 export const RECORD = {
   countInBars: 1,

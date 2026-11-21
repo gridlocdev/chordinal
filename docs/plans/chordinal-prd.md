@@ -100,7 +100,18 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 1. Music Generator, the second app this section once described, was dropped. Its New dialog lives on as Generate Part (§8) and `just compose`.
 2. Its songs are the projects in `projects/`, opened in Chordinal with **Open…**.
 3. Recording is a Chordinal feature: **Record Melody** on a track, and **Record a Chord** on the chord track. While a melody take records, its notes appear in the arrangement and the piano roll as they're played or heard, and the piano roll follows the playhead. When it stops, the playhead goes back to the start of the clip the notes went into (or of the take, if nothing was kept).
-4. `just compose`, `just projects`, `just export`, `just transcribe` and the other tools keep working as they do now.
+4. **New from Melody…** (Transport menu, the piano roll's toolbar and the clip's right-click menu) composes a song around the selected clip's melody and the chords over it (guessed from the melody where there are none). The song is previewed in the window in place of the project, with a customizer docked on the right:
+   - **Style and pace**: a feeling and a genre (or none), the tempo, the key and mode, and the seed with **Roll**. A new feeling or genre brings its own tempo, form, band, groove, swing and dynamics; the key, mode and seed stay. The key and mode start as the melody's, and the tempo as the project's where the clip is. A new key moves the melody there; a new mode reads its scale degrees in that mode.
+   - **Song form**: the feeling's or genre's forms, or **Melody once** (the melody as one section, as it was played). **Melody in** picks the type of section that plays the melody (chorus, else A, else verse by default); the others are composed.
+   - **Band**: an instrument for each part (melody, countermelody, arpeggio, chords, pad, bass, drums), or None.
+   - **Feel**: the groove, swing, dynamics, **Lift** (the last chorus goes up a step) and **Ritardando** (the end slows down).
+5. Every change composes the song again at once, and playback carries on from where it is. Each track keeps its mute and solo across changes. Edits to the preview are allowed but are replaced by the next change.
+6. The project is untouched until one of three buttons ends the preview:
+   - **Cancel** (or Escape in the customizer) puts the project back as it was.
+   - **Replace This Project** puts the song in the project's place, keeping its title and folder, as one undo step.
+   - **Save and Create New** saves the project (asking for a name if it has none), then opens the song as a new, unsaved project. If the project isn't saved, the preview stays.
+7. While the song is previewed, Save and Save As say to finish first and save nothing. Opening a project, starting a new one or closing the window cancels the preview first, then asks about the project's own unsaved changes as usual.
+8. `just compose`, `just projects`, `just export`, `just transcribe` and the other tools keep working as they do now.
 
 ## §10 Patterns and the step grid
 

@@ -4,32 +4,28 @@
 // a pattern's other clips share them), and need no microphone. With a stretch of the chord track picked, it
 // records a chord instead: an arpeggio whistled freely, named and put on the chord track. Audio files dropped on a
 // track are read the same way. A saved project keeps its takes' audio in projects/<name>/takes/.
-//
-// "New from melody" hands the selected clip and the chords over it to the composer, which writes a new project
-// round them.
 import { signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
 import { mic } from '@chordinal/playback';
 import { place } from './place.ts';
 import { trackPitch } from '@chordinal/lib';
 import { freeNotes, guessKeys } from '@chordinal/lib';
-import { guessChords, nameChord } from '@chordinal/lib';
+import { nameChord } from '@chordinal/lib';
 import { parseChord, chordName, chordPitchClasses, pitchName, MODES } from '@chordinal/lib';
 import { encodeWav } from '@chordinal/lib';
 import { bpmAt } from '@chordinal/lib';
 import type { Mode, NamedKey } from '@chordinal/lib';
-import { barAt, meterAt, beatsPerBar } from '@chordinal/daw';
+import { barAt, meterAt } from '@chordinal/daw';
 import { makeTrack, addTrack, addClip, newId, findClip } from '@chordinal/daw';
 import type { ChordSpan, MeterChange, Note } from '@chordinal/daw';
 import { startRecording, takeBlock, updateRecording, stopRecording, keyBeat } from '@chordinal/playback';
 import type { MicTake, Recording, TakeKind } from '@chordinal/playback';
-import { analyse, chordsOf, cut, playedNotes, recordInto } from '@chordinal/sketch';
+import { analyse, cut, playedNotes, recordInto } from '@chordinal/sketch';
 import type { TakeReading } from '@chordinal/sketch';
 import { audioEngine } from '@chordinal/playback';
 import { onPlayed } from './live.ts';
 import type { PlayedKey } from './live.ts';
 import { takingKeys } from './focus.ts';
-import { sketchSection, sketchSpec } from '@chordinal/sketch';
 import {
   project,
   projectName,
@@ -43,7 +39,7 @@ import {
   settings,
 } from './store.ts';
 import type { ChordRange } from './store.ts';
-import { edit, newProject } from './document.ts';
+import { edit } from './document.ts';
 import { stop } from './player.ts';
 import { errorText } from './errors.ts';
 
@@ -109,7 +105,7 @@ const isMode = (m: string): m is Mode => Object.hasOwn(MODES, m);
 const sigAt = (meters: MeterChange[], at: number) => meterAt(meters, at)?.sig ?? DEFAULT_SIG;
 
 /** the key the project is in, or the likeliest for some notes */
-function keyFor(notes: { key: number; beats: number }[]): NamedKey {
+export function keyFor(notes: { key: number; beats: number }[]): NamedKey {
   const k = project.value.key;
   if (k && isMode(k.mode)) return { key: pitchName(k.tonic, true), tonic: k.tonic, mode: k.mode };
   return (notes.length ? guessKeys(notes)[0] : undefined) ?? { key: 'C', tonic: 0, mode: 'major' };
@@ -359,41 +355,4 @@ export async function dropTake(trackId: string, file: string, at: number): Promi
     return null;
   });
   if (bytes) await dropAudio(trackId, [new File([bytes], file, { type: 'audio/wav' })], at);
-}
-
-// ── new from melody ──────────────────────────────────────────────────────────────────────────────────────────────────
-
-/** the selected clip's notes and the chords over them, composed into a new project with a band */
-export function newFromMelody(): void {
-  const sel = selectedClip.value,
-    p = project.value;
-  const clip = sel && findClip(p, sel.track, sel.clip);
-  if (!clip?.notes.length) {
-    notify('Select a clip with a melody in it first.');
-    return;
-  }
-  const meter = sigAt(p.meters, clip.start),
-    bpb = beatsPerBar(meter);
-  const notes = clip.notes.filter((n) => n.beat < clip.beats);
-  const key = keyFor(notes);
-  // chords whistled over the clip keep their reading; the rest are guessed from the melody
-  const a = clip.start,
-    b = clip.start + clip.beats;
-  const whistled = p.chords.flatMap((c) => {
-    if (!c.symbol || c.beat >= b || c.beat + c.beats <= a) return [];
-    const from = Math.max(a, c.beat),
-      to = Math.min(b, c.beat + c.beats);
-    return [{ ...c, symbol: c.symbol, beat: from - a, beats: to - from }];
-  });
-  const chords = chordsOf({
-    chords: whistled,
-    notes,
-    guesses: guessChords(notes, { tonic: key.tonic, mode: key.mode, beatsPerBar: bpb, melody: true }),
-  });
-  const section = sketchSection({ key, meter, melody: notes, chords });
-  const tempo = Math.round(bpmAt(p.tempoMap, clip.start));
-  void newProject({
-    title: `${p.title} melody`,
-    spec: sketchSpec({ name: `${p.title} melody`, key, tempo, meter, section }),
-  });
 }

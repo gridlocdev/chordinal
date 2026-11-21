@@ -99,7 +99,7 @@ The pitch tracker follows one clear line in a high register (about 300 to 4,000 
 
 Then the chords: drag over the chord track above the tracks (bars, or beats with Shift held), press `R` (or **Transport ▸ Record a Chord**) and sound the chord's notes one at a time as an arpeggio, in any order and octave, in your own time. Press `R` again and the chord is named in the project's key from the notes you held longest, and replaces the chords there. Fix notes in the piano roll like any others.
 
-**New from melody** (in the piano roll's toolbar) takes the selected clip and the chords over it (guessing chords from the melody where none were recorded) and composes a band round it in a new project. In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav` (ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it again. Audio files dropped on a track are read the same way, at the project's tempo.
+**New from melody** (in the piano roll's toolbar) takes the selected clip and the chords over it (guessing chords from the melody where none were recorded) and composes a song round it, previewed in the window with the customizer on the right (`packages/ui/src/melody-song.ts`, `components/MelodySong.tsx`) until it replaces the project or opens as a new one. In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav` (ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it again. Audio files dropped on a track are read the same way, at the project's tempo.
 
 **From the command line.**
 

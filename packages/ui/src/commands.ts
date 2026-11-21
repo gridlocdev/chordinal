@@ -29,7 +29,8 @@ import {
 } from './store.ts';
 import { edit, undo, redo, save, saveAs, openProject } from './document.ts';
 import { toggle, seek } from './player.ts';
-import { record, recording, newFromMelody } from './recording.ts';
+import { record, recording } from './recording.ts';
+import { newFromMelody, customizer } from './melody-song.ts';
 import { focus } from './focus.ts';
 import { asking, askText } from './ask.ts';
 import {
@@ -803,13 +804,13 @@ export const catalog = new CommandCatalog([
   {
     id: 'newFromMelody',
     group: 'Transport',
-    title: 'New from Melody',
+    title: 'New from Melody…',
     run: newFromMelody,
     enabled: () => {
       const c = selectedClip.value;
-      return !!c && !!findClip(project.value, c.track, c.clip)?.notes.length;
+      return !customizer.value && !!c && !!findClip(project.value, c.track, c.clip)?.notes.length;
     },
-    description: 'Start a new project around the selected clip’s melody.',
+    description: 'Compose a song around the selected clip’s melody, and customize it beside the preview.',
     keywords: 'generate song',
   },
   // View

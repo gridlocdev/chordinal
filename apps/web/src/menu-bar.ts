@@ -1,5 +1,5 @@
 // Chordinal's menu bar: its File menu (§4: New, Open…, Open Recent, Save, Save As…), Track ▸ Generate Part… (§8) and
-// Record Melody, Transport ▸ Record a Chord and New from Melody (§9.3), and Help, around the shared menus
+// Record Melody, Transport ▸ Record a Chord and New from Melody (§9.3, §9.4), and Help, around the shared menus
 // (packages/ui/src/menu-bar.ts). The app's own commands join the shared catalog here.
 import { projectName, chordRange } from '@chordinal/ui';
 import { recording } from '@chordinal/ui';

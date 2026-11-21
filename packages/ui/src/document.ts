@@ -21,6 +21,7 @@ import {
   beat,
   notify,
   setSettings,
+  songPreview,
 } from './store.ts';
 import { stop } from './player.ts';
 import { focus } from './focus.ts';
@@ -111,6 +112,8 @@ function show(p: Project, name: string, clean = false): void {
 
 /** whether the unsaved changes, if any, may go: the app's question (Save, Don't Save or Cancel), or Discard or Cancel */
 export async function discardOk(): Promise<boolean> {
+  // a song previewed from a melody goes first: the question is about the project
+  songPreview.value?.cancel();
   if (!dirty.value) return true;
   if (!place.askDiscard) return askYes(`Discard the changes to “${project.value.title}”?`, 'Discard');
   const answer = await place.askDiscard(project.value.title);
@@ -160,9 +163,19 @@ export async function openNew(p: Project, { clean = false }: { clean?: boolean }
   });
 }
 
+/** while a song from a melody is previewed, there's nothing of the project's to save: says so */
+function previewing(): boolean {
+  if (!songPreview.value) return false;
+  notify(
+    'The window shows a song from a melody: choose Replace This Project, Save and Create New, or Cancel first.',
+  );
+  return true;
+}
+
 /** saves to the project's folder, or asks for a name when it has none; saves run one at a time, in order, so an older
  * one can never land after a newer one. Resolves to whether it saved. */
 export async function save(): Promise<boolean> {
+  if (previewing()) return false;
   if (!projectName.value) return saveAs();
   const at = shown;
   return inTurn(async () => at === shown && saveNow());
@@ -224,6 +237,7 @@ async function copyTakes(from: string, to: string): Promise<void> {
 /** saves under a new name (the app's place asks where); the project takes the name only once it's saved there.
  * Resolves to whether it saved. */
 export async function saveAs(): Promise<boolean> {
+  if (previewing()) return false;
   const at = shown;
   const chosen = await place.chooseName(project.value.title, projectName.value);
   if (at !== shown) return false;
