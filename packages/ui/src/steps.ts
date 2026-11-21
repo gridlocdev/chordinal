@@ -6,7 +6,7 @@ import { stepOf, stepCount, setStep, toggleAccent, addRow, hideRow } from '@chor
 import type { Clip, Note, Track } from '@chordinal/daw';
 import { project, selectedClip, settings, setSettings, playing, picked, beat } from './store.ts';
 import type { ClipRef } from './store.ts';
-import { playheadStep } from './components/grid-view.js';
+import { playheadStep } from './components/grid-view.ts';
 import { focus } from './focus.ts';
 import { edit } from './document.ts';
 import { press, release } from './live.ts';

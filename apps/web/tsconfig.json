@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "node_modules/.types",
+    "rootDir": "src",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "types": ["vite/client"]
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/lib" },
+    { "path": "../../packages/audio" },
+    { "path": "../../packages/daw" },
+    { "path": "../../packages/composer" },
+    { "path": "../../packages/playback" },
+    { "path": "../../packages/ui" }
+  ]
+}

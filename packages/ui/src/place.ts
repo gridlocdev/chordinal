@@ -1,4 +1,4 @@
-// Where the open project is kept, set once at start-up (src/chordinal/files.js): folders anywhere on disk. The
+// Where the open project is kept, set once at start-up (apps/web/src/files.ts): folders anywhere on disk. The
 // document code (document.ts) and the takes (recording.ts, the browser) read and write through it, and name the
 // project in messages by it.
 import { memoryStore } from './store/memory-store.ts';

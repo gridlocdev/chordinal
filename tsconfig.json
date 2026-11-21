@@ -52,6 +52,12 @@
       "path": "packages/ui/test"
     },
     {
+      "path": "apps/web"
+    },
+    {
+      "path": "apps/web/test"
+    },
+    {
       "path": "packages/playback"
     },
     {

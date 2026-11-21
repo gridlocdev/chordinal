@@ -11,7 +11,7 @@ deps:
     @[ -d node_modules/preact ] && [ -d node_modules/esbuild ] && [ -d node_modules/electron ] && [ -d node_modules/typescript ] || pnpm install
     @[ -f node_modules/electron/path.txt ] || node node_modules/electron/install.js
 
-# build the page (apps/web/src/main.jsx) into apps/web/dist/
+# build the page (apps/web/src/main.tsx) into apps/web/dist/
 build: deps
     node tools/build.mjs
 

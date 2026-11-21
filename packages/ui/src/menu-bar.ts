@@ -1,5 +1,5 @@
 // The menu bar's Edit, Track, Transport and View menus, built from the commands, and the loop that keeps the bar
-// enabled, checked and listed as the app changes. The File and Help menus are in src/chordinal/menu-bar.js.
+// enabled, checked and listed as the app changes. The File and Help menus are in apps/web/src/menu-bar.ts.
 import { effect } from '@preact/signals';
 import { appMenu } from './platform/app-menu.ts';
 import type { MenuEntry, MenuItem } from './platform/app-menu.ts';

@@ -1,4 +1,4 @@
-// The native menus: the page hands over its menu bar and right-click menus as plain items (packages/ui/src/platform/app-menu.js)
+// The native menus: the page hands over its menu bar and right-click menus as plain items (packages/ui/src/platform/app-menu.ts)
 // and gets back the id of the item picked. The bar gets the app menu and Window menu macOS expects around it. While a
 // text field has focus, Edit items marked `text` do the field's own edit (undo, copy, paste…) instead, and items marked
 // `field` drop their shortcut, so the key reaches the field (the bar is built again as focus moves in and out).

@@ -50,7 +50,7 @@ export interface Command extends CommandSpec {
   readonly shortcutText: string;
 }
 
-/** a command as the menus take it (packages/ui/src/platform/app-menu.js) */
+/** a command as the menus take it (packages/ui/src/platform/app-menu.ts) */
 export interface CommandMenuItem {
   id: string;
   label: string;

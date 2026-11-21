@@ -1,6 +1,6 @@
 // The open project's relation to where it is kept (Chordinal PRD §4.6), as a statechart: whether it has a place yet,
 // the version token of what is there, whether a save is on its way, and whether the place changed behind its back.
-// Pure: document.js feeds it events and does what the state says (which token a save passes, whether to ask).
+// Pure: document.ts feeds it events and does what the state says (which token a save passes, whether to ask).
 //
 //   new ──save──▶ saving ──done──▶ saved ──save──▶ saving (passing saved's token)
 //                  │ ├──failed──▶ back where it was

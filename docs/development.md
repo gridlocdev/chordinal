@@ -9,7 +9,7 @@ You need Node.js, Python 3 and [just](https://github.com/casey/just).
 ```bash
 just deps        # pnpm install: the pinned Preact, signals, Vite, esbuild, Electron and dev tools
 just soundfonts  # download GeneralUser GS, FluidR3_GM and MuseScore_General into soundfonts/
-just build       # bundle apps/web/src/main.jsx into apps/web/dist/
+just build       # bundle apps/web/src/main.tsx into apps/web/dist/
 just chordinal   # build, then run Chordinal in its own window
 just dev         # rebuild on every change and reload the window
 just install     # install it as an app: ~/Applications/Chordinal.app on macOS
@@ -29,9 +29,9 @@ just test    # node --test: the tests in test/ for lib/ and *-data.js files
 
 ## Writing songs
 
-Songs are plain specs in `packages/composer/src/`: `songs-data.js`, `genre-songs-data.js` (one
-per genre, each with a story), `game-songs-data.js` (the game music), `chip-songs-data.js`
-(chiptune in different moods) and `classical-songs-data.js` (solo piano). Each is a song the
+Songs are plain specs in `packages/composer/src/`: `songs-data.ts`, `genre-songs-data.ts` (one
+per genre, each with a story), `game-songs-data.ts` (the game music), `chip-songs-data.ts`
+(chiptune in different moods) and `classical-songs-data.ts` (solo piano). Each is a song the
 composer writes (`just compose <id>`). The spec format and how the
 composer reads it are in [composing.md](composing.md#12-the-song-spec-writing-a-song).
 
@@ -175,7 +175,7 @@ Two flags help while working on it:
 
   Menus in a headless run: click a menu-bar item with
   `app.evaluate(({ Menu }, id) => Menu.getApplicationMenu().getMenuItemById(id).click(), 'undo')`
-  (ids are the keys of `COMMANDS` in `packages/ui/src/commands.js`; Cmd shortcuts belong to the menu bar,
+  (ids are the keys of `COMMANDS` in `packages/ui/src/commands.ts`; Cmd shortcuts belong to the menu bar,
   so a scripted `Meta+Z` does nothing). A right-click menu isn't shown; it is kept as
   `globalThis.contextMenu` in the main process, whose `items` a test can read and click.
 
@@ -199,7 +199,7 @@ To publish a release, set `version` in `package.json`, commit, and push a tag `v
 
 ## Adding a command
 
-Add it to `COMMANDS` in `packages/ui/src/commands.js` with a label, an `accelerator` (a Cmd shortcut the menu bar answers) or `shown` (a plain key the page answers, which still types in a text field; never one of the musical-typing letters `A`–`L`, `;`, `'`, `W E T Y U O P`, `Z`, `X`; a letter waits while the piano roll has the focus, since its letters play notes there), and `enabled`/`checked` if it has them. Mark it `field: true` if it changes the project and its Cmd shortcut should go to a text field that has focus instead (Cmd+Backspace deletes text there, not the track). Then put `item('id')` in the shared menus in `packages/ui/src/menu-bar.js` (or the File menu in `apps/web/src/menu-bar.js`) and in any right-click menu in `packages/ui/src/context-menus.js` it belongs in.
+Add it to `COMMANDS` in `packages/ui/src/commands.ts` with a label, an `accelerator` (a Cmd shortcut the menu bar answers) or `shown` (a plain key the page answers, which still types in a text field; never one of the musical-typing letters `A`–`L`, `;`, `'`, `W E T Y U O P`, `Z`, `X`; a letter waits while the piano roll has the focus, since its letters play notes there), and `enabled`/`checked` if it has them. Mark it `field: true` if it changes the project and its Cmd shortcut should go to a text field that has focus instead (Cmd+Backspace deletes text there, not the track). Then put `item('id')` in the shared menus in `packages/ui/src/menu-bar.ts` (or the File menu in `apps/web/src/menu-bar.ts`) and in any right-click menu in `packages/ui/src/context-menus.ts` it belongs in.
 
 ## SoundFont libraries
 
@@ -214,29 +214,29 @@ downloads every library (or the ones named, like `just soundfonts generaluser`) 
 yet, with its license file next to its `.sf2`. The deploy runs the same script, and so does
 `just package`, for GeneralUser GS only. A release build downloads the other two itself
 (`apps/desktop/src/soundfont-download.ts`). The libraries and their folders are listed in
-`packages/audio/src/soundfont-libraries-data.js`.
+`packages/audio/src/soundfont-libraries-data.ts`.
 
 ### Adding or replacing a library
 
 1. Put the `.sf2` and its license file in `soundfonts/<folder>/`, and add the download to
    `tools/fetch-soundfonts.sh`, so `just soundfonts` and the deploy fetch it too, and to `DOWNLOADS`
    in `apps/desktop/src/soundfont-download.ts`, so a release build can download it.
-2. Add the library to `LIBRARY_SOURCES` in `packages/audio/src/soundfont-libraries-data.js`.
-3. Run `just catalog` to regenerate `packages/audio/src/soundfont-catalog-data.js`, the list of every
+2. Add the library to `LIBRARY_SOURCES` in `packages/audio/src/soundfont-libraries-data.ts`.
+3. Run `just catalog` to regenerate `packages/audio/src/soundfont-catalog-data.ts`, the list of every
    file and preset that lets the instrument menu load without the files.
 4. Run `just check` and `just test`.
 
 ### Chip instruments
 
-The chip instruments aren't a file. `packages/lib/src/chip-synth.js` builds them in memory the first time
+The chip instruments aren't a file. `packages/lib/src/chip-synth.ts` builds them in memory the first time
 one is played: pulse waves at the NES's 12.5%, 25% and 50% widths, a pulse-width sweep, triangle,
 saw and sine, each stored with only the harmonics its notes can play cleanly, and drum kits made
 from NES-style LFSR noise and falling tones. They come with every library, listed under
 "Chip · built in" (melodic on bank 64, kits on bank 192). A song uses them with `sound: 'chip'`.
 The Chiptune genre sets that.
 
-To change how they sound, edit `packages/audio/src/chip-instruments-data.js`; the fields are documented
-at the top of `chip-synth.js`:
+To change how they sound, edit `packages/audio/src/chip-instruments-data.ts`; the fields are documented
+at the top of `chip-synth.ts`:
 
 - `wave`: the shape. `steps` quantises it, like the NES triangle's 16 levels. `dpcm` plays the
   cycle through the NES sample channel's delta coding (a counter stepping 2 a clock), for the
@@ -256,11 +256,11 @@ falls back to when the band names one the chip bank doesn't have.
 
 ## Adding to the interface
 
-The interface lives in `packages/ui/src/`: the state as signals in `store.js`, what the controls do in
-`document.js` (open, save, New and `edit`), `player.js`, `recording.js` and `live.js`, and the
+The interface lives in `packages/ui/src/`: the state as signals in `store.ts`, what the controls do in
+`document.ts` (open, save, New and `edit`), `player.ts`, `recording.ts` and `live.ts`, and the
 views in `components/`. A view reads signals and calls actions; it doesn't touch the audio engine or
 the composer itself. Every change to the project goes through `edit(p => …)` with one of the pure
-edits in `packages/daw/src/` (`project.js`, `timeline.js`, `note-edits.js`), so it can be undone; add a new edit there, with a test. DAW logic that isn't about
+edits in `packages/daw/src/` (`project.ts`, `timeline.ts`, `note-edits.ts`), so it can be undone; add a new edit there, with a test. DAW logic that isn't about
 songs goes in `packages/daw/`; music logic goes in `packages/composer/` or `packages/sketch/`, which know nothing of the interface and don't import each other,
 and content goes in a `*-data.js` file with a test. Show a control only when there is code behind
 it. The full rules are in [architecture.md](architecture.md#rules).

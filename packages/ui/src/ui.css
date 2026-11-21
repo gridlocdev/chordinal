@@ -1,6 +1,6 @@
 /* The app's look: a calm, dense studio. Graphite surfaces a few close steps apart, crisp 1px lines and one warm accent;
    clips, notes and strips take their track's colour from --track. Every colour is a token, set for the dark theme and
-   the light one: ui/theme.js picks one through data-theme and reads them back for the canvases. */
+   the light one: theme.ts picks one through data-theme and reads them back for the canvases. */
 :root,
 :root[data-theme='dark'] {
   --bg: #131417;
