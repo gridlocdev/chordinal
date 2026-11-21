@@ -10,17 +10,17 @@ import { signal } from '@preact/signals';
 import { barAt } from '@chordinal/daw';
 import { presetFor } from '@chordinal/playback';
 import { updateClip, moveClip, newId, isDrums, findPattern } from '@chordinal/daw';
-import { project, selected, selectedClip, beat, settings, setSettings } from '../store.js';
-import { edit } from '../document.js';
-import { recording, dropAudio, dropTake } from '../recording.js';
-import { isMidi, dropMidi } from '../midi-import.js';
-import { focus } from '../focus.js';
-import { renameTrack, toggleMute, toggleSolo, newClipAt, moveTrackTo } from '../tracks.js';
-import { clipMenu, laneMenu, trackContextMenu } from '../context-menus.js';
+import { project, selected, selectedClip, beat, settings, setSettings } from '../store.ts';
+import { edit } from '../document.ts';
+import { recording, dropAudio, dropTake } from '../recording.ts';
+import { isMidi, dropMidi } from '../midi-import.ts';
+import { focus } from '../focus.ts';
+import { renameTrack, toggleMute, toggleSolo, newClipAt, moveTrackTo } from '../tracks.ts';
+import { clipMenu, laneMenu, trackContextMenu } from '../context-menus.ts';
 import { useCanvas, rgba } from './canvas.js';
 import { px, snapTo } from './arrange-view.js';
 import { Knob } from './Knob.jsx';
-import { palette, alpha } from '../theme.js';
+import { palette, alpha } from '../theme.ts';
 
 const EDGE = 6;                 // px at a clip's right edge that resize it
 /** a clip being dragged: { track, clip, mode: 'move'|'resize', start, beats, to, copy } */

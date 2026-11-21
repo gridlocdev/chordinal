@@ -1,8 +1,8 @@
 // ⌘K: every command, found by typing part of its name (or another word for it), run with Enter. Disabled commands
 // stay in the list, greyed, so people learn they exist. The field keeps the focus; the list is a listbox it points into.
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { overlay } from '../dialogs.js';
-import { catalog } from '../commands.js';
+import { overlay } from '../dialogs.ts';
+import { catalog } from '../commands.ts';
 import { listStep } from '../commands/index.ts';
 
 export function CommandMenu()

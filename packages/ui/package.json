@@ -6,15 +6,15 @@
   "description": "The Preact views, commands and document session",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.js",
+    ".": "./src/index.ts",
     "./components": "./src/components/index.js",
     "./ui.css": "./src/ui.css",
     "./native-bridge": "./src/platform/native-bridge.ts"
   },
   "sideEffects": [
     "*.css",
-    "./src/platform/*.js",
-    "./src/theme.js"
+    "./src/platform/*.ts",
+    "./src/theme.ts"
   ],
   "dependencies": {
     "@chordinal/lib": "workspace:*",

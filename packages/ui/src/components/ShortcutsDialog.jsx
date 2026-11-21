@@ -1,8 +1,8 @@
 // Help ▸ Keyboard Shortcuts (⌘/): every command with a shortcut, by menu, written from the catalog so it can't drift;
 // and the keys that aren't commands (musical typing, the command menu's list).
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { overlay } from '../dialogs.js';
-import { catalog } from '../commands.js';
+import { overlay } from '../dialogs.ts';
+import { catalog } from '../commands.ts';
 import { GROUPS, compact } from '../commands/index.ts';
 
 /** keys that aren't commands: what they do, and the keys */

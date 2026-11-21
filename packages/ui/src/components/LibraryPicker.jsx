@@ -1,7 +1,7 @@
 // The SoundFont library to play, and the ones not yet downloaded, with a button to download each.
 import { soundfontLibrary } from '@chordinal/audio';
-import { installedLibraries, libraryDownload } from '../store.js';
-import { chooseLibrary, downloadLibrary } from '../libraries.js';
+import { installedLibraries, libraryDownload } from '../store.ts';
+import { chooseLibrary, downloadLibrary } from '../libraries.ts';
 
 const megabytes = (lib)=> Math.round(lib.files.reduce((n, f)=> n + f.bytes, 0) / 1e6);
 

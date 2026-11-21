@@ -1,7 +1,7 @@
 // A track's volume knob: drag up or down, double-click for 0 dB. A drag is one undo step.
 import { setMixer } from '@chordinal/daw';
-import { FADER_FLOOR_DB } from '../store.js';
-import { edit } from '../document.js';
+import { FADER_FLOOR_DB } from '../store.ts';
+import { edit } from '../document.ts';
 
 const DB = [FADER_FLOOR_DB, 6];
 const DB_PER_PX = 0.25;

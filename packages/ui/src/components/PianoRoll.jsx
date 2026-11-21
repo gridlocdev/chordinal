@@ -7,7 +7,7 @@
 // Right-click a note or the background for more. Everything snaps to the grid picked in the toolbar (RollToolbar, in the editor's bar); hold Alt to place
 // freely. The wheel scrolls (Shift: across), Cmd/Ctrl + wheel zooms.
 import { useEffect } from 'preact/hooks';
-import { project, selected, selectedTrack, picked } from '../store.js';
+import { project, selected, selectedTrack, picked } from '../store.ts';
 import { useCanvas } from './canvas.js';
 import { view } from './roll-view.js';
 import { drawRoll } from './roll-draw.js';

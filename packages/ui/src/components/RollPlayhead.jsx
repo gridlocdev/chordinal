@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
-import { beat, playing, settings } from '../store.js';
+import { beat, playing, settings } from '../store.ts';
 import { GUTTER, view } from './roll-view.js';
 
 /** the playhead over the roll, apart from the canvas so a frame of playback doesn't redraw the notes; while playing

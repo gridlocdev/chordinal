@@ -1,6 +1,6 @@
 // The question the app is asking, if any: a line of text, yes or no, or a choice, with Enter and Escape.
 import { useEffect, useRef } from 'preact/hooks';
-import { asking, answer, OTHER } from '../ask.js';
+import { asking, answer, OTHER } from '../ask.ts';
 
 export function Ask()
 {

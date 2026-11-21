@@ -1,9 +1,9 @@
 // The piano roll's toolbar: the snap grid, the track and clip shown, the click and New from melody.
 import { barAt } from '@chordinal/daw';
 import { findClip } from '@chordinal/daw';
-import { project, selectedClip, selectedTrack, settings, setSettings } from '../store.js';
-import { GRIDS } from '../notes.js';
-import { newFromMelody } from '../recording.js';
+import { project, selectedClip, selectedTrack, settings, setSettings } from '../store.ts';
+import { GRIDS } from '../notes.ts';
+import { newFromMelody } from '../recording.ts';
 
 export function RollToolbar()
 {

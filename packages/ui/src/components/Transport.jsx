@@ -8,10 +8,10 @@ import { barAt, meterAt, beatsPerBar } from '@chordinal/daw';
 import { setTempo, setMeter } from '@chordinal/daw';
 import { bpmAt } from '@chordinal/lib';
 import { noteName } from '@chordinal/lib';
-import { project, dirty, beat, playing, status, settings, setSettings } from '../store.js';
-import { edit, save, saveAs } from '../document.js';
-import { play, stop, seek } from '../player.js';
-import { recording, record } from '../recording.js';
+import { project, dirty, beat, playing, status, settings, setSettings } from '../store.ts';
+import { edit, save, saveAs } from '../document.ts';
+import { play, stop, seek } from '../player.ts';
+import { recording, record } from '../recording.ts';
 
 /** 'harmonicMinor' → 'harmonic minor' */
 export const modeName = (mode)=> mode.replace(/[A-Z]/g, c => ` ${c.toLowerCase()}`);

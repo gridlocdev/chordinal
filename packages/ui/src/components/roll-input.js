@@ -2,13 +2,13 @@
 // the right-click menus.
 import { barAt } from '@chordinal/daw';
 import { addClip, newId } from '@chordinal/daw';
-import { selectedClip, selectedTrack, settings, picked } from '../store.js';
-import { edit } from '../document.js';
-import { seek } from '../player.js';
-import { press, release } from '../live.js';
-import { focus } from '../focus.js';
-import { noteId, notesOf, changeNotes, canonicalClip, isPicked, pickedNotes } from '../notes.js';
-import { noteMenu, rollMenu } from '../context-menus.js';
+import { selectedClip, selectedTrack, settings, picked } from '../store.ts';
+import { edit } from '../document.ts';
+import { seek } from '../player.ts';
+import { press, release } from '../live.ts';
+import { focus } from '../focus.ts';
+import { noteId, notesOf, changeNotes, canonicalClip, isPicked, pickedNotes } from '../notes.ts';
+import { noteMenu, rollMenu } from '../context-menus.ts';
 import { GUTTER, STRIP, PPB, VEL_H, EDGE, band, view, geometry, snap } from './roll-view.js';
 
 const NEW_VEL = 90;

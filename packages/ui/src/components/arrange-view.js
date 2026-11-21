@@ -3,9 +3,9 @@
 import { signal } from '@preact/signals';
 import { barAt } from '@chordinal/daw';
 import { projectEnd } from '@chordinal/daw';
-import { project } from '../store.js';
-import { recording } from '../recording.js';
-import { arrangeZoom as zoom } from '../tracks.js';
+import { project } from '../store.ts';
+import { recording } from '../recording.ts';
+import { arrangeZoom as zoom } from '../tracks.ts';
 
 export const HEAD_W = 232;
 export const ZOOM = [0.5, 120];        // px per beat

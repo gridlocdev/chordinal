@@ -3,9 +3,9 @@
 import { signal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { barAt } from '@chordinal/daw';
-import { project, selectedClip, chordRange, picked } from '../store.js';
-import { bounce, exportDialog, TAIL } from '../bounce.js';
-import { selectionRange } from '../commands.js';
+import { project, selectedClip, chordRange, picked } from '../store.ts';
+import { bounce, exportDialog, TAIL } from '../bounce.ts';
+import { selectionRange } from '../commands.ts';
 
 /** the last choices, kept while the app is open */
 const choices = signal({ range: 'all', stems: false, normalized: false, tail: TAIL });

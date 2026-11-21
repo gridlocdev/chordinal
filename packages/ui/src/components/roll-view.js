@@ -1,7 +1,7 @@
 // What the piano roll's parts share: the part of the roll shown, its geometry on a canvas, the selection rectangle
 // and snapping to the grid.
 import { signal } from '@preact/signals';
-import { settings } from '../store.js';
+import { settings } from '../store.ts';
 
 export const GUTTER = 52;       // px of keyboard at the left
 export const STRIP = 26;        // px of chord names above the lanes

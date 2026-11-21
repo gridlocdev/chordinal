@@ -3,11 +3,11 @@
 import { MODES } from '@chordinal/lib';
 import { noteName } from '@chordinal/lib';
 import { barLines } from '@chordinal/daw';
-import { settings, selectedClip, picked } from '../store.js';
-import { held } from '../live.js';
-import { notesOf, canonicalIds, isPicked } from '../notes.js';
+import { settings, selectedClip, picked } from '../store.ts';
+import { held } from '../live.ts';
+import { notesOf, canonicalIds, isPicked } from '../notes.ts';
 import { rgba } from './canvas.js';
-import { palette, alpha } from '../theme.js';
+import { palette, alpha } from '../theme.ts';
 import { GUTTER, STRIP, LANE_H, VEL_H, band, geometry } from './roll-view.js';
 
 const FONT = '-apple-system, system-ui, sans-serif';

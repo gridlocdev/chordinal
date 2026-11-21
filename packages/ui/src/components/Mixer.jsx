@@ -3,10 +3,10 @@
 import { audioEngine } from '@chordinal/playback';
 import { presetFor } from '@chordinal/playback';
 import { setMixer } from '@chordinal/daw';
-import { project, selected, settings, setSettings, levels, FADER_FLOOR_DB } from '../store.js';
-import { edit } from '../document.js';
-import { toggleMute, toggleSolo } from '../tracks.js';
-import { stripMenu } from '../context-menus.js';
+import { project, selected, settings, setSettings, levels, FADER_FLOOR_DB } from '../store.ts';
+import { edit } from '../document.ts';
+import { toggleMute, toggleSolo } from '../tracks.ts';
+import { stripMenu } from '../context-menus.ts';
 import { rgba } from './canvas.js';
 
 const DB = [FADER_FLOOR_DB, 6];

@@ -1,6 +1,6 @@
 // The panel under the arrangement: the piano roll for the selected track, the step grid for its clip, or the mixer.
 // Its tabs and the open view's toolbar share the bar across its top.
-import { settings, setSettings } from '../store.js';
+import { settings, setSettings } from '../store.ts';
 import { PianoRoll } from './PianoRoll.jsx';
 import { RollToolbar } from './RollToolbar.jsx';
 import { Mixer } from './Mixer.jsx';

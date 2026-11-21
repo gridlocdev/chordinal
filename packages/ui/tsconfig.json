@@ -3,9 +3,29 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "lib": ["ES2023", "DOM"],
-    "types": []
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "types": [],
+    "allowJs": true,
+    "checkJs": false
   },
-  "include": ["src/store", "src/commands", "src/platform/native-bridge.ts"],
-  "references": [{ "path": "../daw" }]
+  "include": ["src"],
+  "files": [
+    "src/components/arrange-view.js",
+    "src/components/canvas.js",
+    "src/components/grid-view.js",
+    "src/components/roll-draw.js",
+    "src/components/roll-input.js",
+    "src/components/roll-view.js"
+  ],
+  "exclude": ["src/components"],
+  "references": [
+    { "path": "../lib" },
+    { "path": "../audio" },
+    { "path": "../daw" },
+    { "path": "../sketch" },
+    { "path": "../composer" },
+    { "path": "../playback" }
+  ]
 }

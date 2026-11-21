@@ -2,13 +2,13 @@
 // move the playhead, or drag along it to loop the bars dragged over. Right-click or double-click a flag to change it.
 import { barLines } from '@chordinal/daw';
 import { projectEnd } from '@chordinal/daw';
-import { project } from '../store.js';
-import { edit } from '../document.js';
-import { seek } from '../player.js';
-import { rulerMenu } from '../context-menus.js';
-import { timelineFlags, flagMenu, editFlag } from '../timeline.js';
+import { project } from '../store.ts';
+import { edit } from '../document.ts';
+import { seek } from '../player.ts';
+import { rulerMenu } from '../context-menus.ts';
+import { timelineFlags, flagMenu, editFlag } from '../timeline.ts';
 import { useCanvas } from './canvas.js';
-import { palette, alpha } from '../theme.js';
+import { palette, alpha } from '../theme.ts';
 import { px, snapTo } from './arrange-view.js';
 
 const FLAGS = [15, 29];         // px: the row of tempo and meter flags

@@ -5,13 +5,13 @@ import { barAt } from '@chordinal/daw';
 import { findPattern, isDrums } from '@chordinal/daw';
 import { STEP_SIZES, stepOf, stepCount, gridRows, cell, drumName, ACCENT_VELOCITY } from '@chordinal/daw';
 import { GM_DRUMS } from '@chordinal/daw';
-import { appMenu } from '../platform/app-menu.js';
+import { appMenu } from '../platform/app-menu.ts';
 import { useComputed } from '@preact/signals';
-import { project } from '../store.js';
-import { focus } from '../focus.js';
-import { gridTarget, playingStep, paintStep, accentStep, setStepSize, addGridRow, hideGridRow, previewStep } from '../steps.js';
+import { project } from '../store.ts';
+import { focus } from '../focus.ts';
+import { gridTarget, playingStep, paintStep, accentStep, setStepSize, addGridRow, hideGridRow, previewStep } from '../steps.ts';
 import { useCanvas, rgba } from './canvas.js';
-import { palette, alpha } from '../theme.js';
+import { palette, alpha } from '../theme.ts';
 import { gridGeometry, lineKind, betweenCells, GRID_GUTTER } from './grid-view.js';
 
 const FONT = '11px -apple-system, system-ui, sans-serif';

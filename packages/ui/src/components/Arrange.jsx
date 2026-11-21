@@ -2,8 +2,8 @@
 // + Drums and a place to drop an instrument (or a track's header, to move it last). Cmd/Ctrl + wheel zooms. While
 // playing, the view scrolls to keep the playhead in sight (Follow Playhead).
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { project, chordRange, beat, playing, settings } from '../store.js';
-import { arrangeZoom as zoom, arrangePpb, moveTrackTo } from '../tracks.js';
+import { project, chordRange, beat, playing, settings } from '../store.ts';
+import { arrangeZoom as zoom, arrangePpb, moveTrackTo } from '../tracks.ts';
 import { HEAD_W, ZOOM, width, px, span, fitted } from './arrange-view.js';
 import { Ruler } from './Ruler.jsx';
 import { ChordLane } from './ChordLane.jsx';

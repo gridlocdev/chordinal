@@ -1,10 +1,10 @@
 // The chord track: the project's chords, and a stretch dragged out to whistle a chord for.
 import { barAt } from '@chordinal/daw';
-import { project, chordRange } from '../store.js';
-import { focus } from '../focus.js';
-import { chordMenu } from '../context-menus.js';
+import { project, chordRange } from '../store.ts';
+import { focus } from '../focus.ts';
+import { chordMenu } from '../context-menus.ts';
 import { useCanvas } from './canvas.js';
-import { palette, alpha } from '../theme.js';
+import { palette, alpha } from '../theme.ts';
 import { px, snapTo } from './arrange-view.js';
 
 export function ChordLane({ beats, ppb })
