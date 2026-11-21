@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gridGeometry, lineKind, playheadStep, betweenCells, GRID_GUTTER } from '../../src/ui/components/grid-view.js';
+import { gridGeometry, lineKind, playheadStep, betweenCells, GRID_GUTTER } from '@chordinal/ui';
 
 test('cells under the pointer (PRD §4.5)', ()=>
 {

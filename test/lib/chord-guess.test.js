@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { guessChords, toProgression, chordVocabulary, chordKey, nameChord } from '../../src/lib/chord-guess.js';
-import { trackPitch } from '../../src/lib/pitch-track.js';
-import { transcribe, guessKeys, freeNotes } from '../../src/lib/transcribe.js';
-import { parseChord, pitchClass } from '../../src/lib/music-theory.js';
+import { guessChords, toProgression, chordVocabulary, chordKey, nameChord } from '@chordinal/lib';
+import { trackPitch } from '@chordinal/lib';
+import { transcribe, guessKeys, freeNotes } from '@chordinal/lib';
+import { parseChord, pitchClass } from '@chordinal/lib';
 import { RATE, whistle, fromNotation } from './whistle-synth.js';
 
 const chords = (text, key, mode, beatsPerBar = 4)=>

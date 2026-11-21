@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compose } from '../../src/composer/compose.js';
-import { perform } from '../../src/composer/perform.js';
-import { planEarCandy } from '../../src/composer/ear-candy.js';
-import { toProject } from '../../src/composer/to-project.js';
-import { humanizeFx } from '../../src/composer/humanize-fx.js';
-import { CATALOG } from '../../src/composer/catalog.js';
-import { writeProject, readProject } from '../../src/daw/project-format.js';
-import { trackNotes } from '../../src/daw/project.js';
+import { compose } from '@chordinal/composer';
+import { perform } from '@chordinal/composer';
+import { planEarCandy } from '@chordinal/composer';
+import { toProject } from '@chordinal/composer';
+import { humanizeFx } from '@chordinal/composer';
+import { CATALOG } from '@chordinal/composer';
+import { writeProject, readProject } from '@chordinal/daw';
+import { trackNotes } from '@chordinal/daw';
 
 const near = (a, b)=> Math.abs(a - b) < 2e-3;
 

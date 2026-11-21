@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { noteName, isBlackKey, octaveC } from '../../src/lib/notes.js';
+import { noteName, isBlackKey, octaveC } from '@chordinal/lib';
 
 test('names middle C C4', ()=> assert.equal(noteName(60), 'C4'));
 test('names sharps', ()=> assert.equal(noteName(61), 'C#4'));

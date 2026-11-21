@@ -1,4 +1,0 @@
-{
-    "src": "src",
-    "layers": [["lib"], ["platform"], ["audio"], ["daw"], ["composer", "sketch"], ["ui"], ["chordinal"]]
-}

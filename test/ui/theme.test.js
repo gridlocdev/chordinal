@@ -2,8 +2,8 @@
 // colour can be drawn see-through.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { shownTheme, palette, alpha } from '../../src/ui/theme.js';
-import { settings } from '../../src/ui/store.js';
+import { shownTheme, palette, alpha } from '@chordinal/ui';
+import { settings } from '@chordinal/ui';
 
 test('System follows the OS; Light and Dark are what they say', ()=>
 {

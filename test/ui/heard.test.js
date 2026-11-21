@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { heardDifferently } from '../../src/ui/player.js';
-import { emptyProject, makeTrack, addTrack, updateTrack } from '../../src/daw/project.js';
-import { setMeterAt } from '../../src/daw/timeline.js';
+import { heardDifferently } from '@chordinal/ui';
+import { emptyProject, makeTrack, addTrack, updateTrack } from '@chordinal/daw';
+import { setMeterAt } from '@chordinal/daw';
 
 test('an edit while playing restarts playback when it changes what is heard (meter, key, chords, length, title)', ()=>
 {
@@ -33,9 +33,9 @@ test('moving a send or the low cut while playing glides there without a restart;
 
 test('the mix handed to the player carries each track\'s sends and low cut', async ()=>
 {
-    const { mix, hist } = await import('../../src/ui/store.js');
-    const { setMixer } = await import('../../src/daw/project.js');
-    const { history } = await import('../../src/daw/history.js');
+    const { mix, hist } = await import('@chordinal/ui');
+    const { setMixer } = await import('@chordinal/daw');
+    const { history } = await import('@chordinal/daw');
     let p = emptyProject({ bars: 4 });
     p = addTrack(p, makeTrack(p, { name: 'Keys' }));
     p = setMixer(p, p.tracks[0].id, { sends: { reverb: 0.4, delay: 0.1 }, lowCut: 120 });

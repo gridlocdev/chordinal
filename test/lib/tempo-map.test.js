@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { beatToSeconds, secondsToBeat, bpmAt, tempoSteps } from '../../src/lib/tempo-map.js';
+import { beatToSeconds, secondsToBeat, bpmAt, tempoSteps } from '@chordinal/lib';
 
 const close = (a, b, msg)=> assert.ok(Math.abs(a - b) < 1e-6, `${msg ?? ''} ${a} ≠ ${b}`);
 

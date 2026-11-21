@@ -7,7 +7,7 @@
 # ~/.local/share/applications. Run it again after moving the checkout or updating Electron.
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
-id=chordinal name='Chordinal' entry=electron/chordinal.js icon=assets/chordinal-icon
+id=chordinal name='Chordinal' entry=apps/desktop/src/chordinal.js icon=apps/desktop/assets/icon
 mic="$name listens to your whistling to write it out as notes."
 
 case "$(uname)" in

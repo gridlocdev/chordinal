@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { encodeWav, encodeWavChannels, normalize, peakOf } from '../../src/lib/wav.js';
+import { encodeWav, encodeWavChannels, normalize, peakOf } from '@chordinal/lib';
 
 test('a stereo WAV interleaves its channels; a mono one has one', ()=>
 {

@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyProject, makeTrack, addTrack, addClip, updateClip, removeClip, moveClip, splitAt, joinClips,
-    duplicateTrack, findClip, makePattern, makeUnique, renamePattern, nextPatternName, patternProblems, trackNotes } from '../../src/daw/project.js';
-import { insertTime, deleteTime } from '../../src/daw/timeline.js';
-import { scaleNotes } from '../../src/daw/note-edits.js';
-import { history, commit } from '../../src/daw/history.js';
-import { writeProject, readProject } from '../../src/daw/project-format.js';
-import { compose } from '../../src/composer/compose.js';
-import { toProject } from '../../src/composer/to-project.js';
-import { CATALOG } from '../../src/composer/catalog.js';
+    duplicateTrack, findClip, makePattern, makeUnique, renamePattern, nextPatternName, patternProblems, trackNotes } from '@chordinal/daw';
+import { insertTime, deleteTime } from '@chordinal/daw';
+import { scaleNotes } from '@chordinal/daw';
+import { history, commit } from '@chordinal/daw';
+import { writeProject, readProject } from '@chordinal/daw';
+import { compose } from '@chordinal/composer';
+import { toProject } from '@chordinal/composer';
+import { CATALOG } from '@chordinal/composer';
 
 const KICK = 36, SNARE = 38;
 const round = (x)=> Math.round(x * 1e3) / 1e3;

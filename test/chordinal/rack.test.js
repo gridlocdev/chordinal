@@ -5,13 +5,13 @@ import assert from 'node:assert/strict';
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};
 
-const { instrumentGroups, kits, openTrack, addDrumTrack, addInstrumentTrack, dropInstrument, STANDARD_KIT, GM_FAMILIES } = await import('../../src/chordinal/rack.js');
-const { previewNotes } = await import('../../src/ui/preview.js');
-const { moveTrackTo } = await import('../../src/ui/tracks.js');
-const { soundfontLibrary } = await import('../../src/audio/soundfont-library.js');
-const { hist, project, selected, selectedClip, beat, settings } = await import('../../src/ui/store.js');
-const { emptyProject, addTrack, makeTrack, addClip, findPattern } = await import('../../src/daw/project.js');
-const { history } = await import('../../src/daw/history.js');
+const { instrumentGroups, kits, openTrack, addDrumTrack, addInstrumentTrack, dropInstrument, STANDARD_KIT, GM_FAMILIES } = await import('../../apps/web/src/rack.js');
+const { previewNotes } = await import('@chordinal/ui');
+const { moveTrackTo } = await import('@chordinal/ui');
+const { soundfontLibrary } = await import('@chordinal/audio');
+const { hist, project, selected, selectedClip, beat, settings } = await import('@chordinal/ui');
+const { emptyProject, addTrack, makeTrack, addClip, findPattern } = await import('@chordinal/daw');
+const { history } = await import('@chordinal/daw');
 
 /** a project with these tracks ([name, bank]), nothing selected, the playhead at the start */
 function start(tracks)

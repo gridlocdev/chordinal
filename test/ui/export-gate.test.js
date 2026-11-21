@@ -6,9 +6,9 @@ import assert from 'node:assert/strict';
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};
 
-const { play } = await import('../../src/ui/player.js');
-const { busy } = await import('../../src/ui/commands.js');
-const { exporting, playing, status } = await import('../../src/ui/store.js');
+const { play } = await import('@chordinal/ui');
+const { busy } = await import('@chordinal/ui');
+const { exporting, playing, status } = await import('@chordinal/ui');
 
 test('Play during an export says to wait and plays nothing; the menus and keys wait too', async ()=>
 {
@@ -26,7 +26,7 @@ test('Play during an export says to wait and plays nothing; the menus and keys w
 
 test('an export marks itself from its start to its end, even when it fails', async ()=>
 {
-    const { bounce } = await import('../../src/ui/bounce.js');
+    const { bounce } = await import('@chordinal/ui');
     const seen = [];
     const stopWatch = exporting.subscribe(v => seen.push(v));
     await bounce();     // no instruments can load here, so it fails and says so

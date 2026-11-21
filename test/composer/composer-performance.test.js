@@ -1,21 +1,21 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compose } from '../../src/composer/compose.js';
-import { perform, swungTracks } from '../../src/composer/perform.js';
-import { planMix } from '../../src/composer/mix-plan.js';
-import { valueAt } from '../../src/daw/automation.js';
-import { SECTIONS } from '../../src/composer/composer-data.js';
-import { EXPRESSION, MOVEMENT, DUCK, CHIP } from '../../src/composer/performance-data.js';
-import { EAR_CANDY } from '../../src/composer/ear-candy-data.js';
-import { planEarCandy } from '../../src/composer/ear-candy.js';
-import { swingTime, swingAmount } from '../../src/composer/meter.js';
-import { beatToSeconds } from '../../src/lib/tempo-map.js';
-import { SONGS } from '../../src/composer/songs-data.js';
-import { GENRE_SONGS } from '../../src/composer/genre-songs-data.js';
-import { GAME_SONGS } from '../../src/composer/game-songs-data.js';
-import { CHIP_SONGS } from '../../src/composer/chip-songs-data.js';
-import { CLASSICAL_SONGS } from '../../src/composer/classical-songs-data.js';
-import { CHIP_BANK, CHIP_KIT_BANK } from '../../src/audio/chip-instruments-data.js';
+import { compose } from '@chordinal/composer';
+import { perform, swungTracks } from '@chordinal/composer';
+import { planMix } from '@chordinal/composer';
+import { valueAt } from '@chordinal/daw';
+import { SECTIONS } from '@chordinal/composer';
+import { EXPRESSION, MOVEMENT, DUCK, CHIP } from '@chordinal/composer';
+import { EAR_CANDY } from '@chordinal/composer';
+import { planEarCandy } from '@chordinal/composer';
+import { swingTime, swingAmount } from '@chordinal/composer';
+import { beatToSeconds } from '@chordinal/lib';
+import { SONGS } from '@chordinal/composer';
+import { GENRE_SONGS } from '@chordinal/composer';
+import { GAME_SONGS } from '@chordinal/composer';
+import { CHIP_SONGS } from '@chordinal/composer';
+import { CLASSICAL_SONGS } from '@chordinal/composer';
+import { CHIP_BANK, CHIP_KIT_BANK } from '@chordinal/audio';
 
 const ALL = [...SONGS, ...GENRE_SONGS, ...GAME_SONGS, ...CHIP_SONGS, ...CLASSICAL_SONGS];
 

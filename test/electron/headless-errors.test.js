@@ -14,9 +14,9 @@ import { _electron } from 'playwright-core';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const LIMIT_MS = 15000;
 const APPS = [
-    { id: 'chordinal', entry: 'electron/chordinal.js', ready: '.lane' },
+    { id: 'chordinal', entry: 'apps/desktop/src/chordinal.js', ready: '.lane' },
 ];
-const built = existsSync(path.join(ROOT, 'dist/chordinal.js'));
+const built = existsSync(path.join(ROOT, 'apps/web/dist/chordinal.js'));
 
 async function launch({ entry, ready })
 {

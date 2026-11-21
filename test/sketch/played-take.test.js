@@ -2,9 +2,9 @@
 // beats, and put into the clip the take starts in, which every clip of its pattern shares.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { playedNotes, recordInto } from '../../src/sketch/takes.js';
-import { keyBeat } from '../../src/sketch/recorder.js';
-import { emptyProject, addTrack, makeTrack, addClip, makePattern } from '../../src/daw/project.js';
+import { playedNotes, recordInto } from '@chordinal/sketch';
+import { keyBeat } from '@chordinal/playback';
+import { emptyProject, addTrack, makeTrack, addClip, makePattern } from '@chordinal/daw';
 
 test('a played key is timed from the take\'s first bar line, as heard after the count-in', ()=>
 {

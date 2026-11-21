@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sketchSection, sketchSpec } from '../../src/sketch/sketch-spec.js';
-import { beatsPerBar } from '../../src/daw/meter.js';
-import { compose } from '../../src/composer/compose.js';
+import { sketchSection, sketchSpec } from '@chordinal/sketch';
+import { beatsPerBar } from '@chordinal/daw';
+import { compose } from '@chordinal/composer';
 
 const key = { key: 'G', tonic: 7, mode: 'major' };
 const melody = [

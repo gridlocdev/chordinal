@@ -1,0 +1,15 @@
+{
+  "name": "@chordinal/daw",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The project model, its file format, edits and the MIDI FX hook: pure",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@chordinal/lib": "workspace:*"
+  }
+}

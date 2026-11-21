@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compose } from '../../src/composer/compose.js';
-import { GENRES } from '../../src/composer/genre-data.js';
-import { harmonyStats, melodyDistance, melodyStats, overlap, readChordName } from '../../src/composer/harmony-report.js';
+import { compose } from '@chordinal/composer';
+import { GENRES } from '@chordinal/composer';
+import { harmonyStats, melodyDistance, melodyStats, overlap, readChordName } from '@chordinal/composer';
 
 test('readChordName reads a root and a quality; overlap is shared over all', ()=>
 {

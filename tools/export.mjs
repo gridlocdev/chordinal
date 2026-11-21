@@ -11,9 +11,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import { spawn, execFileSync } from 'node:child_process';
-import { readProject } from '../src/daw/project-format.js';
-import { projectMidi } from '../src/daw/project-midi.js';
-import { LIBRARIES } from '../src/audio/soundfont-catalog-data.js';
+import { readProject } from '@chordinal/daw';
+import { projectMidi } from '@chordinal/daw';
+import { LIBRARIES } from '@chordinal/audio';
+import * as esbuild from 'esbuild';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const projects = path.join(root, 'projects'), out = path.join(root, 'export');
@@ -41,6 +42,9 @@ console.log(`MIDI: ${songs.length} file${songs.length > 1 ? 's' : ''}`);
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json' };
 const body = (req)=> new Promise(resolve => { const parts = []; req.on('data', d => parts.push(d)); req.on('end', ()=> resolve(Buffer.concat(parts))); });
 let failed = 0, done = 0, started = Date.now(), electron = null;
+// the page's code, bundled, since a browser can't resolve the workspace's packages
+await esbuild.build({ entryPoints: [path.join(root, 'tools/export/export.js')], outfile: path.join(root, 'build/export/export.js'),
+    bundle: true, format: 'esm', target: 'chrome140', logLevel: 'warning' });
 const server = http.createServer(async (req, res)=>
 {
     const url = new URL(req.url ?? '/', 'http://x'), p = decodeURIComponent(url.pathname);

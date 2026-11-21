@@ -7,7 +7,7 @@ globalThis.cancelAnimationFrame ??= ()=> {};
 
 const disk = new Map();
 let recentList = /** @type {string[]} */ ([]);
-let pickSaveAnswer = '', pickOpenAnswer = '', handedAnswer = '', handedOver = (dir)=> {};
+let pickSaveAnswer = '', pickOpenAnswer = '', handedAnswer = '', handedOver = (_dir)=> {};
 const toTop = (d)=> { recentList = [d, ...recentList.filter(x => x !== d)]; };
 /** @type {any} */ (globalThis).projectFolders = {
     read: async (d)=> { if (!disk.has(d)) throw new Error('no such folder'); return disk.get(d); },
@@ -24,12 +24,12 @@ const toTop = (d)=> { recentList = [d, ...recentList.filter(x => x !== d)]; };
     onHandedOver: (fn)=> { handedOver = fn; },
 };
 
-const { newSongProject, newSong, openFolder, openRecent, startUp, recent, useProjectFolders } = await import('../../src/chordinal/files.js');
-const { edit, save } = await import('../../src/ui/document.js');
-const { asking, answer, OTHER } = await import('../../src/ui/ask.js');
-const { project, projectName, dirty, status, settings } = await import('../../src/ui/store.js');
-const { addTrack, makeTrack } = await import('../../src/daw/project.js');
-const { writeProject } = await import('../../src/daw/project-format.js');
+const { newSongProject, newSong, openFolder, openRecent, startUp, recent, useProjectFolders } = await import('../../apps/web/src/files.js');
+const { edit, save } = await import('@chordinal/ui');
+const { asking, answer, OTHER } = await import('@chordinal/ui');
+const { project, projectName, dirty, status, settings } = await import('@chordinal/ui');
+const { addTrack, makeTrack } = await import('@chordinal/daw');
+const { writeProject } = await import('@chordinal/daw');
 useProjectFolders();
 
 const tick = ()=> new Promise(r => setTimeout(r, 0));

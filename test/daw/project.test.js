@@ -1,15 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { updateTrack, findClip, updateClip, emptyProject, makeTrack, addTrack, addClip, moveClip, splitAt,
-    removeTrack, setMixer, trackNotes, newId, moveTrack, duplicateTrack, joinClips } from '../../src/daw/project.js';
+    removeTrack, setMixer, trackNotes, newId, moveTrack, duplicateTrack, joinClips } from '@chordinal/daw';
 import { insertTime, deleteTime, setTempo, setTempoAt, removeTempoChange, setMeterAt, removeMeterChange, setLoop,
-    addMarker, renameMarker, removeMarker, markerRange } from '../../src/daw/timeline.js';
-import { humanizeNotes, scaleNotes, reverseNotes, quantizeNotes } from '../../src/daw/note-edits.js';
-import { history, commit, undo, redo } from '../../src/daw/history.js';
-import { writeProject, readProject } from '../../src/daw/project-format.js';
-import { projectMidi, midiProject, addMidiTracks } from '../../src/daw/project-midi.js';
-import { barAt, barLines, beatsPerBar, snap } from '../../src/daw/meter.js';
-import { performProject, registerFx } from '../../src/daw/fx.js';
+    addMarker, renameMarker, removeMarker, markerRange } from '@chordinal/daw';
+import { humanizeNotes, scaleNotes, reverseNotes, quantizeNotes } from '@chordinal/daw';
+import { history, commit, undo, redo } from '@chordinal/daw';
+import { writeProject, readProject } from '@chordinal/daw';
+import { projectMidi, midiProject, addMidiTracks } from '@chordinal/daw';
+import { barAt, barLines, beatsPerBar, snap } from '@chordinal/daw';
+import { performProject, registerFx } from '@chordinal/daw';
 
 function fixture()
 {
@@ -96,7 +96,7 @@ test('bars across meter changes', ()=>
 test('MIDI FX play a track; a track without one plays as written', ()=>
 {
     const { p, keys, kit } = fixture();
-    registerFx('test-octave', { name: 'Octave', perform: (project)=> ({ notes: new Map([[keys, [{ beat: 4, beats: 1, key: 72, vel: 90, grid: 4 }]]]), events: [] }) });
+    registerFx('test-octave', { name: 'Octave', perform: ()=> ({ notes: new Map([[keys, [{ beat: 4, beats: 1, key: 72, vel: 90, grid: 4 }]]]), events: [] }) });
     const withFx = { ...p, tracks: p.tracks.map(t => t.id === keys ? { ...t, fx: [{ type: 'test-octave' }] } : t) };
     const out = performProject(withFx, 0);
     assert.deepEqual(out.tracks[0].map(n => n.key), [72]);

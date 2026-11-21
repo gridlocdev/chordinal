@@ -13,9 +13,9 @@ code layout and its layer rules are in [architecture.md](architecture.md).
 You need Node.js, Python 3 and [just](https://github.com/casey/just).
 
 ```bash
-just deps        # install the pinned Preact, signals, esbuild and Electron into node_modules
+just deps        # pnpm install: the pinned Preact, signals, esbuild, Electron and dev tools
 just soundfonts  # download GeneralUser GS, FluidR3_GM and MuseScore_General into soundfonts/
-just build       # bundle src/chordinal/main.jsx into dist/
+just build       # bundle apps/web/src/main.jsx into apps/web/dist/
 just chordinal   # build, then run Chordinal in its own window
 just dev         # rebuild on every change and reload the window
 just install     # install it as an app: ~/Applications/Chordinal.app on macOS
@@ -35,7 +35,7 @@ just test    # node --test: the tests in test/ for lib/ and *-data.js files
 
 ## Writing songs
 
-Songs are plain specs in `src/composer/`: `songs-data.js`, `genre-songs-data.js` (one
+Songs are plain specs in `packages/composer/src/`: `songs-data.js`, `genre-songs-data.js` (one
 per genre, each with a story), `game-songs-data.js` (the game music), `chip-songs-data.js`
 (chiptune in different moods) and `classical-songs-data.js` (solo piano). Each is a song the
 composer writes (`just compose <id>`). The spec format and how the
@@ -161,11 +161,11 @@ length, peak and loudness, has a blind mode, and saves the WAVs in `.ab/out/`, w
 
 ### The desktop app
 
-`just chordinal` runs Chordinal from the checkout in Electron (`electron/chordinal.js`). `just install` (`tools/install-app.sh`) makes it an app you open from the Dock: on macOS a copy of the Electron in `node_modules`, renamed to Chordinal with its own bundle id and icon, whose only code is a stub that loads `electron/chordinal.js` from the checkout, so it always runs what's checked out (as last built), with its `soundfonts/`. On Linux it adds a launcher to `~/.local/share/applications`. Run it again after moving the checkout or updating Electron. To share it, make release builds (below).
+`just chordinal` runs Chordinal from the checkout in Electron (`apps/desktop/src/chordinal.js`). `just install` (`tools/install-app.sh`) makes it an app you open from the Dock: on macOS a copy of the Electron in `node_modules`, renamed to Chordinal with its own bundle id and icon, whose only code is a stub that loads `apps/desktop/src/chordinal.js` from the checkout, so it always runs what's checked out (as last built), with its `soundfonts/`. On Linux it adds a launcher to `~/.local/share/applications`. Run it again after moving the checkout or updating Electron. To share it, make release builds (below).
 
-`electron/shell.js` serves the repository on a private `app://game/` origin and lets that origin (and nothing else) use the microphone. The settings (library, panel sizes, browser tab, last project, grid, theme) go to `save.json` in Electron's user data folder (`Chordinal`) through `electron/preload.cjs`, beside Open Recent. Projects are folders anywhere on disk, saved in `Documents/Chordinal/` unless you pick somewhere else. On macOS `just chordinal` starts Electron with `open`, so the microphone prompt is for the app and not for the terminal. If you refused it, turn on Electron (or Chordinal, for the installed app) under System Settings → Privacy & Security → Microphone.
+`apps/desktop/src/shell.js` serves the repository on a private `app://game/` origin and lets that origin (and nothing else) use the microphone. The settings (library, panel sizes, browser tab, last project, grid, theme) go to `save.json` in Electron's user data folder (`Chordinal`) through `apps/desktop/src/preload.cjs`, beside Open Recent. Projects are folders anywhere on disk, saved in `Documents/Chordinal/` unless you pick somewhere else. On macOS `just chordinal` starts Electron with `open`, so the microphone prompt is for the app and not for the terminal. If you refused it, turn on Electron (or Chordinal, for the installed app) under System Settings → Privacy & Security → Microphone.
 
-The icon is drawn by hand in `assets/chordinal.svg`, a tile on Apple's icon grid with a white glyph. `just icons` (`tools/make-icons.sh`, needs Inkscape) renders it into `assets/chordinal-icon/`: `icon.icns` for the macOS app, which `just install` copies into the bundle, and `icon.ico` and `icon.png` for Windows and Linux (`icon` in the app's entry picks its window's). The rendered files are committed, so only a change to the SVG needs Inkscape.
+The icon is drawn by hand in `apps/desktop/assets/icon.svg`, a tile on Apple's icon grid with a white glyph. `just icons` (`tools/make-icons.sh`, needs Inkscape) renders it into `assets/chordinal-icon/`: `icon.icns` for the macOS app, which `just install` copies into the bundle, and `icon.ico` and `icon.png` for Windows and Linux (`icon` in the app's entry picks its window's). The rendered files are committed, so only a change to the SVG needs Inkscape.
 
 Two flags help while working on it:
 
@@ -176,11 +176,11 @@ Two flags help while working on it:
 
   Menus in a headless run: click a menu-bar item with
   `app.evaluate(({ Menu }, id) => Menu.getApplicationMenu().getMenuItemById(id).click(), 'undo')`
-  (ids are the keys of `COMMANDS` in `src/ui/commands.js`; Cmd shortcuts belong to the menu bar,
+  (ids are the keys of `COMMANDS` in `packages/ui/src/commands.js`; Cmd shortcuts belong to the menu bar,
   so a scripted `Meta+Z` does nothing). A right-click menu isn't shown; it is kept as
   `globalThis.contextMenu` in the main process, whose `items` a test can read and click.
 
-  Nothing else reaches the screen in a headless run either: closing or reloading with unsaved changes closes without asking (Chordinal asks in its own window, which a test answers by clicking), the file dialogs answer as if cancelled unless a test queued an answer in `globalThis.headlessAnswers` (`{ saveDialog: [path], openDialog: [path] }`) in the main process, and opening a doc, a link or the Finder does nothing. Each of these is kept in `globalThis.headlessPrompts` in the main process for a test to read (`electron/headless-screen.js`, tested in `test/electron/`). A test that launches the app kills it when done.
+  Nothing else reaches the screen in a headless run either: closing or reloading with unsaved changes closes without asking (Chordinal asks in its own window, which a test answers by clicking), the file dialogs answer as if cancelled unless a test queued an answer in `globalThis.headlessAnswers` (`{ saveDialog: [path], openDialog: [path] }`) in the main process, and opening a doc, a link or the Finder does nothing. Each of these is kept in `globalThis.headlessPrompts` in the main process for a test to read (`apps/desktop/src/headless-screen.js`, tested in `test/electron/`). A test that launches the app kills it when done.
 
   Exports in a headless run: swap the save dialog for a stub in the main process, with
   `ipcMain.removeHandler('file:save')` and a new `ipcMain.handle('file:save', …)` that keeps the
@@ -190,17 +190,17 @@ Two flags help while working on it:
 
 ### Release builds
 
-`just package` builds the installable app for this OS with electron-builder, from `packaging/chordinal.json`, into `release/chordinal/`. On macOS it is a `.dmg` and a `.zip` for Apple silicon and for Intel, ad-hoc signed and not notarized; on Windows an NSIS installer; on Linux a `.flatpak` bundle. The Flatpak needs `flatpak` and `flatpak-builder` and the Flathub remote (`flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo`), from which it installs the freedesktop runtime and the Electron base app it's built on (version `flatpak.runtimeVersion`). It may use Wayland or X11, the GPU, the network (downloads), PulseAudio or PipeWire (sound and the microphone), and the home folder, since projects can be anywhere. Its settings and downloaded libraries go in `~/.var/app/<app id>/`. It carries `dist/`, `src/`, `electron/`, the docs and the tools its main process uses, unpacked (no asar), plus, as a resource, `soundfonts/GeneralUser-GS/` (downloaded first if it's missing). `test/tools/packaging.test.js` follows the app's imports from its entry and page and fails when a file it loads isn't in the config's `files`.
+`just package` builds the installable app for this OS with electron-builder, from `apps/desktop/electron-builder.json`, into `release/chordinal/`. On macOS it is a `.dmg` and a `.zip` for Apple silicon and for Intel, ad-hoc signed and not notarized; on Windows an NSIS installer; on Linux a `.flatpak` bundle. The Flatpak needs `flatpak` and `flatpak-builder` and the Flathub remote (`flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo`), from which it installs the freedesktop runtime and the Electron base app it's built on (version `flatpak.runtimeVersion`). It may use Wayland or X11, the GPU, the network (downloads), PulseAudio or PipeWire (sound and the microphone), and the home folder, since projects can be anywhere. Its settings and downloaded libraries go in `~/.var/app/<app id>/`. It carries `dist/`, `src/`, `electron/`, the docs and the tools its main process uses, unpacked (no asar), plus, as a resource, `soundfonts/GeneralUser-GS/` (downloaded first if it's missing). `test/tools/packaging.test.js` follows the app's imports from its entry and page and fails when a file it loads isn't in the config's `files`.
 
-A release build takes its SoundFonts from the app's resources, then from `soundfonts/` in Electron's user data folder, where the Instruments tab's **Download** puts FluidR3_GM and MuseScore_General (`tools/soundfont-download.mjs`: the same sources as `tools/fetch-soundfonts.sh`, read as they stream in, into a temporary folder renamed when done; `app.isPackaged` in `electron/shell.js`).
+A release build takes its SoundFonts from the app's resources, then from `soundfonts/` in Electron's user data folder, where the Instruments tab's **Download** puts FluidR3_GM and MuseScore_General (`apps/desktop/src/soundfont-download.mjs`: the same sources as `tools/fetch-soundfonts.sh`, read as they stream in, into a temporary folder renamed when done; `app.isPackaged` in `apps/desktop/src/shell.js`).
 
-A headless run uses a temporary user data and Documents folder, so a test of a release build can launch `release/chordinal/mac-arm64/Chordinal.app/Contents/MacOS/Chordinal --headless` with Playwright's `_electron.launch({ executablePath })`. `npx electron-builder --mac dir --arm64 --config packaging/chordinal.json` builds only the `.app`, which is quicker for that.
+A headless run uses a temporary user data and Documents folder, so a test of a release build can launch `release/chordinal/mac-arm64/Chordinal.app/Contents/MacOS/Chordinal --headless` with Playwright's `_electron.launch({ executablePath })`. `npx electron-builder --mac dir --arm64 --config apps/desktop/electron-builder.json` builds only the `.app`, which is quicker for that.
 
 To publish a release, set `version` in `package.json`, commit, and push a tag `v<version>`. `.github/workflows/release.yml` tests and builds the app on macOS, Windows and Linux and attaches the builds to one draft release on GitHub; check it and publish it there.
 
 ## Adding a command
 
-Add it to `COMMANDS` in `src/ui/commands.js` with a label, an `accelerator` (a Cmd shortcut the menu bar answers) or `shown` (a plain key the page answers, which still types in a text field; never one of the musical-typing letters `A`–`L`, `;`, `'`, `W E T Y U O P`, `Z`, `X`; a letter waits while the piano roll has the focus, since its letters play notes there), and `enabled`/`checked` if it has them. Mark it `field: true` if it changes the project and its Cmd shortcut should go to a text field that has focus instead (Cmd+Backspace deletes text there, not the track). Then put `item('id')` in the shared menus in `src/ui/menu-bar.js` (or the File menu in `src/chordinal/menu-bar.js`) and in any right-click menu in `src/ui/context-menus.js` it belongs in.
+Add it to `COMMANDS` in `packages/ui/src/commands.js` with a label, an `accelerator` (a Cmd shortcut the menu bar answers) or `shown` (a plain key the page answers, which still types in a text field; never one of the musical-typing letters `A`–`L`, `;`, `'`, `W E T Y U O P`, `Z`, `X`; a letter waits while the piano roll has the focus, since its letters play notes there), and `enabled`/`checked` if it has them. Mark it `field: true` if it changes the project and its Cmd shortcut should go to a text field that has focus instead (Cmd+Backspace deletes text there, not the track). Then put `item('id')` in the shared menus in `packages/ui/src/menu-bar.js` (or the File menu in `apps/web/src/menu-bar.js`) and in any right-click menu in `packages/ui/src/context-menus.js` it belongs in.
 
 ## SoundFont libraries
 
@@ -214,29 +214,29 @@ Add it to `COMMANDS` in `src/ui/commands.js` with a label, an `accelerator` (a C
 downloads every library (or the ones named, like `just soundfonts generaluser`) that isn't on disk
 yet, with its license file next to its `.sf2`. The deploy runs the same script, and so does
 `just package`, for GeneralUser GS only. A release build downloads the other two itself
-(`tools/soundfont-download.mjs`). The libraries and their folders are listed in
-`src/audio/soundfont-libraries-data.js`.
+(`apps/desktop/src/soundfont-download.mjs`). The libraries and their folders are listed in
+`packages/audio/src/soundfont-libraries-data.js`.
 
 ### Adding or replacing a library
 
 1. Put the `.sf2` and its license file in `soundfonts/<folder>/`, and add the download to
    `tools/fetch-soundfonts.sh`, so `just soundfonts` and the deploy fetch it too, and to `DOWNLOADS`
-   in `tools/soundfont-download.mjs`, so a release build can download it.
-2. Add the library to `LIBRARY_SOURCES` in `src/audio/soundfont-libraries-data.js`.
-3. Run `just catalog` to regenerate `src/audio/soundfont-catalog-data.js`, the list of every
+   in `apps/desktop/src/soundfont-download.mjs`, so a release build can download it.
+2. Add the library to `LIBRARY_SOURCES` in `packages/audio/src/soundfont-libraries-data.js`.
+3. Run `just catalog` to regenerate `packages/audio/src/soundfont-catalog-data.js`, the list of every
    file and preset that lets the instrument menu load without the files.
 4. Run `just check` and `just test`.
 
 ### Chip instruments
 
-The chip instruments aren't a file. `src/lib/chip-synth.js` builds them in memory the first time
+The chip instruments aren't a file. `packages/lib/src/chip-synth.js` builds them in memory the first time
 one is played: pulse waves at the NES's 12.5%, 25% and 50% widths, a pulse-width sweep, triangle,
 saw and sine, each stored with only the harmonics its notes can play cleanly, and drum kits made
 from NES-style LFSR noise and falling tones. They come with every library, listed under
 "Chip · built in" (melodic on bank 64, kits on bank 192). A song uses them with `sound: 'chip'`.
 The Chiptune genre sets that.
 
-To change how they sound, edit `src/audio/chip-instruments-data.js`; the fields are documented
+To change how they sound, edit `packages/audio/src/chip-instruments-data.js`; the fields are documented
 at the top of `chip-synth.js`:
 
 - `wave`: the shape. `steps` quantises it, like the NES triangle's 16 levels. `dpcm` plays the
@@ -257,11 +257,11 @@ falls back to when the band names one the chip bank doesn't have.
 
 ## Adding to the interface
 
-The interface lives in `src/ui/`: the state as signals in `store.js`, what the controls do in
+The interface lives in `packages/ui/src/`: the state as signals in `store.js`, what the controls do in
 `document.js` (open, save, New and `edit`), `player.js`, `recording.js` and `live.js`, and the
 views in `components/`. A view reads signals and calls actions; it doesn't touch the audio engine or
 the composer itself. Every change to the project goes through `edit(p => …)` with one of the pure
-edits in `src/daw/` (`project.js`, `timeline.js`, `note-edits.js`), so it can be undone; add a new edit there, with a test. DAW logic that isn't about
-songs goes in `src/daw/`; music logic goes in `src/composer/` or `src/sketch/`, which know nothing of the interface and don't import each other,
+edits in `packages/daw/src/` (`project.js`, `timeline.js`, `note-edits.js`), so it can be undone; add a new edit there, with a test. DAW logic that isn't about
+songs goes in `packages/daw/`; music logic goes in `packages/composer/` or `packages/sketch/`, which know nothing of the interface and don't import each other,
 and content goes in a `*-data.js` file with a test. Show a control only when there is code behind
 it. The full rules are in [architecture.md](architecture.md#rules).

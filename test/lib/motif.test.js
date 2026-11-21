@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sequence, invert, retrograde, augment, fragment, develop } from '../../src/lib/motif.js';
+import { sequence, invert, retrograde, augment, fragment, develop } from '@chordinal/lib';
 
 // do-re-mi-sol: a quarter, a quarter, a half, in a 4-beat bar
 const m = { beats: 4, notes: [{ beat: 0, beats: 1, step: 0 }, { beat: 1, beats: 1, step: 1 }, { beat: 2, beats: 1, step: 2 }, { beat: 3, beats: 1, step: 4 }] };

@@ -6,10 +6,10 @@
 //   node tools/make-projects.mjs [song-id …]
 import fs from 'node:fs';
 import path from 'node:path';
-import { compose } from '../src/composer/compose.js';
-import { toProject } from '../src/composer/to-project.js';
-import { CATALOG } from '../src/composer/catalog.js';
-import { writeProject } from '../src/daw/project-format.js';
+import { compose } from '@chordinal/composer';
+import { toProject } from '@chordinal/composer';
+import { CATALOG } from '@chordinal/composer';
+import { writeProject } from '@chordinal/daw';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const names = process.argv.slice(2);

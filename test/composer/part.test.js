@@ -1,8 +1,8 @@
 // composePart: one part over a stretch of bars, for Chordinal's Generate Part… (Chordinal PRD §8).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { composePart, romanFor, progressionOver, styleName, PARTS } from '../../src/composer/part.js';
-import { parseChord, chordPitchClasses } from '../../src/lib/music-theory.js';
+import { composePart, romanFor, progressionOver, styleName, PARTS } from '@chordinal/composer';
+import { parseChord, chordPitchClasses } from '@chordinal/lib';
 
 const A_MINOR = [9, 0, 4], F_MAJOR = [5, 9, 0], G7 = [7, 11, 2, 5];
 const request = (more = {})=> ({ part: 'bass', style: 'feeling:hopeful', seed: 'ab12', tempo: 110, meter: '4/4', tonic: 0, mode: 'major', bars: 4, ...more });

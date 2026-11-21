@@ -20,12 +20,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm test
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node --test
+      - run: npx vitest run
       - run: node tools/build.mjs
       - run: bash tools/fetch-soundfonts.sh generaluser
         shell: bash
@@ -35,7 +37,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y flatpak flatpak-builder
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-      - run: npx electron-builder ${{ matrix.platform }} --config packaging/chordinal.json --publish never
+      - run: npx electron-builder ${{ matrix.platform }} --config electron-builder.json --publish never
+        working-directory: apps/desktop
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - uses: actions/upload-artifact@v4

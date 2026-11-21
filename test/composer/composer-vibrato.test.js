@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compose } from '../../src/composer/compose.js';
-import { perform } from '../../src/composer/perform.js';
-import { EXPRESSION } from '../../src/composer/performance-data.js';
+import { compose } from '@chordinal/composer';
+import { perform } from '@chordinal/composer';
+import { EXPRESSION } from '@chordinal/composer';
 
 // a short song: a hand-written verse with ~ marks, and a composed chorus that keeps the automatic vibrato
 const spec = (lead, style = {})=> ({

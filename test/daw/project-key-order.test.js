@@ -3,8 +3,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { readProject, writeProject } from '../../src/daw/project-format.js';
-import { emptyProject } from '../../src/daw/project.js';
+import { readProject, writeProject } from '@chordinal/daw';
+import { emptyProject } from '@chordinal/daw';
 
 test('a project read and written again is the same text', ()=>
 {

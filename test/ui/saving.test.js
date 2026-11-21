@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { openProject, save, saveAs, edit } from '../../src/ui/document.js';
-import { setPlace } from '../../src/ui/place.js';
-import { asking, answer } from '../../src/ui/ask.js';
-import { projectName, dirty } from '../../src/ui/store.js';
-import { emptyProject } from '../../src/daw/project.js';
-import { writeProject } from '../../src/daw/project-format.js';
+import { openProject, save, saveAs, edit } from '@chordinal/ui';
+import { setPlace } from '@chordinal/ui';
+import { asking, answer } from '@chordinal/ui';
+import { projectName, dirty } from '@chordinal/ui';
+import { emptyProject } from '@chordinal/daw';
+import { writeProject } from '@chordinal/daw';
 
 // the window's frame calls, which stopping playback uses
 globalThis.requestAnimationFrame ??= ()=> 0;

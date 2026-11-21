@@ -1,7 +1,7 @@
 // A made-up whistle for the transcription tests: notes as sine waves with breath noise, detune, vibrato and timing
 // wobble. Not a test file itself.
-import { parseMelody } from '../../src/composer/notation.js';
-import { degreeToKey, pitchClass } from '../../src/lib/music-theory.js';
+import { parseMelody } from '@chordinal/composer';
+import { degreeToKey, pitchClass } from '@chordinal/lib';
 
 export const RATE = 22050;
 const hz = (midi)=> 440 * 2 ** ((midi - 69) / 12);

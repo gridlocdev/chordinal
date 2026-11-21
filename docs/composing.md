@@ -1,6 +1,6 @@
 # Composing: a knowledge base for writing music by rule
 
-This is how an AI, or anyone without an instrument in hand, can turn a feeling into a finished multi-instrument song without leaning on chance. It explains each decision the composer in `src/composer/` makes and why, then shows how to write a song for it.
+This is how an AI, or anyone without an instrument in hand, can turn a feeling into a finished multi-instrument song without leaning on chance. It explains each decision the composer in `packages/composer/` makes and why, then shows how to write a song for it.
 
 The tables in `composer-data.js` and `patterns-data.js` are this document in data form. When the two disagree, the code is what plays; fix whichever one is wrong.
 
@@ -187,7 +187,7 @@ Chords are written as Roman numerals relative to the song's key and mode, so a p
 | `I/3` `I/5` `V/7` `IV/1` `I/b7` | a scale degree after the slash goes in the bass: C/E, C/G, G/B, F over C, C/Bb (accidentals count from the mode, as in a melody) |
 | `V:2` `ii:0.5` | length in bars (default 1) |
 
-Plain numerals count in the song's mode. In A minor, `VI` is F major and `V` is E major (the harmonic-minor dominant), and `VII` is G major; only a diminished `vii°` or `viiø` takes the leading tone, G#. With an accidental they count from the major scale, as is usual: `bVII` is a whole step below the tonic whatever the mode, so the heroic `I bVII IV` means the same in D major and D mixolydian. The parser is `parseChord` in `src/lib/music-theory.js`.
+Plain numerals count in the song's mode. In A minor, `VI` is F major and `V` is E major (the harmonic-minor dominant), and `VII` is G major; only a diminished `vii°` or `viiø` takes the leading tone, G#. With an accidental they count from the major scale, as is usual: `bVII` is a whole step below the tonic whatever the mode, so the heroic `I bVII IV` means the same in D major and D mixolydian. The parser is `parseChord` in `packages/lib/src/music-theory.js`.
 
 ### Function: what each chord wants
 
@@ -369,7 +369,7 @@ A song has one motif: 3–6 notes in a bar, with a rhythm and a shape (steps bet
 2. the first bar of a hand-written chorus (or of any hand-written section);
 3. otherwise it's invented: a rhythm cell near the chorus's density, and the shape that scores best against `MOTIF.cost`. Steps beat leaps, there's one or two changes of direction, the peak isn't first, the span stays within five steps, and it ends on 1, 3 or 5. A hash of the title picks among equal scores.
 
-Every motif bar states the motif, transformed by the section's `develop` (first statement, later ones), from `lib/motif.js`:
+Every motif bar states the motif, transformed by the section's `develop` (first statement, later ones), from `packages/lib/src/motif.js`:
 
 | Development | Does | Used in |
 |---|---|---|
@@ -489,7 +489,7 @@ Orchestration rules:
 The countermelody has four ways to relate to the lead (a section's `counter`):
 
 - **guide** (the default): the third or seventh of each chord, held while the melody moves. This is *oblique* motion.
-- **harmony**: *parallel* thirds under the lead, shifted by scale steps (`diatonicShift` in `lib/music-theory.js`) so it stays in key. On a strong beat where the third isn't in the chord, it moves to a fourth or fifth below if that one is (*similar* motion). It's placed in the counter's range, nearest its last note, so it doesn't leap. The song's climax always gets this voice, and so does any section heard a third time.
+- **harmony**: *parallel* thirds under the lead, shifted by scale steps (`diatonicShift` in `packages/lib/src/music-theory.js`) so it stays in key. On a strong beat where the third isn't in the chord, it moves to a fourth or fifth below if that one is (*similar* motion). It's placed in the counter's range, nearest its last note, so it doesn't leap. The song's climax always gets this voice, and so does any section heard a third time.
 - **contrary**: moves the other way by as many steps as the melody, snapped to chord tones on strong beats.
 - **call and response** (`answer`, the bridge by default): the lead keeps every other two-bar turn and rests through the others. In the gaps, the countermelody answers with the call's rhythm a third lower, in its own register and panned to the other side. Two instruments take turns, as in a conversation.
 
@@ -530,7 +530,7 @@ The resulting shape: the intro is pad only, the first verse adds chords, bass an
 
 The score stays on the grid. That's what the falling-notes view draws and what the `.mid` file holds. When a song plays, `perform.js` adds what a player would, and `mix-plan.js` sets up and moves the mix. Both are rules, with a hash where a choice is needed, so a song sounds the same every time. The tables are `EXPRESSION`, `MIX`, `DUCK` and `MOVEMENT` in `composer-data.js`.
 
-- **Velocity is tone as well as volume.** The synth squares velocity for loudness and lowers a low-pass cutoff by up to three octaves for soft notes (`VELOCITY_CUTOFF_CENTS` in `lib/sf2-voice.js`, unless the SoundFont sets its own velocity→cutoff modulator), so a soft note is darker, not just quieter. Section energy already sets velocity, so quiet sections are darker too.
+- **Velocity is tone as well as volume.** The synth squares velocity for loudness and lowers a low-pass cutoff by up to three octaves for soft notes (`VELOCITY_CUTOFF_CENTS` in `packages/lib/src/sf2-voice.js`, unless the SoundFont sets its own velocity→cutoff modulator), so a soft note is darker, not just quieter. Section energy already sets velocity, so quiet sections are darker too.
 - **Accents** (`DYNAMICS.accent`): the downbeat is loudest, then beat 3, then the other beats, then offbeat eighths, then sixteenths, so busy hi-hats alternate loud and soft.
 - **Phrases breathe.** The lead and countermelody swell across each 4-bar phrase, and the last note of each phrase tapers off.
 - **Timing drifts a little.** Melodic parts move by up to 5–15 ms either way, and drums and bass stay exactly on the grid to hold the groove. A genre's `feel` sets how much (funk is tight, lo-fi drunk, EDM sequenced) and its pocket: parts that sit behind the beat (lo-fi's chords and lazy snare, reggae's everything) or push ahead of it (gospel).
@@ -539,7 +539,7 @@ The score stays on the grid. That's what the falling-notes view draws and what t
 - **Channel strips** (`MIX`): each part has a fader in dB, a pan, a low cut (100–150 Hz on everything but bass and drums, to clear the mud) and sends to one shared reverb and one tempo-synced dotted-eighth delay. Lead, bass and drums sit in the centre, and the others spread from −0.45 to +0.4. Drums and bass stay nearly dry, and pads get the most reverb. A genre's `mix` scales the sends (a dry funk band, a church's reverb, dub delay), can cap every filter (lo-fi's muffled tape) and moves parts' faders (jazz's ride cymbal up front, the horns a step back).
 - **Ducking** (`DUCK`): on each kick the bass dips 4 dB and the pad 3 dB for 100 ms, which gives a sidechain's clean low end without a compressor.
 - **Movement** (`MOVEMENT`): the pad, arpeggio and chords close a low-pass at the start of a build (a pre-chorus, or the last two bars of a section rising into a chorus) and open it across the build. Reverb sends grow in the bridge, in quiet sections and most of all in the outro.
-- **Master** (`platform/audio-engine.js`): the mix bus leaves 3 dB of headroom, then a little high-shelf air, a gentle glue compressor and a peak limiter.
+- **Master** (`packages/playback/src/audio-engine.js`): the mix bus leaves 3 dB of headroom, then a little high-shelf air, a gentle glue compressor and a peak limiter.
 
 ## 9. Meter and tempo
 
@@ -585,7 +585,7 @@ Similar effects without a meter change, as a section's drum `feel`:
 | 130–150 | techno, trance, energetic levels |
 | 150–180 | drum and bass, punk, chases and bosses |
 
-A score has a **tempo map** (`lib/tempo-map.js`): segments that hold a tempo or ramp evenly to another, converted between beats and seconds for playback, the view and the MIDI file. The planner pushes the tempo up `TEMPO.push` (2 bpm) from the climax on, felt more than noticed, and slows an ending by 15% over its last two bars (a ritardando; `ritardando: false` turns it off). A section's `tempo` sets its own. Loops never slow down.
+A score has a **tempo map** (`packages/lib/src/tempo-map.js`): segments that hold a tempo or ramp evenly to another, converted between beats and seconds for playback, the view and the MIDI file. The planner pushes the tempo up `TEMPO.push` (2 bpm) from the climax on, felt more than noticed, and slows an ending by 15% over its last two bars (a ritardando; `ritardando: false` turns it off). A section's `tempo` sets its own. Loops never slow down.
 
 **Rubato.** A style's `rubato` (0–1) makes the tempo breathe with each phrase of up to `TEMPO.rubato.bars` (4) bars: it ramps up by 7% × rubato to 60% of the way through, toward the phrase's high point, then broadens by 14% × rubato into its cadence, and the next phrase starts back at tempo. The romantic style's rubato of 1 takes a 60 bpm nocturne from 60 up to 64 and down to 52 in every phrase; the classical style's 0.35 is a gentle push and pull. A one-bar section keeps a steady tempo.
 
@@ -597,7 +597,7 @@ Most of what makes a performance feel alive are passes over the score, run in a 
 2. **Detail** (`perform.js`): **ghost notes**, quiet (velocity 15–35) and very short, on empty sixteenths beside the snare's backbeat and as a dead note just before a bass note, in sections loud enough to groove. **Run shaping**: in a quick run moving one way, the inner notes are softer than the first and last. **Phrase shaping**: a swell across each phrase and a softer last note. **Scoops**, the +1 trick: on instruments that can bend, a phrase's last note and a section's last chord start a semitone low and slide up over 50–200 ms, every note of a chord together. **Slides** between close notes, and **vibrato** that arrives late on long ones.
 3. **Ear candy** (`ear-candy.js`): small details at structural points (section starts and every fourth bar's end), each with a low chance and an 8-bar cooldown: an octave **riser** into a section's first chord, a bright **accent** high above beat 1 of a loud section, a **flourish** of the bar's chord an octave or two up as sixteenths over its last beat with the delay swelling, and a **tape stop** that winds everything down in pitch and speed into a breakdown, bridge or drop. A key change always gets its riser.
 4. **Feel**: swing, then per-part timing drift on top.
-5. **Mix movement** (`mix-plan.js`, `audio/mixer.js`): the tone filter following energy and sweeping into builds; reverb that grows in bridges and outros and swells across each of the pad's phrases; **delay throws**, where the lead's delay send opens only on the last note of each phrase, so only it echoes; a slowly wobbling (modulated) delay time; and an auto-pan on the arpeggio.
+5. **Mix movement** (`mix-plan.js`, `packages/playback/src/mixer.js`): the tone filter following energy and sweeping into builds; reverb that grows in bridges and outros and swells across each of the pad's phrases; **delay throws**, where the lead's delay send opens only on the last note of each phrase, so only it echoes; a slowly wobbling (modulated) delay time; and an auto-pan on the arpeggio.
 
 A **style** (`STYLES` in `song-craft-data.js`) sets every pass's intensity with one name, and which passing chords it plays (section 4; the chances are in the second table). Each emotion has one, and a spec's `style` names another or overrides values:
 
@@ -666,7 +666,7 @@ Game music plays for a long time and has to follow the game. A song can be built
 - **Loops.** `loop: true` drops the outro. The intro plays once, then everything after it repeats. The last section ends on a half cadence and a fill, so its last bar leads back to the first. Nothing is pre-rendered, so reverb and delay tails carry across the loop point. Each pass round the loop is performed with a different hash, so its ghost notes, scoops, slides, timing and ear candy change while the music stays the same. That's a defence against listener fatigue that only a generator has.
 - **Leitmotifs.** A spec's `motif` names a theme from `LEITMOTIFS` (or writes one). *Hero's Road* plays the `hero` motif bold and mixolydian in 4/4; *Hero's Rest* plays the same steps slow, aeolian and in 6/8, where the motif's rhythm adapts to the meter.
 
-A game plays a project with `playProject(project, instruments)` from `src/daw/player.js` (load the instruments with `loadInstruments(project.tracks)` and register Humanize with `registerFx` first); its handle has `seek`, `setMix` and `stop`.
+A game plays a project with `playProject(project, instruments)` from `packages/playback/src/player.js` (load the instruments with `loadInstruments(project.tracks)` and register Humanize with `registerFx` first); its handle has `seek`, `setMix` and `stop`.
 
 **Hearing a change.** `just ab [commit]` renders every song with that commit and with the working tree, offline, and plays them side by side, with peak and loudness for each and a blind mode. Tune the tables by ear, one at a time.
 
@@ -708,7 +708,7 @@ A song is a plain object. Only `title` (or `id`) and `emotion` are needed; every
     ritardando: true,               // slow the ending down
     swingSub: 0.5,                  // swing eighths (0.5) or sixteenths (0.25)
     band: { lead: 73, drums: 40, counter: null },   // GM programs per role; null removes a part
-    sound: 'chip',                  // 'chip': chip instruments (audio/chip-instruments-data.js) in place of GM ones;
+    sound: 'chip',                  // 'chip': chip instruments (packages/audio/src/chip-instruments-data.js) in place of GM ones;
                                     // band programs the chip bank has are kept, the rest fall back per role
     sections: {
         chorus: {
@@ -735,14 +735,14 @@ A song is a plain object. Only `title` (or `id`) and `emotion` are needed; every
 
 **Where specs go.**
 
-- In the app: add it to `GENRE_SONGS` in `src/composer/genre-songs-data.js`, `GAME_SONGS` in `game-songs-data.js`, `CHIP_SONGS` in `chip-songs-data.js` (chiptune, `sound: 'chip'`), `CLASSICAL_SONGS` in `classical-songs-data.js` (solo piano, `genre: 'Classical'`) or `SONGS` in `songs-data.js`. It appears under New project → Song, and `just projects` writes it into `projects/` as a project file. The tests check that a hand-written hook puts chord tones on at least 85% of its strong beats, and that every scene names a real section.
+- In the app: add it to `GENRE_SONGS` in `packages/composer/src/genre-songs-data.js`, `GAME_SONGS` in `game-songs-data.js`, `CHIP_SONGS` in `chip-songs-data.js` (chiptune, `sound: 'chip'`), `CLASSICAL_SONGS` in `classical-songs-data.js` (solo piano, `genre: 'Classical'`) or `SONGS` in `songs-data.js`. It appears under New project → Song, and `just projects` writes it into `projects/` as a project file. The tests check that a hand-written hook puts chord tones on at least 85% of its strong beats, and that every scene names a real section.
 - On the command line: `just compose first-light --melody --midi out.mid` prints the plan (sections, energy, chords, parts) and the melody bar by bar, and writes a Standard MIDI File any DAW can open. Run `just compose path/to/spec.json` for a spec saved as a file.
 
 **What comes out.** `compose(spec)` returns a score: tempo, its `tempoMap` and the `loop`; `sections` with labels, start beats, energy, meter, key and mode, and which is the climax; the `motif`; `chords` with names; and one track per part, each `{ role, name, program, bank, notes: [{ key, beat, beats, vel }] }` (an ornament's quick notes also carry `ornament: true`). The player schedules those notes on the Web Audio clock through the SoundFont instruments. The view draws each track as its own piano in a grid, with notes falling onto the keys that play them.
 
 ## 13. Genre recipes
 
-A genre is mostly a groove, a comping rhythm, a bass pattern and a band. Harmony and melody habits come second. Each recipe below is a full song in `src/composer/genre-songs-data.js` (the Classical ones in `classical-songs-data.js`); the table gives the settings, and the notes explain the moves that make the genre recognisable.
+A genre is mostly a groove, a comping rhythm, a bass pattern and a band. Harmony and melody habits come second. Each recipe below is a full song in `packages/composer/src/genre-songs-data.js` (the Classical ones in `classical-songs-data.js`); the table gives the settings, and the notes explain the moves that make the genre recognisable.
 
 | Genre | Song | Key / mode | Tempo | Groove · comp · arp | Band (lead / counter / chords / bass) | Harmony |
 |---|---|---|---|---|---|---|
@@ -901,7 +901,7 @@ The person who wrote the notes this guide grew from learned by making up music a
 
 ## 17. Reference tables
 
-**General MIDI programs** (0-based) used most, by family: pianos 0–7 · chromatic percussion 8–15 (celesta 8, glockenspiel 9, music box 10, vibraphone 11, marimba 12) · organs 16–23 · guitars 24–31 (nylon 24, steel 25, clean 27, overdrive 29, distortion 30) · basses 32–39 · strings 40–47 (violin 40, viola 41, cello 42, contrabass 43, tremolo 44, pizzicato 45, harp 46, timpani 47) · ensembles 48–55 (strings 48, slow strings 49, choir 52) · brass 56–63 (trumpet 56, trombone 57, tuba 58, horns 60) · reeds 64–71 (sax 64–67, oboe 68, clarinet 71) · pipes 72–79 (piccolo 72, flute 73, pan flute 75, shakuhachi 77) · synth leads 80–87 · synth pads 88–95 (fantasia 88, warm 89, space voice 91) · effects, ethnic and percussive 96–127. The full list of what this library has is `src/audio/soundfont-catalog-data.js`.
+**General MIDI programs** (0-based) used most, by family: pianos 0–7 · chromatic percussion 8–15 (celesta 8, glockenspiel 9, music box 10, vibraphone 11, marimba 12) · organs 16–23 · guitars 24–31 (nylon 24, steel 25, clean 27, overdrive 29, distortion 30) · basses 32–39 · strings 40–47 (violin 40, viola 41, cello 42, contrabass 43, tremolo 44, pizzicato 45, harp 46, timpani 47) · ensembles 48–55 (strings 48, slow strings 49, choir 52) · brass 56–63 (trumpet 56, trombone 57, tuba 58, horns 60) · reeds 64–71 (sax 64–67, oboe 68, clarinet 71) · pipes 72–79 (piccolo 72, flute 73, pan flute 75, shakuhachi 77) · synth leads 80–87 · synth pads 88–95 (fantasia 88, warm 89, space voice 91) · effects, ethnic and percussive 96–127. The full list of what this library has is `packages/audio/src/soundfont-catalog-data.js`.
 
 **Genre instruments** in this library: honky-tonk piano 3, clav 7, organ 16, accordion 21, harmonica 22, bandoneon 23, jazz guitar 26, slap bass 36, synth bass 38–39, voice oohs 53, synth brass 62, square 80, saw 81, polysynth 90, sweep pad 95, sitar 104, banjo 105, shamisen 106, koto 107, kalimba 108, bagpipe 109, fiddle 110, steel drums 114, taiko 116.
 

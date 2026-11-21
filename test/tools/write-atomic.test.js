@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { writeAtomic } from '../../tools/write-atomic.mjs';
+import { writeAtomic } from '../../apps/desktop/src/write-atomic.mjs';
 
 test('writes of one file at the same moment all succeed, and the file ends whole', async ()=>
 {

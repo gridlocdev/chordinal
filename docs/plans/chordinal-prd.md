@@ -9,7 +9,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 1. Start on an empty project or the last one, never on a list of generated songs. The main path is clicking things in by hand.
 2. Work the way FL Studio and GarageBand users already work: a channel rack of instruments, a step grid for beats, a piano roll for melodies, a song built from patterns, and a mixer.
 3. Generating is optional: a part generated into a track, edited by hand afterwards like any other clip.
-4. One engine, one project format, one place to fix bugs. The app shell sits on shared modules (`src/ui/`) that hold no app-only code.
+4. One engine, one project format, one place to fix bugs. The app shell sits on shared modules (`packages/ui/`) that hold no app-only code.
 
 ## §2 Non-goals
 
@@ -20,11 +20,11 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 
 ## §3 One app, one repo
 
-1. Chordinal is the repo's one Electron entry, page bundle, menu bar, settings file and package: `src/chordinal/main.jsx`, built by `just build`, run by `just chordinal`.
+1. Chordinal is the repo's one Electron entry, page bundle, menu bar, settings file and package: `apps/web/src/main.jsx`, built by `just build`, run by `just chordinal`.
 2. Shared code:
-   - `src/ui/` holds the views and actions: the arrangement, piano roll, step grid, mixer, transport, browser parts, store, document, commands, clipboard and context menus.
-   - `src/chordinal/` holds only the app's shell, layout, menus and app-only commands.
-   - The layer rules put `ui` between `daw` and `chordinal`.
+   - `packages/ui/` holds the views and actions: the arrangement, piano roll, step grid, mixer, transport, browser parts, store, document, commands, clipboard and context menus.
+   - `apps/web/` holds only the app's shell, layout, menus and app-only commands.
+   - The layer rules put `ui` between the engine packages and `apps/web`.
 3. electron-builder packages it from one config, with its own app id, icon and release flow.
 4. It reads and writes `project.json` (versions 1 and 2), so projects saved before Music Generator was dropped still open.
 

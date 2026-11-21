@@ -27,7 +27,7 @@ async function until(what, fn)
 
 async function launch(marker)
 {
-    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'electron/chordinal.js'), '--headless'], cwd: ROOT });
+    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'apps/desktop/src/chordinal.js'), '--headless'], cwd: ROOT });
     const page = await app.firstWindow();
     await page.waitForLoadState('domcontentloaded');
     // if the headless gate ever breaks, a native dialog still stays off the screen: it leaves a marker and answers
@@ -56,7 +56,7 @@ async function quit(run)
     assert.equal(await Promise.race([exited, new Promise(r => setTimeout(()=> r(false), LIMIT_MS))]), true, 'the app quit');
 }
 
-test('Chordinal starts on a new project, saves it to a chosen folder, asks before closing, and reopens it next time', { skip: !existsSync(path.join(ROOT, 'dist/chordinal.js')) && 'run just build first', timeout: 90000 }, async ()=>
+test('Chordinal starts on a new project, saves it to a chosen folder, asks before closing, and reopens it next time', { skip: !existsSync(path.join(ROOT, 'apps/web/dist/chordinal.js')) && 'run just build first', timeout: 90000 }, async ()=>
 {
     await fs.rm(DATA, { recursive: true, force: true });
     await fs.rm(DOCS, { recursive: true, force: true });
@@ -119,7 +119,7 @@ test('Chordinal starts on a new project, saves it to a chosen folder, asks befor
     }
 });
 
-test('a reload with unsaved changes asks through the headless gate, never a native dialog', { skip: !existsSync(path.join(ROOT, 'dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
+test('a reload with unsaved changes asks through the headless gate, never a native dialog', { skip: !existsSync(path.join(ROOT, 'apps/web/dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
 {
     await fs.rm(DATA, { recursive: true, force: true });
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'chordinal-'));
@@ -143,7 +143,7 @@ test('a reload with unsaved changes asks through the headless gate, never a nati
     }
 });
 
-test('the track headers and the browser: a header\'s double-click, + Drums, the tabs, the edge and B', { skip: !existsSync(path.join(ROOT, 'dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
+test('the track headers and the browser: a header\'s double-click, + Drums, the tabs, the edge and B', { skip: !existsSync(path.join(ROOT, 'apps/web/dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
 {
     await fs.rm(DATA, { recursive: true, force: true });
     await fs.rm(DOCS, { recursive: true, force: true });
@@ -228,7 +228,7 @@ test('the track headers and the browser: a header\'s double-click, + Drums, the 
     }
 });
 
-test('while a text field has focus, the menu bar leaves Cmd+Backspace and the other editing keys to it', { skip: !existsSync(path.join(ROOT, 'dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
+test('while a text field has focus, the menu bar leaves Cmd+Backspace and the other editing keys to it', { skip: !existsSync(path.join(ROOT, 'apps/web/dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
 {
     const marker = path.join(os.tmpdir(), `chordinal-dialog-${Date.now()}`);
     const run = await launch(marker);

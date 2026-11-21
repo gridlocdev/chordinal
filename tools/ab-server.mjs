@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import { execFileSync } from 'node:child_process';
+import * as esbuild from 'esbuild';
 
 const args = process.argv.slice(2);
 const opt = (f, d)=> { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : d; };
@@ -39,8 +40,34 @@ function resolve(url)
     return path.join(root, p.startsWith('/old/') ? p.slice(5) : p.slice(1));
 }
 
-const server = http.createServer((req, res)=>
+/** a version with the workspace layout (packages/): what render.js needs, bundled, since a browser can't load its packages */
+async function bundleOf(dir)
 {
+    if (!fs.existsSync(path.join(dir, 'packages/composer'))) return null;
+    const pkg = (name)=> path.join(dir, 'packages', name, 'src');
+    const alias = Object.fromEntries(fs.readdirSync(path.join(dir, 'packages')).map(name =>
+        [`@chordinal/${name}`, ['index.ts', 'index.js'].map(f => path.join(pkg(name), f)).find(f => fs.existsSync(f))]));
+    const c = pkg('composer'), entry = `
+        export * as songs from '${c}/songs-data'; export * as genreSongs from '${c}/genre-songs-data';
+        export * as gameSongs from '${c}/game-songs-data'; export * as chipSongs from '${c}/chip-songs-data';
+        export { compose } from '${c}/compose'; export { EMOTIONS } from '${c}/composer-data';
+        export { toProject } from '${c}/to-project'; export { humanizeFx, HUMANIZE } from '${c}/humanize-fx';
+        export { registerFx } from '@chordinal/daw'; export { loadInstruments, playProject } from '@chordinal/playback';`;
+    const { outputFiles } = await esbuild.build({ stdin: { contents: entry, resolveDir: dir }, alias, bundle: true, format: 'esm',
+        target: 'chrome140', write: false, logLevel: 'warning' });
+    return outputFiles[0].text;
+}
+
+const server = http.createServer(async (req, res)=>
+{
+    const bundle = /^\/(old\/)?ab-bundle\.js$/.exec(req.url ?? '');
+    if (bundle)
+    {
+        const code = await bundleOf(bundle[1] ? old : root).catch((e)=> { console.error(e.message); return null; });
+        res.writeHead(code ? 200 : 404, { 'content-type': 'text/javascript', 'cache-control': 'no-cache' });
+        res.end(code ?? 'not found');
+        return;
+    }
     // a finished render: PUT /save/<before|after>/<song>.wav
     const save = /^\/save\/(before|after)\/([\w:-]+)\.wav$/.exec(req.url ?? '');
     if (req.method === 'PUT' && save)

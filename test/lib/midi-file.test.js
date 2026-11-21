@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeMidi, readMidi, varLen } from '../../src/lib/midi-file.js';
+import { writeMidi, readMidi, varLen } from '@chordinal/lib';
 
 test('variable-length numbers', ()=>
 {

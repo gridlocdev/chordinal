@@ -65,18 +65,22 @@ globalThis.Worker = class
 // &compressors=off swaps the master chain's compressors for plain gains, to hear (or measure) the mix without them
 if (params.get('compressors') === 'off') globalThis.DynamicsCompressorNode = function (ctx) { return new GainNode(ctx); };
 
+// versions with the workspace layout come bundled by the server (ab-bundle.js); older ones load their src/ as it is
+const bundled = (await fetch(`${root}ab-bundle.js`, { method: 'HEAD' })).ok ? await import(`${root}ab-bundle.js`) : null;
 // the composer moved out of features/; older commits still have it there
 const dir = (await fetch(`${root}src/composer/compose.js`, { method: 'HEAD' })).ok ? `${root}src/composer/` : `${root}src/features/composer/`;
 // a song list the version may not have yet (the game songs are newer than some commits)
 const optional = async (file)=> (await fetch(dir + file, { method: 'HEAD' })).ok ? import(dir + file) : {};
-const daw = (await fetch(`${root}src/daw/player.js`, { method: 'HEAD' })).ok;
+const daw = !!bundled || (await fetch(`${root}src/daw/player.js`, { method: 'HEAD' })).ok;
 
 try
 {
-    const [{ compose }, { EMOTIONS }, ...lists] = await Promise.all([
-        import(dir + 'compose.js'), import(dir + 'composer-data.js'),
-        optional('songs-data.js'), optional('genre-songs-data.js'), optional('game-songs-data.js'), optional('chip-songs-data.js'),
-    ]);
+    const [{ compose }, { EMOTIONS }, ...lists] = bundled
+        ? [bundled, bundled, bundled.songs, bundled.genreSongs, bundled.gameSongs, bundled.chipSongs]
+        : await Promise.all([
+            import(dir + 'compose.js'), import(dir + 'composer-data.js'),
+            optional('songs-data.js'), optional('genre-songs-data.js'), optional('game-songs-data.js'), optional('chip-songs-data.js'),
+        ]);
     const groups = ['Written songs', 'Genres', 'Game music', 'Chiptune'];
     const written = lists.flatMap((m, i)=> Object.values(m).flat().map(spec => ({ spec, group: groups[i] })));
     const feelings = Object.keys(EMOTIONS).map(e => ({ spec: { id: `feel:${e}`, title: e[0].toUpperCase() + e.slice(1), emotion: e }, group: 'Feelings' }));
@@ -108,9 +112,11 @@ try
         if (daw)
         {
             // newer versions play a project: the song as written notes, with the Humanize MIDI FX on each track
-            const [{ toProject }, { humanizeFx, HUMANIZE }, { registerFx }, { loadInstruments }, { playProject }] = await Promise.all([
-                import(dir + 'to-project.js'), import(dir + 'humanize-fx.js'), import(`${root}src/daw/fx.js`),
-                import(`${root}src/daw/instruments.js`), import(`${root}src/daw/player.js`)]);
+            const [{ toProject }, { humanizeFx, HUMANIZE }, { registerFx }, { loadInstruments }, { playProject }] = bundled
+                ? [bundled, bundled, bundled, bundled, bundled]
+                : await Promise.all([
+                    import(dir + 'to-project.js'), import(dir + 'humanize-fx.js'), import(`${root}src/daw/fx.js`),
+                    import(`${root}src/daw/instruments.js`), import(`${root}src/daw/player.js`)]);
             registerFx(HUMANIZE, humanizeFx);
             const project = toProject(score);
             playProject(project, await loadInstruments(project.tracks));

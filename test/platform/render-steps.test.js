@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { renderPauses } from '../../src/platform/audio-engine.js';
+import { renderPauses } from '@chordinal/playback';
 
 test('an offline render pauses only on whole blocks inside the render, each block once', ()=>
 {

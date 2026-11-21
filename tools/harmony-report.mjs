@@ -5,10 +5,10 @@
 // outside the key) and the genres whose tunes are nearest. Sameness shows up here before it's heard.
 //
 //   node tools/harmony-report.mjs [song-id ...]     (no ids: the genres, then every written song)
-import { compose } from '../src/composer/compose.js';
-import { CATALOG } from '../src/composer/catalog.js';
-import { GENRES } from '../src/composer/genre-data.js';
-import { harmonyStats, melodyDistance, melodyStats, overlap } from '../src/composer/harmony-report.js';
+import { compose } from '@chordinal/composer';
+import { CATALOG } from '@chordinal/composer';
+import { GENRES } from '@chordinal/composer';
+import { harmonyStats, melodyDistance, melodyStats, overlap } from '@chordinal/composer';
 
 const ids = process.argv.slice(2);
 const pct = (x)=> `${Math.round(x * 100)}%`.padStart(4);

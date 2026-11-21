@@ -2,7 +2,7 @@
 // (through a ramp, a change per beat), not only the song's first tempo.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { delayTimes } from '../../src/audio/mixer.js';
+import { delayTimes } from '@chordinal/playback';
 
 const round = (list)=> list.map(d => [d.beat, Math.round(d.seconds * 1000)]);
 

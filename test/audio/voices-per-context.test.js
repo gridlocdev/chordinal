@@ -2,8 +2,8 @@
 // and counted against the live voice limit, so live notes stole them). Run on a fake Web Audio context.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildChipFont } from '../../src/lib/chip-synth.js';
-import { CHIP_BANK, CHIP_KIT_BANK, CHIP_INSTRUMENTS, CHIP_KITS } from '../../src/audio/chip-instruments-data.js';
+import { buildChipFont } from '@chordinal/lib';
+import { CHIP_BANK, CHIP_KIT_BANK, CHIP_INSTRUMENTS, CHIP_KITS } from '@chordinal/audio';
 
 const param = ()=> ({ value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {},
     setTargetAtTime() {}, cancelScheduledValues() {}, cancelAndHoldAtTime() {} });
@@ -19,7 +19,7 @@ function fakeContext()
 }
 globalThis.AudioBuffer = class { constructor({ length, sampleRate }) { this.length = length; this.sampleRate = sampleRate; this.data = new Float32Array(length); } getChannelData() { return this.data; } };
 
-const { createInstrument, voicesIn } = await import('../../src/audio/soundfont.js');
+const { createInstrument, voicesIn } = await import('@chordinal/playback');
 const font = { url: 'chip', ...buildChipFont({ bank: CHIP_BANK, kitBank: CHIP_KIT_BANK, instruments: CHIP_INSTRUMENTS, kits: CHIP_KITS }) };
 const preset = font.presets.find(p => p.bank === CHIP_BANK);
 

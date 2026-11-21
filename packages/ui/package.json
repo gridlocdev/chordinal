@@ -1,0 +1,28 @@
+{
+  "name": "@chordinal/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The Preact views, commands and document session",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.js",
+    "./components": "./src/components/index.js",
+    "./ui.css": "./src/ui.css"
+  },
+  "sideEffects": [
+    "*.css",
+    "./src/platform/*.js",
+    "./src/theme.js"
+  ],
+  "dependencies": {
+    "@chordinal/lib": "workspace:*",
+    "@chordinal/audio": "workspace:*",
+    "@chordinal/daw": "workspace:*",
+    "@chordinal/composer": "workspace:*",
+    "@chordinal/sketch": "workspace:*",
+    "@chordinal/playback": "workspace:*",
+    "@preact/signals": "2.11.4",
+    "preact": "11.2.0"
+  }
+}

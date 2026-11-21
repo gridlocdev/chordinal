@@ -2,7 +2,7 @@
 // added the far channel into the near one). A centred part now keeps its power wherever it's panned.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { panGains, panCurves } from '../../src/audio/mixer.js';
+import { panGains, panCurves } from '@chordinal/playback';
 
 const near = (a, b, what)=> assert.ok(Math.abs(a - b) < 1e-6, `${what}: ${a} vs ${b}`);
 

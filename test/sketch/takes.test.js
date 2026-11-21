@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chordsOf, cut } from '../../src/sketch/takes.js';
+import { chordsOf, cut } from '@chordinal/sketch';
 
 // a G major tune over two bars of 4/4: G B D, then G held
 const melody = ()=> ({

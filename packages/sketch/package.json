@@ -1,0 +1,16 @@
+{
+  "name": "@chordinal/sketch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Whistled takes read into notes and specs: pure",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@chordinal/lib": "workspace:*",
+    "@chordinal/daw": "workspace:*"
+  }
+}

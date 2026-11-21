@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};
 
-const { writeStems } = await import('../../src/ui/bounce.js');
+const { writeStems } = await import('@chordinal/ui');
 
 /** stems whose peaks are `peaks`; logs each render and write, and how many rendered stems are still held */
 function fake(peaks)

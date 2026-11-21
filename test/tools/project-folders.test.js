@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { projectFolders, folderOf, RECENT_LIMIT } from '../../tools/project-folders.mjs';
+import { projectFolders, folderOf, RECENT_LIMIT } from '../../apps/desktop/src/project-folders.mjs';
 
 async function scratch(fn)
 {

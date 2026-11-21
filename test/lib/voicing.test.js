@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { voiceChord, shellClasses, dropTwo } from '../../src/lib/voicing.js';
-import { parseChord } from '../../src/lib/music-theory.js';
+import { voiceChord, shellClasses, dropTwo } from '@chordinal/lib';
+import { parseChord } from '@chordinal/lib';
 
 test('voice leading moves little and stays in range', ()=>
 {

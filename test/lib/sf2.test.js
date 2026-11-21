@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { parseSf2, regionsFor, GEN } from '../../src/lib/sf2.js';
+import { parseSf2, regionsFor, GEN } from '@chordinal/lib';
 
 // Builds a minimal SoundFont: one sample, one instrument with a global zone, one preset with a global zone.
 // instrumentZones({ gen, range }) can replace the instrument's zones (each a list of generators, global first).

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { reverbImpulse } from '../../src/lib/impulse.js';
+import { reverbImpulse } from '@chordinal/lib';
 
 test('a reverb impulse is stereo, seeded and decays to silence', ()=>
 {

@@ -2,7 +2,7 @@
 // bar accented, across meter changes.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clickBeats } from '../../src/daw/meter.js';
+import { clickBeats } from '@chordinal/daw';
 
 const show = (list)=> list.map(c => `${c.first ? '|' : ''}${c.beat}`).join(' ');
 

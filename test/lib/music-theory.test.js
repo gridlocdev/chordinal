@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import * as MT from '../../src/lib/music-theory.js';
+import * as MT from '@chordinal/lib';
 import {
     pitchClass, degreeToKey, keyToDegree, parseChord, chordPitchClasses, chordName, parseProgression, hash, MODES,
     alterToChord, unalter, bassOf, extendChord,
-} from '../../src/lib/music-theory.js';
+} from '@chordinal/lib';
 
 test('pitch classes', ()=> assert.deepEqual(['C', 'F#', 'Bb', 'B', 'Cb'].map(pitchClass), [0, 6, 10, 11, 11]));
 

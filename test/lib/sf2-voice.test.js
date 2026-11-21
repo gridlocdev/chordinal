@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { voiceParams, timecentsToSeconds, centibelsToGain, voiceLevel, modulated, sourceValue, sweepCents } from '../../src/lib/sf2-voice.js';
-import { GEN } from '../../src/lib/sf2.js';
+import { voiceParams, timecentsToSeconds, centibelsToGain, voiceLevel, modulated, sourceValue, sweepCents } from '@chordinal/lib';
+import { GEN } from '@chordinal/lib';
 
 const near = (a, b, eps = 1e-6)=> assert.ok(Math.abs(a - b) < eps, `${a} ≉ ${b}`);
 
@@ -49,7 +49,7 @@ test('velocity and attenuation scale the gain', ()=>
 
 test('envelope level follows delay, attack, hold and decay', async ()=>
 {
-    const { envelopeLevel } = await import('../../src/lib/sf2-voice.js');
+    const { envelopeLevel } = await import('@chordinal/lib');
     const env = { delay: 0.1, attack: 0.2, hold: 0.1, decay: 1, sustain: 0.5, release: 0 };
     assert.equal(envelopeLevel(env, 1, 0.05), 0);
     near(envelopeLevel(env, 1, 0.2), 0.5);

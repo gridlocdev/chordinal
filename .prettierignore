@@ -1,0 +1,18 @@
+dist
+out
+build
+release
+export
+reference
+scratch
+soundfonts
+.ab
+pnpm-lock.yaml
+projects
+docs
+*.md
+# JavaScript that is not ported to TypeScript yet keeps its own layout; each file is formatted as it is ported
+*.js
+*.jsx
+*.mjs
+*.cjs

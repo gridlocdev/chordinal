@@ -6,10 +6,10 @@ import assert from 'node:assert/strict';
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};
 
-const { recordMelody, whistleChord } = await import('../../src/chordinal/whistle.js');
-const { hist, project, selected, chordRange, status } = await import('../../src/ui/store.js');
-const { emptyProject, addTrack, makeTrack } = await import('../../src/daw/project.js');
-const { history } = await import('../../src/daw/history.js');
+const { recordMelody, whistleChord } = await import('../../apps/web/src/whistle.js');
+const { hist, project, selected, chordRange, status } = await import('@chordinal/ui');
+const { emptyProject, addTrack, makeTrack } = await import('@chordinal/daw');
+const { history } = await import('@chordinal/daw');
 
 function start()
 {

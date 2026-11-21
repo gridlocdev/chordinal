@@ -2,8 +2,8 @@
 // (audit: only the top-level keys were checked, so a note with no key opened and played silence or NaN).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readProject, writeProject } from '../../src/daw/project-format.js';
-import { emptyProject, makeTrack, addTrack } from '../../src/daw/project.js';
+import { readProject, writeProject } from '@chordinal/daw';
+import { emptyProject, makeTrack, addTrack } from '@chordinal/daw';
 
 /** a written project with one track and one clip, then `spoil` applied to its parsed JSON */
 function spoiled(spoil)

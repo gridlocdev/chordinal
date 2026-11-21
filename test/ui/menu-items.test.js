@@ -2,11 +2,11 @@
 // after the app changes, so a click or shortcut in between must not run a command that just became disabled.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { item } from '../../src/ui/commands.js';
-import { exportDialog } from '../../src/ui/bounce.js';
-import { hist } from '../../src/ui/store.js';
-import { emptyProject, makeTrack, addTrack } from '../../src/daw/project.js';
-import { history } from '../../src/daw/history.js';
+import { item } from '@chordinal/ui';
+import { exportDialog } from '@chordinal/ui';
+import { hist } from '@chordinal/ui';
+import { emptyProject, makeTrack, addTrack } from '@chordinal/daw';
+import { history } from '@chordinal/daw';
 
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};

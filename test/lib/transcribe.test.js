@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { trackPitch } from '../../src/lib/pitch-track.js';
-import { transcribe, readLive, tuningOffset, measureVibrato, guessKeys, spellDegree, toNotation, vibratoSummary, noteStarts, clickGrid, freeNotes } from '../../src/lib/transcribe.js';
-import { parseMelody } from '../../src/composer/notation.js';
-import { pitchClass } from '../../src/lib/music-theory.js';
+import { trackPitch } from '@chordinal/lib';
+import { transcribe, readLive, tuningOffset, measureVibrato, guessKeys, spellDegree, toNotation, vibratoSummary, noteStarts, clickGrid, freeNotes } from '@chordinal/lib';
+import { parseMelody } from '@chordinal/composer';
+import { pitchClass } from '@chordinal/lib';
 import { RATE, whistle, fromNotation } from './whistle-synth.js';
 
 const near = (a, b, eps)=> assert.ok(Math.abs(a - b) < eps, `${a} ≉ ${b}`);

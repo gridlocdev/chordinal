@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { heldAt, ownsKey } from '../../src/daw/play-parts.js';
+import { heldAt, ownsKey } from '@chordinal/daw';
 
 const note = (beat, beats, key = 60, grid = beat)=> ({ beat, beats, key, vel: 90, grid });
 

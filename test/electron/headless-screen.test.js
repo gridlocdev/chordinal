@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { screenCalls } from '../../electron/headless-screen.js';
+import { screenCalls } from '../../apps/desktop/src/headless-screen.js';
 
 /** a stand-in for electron's dialog and shell that fails the test if anything reaches it */
 function forbidden()

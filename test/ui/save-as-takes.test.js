@@ -2,11 +2,11 @@
 // clips were read from.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { openProject, saveAs } from '../../src/ui/document.js';
-import { setPlace } from '../../src/ui/place.js';
-import { status } from '../../src/ui/store.js';
-import { emptyProject } from '../../src/daw/project.js';
-import { writeProject } from '../../src/daw/project-format.js';
+import { openProject, saveAs } from '@chordinal/ui';
+import { setPlace } from '@chordinal/ui';
+import { status } from '@chordinal/ui';
+import { emptyProject } from '@chordinal/daw';
+import { writeProject } from '@chordinal/daw';
 
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};

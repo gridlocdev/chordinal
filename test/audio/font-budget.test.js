@@ -2,7 +2,7 @@
 // ever loaded stayed in memory until the app quit, so trying instruments from many libraries kept growing).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { trimFonts } from '../../src/audio/soundfont.js';
+import { trimFonts } from '@chordinal/playback';
 
 test('the least recently asked for fonts go until the rest fit, never the one just loaded or one still loading', ()=>
 {

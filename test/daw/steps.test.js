@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gridRows, stepCount, cell, setStep, toggleAccent, addRow, hideRow, stepOf, drumName, STEP_SIZES } from '../../src/daw/steps.js';
-import { CORE_ROWS, GM_DRUMS } from '../../src/daw/gm-drums-data.js';
+import { gridRows, stepCount, cell, setStep, toggleAccent, addRow, hideRow, stepOf, drumName, STEP_SIZES } from '@chordinal/daw';
+import { CORE_ROWS, GM_DRUMS } from '@chordinal/daw';
 
 const clip = (notes = [], extra = {})=> ({ id: 'c1', start: 0, beats: 4, notes, ...extra });
 

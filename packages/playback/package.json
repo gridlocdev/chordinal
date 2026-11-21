@@ -1,0 +1,19 @@
+{
+  "name": "@chordinal/playback",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Playing projects, instruments, the mixer and the microphone through Web Audio",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.js",
+    "./mic-worklet.js": "./src/mic-worklet.js"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@chordinal/lib": "workspace:*",
+    "@chordinal/audio": "workspace:*",
+    "@chordinal/daw": "workspace:*",
+    "@chordinal/sketch": "workspace:*"
+  }
+}

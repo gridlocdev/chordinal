@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildChipFont, harmonics, waveZones, lfsrNoise, drumSample, deltaCode, CHIP_RATE } from '../../src/lib/chip-synth.js';
-import { regionsFor } from '../../src/lib/sf2.js';
-import { voiceParams } from '../../src/lib/sf2-voice.js';
-import { CHIP_BANK, CHIP_KIT_BANK, CHIP_INSTRUMENTS, CHIP_KITS, CHIP_ROLES } from '../../src/audio/chip-instruments-data.js';
+import { buildChipFont, harmonics, waveZones, lfsrNoise, drumSample, deltaCode, CHIP_RATE } from '@chordinal/lib';
+import { regionsFor } from '@chordinal/lib';
+import { voiceParams } from '@chordinal/lib';
+import { CHIP_BANK, CHIP_KIT_BANK, CHIP_INSTRUMENTS, CHIP_KITS, CHIP_ROLES } from '@chordinal/audio';
 
 const near = (a, b, eps)=> assert.ok(Math.abs(a - b) < eps, `${a} ≉ ${b}`);
 const font = buildChipFont({ bank: CHIP_BANK, kitBank: CHIP_KIT_BANK, instruments: CHIP_INSTRUMENTS, kits: CHIP_KITS });

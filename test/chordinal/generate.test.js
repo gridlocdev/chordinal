@@ -5,13 +5,13 @@ import assert from 'node:assert/strict';
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};
 
-const { generatePart, rangeChoices, defaultPart, canAgain } = await import('../../src/chordinal/generate.js');
-const { hist, project, selected, selectedClip, chordRange } = await import('../../src/ui/store.js');
-const { undo } = await import('../../src/ui/document.js');
-const { emptyProject, addTrack, makeTrack, addClip, findPattern, updateClip } = await import('../../src/daw/project.js');
-const { history } = await import('../../src/daw/history.js');
-const { setLoop } = await import('../../src/daw/timeline.js');
-const { edit } = await import('../../src/ui/document.js');
+const { generatePart, rangeChoices, defaultPart, canAgain } = await import('../../apps/web/src/generate.js');
+const { hist, project, selected, selectedClip, chordRange } = await import('@chordinal/ui');
+const { undo } = await import('@chordinal/ui');
+const { emptyProject, addTrack, makeTrack, addClip, findPattern, updateClip } = await import('@chordinal/daw');
+const { history } = await import('@chordinal/daw');
+const { setLoop } = await import('@chordinal/daw');
+const { edit } = await import('@chordinal/ui');
 
 function start({ tracks = [['Drums', 128], ['Keys', 0]], key = { tonic: 0, mode: 'major' }, chords = [] } = {})
 {

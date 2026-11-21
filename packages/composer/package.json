@@ -1,0 +1,17 @@
+{
+  "name": "@chordinal/composer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The part composer: songs, genres, harmony and melody, written as projects",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@chordinal/lib": "workspace:*",
+    "@chordinal/audio": "workspace:*",
+    "@chordinal/daw": "workspace:*"
+  }
+}

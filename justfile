@@ -6,12 +6,12 @@ default:
 install: build
     bash tools/install-app.sh
 
-# install the pinned Preact, esbuild and Electron into node_modules
+# install the workspace's pinned packages (pnpm) and Electron
 deps:
-    @[ -d node_modules/preact ] && [ -d node_modules/esbuild ] && [ -d node_modules/electron ] || npm install
+    @[ -d node_modules/preact ] && [ -d node_modules/esbuild ] && [ -d node_modules/electron ] && [ -d node_modules/typescript ] || pnpm install
     @[ -f node_modules/electron/path.txt ] || node node_modules/electron/install.js
 
-# bundle the UI (src/chordinal/main.jsx) into dist/chordinal.js
+# build the page (apps/web/src/main.jsx) into apps/web/dist/
 build: deps
     node tools/build.mjs
 
@@ -20,9 +20,9 @@ build: deps
 chordinal: build
     #!/usr/bin/env sh
     if [ "$(uname)" = Darwin ]; then
-        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/electron/chordinal.js"
+        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/apps/desktop/src/chordinal.js"
     else
-        npx electron electron/chordinal.js
+        npx electron apps/desktop/src/chordinal.js
     fi
 
 # run it while working on it: rebuilds on every change and reloads the window
@@ -32,20 +32,24 @@ dev: build
     node tools/build.mjs --watch & watcher=$!
     trap 'kill $watcher' EXIT INT TERM
     if [ "$(uname)" = Darwin ]; then
-        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/electron/chordinal.js" --dev
+        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/apps/desktop/src/chordinal.js" --dev
     else
-        npx electron electron/chordinal.js --dev
+        npx electron apps/desktop/src/chordinal.js --dev
     fi
 
-# syntax-check every module, bundle the UI (which checks the .jsx), and check the layer rules
+# everything a commit must pass: formatting, lint (with the layer rules), types, the page's bundle and the tests
 check: deps
-    @for f in $(find src -name '*.js'); do node --check "$f" || exit 1; done
-    @node tools/build.mjs --check
-    node tools/coupling-report.mjs --strict
+    npx prettier --check .
+    npx eslint .
+    npx tsc -b
+    node tools/build.mjs --check
+    node --test
+    npx vitest run
 
-# run the unit tests for lib/ and *-data.js files
+# run the tests: node --test for the JavaScript, Vitest for the TypeScript
 test:
     node --test
+    npx vitest run
 
 # report how an NSF file's songs are built (keep the files in reference/, which git ignores)
 nsf file *songs:
@@ -64,17 +68,17 @@ whistle +args:
 catalog:
     node tools/sf2-catalog.mjs
 
-# assets/chordinal.svg goes to assets/chordinal-icon/; needs Inkscape
+# apps/desktop/assets/icon.svg goes to apps/desktop/assets/icon/; needs Inkscape
 # render the app's icon as icon.icns, icon.ico and icon.png
 icons:
-    bash tools/make-icons.sh assets/chordinal.svg assets/chordinal-icon --work build/chordinal-icons
+    bash tools/make-icons.sh apps/desktop/assets/icon.svg apps/desktop/assets/icon --work build/chordinal-icons
 
 # into release/chordinal/ (macOS: .dmg and .zip; Windows: installer; Linux: .flatpak)
 # it comes with GeneralUser GS (downloaded first if missing); the other libraries are downloaded in the app
 # build the installable app for this OS
 package: build
     bash tools/fetch-soundfonts.sh generaluser
-    npx electron-builder --config packaging/chordinal.json --publish never
+    cd apps/desktop && npx electron-builder --config electron-builder.json --publish never
 
 # download the openly licensed SoundFont libraries into soundfonts/ (all, or those named); ones already there are skipped
 # e.g. just soundfonts   ·   just soundfonts generaluser

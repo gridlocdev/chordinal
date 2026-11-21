@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { LIBRARIES } from '../../src/audio/soundfont-catalog-data.js';
-import { LIBRARY_SOURCES } from '../../src/audio/soundfont-libraries-data.js';
+import { LIBRARIES } from '@chordinal/audio';
+import { LIBRARY_SOURCES } from '@chordinal/audio';
 
 test('the catalog has every library source, in order', ()=>
     assert.deepEqual(LIBRARIES.map(l => l.id), LIBRARY_SOURCES.map(s => s.id)));

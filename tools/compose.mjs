@@ -5,19 +5,19 @@
 //
 // --melody also prints the lead line bar by bar, as note names, to read a melody without hearing it.
 import fs from 'node:fs';
-import { compose, describe } from '../src/composer/compose.js';
-import { SONGS as WRITTEN } from '../src/composer/songs-data.js';
-import { GENRE_SONGS } from '../src/composer/genre-songs-data.js';
-import { GAME_SONGS } from '../src/composer/game-songs-data.js';
-import { CHIP_SONGS } from '../src/composer/chip-songs-data.js';
-import { CLASSICAL_SONGS } from '../src/composer/classical-songs-data.js';
-import { EMOTIONS } from '../src/composer/composer-data.js';
-import { barAt } from '../src/composer/meter.js';
-import { swungTracks } from '../src/composer/perform.js';
-import { METERS } from '../src/composer/patterns-data.js';
-import { writeMidi } from '../src/lib/midi-file.js';
-import { tempoSteps } from '../src/lib/tempo-map.js';
-import { noteName } from '../src/lib/notes.js';
+import { compose, describe } from '@chordinal/composer';
+import { SONGS as WRITTEN } from '@chordinal/composer';
+import { GENRE_SONGS } from '@chordinal/composer';
+import { GAME_SONGS } from '@chordinal/composer';
+import { CHIP_SONGS } from '@chordinal/composer';
+import { CLASSICAL_SONGS } from '@chordinal/composer';
+import { EMOTIONS } from '@chordinal/composer';
+import { barAt } from '@chordinal/composer';
+import { swungTracks } from '@chordinal/composer';
+import { METERS } from '@chordinal/composer';
+import { writeMidi } from '@chordinal/lib';
+import { tempoSteps } from '@chordinal/lib';
+import { noteName } from '@chordinal/lib';
 
 const SONGS = [...GAME_SONGS, ...CHIP_SONGS, ...CLASSICAL_SONGS, ...GENRE_SONGS, ...WRITTEN];
 

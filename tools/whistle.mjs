@@ -7,11 +7,11 @@
 import { spawnSync } from 'node:child_process';
 import { readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { trackPitch } from '../src/lib/pitch-track.js';
-import { transcribe, guessKeys, toNotation, vibratoSummary } from '../src/lib/transcribe.js';
-import { guessChords, chordKey, toProgression } from '../src/lib/chord-guess.js';
-import { pitchClass } from '../src/lib/music-theory.js';
-import { noteName } from '../src/lib/notes.js';
+import { trackPitch } from '@chordinal/lib';
+import { transcribe, guessKeys, toNotation, vibratoSummary } from '@chordinal/lib';
+import { guessChords, chordKey, toProgression } from '@chordinal/lib';
+import { pitchClass } from '@chordinal/lib';
+import { noteName } from '@chordinal/lib';
 
 const RATE = 22050;
 const args = process.argv.slice(2);

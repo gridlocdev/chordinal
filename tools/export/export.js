@@ -1,17 +1,17 @@
 // Renders projects to WAV, as the app's Export as Audio File does with its defaults (the whole project, the mix, a
 // 3 s tail, not normalized): export.html?songs=a,b,c[&library=<id>] (the first SoundFont library without one). Each WAV goes back to tools/export.mjs as PUT /wav/<name>;
 // a failure as PUT /error/<name>, and the end as PUT /done.
-import { readProject } from '../../src/daw/project-format.js';
-import { loadInstruments } from '../../src/daw/instruments.js';
-import { playProject, LEAD_IN } from '../../src/daw/player.js';
-import { projectEnd } from '../../src/daw/project.js';
-import { registerFx } from '../../src/daw/fx.js';
-import { dbToGain } from '../../src/audio/mixer.js';
-import { beatToSeconds } from '../../src/lib/tempo-map.js';
-import { encodeWavChannels } from '../../src/lib/wav.js';
-import { audioEngine } from '../../src/platform/audio-engine.js';
-import { soundfontLibrary } from '../../src/audio/soundfont-library.js';
-import { humanizeFx, HUMANIZE } from '../../src/composer/humanize-fx.js';
+import { readProject } from '@chordinal/daw';
+import { loadInstruments } from '@chordinal/playback';
+import { playProject, LEAD_IN } from '@chordinal/playback';
+import { projectEnd } from '@chordinal/daw';
+import { registerFx } from '@chordinal/daw';
+import { dbToGain } from '@chordinal/playback';
+import { beatToSeconds } from '@chordinal/lib';
+import { encodeWavChannels } from '@chordinal/lib';
+import { audioEngine } from '@chordinal/playback';
+import { soundfontLibrary } from '@chordinal/audio';
+import { humanizeFx, HUMANIZE } from '@chordinal/composer';
 
 const TAIL = 3;                 // seconds after the last beat, for reverb and release
 const FADER_FLOOR_DB = -40;     // a fader at the bottom is silent, as in the app

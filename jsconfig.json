@@ -4,16 +4,15 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "target": "ES2023",
-    "lib": [
-      "ES2023",
-      "DOM"
-    ],
+    "lib": ["ES2023", "DOM"],
     "noEmit": true,
     "jsx": "react-jsx",
     "jsxImportSource": "preact"
   },
   "include": [
-    "src/**/*.js",
-    "src/**/*.jsx"
+    "packages/*/src/**/*.js",
+    "packages/*/src/**/*.jsx",
+    "apps/web/src/**/*.js",
+    "apps/web/src/**/*.jsx"
   ]
 }

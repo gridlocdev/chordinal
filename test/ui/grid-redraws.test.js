@@ -7,15 +7,15 @@ import { computed, effect } from '@preact/signals';
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};
 
-const { playingStep } = await import('../../src/ui/steps.js');
-const { beat, playing } = await import('../../src/ui/store.js');
+const { playingStep } = await import('@chordinal/ui');
+const { beat, playing } = await import('@chordinal/ui');
 
 test('a frame of playback inside one step changes nothing the grid draws from', ()=>
 {
     const clip = { id: 'c1', start: 0, beats: 4, step: 0.25, notes: [] };
     const now = computed(()=> playingStep(clip));
     let draws = 0;
-    const stop = effect(()=> { now.value; draws++; });
+    const stop = effect(()=> { void now.value; draws++; });
     playing.value = true;
     try
     {

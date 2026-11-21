@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hist, selected, project } from '../../src/ui/store.js';
-import { emptyProject, makeTrack, addTrack } from '../../src/daw/project.js';
-import { history } from '../../src/daw/history.js';
-import { undo } from '../../src/ui/document.js';
-import { down } from '../../src/ui/components/roll-input.js';
+import { hist, selected, project } from '@chordinal/ui';
+import { emptyProject, makeTrack, addTrack } from '@chordinal/daw';
+import { history } from '@chordinal/daw';
+import { undo } from '@chordinal/ui';
+import { down } from '@chordinal/ui';
 
 globalThis.requestAnimationFrame ??= ()=> 0;
 globalThis.cancelAnimationFrame ??= ()=> {};

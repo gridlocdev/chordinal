@@ -11,12 +11,12 @@ class HTMLElement { constructor(tag, type) { this.tagName = tag; this.type = typ
 globalThis.HTMLElement = HTMLElement;
 globalThis.document = { activeElement: null };
 
-const { handleKey } = await import('../../src/ui/keys.js');
-const { COMMANDS } = await import('../../src/ui/commands.js');
-const { hist, selected, settings, setSettings } = await import('../../src/ui/store.js');
-const { focus, musicalTyping, takingKeys } = await import('../../src/ui/focus.js');
-const { emptyProject, addTrack, makeTrack } = await import('../../src/daw/project.js');
-const { history } = await import('../../src/daw/history.js');
+const { handleKey } = await import('@chordinal/ui');
+const { COMMANDS } = await import('@chordinal/ui');
+const { hist, selected, settings, setSettings } = await import('@chordinal/ui');
+const { focus, musicalTyping, takingKeys } = await import('@chordinal/ui');
+const { emptyProject, addTrack, makeTrack } = await import('@chordinal/daw');
+const { history } = await import('@chordinal/daw');
 
 const key = (code, mods = {})=> ({ code, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, repeat: false, ...mods });
 
