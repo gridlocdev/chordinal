@@ -6,6 +6,7 @@ import { barLines } from '@chordinal/daw';
 import type { Project, Track } from '@chordinal/daw';
 import { settings, selectedClip, picked } from '../store.ts';
 import { held } from '../live.ts';
+import { recording, takeNotes } from '../recording.ts';
 import { notesOf, canonicalIds, isPicked } from '../notes.ts';
 import { rgba } from './canvas.ts';
 import { palette, alpha } from '../theme.ts';
@@ -220,6 +221,19 @@ export function drawRoll(
     g.fillStyle = sel ? C.selected : rgba(track.color, 0.9);
     g.fillRect(a, h - 2 - vh, 2, vh);
     g.fillRect(a, h - 2 - vh, 6, 2);
+  }
+  // the take being recorded on this track: its notes so far, written in as they're played or heard
+  if (recording.value?.track === track.id) {
+    g.fillStyle = alpha(palette.value.rec, 0.85);
+    for (const n of takeNotes.value) {
+      const a = G.x(n.beat),
+        b = G.x(n.beat + n.beats),
+        y = G.L.y(n.key);
+      if (b < GUTTER || a > w || y < G.top - 1 || y >= G.bottom) continue;
+      g.beginPath();
+      g.roundRect(a + 0.5, y + 1, Math.max(2, b - a - 1), LANE_H - 2, 2);
+      g.fill();
+    }
   }
   const box = band.value;
   if (box) {

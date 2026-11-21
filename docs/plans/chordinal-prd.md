@@ -99,7 +99,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 
 1. Music Generator, the second app this section once described, was dropped. Its New dialog lives on as Generate Part (§8) and `just compose`.
 2. Its songs are the projects in `projects/`, opened in Chordinal with **Open…**.
-3. Recording is a Chordinal feature: **Record Melody** on a track, and **Record a Chord** on the chord track.
+3. Recording is a Chordinal feature: **Record Melody** on a track, and **Record a Chord** on the chord track. While a melody take records, its notes appear in the arrangement and the piano roll as they're played or heard, and the piano roll follows the playhead. When it stops, the playhead goes back to the start of the clip the notes went into (or of the take, if nothing was kept).
 4. `just compose`, `just projects`, `just export`, `just transcribe` and the other tools keep working as they do now.
 
 ## §10 Patterns and the step grid

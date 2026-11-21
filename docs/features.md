@@ -36,7 +36,7 @@ Make a clip a **pattern** and its copies stay linked: edit one, in the step grid
 
 ## Recording
 
-**Track ▸ Record Melody** (or **●**, or `R`) and sing, hum or play a melody into the microphone over a click onto any track, vibrato included. It reads one clear line at a time in a high register (about 300 to 4,000 Hz). Or play it on the letter keys or a MIDI keyboard during the take, with no microphone needed: the notes go into the clip the take starts in (the selected one first, so every clip of its pattern gets them, growing it to fit), or into a new clip if there's none. Pick a stretch of the chord track and sound the chord's notes one at a time (**Transport ▸ Record a Chord**) to set the chord there. **New from melody** composes a band around the selected clip.
+**Track ▸ Record Melody** (or **●**, or `R`) and sing, hum or play a melody into the microphone over a click onto any track, vibrato included. It reads one clear line at a time in a high register (about 300 to 4,000 Hz). Or play it on the letter keys or a MIDI keyboard during the take, with no microphone needed: the notes go into the clip the take starts in (the selected one first, so every clip of its pattern gets them, growing it to fit), or into a new clip if there's none. The notes appear in the piano roll as you play, and when you stop, the playhead goes back to the start of the clip they went into. Pick a stretch of the chord track and sound the chord's notes one at a time (**Transport ▸ Record a Chord**) to set the chord there. **New from melody** composes a band around the selected clip.
 
 A saved project keeps its takes in its folder's `takes/`, listed in the browser's **Takes** tab to read onto a track again, and an audio file dropped on a track is read the same way.
 

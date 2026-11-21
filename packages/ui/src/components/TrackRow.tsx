@@ -14,7 +14,7 @@ import { updateClip, moveClip, newId, isDrums, findPattern } from '@chordinal/da
 import type { Clip, Track } from '@chordinal/daw';
 import { project, selected, selectedClip, beat, settings, setSettings } from '../store.ts';
 import { edit } from '../document.ts';
-import { recording, dropAudio, dropTake } from '../recording.ts';
+import { recording, takeNotes, dropAudio, dropTake } from '../recording.ts';
 import { isMidi, dropMidi } from '../midi-import.ts';
 import { focus } from '../focus.ts';
 import { renameTrack, toggleMute, toggleSolo, newClipAt, moveTrackTo } from '../tracks.ts';
@@ -56,7 +56,7 @@ function Lane({ track, beats, ppb }: LaneProps) {
   const ref = useCanvas((g, _w, h) => {
     const all = track.clips.flatMap((c) => c.notes);
     const rec = recording.value?.track === track.id ? recording.value : null;
-    const recNotes = rec?.rec.notes ?? [];
+    const recNotes = rec ? takeNotes.value : [];
     const keys = [...all, ...recNotes].map((n) => n.key);
     const lo = keys.length ? Math.min(...keys) - 1 : 59,
       hi = keys.length ? Math.max(...keys) + 1 : 61;
@@ -123,8 +123,7 @@ function Lane({ track, beats, ppb }: LaneProps) {
       g.fillStyle = alpha(t.rec, 0.18);
       g.fillRect(rec.start * ppb, 2, (now - rec.start) * ppb, h - 4);
       g.fillStyle = alpha(t.rec, 0.9);
-      for (const n of recNotes)
-        g.fillRect((rec.start + n.beat) * ppb, y(n.key), Math.max(1, n.beats * ppb - 1), noteH);
+      for (const n of recNotes) g.fillRect(n.beat * ppb, y(n.key), Math.max(1, n.beats * ppb - 1), noteH);
     }
   });
 

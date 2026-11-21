@@ -73,6 +73,25 @@ export interface Take {
 export const recording: Signal<Take | null> = signal(null);
 let frame = 0;
 
+/** the notes of the melody take being recorded so far, in the project's beats: the keys played (a key still held
+ * runs to the playhead), else what the mic has heard. The arrangement and the piano roll draw them as they come in. */
+export const takeNotes: Signal<Note[]> = signal([]);
+
+/** a melody take's notes so far, in the project's beats */
+function notesSoFar(r: Take): Note[] {
+  const notes = r.played.length
+    ? playedNotes(r.played, keyBeat(r.rec, takeClock.now(), takeClock.latency()))
+    : r.rec.notes
+        .filter((n) => n.beat >= 0)
+        .map((n) => ({ beat: n.beat, beats: n.beats, key: n.key, vel: VELOCITY }));
+  return notes.map((n) => ({ ...n, beat: r.start + n.beat }));
+}
+
+/** whether two lists of notes would draw the same */
+const sameNotes = (a: Note[], b: Note[]) =>
+  a.length === b.length &&
+  a.every((n, i) => n.key === b[i]?.key && n.beat === b[i].beat && n.beats === b[i].beats);
+
 /** counts the takes kept, so the list of them knows to look again */
 export const takesKept: Signal<number> = signal(0);
 
@@ -81,6 +100,10 @@ function outputLatency(): number {
   const ctx = audioEngine.context;
   return ('outputLatency' in ctx && ctx.outputLatency) || 0;
 }
+
+/** the audio clock that times played keys against a take: its time now (s) and its output latency (s). Tests replace
+ * it, since Node has no audio. */
+export const takeClock = { now: (): number => audioEngine.context.currentTime, latency: outputLatency };
 
 const isMode = (m: string): m is Mode => Object.hasOwn(MODES, m);
 const sigAt = (meters: MeterChange[], at: number) => meterAt(meters, at)?.sig ?? DEFAULT_SIG;
@@ -126,8 +149,9 @@ function placeTake(trackId: string, start: number, take: Pick<TakeReading, 'note
   notify(`${notes.length} notes from ${label}`);
 }
 
-/** notes played on the keys during a take: into the clip under its start (the selected one first), else a new clip */
-function placePlayed(trackId: string, start: number, notes: Note[]): void {
+/** notes played on the keys during a take: into the clip under its start (the selected one first), else a new clip;
+ * returns that clip's start */
+function placePlayed(trackId: string, start: number, notes: Note[]): number {
   let clip = '';
   edit((p) => {
     const sel = selectedClip.value;
@@ -137,6 +161,7 @@ function placePlayed(trackId: string, start: number, notes: Note[]): void {
   });
   selectedClip.value = { track: trackId, clip };
   notify(`${notes.length} played note${notes.length === 1 ? '' : 's'} recorded`);
+  return findClip(project.value, trackId, clip)?.start ?? start;
 }
 
 /** keeps a take's audio beside a saved project */
@@ -190,7 +215,7 @@ export async function record(): Promise<void> {
   const played: RecordedKey[] = [];
   const unhear =
     kind === 'melody'
-      ? onPlayed((e) => played.push({ ...e, beat: keyBeat(rec, e.time, outputLatency()) }))
+      ? onPlayed((e) => played.push({ ...e, beat: keyBeat(rec, e.time, takeClock.latency()) }))
       : () => {};
   takingKeys.value = kind === 'melody';
   recording.value = { kind, track, start: at, range, rec, played, unhear, mic: !heard };
@@ -204,8 +229,11 @@ export async function record(): Promise<void> {
       return;
     }
     // the playhead follows the take as heard, from its bar once the count-in is over
-    if (r.kind === 'melody')
+    if (r.kind === 'melody') {
       beat.value = r.start + Math.max(0, (r.rec.playhead - r.rec.origin) / r.rec.beatSec);
+      const notes = notesSoFar(r);
+      if (!sameNotes(notes, takeNotes.value)) takeNotes.value = notes;
+    }
     notify(r.rec.countIn ? `Count-in: ${r.rec.countIn}` : r.kind === 'chord' ? status.value : doing, 'busy');
     frame = requestAnimationFrame(step);
   };
@@ -227,16 +255,17 @@ export async function finish(): Promise<void> {
   if (!r) return;
   cancelAnimationFrame(frame);
   recording.value = null;
+  takeNotes.value = [];
   takingKeys.value = false;
   r.unhear();
+  // the playhead goes back to the start of the clip the take went into (or of the take, when nothing was kept)
+  if (r.kind === 'melody') beat.value = r.start;
   // keys played win over the mic, which heard them clicking
   const notes =
-    r.kind === 'melody'
-      ? playedNotes(r.played, keyBeat(r.rec, audioEngine.context.currentTime, outputLatency()))
-      : [];
+    r.kind === 'melody' ? playedNotes(r.played, keyBeat(r.rec, takeClock.now(), takeClock.latency())) : [];
   // a melody take always has its track
   if (notes.length && r.track !== null) {
-    placePlayed(r.track, r.start, notes);
+    beat.value = placePlayed(r.track, r.start, notes);
     return;
   }
   if (!r.mic) {
