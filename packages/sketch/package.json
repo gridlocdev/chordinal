@@ -6,7 +6,7 @@
   "description": "Whistled takes read into notes and specs: pure",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.ts"
   },
   "sideEffects": false,
   "dependencies": {

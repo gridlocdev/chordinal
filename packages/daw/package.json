@@ -6,7 +6,7 @@
   "description": "The project model, its file format, edits and the MIDI FX hook: pure",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.ts"
   },
   "sideEffects": false,
   "dependencies": {

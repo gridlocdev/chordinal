@@ -1,0 +1,220 @@
+// The project file: project.json in a project's folder. JSON, two-space indented so changes diff well, except that each
+// note is one compact line, [beat, beats, key, vel] with its marks as a fifth item when it has any, so a song is a
+// few hundred kilobytes rather than megabytes. Pure.
+//
+// Version 1 has every clip's notes in the clip. Version 2 adds patterns (PRD §7): their notes, length and step are
+// written once in `patterns`, and a pattern clip is just { id, start, pattern, mute? }. A project with no pattern clips
+// is written as version 1, so older versions of the app still open it.
+import type { Clip, Note, Project, Track } from './project.ts';
+
+export const FORMAT = 'music-generator-project';
+export const VERSION = 1;
+export const PATTERN_VERSION = 2;
+
+/** a note as written: [beat, beats, key, vel], and its marks when it has any */
+type NoteRow = [number, number, number, number, Record<string, unknown>?];
+
+/** a pattern as written: the notes, length and step its clips share */
+interface WrittenPattern {
+  id: string;
+  name: string;
+  beats: number;
+  step?: number;
+  notes: NoteRow[];
+}
+
+/** a clip as written; a pattern clip has no notes or length of its own, as reading gives it its pattern's */
+type WrittenClip = Omit<Clip, 'notes'> & { notes: NoteRow[] };
+type WrittenTrack = Omit<Track, 'clips'> & { clips: WrittenClip[] };
+
+/** a project as written, once its format and version are taken off; the settings the app fills in may be missing */
+type WrittenProject = Omit<
+  Project,
+  'tracks' | 'patterns' | 'key' | 'markers' | 'loop' | 'groove' | 'chords'
+> &
+  Partial<Pick<Project, 'key' | 'markers' | 'loop' | 'groove' | 'chords'>> & { tracks: WrittenTrack[] };
+
+/** the order a project's settings are written in, before its patterns and tracks; any others follow */
+const ORDER = ['title', 'length', 'tempoMap', 'meters', 'key', 'markers', 'loop', 'groove', 'chords'];
+const round = (x: number) => Math.round(x * 1e4) / 1e4;
+
+export function writeProject(project: Project): string {
+  const rows: string[] = [];
+  const placeholders = (notes: Note[]) =>
+    notes.map((n) => {
+      const { beat, beats, key, vel, ...marks } = n;
+      const row: (number | Record<string, unknown>)[] = [round(beat), round(beats), key, vel];
+      if (Object.keys(marks).length) row.push(marks);
+      rows.push(JSON.stringify(row));
+      return `\u0000${rows.length - 1}`;
+    });
+  const { patterns = [], ...rest } = project;
+  // PRD §3.11: a pattern no clip plays any more isn't written; the first clip of each gives its notes
+  const firstClip = new Map<string, Clip>();
+  for (const t of project.tracks)
+    for (const c of t.clips) if (c.pattern && !firstClip.has(c.pattern)) firstClip.set(c.pattern, c);
+  const used = patterns.filter((x) => firstClip.has(x.id));
+  // a fixed order, whatever order the project's keys are in, so opening and saving a project changes nothing
+  const { tracks: _tracks, ...settings } = rest;
+  const values = new Map<string, unknown>(Object.entries(settings));
+  const ordered = Object.fromEntries(
+    [...ORDER.filter((k) => values.has(k)), ...[...values.keys()].filter((k) => !ORDER.includes(k))].map(
+      (k) => [k, values.get(k)],
+    ),
+  );
+  const body = {
+    format: FORMAT,
+    version: used.length ? PATTERN_VERSION : VERSION,
+    ...ordered,
+    ...(used.length && {
+      patterns: used.flatMap((x) => {
+        const c = firstClip.get(x.id);
+        if (!c) return [];
+        return [
+          {
+            id: x.id,
+            name: x.name,
+            beats: c.beats,
+            ...(c.step !== undefined && { step: c.step }),
+            notes: placeholders(c.notes),
+          },
+        ];
+      }),
+    }),
+    tracks: project.tracks.map((t) => ({
+      ...t,
+      clips: t.clips.map((c) =>
+        c.pattern
+          ? { id: c.id, start: c.start, pattern: c.pattern, ...(c.mute && { mute: true }) }
+          : { ...c, notes: placeholders(c.notes) },
+      ),
+    })),
+  };
+  return JSON.stringify(body, null, 2).replace(/"\\u0000(\d+)"/g, (_, i) => rows[Number(i)] ?? '') + '\n';
+}
+
+const readNotes = (list: NoteRow[]): Note[] =>
+  list.map((row) => ({ beat: row[0], beats: row[1], key: row[2], vel: row[3], ...row[4] }));
+
+const isNum = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
+const isList = (x: unknown): x is unknown[] => Array.isArray(x);
+const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null;
+
+/** a field of a value read from the file, as `x?.[key]` reads it */
+const field = (x: unknown, key: string): unknown => (isRecord(x) ? x[key] : undefined);
+
+/** what is wrong with a note row as written, or null */
+function badRow(row: unknown): string | null {
+  if (!isList(row) || row.length < 4) return 'is not [beat, beats, key, vel]';
+  const [beat, beats, key, vel, marks] = row;
+  if (!isNum(beat) || beat < 0) return 'has no beat of 0 or more';
+  if (!isNum(beats) || beats <= 0) return 'has no length above 0';
+  if (typeof key !== 'number' || !Number.isInteger(key) || key < 0 || key > 127)
+    return 'has no key from 0 to 127';
+  if (!isNum(vel) || vel < 0 || vel > 127) return 'has no velocity from 0 to 127';
+  if (marks !== undefined && (typeof marks !== 'object' || marks === null || isList(marks)))
+    return 'has marks that are not an object';
+  return null;
+}
+
+/** the first problem in a list of note rows, or null */
+function badRows(notes: unknown[]): { k: number; bad: string } | null {
+  for (const [k, row] of notes.entries()) {
+    const bad = badRow(row);
+    if (bad) return { k, bad };
+  }
+  return null;
+}
+
+/** the first thing in a read project (before its notes are unpacked) that the app can't play, or null */
+function problemIn(project: Record<string, unknown>, patterns: unknown): string | null {
+  const { title, length, tempoMap, meters, tracks } = project;
+  if (typeof title !== 'string') return 'title is not text';
+  if (!isNum(length) || length <= 0) return 'length is not above 0';
+  if (!isList(tempoMap) || !tempoMap.length || field(tempoMap[0], 'beat') !== 0)
+    return 'tempo map does not start at beat 0';
+  for (const [i, s] of tempoMap.entries()) {
+    const beat = field(s, 'beat'),
+      bpm = field(s, 'bpm'),
+      to = field(s, 'to');
+    if (!isNum(beat) || !isNum(bpm) || bpm <= 0 || (to !== undefined && (!isNum(to) || to <= 0)))
+      return `tempo change ${i + 1} has no tempo above 0`;
+  }
+  if (!isList(meters) || !meters.length) return 'meters are missing';
+  for (const [i, m] of meters.entries())
+    if (!isNum(field(m, 'beat')) || !/^\d+\/\d+$/.test(String(field(m, 'sig') ?? '')))
+      return `meter ${i + 1} is not like 4/4`;
+  if (!isList(patterns)) return 'patterns are not a list';
+  for (const x of patterns) {
+    const id = field(x, 'id'),
+      beats = field(x, 'beats'),
+      notes = field(x, 'notes');
+    if (typeof id !== 'string' || !isNum(beats) || beats <= 0 || !isList(notes))
+      return `pattern ${String(id ?? '?')} has no id, length or notes`;
+    const first = badRows(notes);
+    if (first) return `pattern ${id}, note ${first.k + 1} ${first.bad}`;
+  }
+  if (!isList(tracks)) return 'tracks are not a list';
+  const ids = new Set<string>();
+  for (const [i, t] of tracks.entries()) {
+    const name = `track ${i + 1}`,
+      id = field(t, 'id'),
+      clips = field(t, 'clips');
+    if (typeof id !== 'string' || ids.has(id)) return `${name} has no id of its own`;
+    ids.add(id);
+    if (!isList(clips)) return `${name} has no list of clips`;
+    for (const c of clips) {
+      const cid = field(c, 'id'),
+        start = field(c, 'start'),
+        beats = field(c, 'beats'),
+        notes = field(c, 'notes');
+      if (typeof cid !== 'string' || ids.has(cid)) return `${name} has a clip with no id of its own`;
+      ids.add(cid);
+      if (!isNum(start) || start < 0) return `${name}, clip ${cid} has no start of 0 or more`;
+      if (field(c, 'pattern') !== undefined) continue;
+      if (!isNum(beats) || beats <= 0) return `${name}, clip ${cid} has no length above 0`;
+      if (!isList(notes)) return `${name}, clip ${cid} has no list of notes`;
+      const first = badRows(notes);
+      if (first) return `${name}, clip ${cid}, note ${first.k + 1} ${first.bad}`;
+    }
+  }
+  return null;
+}
+
+export function readProject(text: string): Project {
+  const data: unknown = JSON.parse(text);
+  if (!isRecord(data) || data.format !== FORMAT) throw new Error('not a Chordinal project');
+  if (data.version !== VERSION && data.version !== PATTERN_VERSION)
+    throw new Error(
+      `project version ${String(data.version)}; this app reads versions ${VERSION} and ${PATTERN_VERSION}`,
+    );
+  const { format, version, patterns: written = [], ...project } = data;
+  for (const key of ['title', 'length', 'tempoMap', 'meters', 'tracks'])
+    if (project[key] === undefined) throw new Error(`the project has no ${key}`);
+  const problem = problemIn(project, written);
+  if (problem) throw new Error(`the project's ${problem}`);
+  // problemIn has checked all the app relies on to play it; the rest is read as written
+  const file = project as WrittenProject,
+    list = written as WrittenPattern[];
+  const patterns = new Map(list.map((x) => [x.id, { ...x, notes: readNotes(x.notes) }]));
+  const tracks = file.tracks.map((t): Track => ({
+    ...t,
+    clips: t.clips.map((c): Clip => {
+      if (!c.pattern) return { ...c, notes: readNotes(c.notes) };
+      const x = patterns.get(c.pattern);
+      if (!x) throw new Error(`clip ${c.id} plays pattern ${c.pattern}, which the project doesn't have`);
+      // PRD §7.5: in memory every pattern clip holds its pattern's notes, length and step
+      return { ...c, beats: x.beats, notes: x.notes, ...(x.step !== undefined && { step: x.step }) };
+    }),
+  }));
+  return {
+    key: null,
+    markers: [],
+    loop: null,
+    groove: {},
+    chords: [],
+    ...file,
+    tracks,
+    ...(patterns.size ? { patterns: list.map((x) => ({ id: x.id, name: x.name })) } : {}),
+  };
+}
