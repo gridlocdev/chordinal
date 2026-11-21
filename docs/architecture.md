@@ -80,7 +80,7 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `packages/ui/src/focus.js`, `packages/ui/src/ask.js` | which pane the editing keys act on; an in-app question for a name, a yes, or a choice such as Save, Don't Save or Cancel (Electron has no `prompt`) |
 | `packages/ui/src/components/` | the views: `Transport`, `LibraryPicker`, `Arrange` (`Ruler`, `ChordLane`, a `TrackRow` per track with a `Knob`, sharing `arrange-view.js`), `Editor` (`PianoRoll`, `Mixer` or `StepGrid`, whose geometry is in `grid-view.js`), `Ask`; `canvas.js` is a canvas that redraws when the signals it reads change, the piano roll's parts are `roll-view.js` (what's shown, its geometry), `roll-draw.js` (drawing), `roll-input.js` (the pointer), `RollToolbar` and `RollPlayhead` |
 | `packages/ui/src/ui.css` | the look: colour tokens and the panel grid |
-| `tools/compose.mjs` | composes a song in Node: prints the plan and melody, writes a `.mid` (`just compose`) |
+| `apps/cli/src/compose-command.ts` | `chordinal compose`: composes a song in Node, prints the plan and melody, writes a `.mid` or a project folder (`just compose`) |
 | `tools/make-projects.mjs` | writes the written songs as project files in `projects/` (`just projects`) |
 | `tools/build.mjs` | builds the page with Vite (`apps/web/vite.config.ts`) and the desktop main process and preload with esbuild (`just build`, `--watch` for `just dev`, `--check` for `just check`) |
 | `tools/install-app.sh` | installs Chordinal as a desktop app that runs this checkout (`just install`): a renamed Electron in `~/Applications` on macOS, with the app's icon; a launcher on Linux |
@@ -95,7 +95,7 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `tools/whistle.mjs` | transcribes a whistled recording into a section's `melody:` line, or with `--chords` an arpeggio take into its `progression:` (`just whistle`) |
 | `tools/nsf-report.mjs`, `tools/nsf/` | studies NES music: plays an NSF's 6502 driver (`cpu6502.js`, `nsf.js`), turns its 2A03/VRC6 register writes into notes, drum hits and loops (`decode.js`), and reports how each song's lead moves, its rows, echoes, vibrato and drums (`just nsf`) |
 | `tools/audio-report.mjs`, `tools/audio/`, `tools/music-stats.js` | the same lead statistics from recorded music: follows the lead's pitch in the mixed audio (`lead.js`) and reuses `decode.js`'s note finding; `music-stats.js` holds the interval, turn and leap measures both reports share (`just audio`) |
-| `tools/export.mjs`, `tools/export/` | exports `projects/` to `export/` as MIDI (in Node) and WAV (rendered in a hidden Electron window), optionally MP3 through ffmpeg (`just export`) |
+| `apps/cli/src/export-command.ts`, `render-command.ts` | `chordinal export`: project folders as MIDI (in Node) and WAV, optionally MP3 through ffmpeg (`just export`); `chordinal render`: a game's songs file as loudness-matched, loop-cut mp3s and its tracks-data file. Both render in `apps/cli/src/page/` (`audioEngine.render` and `playProject`, as Export as Audio File does) in a hidden Electron window (`electron-main.ts`) that `browser.ts` serves and sends jobs; the cutting, seam, loudness and decode check are in `soundtrack.ts` |
 | `tools/ab-server.mjs`, `tools/ab/` | A/B listening: renders each song with an older commit and with this checkout, offline in the browser, side by side (`just ab`) |
 
 The synth covers the parts of SF2 that matter for these files: key/velocity splits, preset+instrument generator merging, root key and tuning, loop modes, sample address offsets, a low-pass filter swept by the modulation envelope (`modEnvToFilterFc`), modulators driven by the note's velocity or key (a font's own velocity→cutoff one replaces the default, which lowers the cutoff for soft notes), pan, the DAHDSR volume envelope, and exclusive classes (drum kits). Modulators on CCs, pressure or the pitch wheel, the modulation envelope's pitch amount, LFOs, reverb and chorus sends are not implemented. Many GeneralUser GS presets (distortion guitar, French horn, clarinet) start their filter at a few hundred Hz and open it with the modulation envelope, so they need both.
@@ -140,6 +140,7 @@ A pnpm workspace. Each package is `@chordinal/<name>`, imported by that name thr
 | `packages/ui` | the Preact UI: state, actions, commands and views, and the platform hooks (MIDI, keys, storage, menus, project folders) | all of the above |
 | `apps/web` | the page: start-up, layout, File menu, files, the browser, Generate Part, whistling | all of the above |
 | `apps/desktop` | the Electron shell: the window, menus, project folders, settings, SoundFont downloads | audio (the library list) |
+| `apps/cli` | the `chordinal` command line: compose, export and render, in Node; its render page in a hidden Electron window | lib, audio, daw, composer and Node; its page (`src/page/`) also playback, but not Node |
 
 `lib`, `audio`, `daw`, `composer` and `sketch` are the engine: no DOM, no Node and no Preact. `composer` and `sketch` don't import each other. `eslint.config.js` enforces all of this.
 

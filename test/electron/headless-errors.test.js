@@ -75,9 +75,9 @@ for (const [kind, throwIt] of [
     ['an unhandled rejection', ()=> { Promise.reject(new Error('boom from the test')); }],
 ])
 {
-    test(`the export tool's Electron: ${kind} exits with code 1 and no dialog`, { timeout: 60000 }, async ()=>
+    test(`the CLI's render browser: ${kind} exits with code 1 and no dialog`, { timeout: 60000 }, async ()=>
     {
-        const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'tools/export/electron.mjs'), 'about:blank'], cwd: ROOT });
+        const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'apps/cli/dist/electron.mjs'), 'about:blank'], cwd: ROOT });
         const proc = app.process();
         let stderr = '';
         proc.stderr.on('data', (d)=> { stderr += d; });

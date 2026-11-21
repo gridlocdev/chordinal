@@ -85,10 +85,11 @@ package: build
 soundfonts *ids:
     bash tools/fetch-soundfonts.sh {{ids}}
 
-# compose a song without the app: print its plan, optionally its melody and a .mid file
-# e.g. just compose first-light --melody --midi first-light.mid   ·   just compose feel:tender
-compose *args:
-    node tools/compose.mjs {{args}}
+# compose a song without the app: print its plan, optionally its melody, a .mid file and a project folder
+# e.g. just compose first-light --melody --midi first-light.mid   ·   just compose feel:tender --project scratch/tender
+compose *args: deps
+    @node tools/build.mjs --cli
+    node apps/cli/dist/chordinal.mjs compose {{args}}
 
 # report how alike the harmony is: each genre's triads, colours and cadences, then the written songs' shared progressions
 # e.g. just harmony   ·   just harmony first-light lighthouse
@@ -101,9 +102,32 @@ projects *songs:
     node tools/make-projects.mjs {{songs}}
 
 # export songs from projects/ to export/<name>.mid and .wav (all of them without names); --mp3 adds an MP3 (ffmpeg)
-# e.g. just export   ·   just export first-light creaking-halls --mp3
+# e.g. just export   ·   just export first-light creaking-halls --mp3   ·   just export --library fluidr3
 export *args: deps
-    node tools/export.mjs {{args}}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    node tools/build.mjs --cli
+    folders=() options=()
+    set -- {{args}}
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --library) options+=("$1" "${2:-}"); shift; [ $# -gt 0 ] && shift ;;
+            --*) options+=("$1"); shift ;;
+            *) [ -f "projects/$1/project.json" ] || { echo "no project $1 in projects/" >&2; exit 1; }
+               folders+=("projects/$1"); shift ;;
+        esac
+    done
+    if [ ${#folders[@]} -eq 0 ]; then
+        for f in projects/*/project.json; do folders+=("$(dirname "$f")"); done
+    fi
+    node apps/cli/dist/chordinal.mjs export "${folders[@]}" --out export ${options[@]+"${options[@]}"}
+
+# e.g. just -f ~/src/apps/music-generator/justfile cli render tools/music/songs.js music --data src/audio/tracks-data.js
+# run Chordinal's command-line tool (`cli help` lists its commands) in the folder you're in, so paths are yours
+[no-cd]
+cli *args: deps
+    @node "{{justfile_directory()}}/tools/build.mjs" --cli
+    node "{{justfile_directory()}}/apps/cli/dist/chordinal.mjs" {{args}}
 
 # A/B listening: render each song with an older commit and with this checkout, side by side
 # e.g. just ab   ·   just ab a913205   (then open the URL it prints; port 8010 or the next free one)

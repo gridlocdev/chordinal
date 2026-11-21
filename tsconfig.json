@@ -56,6 +56,12 @@
     },
     {
       "path": "packages/playback/test"
+    },
+    {
+      "path": "apps/cli"
+    },
+    {
+      "path": "apps/cli/test"
     }
   ]
 }

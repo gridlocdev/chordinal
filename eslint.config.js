@@ -20,6 +20,9 @@ const LAYERS = {
 };
 const ALL = Object.keys(LAYERS);
 const PURE = ['lib', 'audio', 'daw', 'composer', 'sketch'];
+/** the apps, which nothing imports from */
+const APPS = { group: ['@chordinal/ui', '@chordinal/ui/*', '@chordinal/desktop', '@chordinal/web'], message: 'The CLI uses the engine, never the UI or another app.' };
+const APP_PATHS = { regex: '^(\\.\\./)+(apps/)?(web|desktop)/', message: 'The CLI uses the engine, never the UI or another app.' };
 
 export default tseslint.config(
   {
@@ -78,4 +81,31 @@ export default tseslint.config(
         : {}),
     },
   })),
+  // the CLI: Node and the engine packages; its render page (src/page/) runs in the browser, so it plays through
+  // playback instead of Node
+  {
+    files: ['apps/cli/src/**', 'apps/cli/test/**'],
+    ignores: ['apps/cli/src/page/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            DEEP_IMPORTS,
+            APP_PATHS,
+            { ...APPS, group: [...APPS.group, '@chordinal/playback'], message: 'The CLI runs in Node: it uses the engine packages, never playback, the UI or another app.' },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['apps/cli/src/page/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [DEEP_IMPORTS, APP_PATHS, APPS, { group: ['node:*'], message: 'The render page runs in the browser: no Node.' }] },
+      ],
+    },
+  },
 );

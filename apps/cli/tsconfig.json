@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist/types",
+    "rootDir": "src",
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/lib" },
+    { "path": "../../packages/audio" },
+    { "path": "../../packages/daw" },
+    { "path": "../../packages/composer" },
+    { "path": "../../packages/playback" }
+  ]
+}

@@ -40,30 +40,35 @@ be edited and saved. `just projects` (`tools/make-projects.mjs`) writes them aga
 all of them, or the ids you name (`just projects first-light`). It overwrites the edits made to
 those projects in the app, so commit or save under another name first.
 
-### Exporting the songs
+### The command line
 
-`just export` (`tools/export.mjs`) exports the projects in `projects/` to `export/` (not committed):
-a `.mid` and a `.wav` of each, as the app's Export as MIDI and Export as Audio File make them (the
-whole song, the mix, a 3 s tail, not normalized). The WAVs are rendered offline by
-`tools/export/export.html` in a hidden Electron window, about ten seconds a song.
+`apps/cli` is Chordinal's command line, `chordinal`, on the same engine as the app. `just cli <command> …` builds it (`node tools/build.mjs --cli`, into `apps/cli/dist/`) and runs it from the folder you're in; `just compose` and `just export` are shortcuts for two of its commands. `just cli help` lists the commands, and `just cli <command> --help` explains one. `export` and `render` play projects in a hidden, muted Electron window (no Dock icon), which the CLI ends when it's done; they take `--library <id>` for another SoundFont library: generaluser (the default), fluidr3 or musescore.
 
-```bash
-just export                                   # every project
-just export first-light creaking-halls        # just these
-just export first-light --mp3                 # and an MP3 (320 kbps; needs ffmpeg)
-just export --library fluidr3                  # on another SoundFont library: generaluser (the default), fluidr3, musescore
-```
-
-### Composing from the command line
-
-`just compose` (`tools/compose.mjs`) composes a song in Node and prints its plan. It takes a
-song id, `feel:<emotion>` or a path to a spec in JSON:
+`compose` composes a song in Node and prints its plan. It takes a song id, `feel:<emotion>` or a path to a spec in JSON:
 
 ```bash
 just compose first-light                               # the plan
 just compose first-light --melody                      # and the lead line, bar by bar, as note names
 just compose first-light --midi first-light.mid        # and a Standard MIDI File
+just compose first-light --project my-songs/first      # and a project folder (project.json) the app opens
 just compose feel:tender
+```
+
+`export` makes a `.mid` and a `.wav` of project folders, as the app's Export as MIDI and Export as Audio File make them (the whole song, the mix, a 3 s tail, not normalized), about ten seconds a song. `just export` exports the projects in `projects/` to `export/` (not committed):
+
+```bash
+just export                                   # every project
+just export first-light creaking-halls        # just these
+just export first-light --mp3                 # and an MP3 (320 kbps; needs ffmpeg)
+just export --library fluidr3                 # on another SoundFont library
+just cli export path/to/project --out out     # any project folder, into out/
+```
+
+`render` renders a game's soundtrack. It takes a songs file, a JavaScript module whose `TRACKS` lists `{ id, spec, loop?, trim?, shape? }` (a spec as in [composing.md](composing.md#12-the-song-spec-writing-a-song); `loop: [first, end]` names the sections the loop runs between, `trim` starts the file at the loop, `shape(score)` changes the score before it's rendered; any other field is copied to the data file as it is), and a folder for the mp3s. Each track is composed, rendered at 44100 Hz, cut 0.05 s before its first beat (and just after its loop's end, crossfaded at the seam), brought to −20 dB RMS (peaks at most −1 dB) and encoded by ffmpeg (160 kbps, or `--bitrate`). Each mp3 is then decoded again to check it lines up with the render. With `--data <file>` it writes the tracks' timing for the game (file, tempo, offset, loop points or end, bar lines, length, rate), keeping the entries of tracks not rendered this time; name tracks after the folder to render only those. Comet, Little Lantern and Blast Complex use it from their own justfiles:
+
+```bash
+just -f path/to/chordinal/justfile cli render tools/music/songs.js music --data src/audio/tracks-data.js
+just -f path/to/chordinal/justfile cli render tools/music/songs.js music title --data src/audio/tracks-data.js   # one track
 ```
 
 `just harmony` (`tools/harmony-report.mjs`) checks that songs don't all share the same chords. It
