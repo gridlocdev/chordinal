@@ -12,7 +12,7 @@ Decisions:
 
 ## Slices
 
-- [ ] **1. Drop Music Generator.** Remove `src/app/`, `electron/main.js`'s window, its packaging config and icon, Open in Chordinal, and their tests and docs. Chordinal becomes the `main` entry. `chordinal-prd.md` §3 and §9 rewritten for one app; §12 keeps the games' API. Waits on nothing.
+- [x] **1. Drop Music Generator.** Remove `src/app/`, `electron/main.js`'s window, its packaging config and icon, Open in Chordinal, and their tests and docs. Chordinal becomes the `main` entry. `chordinal-prd.md` §3 and §9 rewritten for one app; §12 keeps the games' API. Waits on nothing.
 - [ ] **2. Design pass.** A visual pass over the window (toolbar, transport, track list, arrangement, piano roll, step grid, mixer, channel rack, browser, dialogs): spacing, type scale, colour tokens, states, the light theme and the theme setting. Checked with headless screenshots in both themes. The stylesheet carries over into the workspace unchanged. Waits on 1.
 - [ ] **3. Rename.** Package and product names, `AGENTS.md`, README and docs; move the folder to `~/src/apps/chordinal`; rename the GitHub repo and its remote; update the pointer in the home repo. Waits on 1.
 - [ ] **4. Workspace.** pnpm, `tsconfig.base.json`, ESLint with engine purity and deep-import bans, Prettier, Vitest, the root scripts and `just check`; the current code moved under `apps/desktop` and `packages/` as JavaScript, still building with esbuild. `node --test` tests keep running until they are ported. Waits on 3.

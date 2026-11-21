@@ -113,7 +113,7 @@ function problemIn(project, patterns)
 export function readProject(text)
 {
     const data = JSON.parse(text);
-    if (data?.format !== FORMAT) throw new Error('not a Music Generator project');
+    if (data?.format !== FORMAT) throw new Error('not a Chordinal project');
     if (data.version !== VERSION && data.version !== PATTERN_VERSION)
         throw new Error(`project version ${data.version}; this app reads versions ${VERSION} and ${PATTERN_VERSION}`);
     const { format, version, patterns: written = [], ...project } = data;

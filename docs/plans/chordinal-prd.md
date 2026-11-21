@@ -1,6 +1,6 @@
 # Chordinal: a DAW for making music by hand (PRD)
 
-Chordinal is a second desktop app in this repo, built for making music by hand: pick sounds, click in beats, draw notes, arrange parts, mix. It runs on Music Generator's engine (projects, player, instruments, mixer, piano roll, step grid, patterns) and offers the composer as one optional action, **Generate Part…**. Music Generator becomes a small generator app that hands its songs to Chordinal for editing. Code that implements a section cites it (`Chordinal PRD §4.2`).
+Chordinal is the desktop app in this repo, built for making music by hand: pick sounds, click in beats, draw notes, arrange parts, mix. It runs on the repo's engine (projects, player, instruments, mixer, piano roll, step grid, patterns) and offers the composer as one optional action, **Generate Part…**. The repo used to ship a second app, Music Generator, a generator window that handed its songs to Chordinal; it was dropped, and the composer lives on in Generate Part, the CLI and the games' API. Code that implements a section cites it (`Chordinal PRD §4.2`).
 
 The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal uses it as written.
 
@@ -9,7 +9,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 1. Start on an empty project or the last one, never on a list of generated songs. The main path is clicking things in by hand.
 2. Work the way FL Studio and GarageBand users already work: a channel rack of instruments, a step grid for beats, a piano roll for melodies, a song built from patterns, and a mixer.
 3. Generating is optional: a part generated into a track, edited by hand afterwards like any other clip.
-4. One engine, one project format, one place to fix bugs. Music Generator and Chordinal share every module below the UI shell.
+4. One engine, one project format, one place to fix bugs. The app shell sits on shared modules (`src/ui/`) that hold no app-only code.
 
 ## §2 Non-goals
 
@@ -18,17 +18,15 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 - Third-party plugins (VST, AU), notation, time-stretching audio.
 - Any change to the composer API that games use (§12).
 
-## §3 Two apps, one repo
+## §3 One app, one repo
 
-1. Each app is its own Electron entry, page bundle, menu bar, settings file and package:
-   - Music Generator: `src/app/main.jsx`, built by `just build`, run by `just app`.
-   - Chordinal: `src/chordinal/main.jsx`, built by `just build`, run by `just chordinal`.
+1. Chordinal is the repo's one Electron entry, page bundle, menu bar, settings file and package: `src/chordinal/main.jsx`, built by `just build`, run by `just chordinal`.
 2. Shared code:
-   - The views and actions both apps use move from `src/app/` to `src/ui/`: the arrangement, piano roll, step grid, mixer, transport, browser parts, store, document, commands, clipboard and context menus.
-   - `src/app/` and `src/chordinal/` hold only each app's shell, layout, menus and app-only commands.
-   - The layer rules gain `ui` between `daw` and the two apps, and the two apps may not import each other.
-3. Each app is packaged separately by electron-builder (two configs). Each has its own app id and icon, and each has a release flow, so a fix to the shared code ships in both.
-4. Both apps read and write the same `project.json` (versions 1 and 2), so a project made in one opens in the other.
+   - `src/ui/` holds the views and actions: the arrangement, piano roll, step grid, mixer, transport, browser parts, store, document, commands, clipboard and context menus.
+   - `src/chordinal/` holds only the app's shell, layout, menus and app-only commands.
+   - The layer rules put `ui` between `daw` and `chordinal`.
+3. electron-builder packages it from one config, with its own app id, icon and release flow.
+4. It reads and writes `project.json` (versions 1 and 2), so projects saved before Music Generator was dropped still open.
 
 ## §4 Starting up and files
 
@@ -41,7 +39,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
    - Choosing a missing project shows a notice, "<name> was moved or deleted", and removes it from the list.
 6. **Save** (`Cmd S`) and **Save As…** (`Shift Cmd S`):
    - The first save of a new project asks for a name and a location. The default location is `Documents/Chordinal/`.
-   - A project is a folder holding `project.json`, as in Music Generator. Saving is atomic: a temporary file, then a swap.
+   - A project is a folder holding `project.json`. Saving is atomic: a temporary file, then a swap.
 7. Closing the window or quitting with unsaved changes asks the same question as New.
 8. The window title shows the project's name and a dot while it has unsaved changes.
 
@@ -88,11 +86,11 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 5. If the composer can't write the part for the meter (for example a style that doesn't support 7/8), the dialog says "<Style> can't write <part> in <meter>." and adds nothing.
 6. This uses the composer through a new function beside `compose` and `toProject`. Their signatures and output don't change.
 
-## §9 Music Generator, slimmed down
+## §9 Whistling and the tools
 
-1. Music Generator's window becomes: the New dialog (feeling, genre or song, seed), the list of shipped songs, a transport to play the selected song, and **Open in Chordinal**.
-2. **Open in Chordinal** saves the song into `Documents/Chordinal/<title>/` (adding " 2", " 3" if the name is taken), then opens it in Chordinal. If Chordinal isn't installed, it reveals the folder in the Finder.
-3. The piano roll, step grid, mixer, recording (whistling) and editing move out of Music Generator's window. Whistling becomes a Chordinal feature: **Record Melody** on a track, and the chord track's whistle-a-chord.
+1. Music Generator, the second app this section once described, was dropped. Its New dialog lives on as Generate Part (§8) and `just compose`.
+2. Its songs are the projects in `projects/`, opened in Chordinal with **Open…**.
+3. Whistling is a Chordinal feature: **Record Melody** on a track, and the chord track's whistle-a-chord.
 4. `just compose`, `just projects`, `just export`, `just whistle` and the other tools keep working as they do now.
 
 ## §10 Patterns and the step grid
@@ -118,13 +116,13 @@ Each gets its own interview and PRD section before it's built.
 ## §12 What must not change
 
 1. The games' API, exactly as `prd.md` §8: `compose`, `toProject`, `playProject`, `loadInstruments`, `registerFx`, the Humanize FX and `beatToSeconds`. Their signatures and output stay as they are.
-2. Every project in `projects/` opens and plays the same in both apps.
-3. A project saved by Chordinal opens in Music Generator, and the reverse, as long as it uses only features both apps have.
+2. Every project in `projects/` opens and plays the same in Chordinal.
+3. A project saved by an older build still opens: the format id and versions 1 and 2 stay readable.
 
 ## Decisions
 
 1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid (§11.2).
-2. The slimmed Music Generator plays a song and opens it in Chordinal. It shows no piano roll (§9.1).
-3. Whistling lives in Chordinal only (§9.3).
+2. Music Generator is dropped; the composer stays as Generate Part, the CLI and the games' API (§9.1).
+3. Whistling lives in Chordinal (§9.3).
 
 The slices are in [2-chordinal.md](2-chordinal.md).

@@ -1,11 +1,7 @@
 // Gives the page a file-backed settings store (src/platform/storage.js), the native menus, a save dialog and the
-// Finder (src/platform/app-menu.js), and Chordinal's project folders (src/platform/project-folders.js), whose calls
-// only Chordinal answers. Nothing else is exposed.
+// Finder (src/platform/app-menu.js), and the project folders (src/platform/project-folders.js). Nothing else is exposed.
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('projectFolder', {
-    onChange: (fn)=> { ipcRenderer.on('projects:changed', ()=> fn()); },
-});
 contextBridge.exposeInMainWorld('appStorage', {
     load: ()=> ipcRenderer.invoke('save:load'),
     write: (all)=> ipcRenderer.invoke('save:write', all),
@@ -25,15 +21,13 @@ contextBridge.exposeInMainWorld('appMenu', {
     typing: (on)=> ipcRenderer.send('menu:typing', on),
     onPick: (fn)=> { ipcRenderer.on('menu:pick', (e, id)=> fn(id)); },
     open: (rel)=> ipcRenderer.invoke('shell:open', rel),
-    reveal: (rel)=> ipcRenderer.invoke('shell:reveal', rel),
-    openInChordinal: (name)=> ipcRenderer.invoke('chordinal:open', name),
     openFile: (title, extensions)=> ipcRenderer.invoke('file:open', title, extensions),
     saveFile: (name, bytes)=> ipcRenderer.invoke('file:save', name, bytes),
     chooseFolder: (name)=> ipcRenderer.invoke('file:chooseFolder', name),
     writeInFolder: (name, bytes)=> ipcRenderer.invoke('file:writeInFolder', name, bytes),
 });
 
-// Chordinal: projects in folders anywhere on disk, and the window's close question
+// projects in folders anywhere on disk, and the window's close question
 contextBridge.exposeInMainWorld('projectFolders', {
     recent: ()=> ipcRenderer.invoke('folders:recent'),
     forget: (dir)=> ipcRenderer.invoke('folders:forget', dir),

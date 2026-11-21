@@ -2,7 +2,7 @@
 // new one, wires musical typing and MIDI, and lays out the window: the transport across the top, the browser on the
 // left, the arrangement (whose track headers carry each track's mute, solo and volume), and the editor below it (§5).
 //
-// Its File menu is in menu-bar.js, its files in files.js; everything else is shared with Music Generator (src/ui/).
+// Its File menu is in menu-bar.js, its files in files.js; the views and commands are in src/ui/.
 import { render } from 'preact';
 import { audioEngine } from '../platform/audio-engine.js';
 import { registerFx } from '../daw/fx.js';

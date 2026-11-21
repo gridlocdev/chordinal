@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Chordinal's icon source, on the same grid as icon.svg (Music Generator's): an 824-unit tile at (100,100) on a
+<!-- Chordinal's icon source, an 824-unit tile at (100,100) on a
      1024 canvas. tools/make-icons.sh crops to the tile for Windows and Linux. The glyph is a three-note chord on
      one stem. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">

@@ -1,5 +1,5 @@
-// The two installable apps (packaging/*.json, built by electron-builder): each ships every file its main process and
-// page load, its own icon, and its own app id (Chordinal PRD §3.3).
+// The installable app (packaging/chordinal.json, built by electron-builder): it ships every file its main process and
+// page load, and its icons (Chordinal PRD §3.3).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (rel)=> readFileSync(path.join(ROOT, rel), 'utf8');
 const pkg = JSON.parse(read('package.json'));
-const APPS = ['music-generator', 'chordinal'].map(name =>
+const APPS = ['chordinal'].map(name =>
 {
     const config = JSON.parse(read(`packaging/${name}.json`));
     return { name, config, main: config.extraMetadata?.main ?? pkg.main };
@@ -45,7 +45,7 @@ for (const { name, config, main } of APPS)
         const needed = [...loaded(main), ...loaded(page), 'electron/preload.cjs', `assets/${icon}/icon.png`, 'package.json'];
         const missing = needed.filter(rel => !shipped(config.files, rel));
         assert.deepEqual(missing, [], `add these to packaging/${name}.json "files"`);
-        if (page !== 'index.html') assert.ok(existsSync(path.join(ROOT, page)));
+        assert.ok(existsSync(path.join(ROOT, page)));
     });
 
     test(`${name}: its icons are there`, ()=>
@@ -55,14 +55,11 @@ for (const { name, config, main } of APPS)
     });
 }
 
-test('the two apps have their own ids, names and output folders, and only Chordinal asks for the microphone', ()=>
+test('the app asks for the microphone, runs electron/chordinal.js, and keeps its build settings in packaging/', ()=>
 {
-    const [mg, ch] = APPS.map(a => a.config);
-    assert.notEqual(mg.appId, ch.appId);
-    assert.notEqual(mg.productName, ch.productName);
-    assert.notEqual(mg.directories.output, ch.directories.output);
+    const [ch] = APPS.map(a => a.config);
     assert.equal(ch.extraMetadata.productName, ch.productName);
-    assert.equal(mg.mac.extendInfo?.NSMicrophoneUsageDescription, undefined);
     assert.ok(ch.mac.extendInfo.NSMicrophoneUsageDescription);
+    assert.equal(pkg.main, 'electron/chordinal.js');
     assert.equal(pkg.build, undefined, 'the build settings live in packaging/, not package.json');
 });

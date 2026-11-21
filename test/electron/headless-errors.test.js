@@ -1,4 +1,4 @@
-// Both apps' main processes, run headless: an error nothing caught exits the app with code 1 and says why on stderr,
+// The app's main process, run headless: an error nothing caught exits the app with code 1 and says why on stderr,
 // instead of putting Electron's error dialog on the screen; and closing the window while the settings are being
 // written finishes the write, then quits. The export tool's windowless Electron exits the same way, with no flag.
 import test from 'node:test';
@@ -14,10 +14,9 @@ import { _electron } from 'playwright-core';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const LIMIT_MS = 15000;
 const APPS = [
-    { id: 'music-generator', entry: '.', ready: '.song' },
     { id: 'chordinal', entry: 'electron/chordinal.js', ready: '.lane' },
 ];
-const built = existsSync(path.join(ROOT, 'dist/chordinal.js')) && existsSync(path.join(ROOT, 'dist/app.js'));
+const built = existsSync(path.join(ROOT, 'dist/chordinal.js'));
 
 async function launch({ entry, ready })
 {

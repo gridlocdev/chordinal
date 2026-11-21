@@ -119,6 +119,30 @@ test('Chordinal starts on a new project, saves it to a chosen folder, asks befor
     }
 });
 
+test('a reload with unsaved changes asks through the headless gate, never a native dialog', { skip: !existsSync(path.join(ROOT, 'dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
+{
+    await fs.rm(DATA, { recursive: true, force: true });
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'chordinal-'));
+    const marker = path.join(tmp, 'dialog-shown');
+    let run = null;
+    try
+    {
+        run = await launch(marker);
+        await run.click('newTrack');
+        await until('the title has a dot', async ()=> (await run.page.title()).startsWith('• '));
+        await run.page.reload();
+        await run.page.waitForFunction(()=> document.querySelector('.lane'));
+        const prompts = await run.app.evaluate(()=> globalThis.headlessPrompts.map(p => p.what.message ?? p.kind));
+        assert.deepEqual(prompts, ['Close without saving?']);
+        assert.equal(existsSync(marker), false, 'no native dialog was asked for');
+    }
+    finally
+    {
+        if (run && run.proc.exitCode === null) run.proc.kill('SIGKILL');
+        await fs.rm(tmp, { recursive: true, force: true });
+    }
+});
+
 test('the track headers and the browser: a header\'s double-click, + Drums, the tabs, the edge and B', { skip: !existsSync(path.join(ROOT, 'dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
 {
     await fs.rm(DATA, { recursive: true, force: true });

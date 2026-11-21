@@ -1,6 +1,5 @@
-// The menu bar both apps share: Edit, Track, Transport and View, built from the commands, and the loop that keeps an
-// app's bar enabled, checked and listed as the app changes. Each app adds its own File and Help menus
-// (src/app/menu-bar.js, src/chordinal/menu-bar.js).
+// The menu bar's Edit, Track, Transport and View menus, built from the commands, and the loop that keeps the bar
+// enabled, checked and listed as the app changes. The File and Help menus are in src/chordinal/menu-bar.js.
 import { effect } from '@preact/signals';
 import { appMenu } from '../platform/app-menu.js';
 import { typing } from '../platform/keys.js';

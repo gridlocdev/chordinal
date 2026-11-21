@@ -1,16 +1,15 @@
-// The open project as a document: opening, saving, starting a new one (empty, or made by the composer from a feeling,
-// a genre or one of its songs), and every edit, each a step undo can take back. Where projects are kept, and how Save
-// As and the unsaved-changes question go, is the app's own (place.js).
-import { projectFiles, folderName } from '../platform/project-files.js';
+// The open project as a document: opening, saving, starting a new one (empty, or made by the composer from a spec),
+// and every edit, each a step undo can take back. Where projects are kept, and how Save As and the unsaved-changes
+// question go, is set at start-up (place.js).
 import { emptyProject } from '../daw/project.js';
 import { history, commit, undo as undoStep, redo as redoStep } from '../daw/history.js';
 import { readProject, writeProject } from '../daw/project-format.js';
 import { compose } from '../composer/compose.js';
 import { toProject } from '../composer/to-project.js';
-import { hist, project, projectName, projectList, saved, dirty, selected, selectedClip, picked, chordRange, beat, status, setSettings } from './store.js';
+import { hist, project, projectName, saved, dirty, selected, selectedClip, picked, chordRange, beat, status, setSettings } from './store.js';
 import { stop } from './player.js';
 import { focus } from './focus.js';
-import { askText, askYes } from './ask.js';
+import { askYes } from './ask.js';
 import { place } from './place.js';
 
 let mergeKey = null;
@@ -59,33 +58,6 @@ function show(p, name, clean = false)
     beat.value = 0;
     status.value = '';
     if (name) setSettings({ project: name });
-}
-
-/** lists projects/ again */
-export async function refreshProjects()
-{
-    projectList.value = await projectFiles.list().catch(e => { status.value = e.message; return []; });
-}
-
-/**
- * Keeps the Projects tab in step with projects/: lists it now, and again whenever it changes on disk, so projects
- * written by `just projects` or copied into the folder show up without a restart. The open project, when it has no
- * unsaved changes and its file now holds something else, is read again: a regenerated song plays as regenerated.
- */
-export function watchProjects()
-{
-    refreshProjects();
-    projectFiles.onChange(async ()=>
-    {
-        await refreshProjects();
-        const name = projectName.value;
-        if (!name || dirty.value || !projectList.value.some(p => p.name === name)) return;
-        const text = await place.files.read(name).catch(()=> null);
-        // an edit made, or another project opened, while it was read is kept: no reload over it
-        if (!text || text === onDisk || dirty.value || projectName.value !== name) return;
-        try { show(readProject(text), name); onDisk = text; status.value = `Reloaded projects/${name}/: it changed on disk`; }
-        catch (e) { status.value = `Couldn't read projects/${name} again: ${e.message}`; }
-    });
 }
 
 /** whether the unsaved changes, if any, may go: the app's question (Save, Don't Save or Cancel), or Discard or Cancel */
@@ -156,21 +128,10 @@ async function saveNow()
         onDisk = text;
         saved.value = p;
         status.value = `Saved ${place.where(name)}`;
-        (place.saved ?? refreshProjects)(name);
+        place.saved?.(name);
         return true;
     }
     catch (e) { status.value = `Couldn't save ${place.where(name)}: ${e.message}`; return false; }
-}
-
-/** Music Generator's Save As: a name for a folder in projects/, asking before replacing one */
-async function chooseProjectName(title, current)
-{
-    const typed = await askText('Save the project as', title, 'Save');
-    if (!typed) return null;
-    const name = folderName(typed);
-    const existing = await projectFiles.list().catch(()=> []);
-    if (name !== current && existing.some(e => e.name === name) && !await askYes(`projects/${name} exists. Replace it?`, 'Replace')) return null;
-    return { name, title: typed };
 }
 
 /** the takes of the project's old folder, copied into its new one after a Save As (those already there are kept) */
@@ -189,7 +150,7 @@ async function copyTakes(from, to)
  * @returns {Promise<boolean>} whether it saved */
 export async function saveAs()
 {
-    const chosen = await (place.chooseName ?? chooseProjectName)(project.value.title, projectName.value);
+    const chosen = await place.chooseName(project.value.title, projectName.value);
     if (!chosen) return false;
     const { name, title } = chosen;
     edit(p => p.title === title ? p : { ...p, title });

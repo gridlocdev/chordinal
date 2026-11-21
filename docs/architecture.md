@@ -1,6 +1,6 @@
 # Architecture
 
-A desktop app (Electron) with a DAW-style UI in [Preact](https://preactjs.com) and [signals](https://preactjs.com/guide/v10/signals). Two apps share it (`docs/plans/chordinal-prd.md` §3): Music Generator (writes and plays songs, edits nothing), whose `src/app/main.jsx` esbuild bundles into `dist/app.js` for `index.html`, and Chordinal, whose `src/chordinal/main.jsx` becomes `dist/chordinal.js` for `chordinal.html` (`just build` makes both). Each holds only its app's shell, layout, File menu and files, and Chordinal its browser (`src/chordinal/components/`, with what it and the track headers do in `src/chordinal/rack.js`), Generate Part… (`src/chordinal/generate.js`), and Record Melody and Whistle a Chord (`src/chordinal/whistle.js`, over the shared recorder in `src/ui/recording.js`); the views and actions are in `src/ui/`, shared. Everything below `src/ui/` is plain ES modules with no DOM in the music logic, so the tools in `tools/` and the tests in `test/` run it in Node as it is.
+A desktop app (Electron) with a DAW-style UI in [Preact](https://preactjs.com) and [signals](https://preactjs.com/guide/v10/signals). esbuild bundles `src/chordinal/main.jsx` into `dist/chordinal.js` for `chordinal.html` (`just build`). `src/chordinal/` holds the app's shell, layout, File menu and files, its browser (`src/chordinal/components/`, with what it and the track headers do in `src/chordinal/rack.js`), Generate Part… (`src/chordinal/generate.js`), and Record Melody and Whistle a Chord (`src/chordinal/whistle.js`, over the shared recorder in `src/ui/recording.js`); the views and actions are in `src/ui/`. Everything below `src/ui/` is plain ES modules with no DOM in the music logic, so the tools in `tools/` and the tests in `test/` run it in Node as it is.
 
 ## This app
 
@@ -31,8 +31,7 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `src/platform/keys.js` | musical typing: computer keys → semitones and octave steps, and whether focus is in a text field |
 | `src/platform/storage.js` | the settings, through the desktop app's `window.appStorage` hook |
 | `src/platform/app-menu.js` | the native menu bar and right-click menus, built by the desktop app from plain items; each item's action stays in the page, which gets back the id of the item picked; also opening a doc, showing a file in the Finder and saving a file where the user picks |
-| `src/platform/project-files.js` | the project files in `projects/`, through the desktop app: listing them, reading and writing one, and its takes |
-| `src/platform/project-folders.js` | Chordinal's projects: folders anywhere on disk, named by their path, with the same read, write and takes as `project-files.js`, plus Open Recent and the Open and Save dialogs; and the window's close question (`docWindow`) |
+| `src/platform/project-folders.js` | Chordinal's projects: folders anywhere on disk, named by their path: reading, writing and the takes, plus Open Recent and the Open and Save dialogs; and the window's close question (`docWindow`) |
 | `src/platform/soundfonts.js` | which SoundFont libraries are installed, and downloading one, through the desktop app |
 | `src/audio/soundfont.js` | downloads and caches `.sf2` files; `createInstrument(font, preset, destination)` plays notes as Web Audio voices, with optional delayed vibrato and legato glides |
 | `src/audio/pitch-moves.js` | a voice's pitch moves on its detune: delayed vibrato, scoops, tracker arpeggios, falls |
@@ -58,7 +57,7 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `src/sketch/` | whistle → notes: recording a take over a click and count-in, read live a beat behind the playhead (`recorder.js`); reading a take, the chords whistled over stretches and the ones guessed for the rest (`takes.js`); a melody and its chords as a section and a spec for New from melody (`sketch-spec.js`); recording settings and the band it's composed for (`sketchpad-data.js`) |
 | `src/ui/store.js` | the app's state as signals: settings (saved), the open project, its name, history and whether it's saved, the selection (track, clip, notes, a stretch of the chord track), the transport |
 | `src/ui/document.js` | the open project as a document: open, save, save as, New (empty, or from the composer), and `edit(fn, mergeKey)`, through which every edit goes so undo can take it back |
-| `src/ui/place.js` | where the open project is kept, set by each app at start-up: `projects/` (the default) or Chordinal's folders; how messages name it, how Save As asks, and the question before unsaved changes go |
+| `src/ui/place.js` | where the open project is kept, set at start-up (`src/chordinal/files.js`): its folders on disk; how messages name it, how Save As asks, and the question before unsaved changes go |
 | `src/ui/player.js` | plays the open project from the playhead, follows it (and the mixer's meters), stops, seeks, keeps the mixer's settings on the playing channels, and restarts after an edit that changes what's heard |
 | `src/ui/midi-import.js` | File → Import MIDI File (a new project) and MIDI files dropped on a track (tracks added at that bar) |
 | `src/ui/bounce.js` | Export as Audio File: the project, or a range of it, played once through an offline render and saved as a stereo WAV, or one WAV per track (stems) into a folder, optionally normalized |
@@ -66,24 +65,23 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `src/ui/recording.js` | whistle → MIDI: recording a take into a new clip on the selected track (or a chord onto the chord track), dropped audio files and kept takes read the same way, keeping takes beside the project, and New from melody |
 | `src/ui/live.js` | musical typing (while the piano roll has the focus, `focus.js`) and MIDI input playing the selected track's instrument |
 | `src/ui/libraries.js` | the SoundFont library in use (an installed one while the picked one isn't) and downloading the others from the Instruments tab |
-| `src/ui/commands.js` | every command (label, shortcut, action, when it can be used); `menu-bar.js` builds the menus both apps share from them and keeps an app's bar current, `keys.js` answers the plain-key shortcuts (Cmd shortcuts are the menu bar's) |
+| `src/ui/commands.js` | every command (label, shortcut, action, when it can be used); `menu-bar.js` builds the Edit, Track, Transport and View menus from them and keeps the bar current, `keys.js` answers the plain-key shortcuts (Cmd shortcuts are the menu bar's) |
 | `src/ui/timeline.js` | tempo and meter: the whole song's, changes from a bar on, and the flags the ruler shows for them with their menu |
 | `src/ui/context-menus.js` | the right-click menus, one per thing clicked, which select it first and are built from the commands and the actions below |
 | `src/ui/tracks.js`, `src/ui/notes.js`, `src/ui/clipboard.js` | the actions on tracks and clips, on the piano roll's picked notes, and cut, copy, paste and duplicate for either |
 | `src/ui/steps.js` | the step grid's actions (paint, accent, step size, rows, hearing a drum) and switching the editor between the piano roll and the step grid as clips are picked |
 | `src/ui/focus.js`, `src/ui/ask.js` | which pane the editing keys act on; an in-app question for a name, a yes, or a choice such as Save, Don't Save or Cancel (Electron has no `prompt`) |
-| `src/ui/components/` | the views: `Transport`, `LibraryPicker`, `Arrange` (`Ruler`, `ChordLane`, a `TrackRow` per track with a `Knob`, sharing `arrange-view.js`), `Editor` (`PianoRoll`, `Mixer` or `StepGrid`, whose geometry is in `grid-view.js`), `NewProject` (Music Generator's New dialog), `Ask`; `canvas.js` is a canvas that redraws when the signals it reads change, the piano roll's parts are `roll-view.js` (what's shown, its geometry), `roll-draw.js` (drawing), `roll-input.js` (the pointer), `RollToolbar` and `RollPlayhead` |
+| `src/ui/components/` | the views: `Transport`, `LibraryPicker`, `Arrange` (`Ruler`, `ChordLane`, a `TrackRow` per track with a `Knob`, sharing `arrange-view.js`), `Editor` (`PianoRoll`, `Mixer` or `StepGrid`, whose geometry is in `grid-view.js`), `Ask`; `canvas.js` is a canvas that redraws when the signals it reads change, the piano roll's parts are `roll-view.js` (what's shown, its geometry), `roll-draw.js` (drawing), `roll-input.js` (the pointer), `RollToolbar` and `RollPlayhead` |
 | `src/ui/ui.css` | the look: colour tokens and the panel grid |
 | `tools/compose.mjs` | composes a song in Node: prints the plan and melody, writes a `.mid` (`just compose`) |
 | `tools/make-projects.mjs` | writes the written songs as project files in `projects/` (`just projects`) |
 | `tools/build.mjs` | bundles the UI with esbuild (`just build`, `--watch` for `just dev`, `--check` for `just check`) |
-| `tools/install-app.sh` | installs Music Generator or Chordinal as a desktop app that runs this checkout (`just install` does both): a renamed Electron in `~/Applications` on macOS, with the app's icon; a launcher on Linux |
+| `tools/install-app.sh` | installs Chordinal as a desktop app that runs this checkout (`just install`): a renamed Electron in `~/Applications` on macOS, with the app's icon; a launcher on Linux |
 | `assets/icon.svg`, `assets/chordinal.svg`, `tools/make-icons.sh` | each app's icon source, and the script (`just icons`) that renders them into `assets/icon/` and `assets/chordinal-icon/` |
-| `packaging/music-generator.json`, `packaging/chordinal.json` | each app's electron-builder config (`just package`): its entry, app id, name, icon, files and bundled resources |
+| `packaging/chordinal.json` | the electron-builder config (`just package`): its entry, app id, name, icon, files and bundled resources |
 | `tools/project-folders.mjs` | Chordinal's project folders in its main process: reaching only folders the user picked in this run or has in Open Recent (the last ten, kept in its user data folder), and writing `project.json` through a temporary file |
-| `tools/project-files.mjs` | the desktop app's `projects/` requests: `GET /projects/` lists the projects, `PUT /projects/<name>/project.json` saves one (to a temporary file, then swapped in), `GET` and `PUT /projects/<name>/takes/…` list and keep its takes |
-| `electron/shell.js`, `electron/preload.cjs`, `tools/soundfont-download.mjs` | what both desktop apps share: serves the checkout on `app://game/`, allows the microphone for that origin only, checks and downloads SoundFont libraries, and keeps each app's settings in a file in its own user data folder through the `window.appStorage` hook. `--dev` reloads the window when `dist/` changes; `--headless` runs it hidden and muted, with its own settings, for automated tests |
-| `electron/main.js` | Music Generator (`just app`): answers `projects/` requests and tells the page when `projects/` changes. Open in Chordinal (File menu, `src/app/open-in-chordinal.js`) copies the song's folder into `Documents/Chordinal/<title>/` and starts Chordinal on it, or shows the folder when Chordinal can't be started. A release build (`just package`) keeps projects in `Documents/Music Generator/` and downloaded libraries in its user data folder |
+| `tools/write-atomic.mjs` | writes a file to a temporary file beside it, then swaps it in, so a crash never leaves half a file |
+| `electron/shell.js`, `electron/preload.cjs`, `tools/soundfont-download.mjs` | the window and what it serves: the checkout on `app://game/`, allows the microphone for that origin only, checks and downloads SoundFont libraries, and keeps the settings in a file in the app's user data folder through the `window.appStorage` hook. `--dev` reloads the window when `dist/` changes; `--headless` runs it hidden and muted, with its own settings, for automated tests |
 | `electron/chordinal.js` | Chordinal (`just chordinal`): its project folders, Open Recent and the Open and Save dialogs (`Documents/Chordinal/` by default), and closing: with unsaved changes, the page asks its own question in the window and then closes it. A folder handed over at launch (command line or macOS open-file) opens instead of the last project |
 | `electron/menus.js` | the native menus from the page's items: the menu bar with macOS's app and Window menus round it, and right-click menus; Edit items act on a text field while one has focus, and items marked `field` leave their shortcut to it. Headless, a right-click menu is kept as `globalThis.contextMenu` for a test to click |
 | `tools/whistle.mjs` | transcribes a whistled recording into a section's `melody:` line, or with `--chords` an arpeggio take into its `progression:` (`just whistle`) |
@@ -100,7 +98,7 @@ The libraries live in `soundfonts/<folder>/`, ignored by git and downloaded by `
 
 ### Project files
 
-A project is a folder, `projects/<name>/` (in the checkout, or `Documents/Music Generator/projects/` for a release build), holding `project.json` and, once whistled into, `takes/` (the takes' WAVs are ignored by git). The file:
+A project is a folder anywhere on disk (`Documents/Chordinal/<title>/` by default; the written songs are in the checkout's `projects/<name>/`), holding `project.json` and, once whistled into, `takes/` (the takes' WAVs are ignored by git). The file:
 
 ```
 { format: 'music-generator-project', version: 1 | 2, title, length (beats),
@@ -128,8 +126,8 @@ A beat is a quarter note; a note's beat is from its clip's start. `marker.meta`,
 | `src/audio/` | SoundFont instruments, the mixer, the library in use | lib, platform |
 | `src/daw/` | projects, their file, edits and undo, playback, the MIDI FX hook | the above |
 | `src/composer/`, `src/sketch/` | composing projects and the Humanize FX; whistle → notes | the above, **not each other** |
-| `src/ui/` | the Preact UI both apps share: state, actions, commands and views | everything above |
-| `src/app/`, `src/chordinal/` | each app's shell: start-up and layout | everything above, **not each other** |
+| `src/ui/` | the Preact UI: state, actions, commands and views | everything above |
+| `src/chordinal/` | the app's shell: start-up, layout, File menu and files | everything above |
 
 `architecture.json` lists these layers for `tools/coupling-report.mjs`.
 

@@ -27,10 +27,10 @@ import { exportDialog } from './bounce.js';
 import { importMidi } from './midi-import.js';
 import { audioEngine } from '../platform/audio-engine.js';
 import { askTempo, askMeter } from './timeline.js';
-import { newDialog as dialog, appDialog } from './dialogs.js';
+import { appDialog } from './dialogs.js';
 
 /** a dialog is open: commands wait */
-export const busy = ()=> !!(dialog.value || appDialog.value || exportDialog.value || asking.value || audioEngine.rendering || exporting.value);
+export const busy = ()=> !!(appDialog.value || exportDialog.value || asking.value || audioEngine.rendering || exporting.value);
 
 // ── what the commands act on ─────────────────────────────────────────────────────────────────────────────────────────
 
@@ -140,15 +140,12 @@ const track = ()=> selectedTrack.value;
  */
 export const COMMANDS = {
     // File
-    new: { label: 'New…', accelerator: 'CmdOrCtrl+N', run: ()=> { dialog.value = true; } },
-    open: { label: 'Show Projects', accelerator: 'CmdOrCtrl+O', run: ()=> setSettings({ browserOpen: true, browserTab: 'projects' }) },
     save: { label: 'Save', accelerator: 'CmdOrCtrl+S', run: save },
     saveAs: { label: 'Save As…', accelerator: 'Shift+CmdOrCtrl+S', run: saveAs },
     revert: { label: 'Revert to Saved', run: ()=> openProject(projectName.value), enabled: ()=> !!projectName.value && dirty.value },
     importMidi: { label: 'Import MIDI File…', run: importMidi },
     exportMidi: { label: 'Export as MIDI File…', accelerator: 'CmdOrCtrl+E', run: exportMidi },
     exportAudio: { label: 'Export as Audio File…', accelerator: 'CmdOrCtrl+B', run: ()=> { exportDialog.value = true; }, enabled: ()=> project.value.tracks.some(t => t.clips.length) },
-    reveal: { label: 'Show in Finder', run: ()=> appMenu.reveal(`${projectName.value}/project.json`), enabled: ()=> !!projectName.value },
     // Edit
     undo: { label: 'Undo', accelerator: 'CmdOrCtrl+Z', text: 'undo', run: undo, enabled: ()=> hist.value.past.length > 0 },
     redo: { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', text: 'redo', run: redo, enabled: ()=> hist.value.future.length > 0 },
@@ -229,7 +226,6 @@ export const COMMANDS = {
     follow: { label: 'Follow Playhead', run: ()=> setSettings({ follow: !settings.value.follow }), checked: ()=> settings.value.follow },
     ghosts: { label: 'Show Other Tracks’ Notes', run: ()=> setSettings({ ghosts: !settings.value.ghosts }), checked: ()=> settings.value.ghosts },
     // Help
-    composing: { label: 'How It Composes', run: ()=> appMenu.open('docs/composing.md') },
     readme: { label: 'Read Me', run: ()=> appMenu.open('README.md') },
 };
 

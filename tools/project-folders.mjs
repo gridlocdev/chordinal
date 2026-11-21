@@ -4,7 +4,7 @@
 // its absolute path; a project.json picked instead of its folder names that folder.
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { writeAtomic } from './project-files.mjs';
+import { writeAtomic } from './write-atomic.mjs';
 
 export const RECENT_LIMIT = 10;
 const TAKE = /^[\w-]+\.wav$/;
@@ -13,20 +13,6 @@ const exists = (file)=> fs.access(file).then(()=> true, ()=> false);
 
 /** the folder a picked path names: the folder itself, or the folder of a project.json */
 export const folderOf = (picked)=> path.basename(picked) === 'project.json' ? path.dirname(path.resolve(picked)) : path.resolve(picked);
-
-/** a project title as a folder name: no path separators or other characters a file name can't hold */
-export const folderName = (title)=> String(title).replace(/[\\/:*?"<>|\x00-\x1f]/g, '-').replace(/^[.\s]+|[.\s]+$/g, '') || 'Untitled';
-
-/** a new folder for `title` in `parent`: 'Night Drive', or 'Night Drive 2', 'Night Drive 3' … when that's taken */
-export async function freeFolder(parent, title)
-{
-    const name = folderName(title);
-    for (let n = 1; ; n++)
-    {
-        const dir = path.join(parent, n === 1 ? name : `${name} ${n}`);
-        if (!await exists(dir)) return dir;
-    }
-}
 
 /**
  * @param {{ listFile: string }} options  where Open Recent is kept

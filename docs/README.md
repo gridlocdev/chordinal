@@ -1,8 +1,8 @@
-# Music Generator documentation
+# Chordinal documentation
 
-These pages cover using Music Generator, how its composer works, and working on its code.
+These pages cover using Chordinal, how its composer works, and working on its code.
 
-## Using Music Generator
+## Using Chordinal
 
 - [Getting started](getting-started.md): which file to download, getting past the first-launch warnings, the microphone, and where your projects go.
 - [Features](features.md): everything it does, one section per feature.
@@ -16,8 +16,8 @@ Some questions the composing page answers:
 - [How do I write a song?](composing.md#12-the-song-spec-writing-a-song)
 - [What makes a funk song sound like funk?](composing.md#13-genre-recipes)
 
-## Working on Music Generator
+## Working on Chordinal
 
 - [Development](development.md): setting up, checking your work, writing songs, composing from the command line, comparing versions by ear, release builds, and adding a sound library.
 - [Architecture](architecture.md): the code layout, its layer rules, and how projects and sound libraries load.
-- [Plans](plans/prd.md): the spec for patterns and the step grid, and the work planned after them.
+- [Plans](plans/): the specs ([Chordinal](plans/chordinal-prd.md), [patterns and the step grid](plans/prd.md)) and the slices of work planned after them.

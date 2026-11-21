@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { projectFolders, folderOf, folderName, freeFolder, RECENT_LIMIT } from '../../tools/project-folders.mjs';
+import { projectFolders, folderOf, RECENT_LIMIT } from '../../tools/project-folders.mjs';
 
 async function scratch(fn)
 {
@@ -80,14 +80,4 @@ test('the projects in a folder are listed by name, and each can be opened', ()=>
     assert.deepEqual((await folders.listIn(home)).map(p => p.name), ['Alpha', 'Beta']);
     assert.equal(await folders.read(path.join(home, 'Beta')), '"Beta"');
     assert.deepEqual(await folders.listIn(path.join(root, 'missing')), []);
-}));
-
-test('a new folder for a title takes the next free name', ()=> scratch(async (root)=>
-{
-    assert.equal(folderName('AC/DC: Live?'), 'AC-DC- Live-');
-    assert.equal(folderName('..'), 'Untitled');
-    assert.equal(await freeFolder(root, 'Night Drive'), path.join(root, 'Night Drive'));
-    await fs.mkdir(path.join(root, 'Night Drive'));
-    await fs.mkdir(path.join(root, 'Night Drive 2'));
-    assert.equal(await freeFolder(root, 'Night Drive'), path.join(root, 'Night Drive 3'));
 }));

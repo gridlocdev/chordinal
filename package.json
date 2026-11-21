@@ -8,7 +8,7 @@
     "test": "node --test",
     "check": "node tools/coupling-report.mjs --strict",
     "app": "node tools/build.mjs && electron .",
-    "package": "electron-builder --config packaging/music-generator.json --publish never && electron-builder --config packaging/chordinal.json --publish never"
+    "package": "electron-builder --config packaging/chordinal.json --publish never"
   },
   "devDependencies": {
     "electron": "44.9.2",
@@ -16,13 +16,13 @@
     "esbuild": "0.28.2",
     "playwright-core": "1.64.1"
   },
-  "productName": "Music Generator",
-  "main": "electron/main.js",
+  "productName": "Chordinal",
+  "main": "electron/chordinal.js",
   "dependencies": {
     "@preact/signals": "2.11.4",
     "preact": "11.2.0"
   },
-  "description": "Write, whistle and arrange music: a small DAW with a song composer and a whistle-to-notes sketchpad",
+  "description": "Write, whistle and arrange music: a small DAW with a part composer and a whistle-to-notes sketchpad",
   "author": "gridlocdev",
   "homepage": "https://github.com/gridlocdev/music-generator",
   "license": "MIT"

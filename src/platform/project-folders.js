@@ -1,6 +1,5 @@
 // Chordinal's projects (Chordinal PRD §4): folders anywhere on disk, each named by its path, reached through the
 // desktop app (electron/chordinal.js), which lets the page reach only folders the user picked or has in Open Recent.
-// Reading, writing and the takes have the same shape as projectFiles, so the document code works on either.
 const backend = /** @type {any} */ (globalThis).projectFolders;
 const none = ()=> Promise.reject(new Error('project folders need the Chordinal desktop app'));
 
@@ -29,7 +28,7 @@ export const projectFolders = {
     /** @returns {Promise<{ path: string, name: string }[]>} the projects in Documents/Chordinal/ */
     library: ()=> backend?.library() ?? Promise.resolve([]),
     reveal: (dir)=> backend?.reveal(dir),
-    /** @returns {Promise<string>} the folder handed over when Chordinal started (Open in Chordinal), or '' */
+    /** @returns {Promise<string>} the folder handed over when Chordinal started (a command-line argument or the Finder), or '' */
     handed: ()=> backend?.handed() ?? Promise.resolve(''),
     /** a folder handed over while Chordinal runs */
     onHandedOver: (fn)=> backend?.onHandedOver(fn),

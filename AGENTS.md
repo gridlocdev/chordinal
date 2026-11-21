@@ -2,9 +2,9 @@
 
 This app follows the layered layout in `docs/architecture.md`. Read it before adding or moving code. In short:
 
-- `lib → platform → audio → daw → (composer, sketch) → app`; imports only point down that chain.
+- `lib → platform → audio → daw → (composer, sketch) → ui → chordinal`; imports only point down that chain.
 - `daw/` is the generic DAW: projects, their file format, edits with undo, playback and the MIDI FX hook. It knows nothing of songs, specs or whistling.
-- `composer/` and `sketch/` hold the music logic and know nothing of the UI. `ui/` is the Preact UI: signals in `ui/store.js`, actions in `ui/*.js`, views in `ui/components/`. `app/` holds only Music Generator's shell (start-up, its window of songs, player and song, its menus and Open in Chordinal; it edits nothing) and `chordinal/` Chordinal's (with its files: New, Open, Open Recent, Save As to any folder; and its left panel: the channel rack and the browser, in `chordinal/rack.js` and `chordinal/components/`); the two never import each other. Where projects are kept is each app's `ui/place.js` setting.
+- `composer/` and `sketch/` hold the music logic and know nothing of the UI. `ui/` is the Preact UI: signals in `ui/store.js`, actions in `ui/*.js`, views in `ui/components/`. `chordinal/` holds the app's shell: start-up, its menus, its files (New, Open, Open Recent, Save As to any folder) and its browser (`chordinal/rack.js` and `chordinal/components/`). Where projects are kept is set in `ui/place.js` at start-up.
 - `composer/` and `sketch/` don't import each other; `ui/` joins them.
 - Content (songs, tables, tuning) goes in `*-data.js` files.
 - `lib/` and `*-data.js` files import no DOM code and have tests in `test/`.

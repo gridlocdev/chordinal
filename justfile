@@ -2,28 +2,18 @@
 default:
     @just --list
 
-# install both desktop apps (~/Applications/Music Generator.app and Chordinal.app on macOS) that run this checkout
+# install the desktop app (~/Applications/Chordinal.app on macOS) that runs this checkout
 install: build
-    bash tools/install-app.sh music-generator
-    bash tools/install-app.sh chordinal
+    bash tools/install-app.sh
 
 # install the pinned Preact, esbuild and Electron into node_modules
 deps:
     @[ -d node_modules/preact ] && [ -d node_modules/esbuild ] && [ -d node_modules/electron ] || npm install
     @[ -f node_modules/electron/path.txt ] || node node_modules/electron/install.js
 
-# bundle each app's UI (src/app/main.jsx, src/chordinal/main.jsx) into dist/app.js and dist/chordinal.js
+# bundle the UI (src/chordinal/main.jsx) into dist/chordinal.js
 build: deps
     node tools/build.mjs
-
-# build and run Music Generator without installing: projects save into projects/
-app: build
-    #!/usr/bin/env sh
-    if [ "$(uname)" = Darwin ]; then
-        open -W -n node_modules/electron/dist/Electron.app --args "$PWD"
-    else
-        npx electron .
-    fi
 
 # on macOS it starts through `open`, so macOS asks for the microphone for the app, not for the terminal
 # build and run Chordinal, the DAW for making music by hand: its projects are folders anywhere (Documents/Chordinal/ by default)
@@ -42,9 +32,9 @@ dev: build
     node tools/build.mjs --watch & watcher=$!
     trap 'kill $watcher' EXIT INT TERM
     if [ "$(uname)" = Darwin ]; then
-        open -W -n node_modules/electron/dist/Electron.app --args "$PWD" --dev
+        open -W -n node_modules/electron/dist/Electron.app --args "$PWD/electron/chordinal.js" --dev
     else
-        npx electron . --dev
+        npx electron electron/chordinal.js --dev
     fi
 
 # syntax-check every module, bundle the UI (which checks the .jsx), and check the layer rules
@@ -74,21 +64,17 @@ whistle +args:
 catalog:
     node tools/sf2-catalog.mjs
 
-# assets/icon.svg goes to assets/icon/, assets/chordinal.svg to assets/chordinal-icon/; needs Inkscape
-# render each app's icon as icon.icns, icon.ico and icon.png
+# assets/chordinal.svg goes to assets/chordinal-icon/; needs Inkscape
+# render the app's icon as icon.icns, icon.ico and icon.png
 icons:
-    bash tools/make-icons.sh assets/icon.svg assets/icon
     bash tools/make-icons.sh assets/chordinal.svg assets/chordinal-icon --work build/chordinal-icons
 
-# into release/music-generator/ and release/chordinal/ (macOS: .dmg and .zip; Windows: installer; Linux: .flatpak)
-# each comes with GeneralUser GS (downloaded first if missing); the other libraries are downloaded in the app
-# e.g. just package   ·   just package chordinal
-# build both installable apps for this OS, or the ones named
-package *apps="music-generator chordinal": build
-    #!/usr/bin/env sh
-    set -e
+# into release/chordinal/ (macOS: .dmg and .zip; Windows: installer; Linux: .flatpak)
+# it comes with GeneralUser GS (downloaded first if missing); the other libraries are downloaded in the app
+# build the installable app for this OS
+package: build
     bash tools/fetch-soundfonts.sh generaluser
-    for a in {{apps}}; do npx electron-builder --config "packaging/$a.json" --publish never; done
+    npx electron-builder --config packaging/chordinal.json --publish never
 
 # download the openly licensed SoundFont libraries into soundfonts/ (all, or those named); ones already there are skipped
 # e.g. just soundfonts   ·   just soundfonts generaluser

@@ -1,16 +1,5 @@
 # Controls
 
-## Music Generator
-
-| | Keyboard | Mouse |
-| --- | --- | --- |
-| Play and stop | `Space` | **▶** and **■**; **■** twice goes back to the start |
-| Go to the start | `Return` | **⏮**, or click the song's bar to move the playhead |
-| Write a new song, save it | `Cmd N`, `Cmd S` | **New…**, **Save**, or **New song…** above the list |
-| Open a song | File ▸ Open Song | click it in the list |
-| Edit it in Chordinal | File ▸ Open in Chordinal | **Open in Chordinal** |
-| Export as audio or MIDI | `Cmd B`, `Cmd E` | |
-
 ## Chordinal
 
 | | Keyboard | Mouse or MIDI |

@@ -1,22 +1,18 @@
 # Features
 
-This repo makes two apps. **Music Generator** writes songs and plays them. **Chordinal** is a DAW laid out like one (a transport, a browser, an arrangement, a step grid, a piano roll and a mixer), in a dark or a light theme, where you change those songs or make your own, and where whistling turns into notes.
+**Chordinal** is a DAW laid out like one (a transport, a browser, an arrangement, a step grid, a piano roll and a mixer), in a dark or a light theme, where you make music by hand, have the composer write parts, and turn whistling into notes.
 
 ## Projects
 
-A project is a folder with a `project.json`: tracks, clips of notes, instruments, the mixer, tempo, meter, markers and a chord track. Music Generator keeps its songs in `projects/`, the 38 it ships with among them. Chordinal keeps projects anywhere, in `Documents/Chordinal/` unless you pick somewhere else. Both read the same file, so a song opens in either.
+A project is a folder with a `project.json`: tracks, clips of notes, instruments, the mixer, tempo, meter, markers and a chord track. Chordinal keeps projects anywhere, in `Documents/Chordinal/` unless you pick somewhere else. The 38 songs the composer writes are in the checkout's `projects/` folder as projects too, and open with **File ▸ Open…**.
 
-## Music Generator
+## The window
 
-The window is the songs at the left, a player across the top, and the open song: its sections along a bar you can click to move the playhead, and its tracks. **New…** writes a song (below), **Save** keeps it in `projects/`, and **Open in Chordinal** copies it into `Documents/Chordinal/<title>/` and opens it there to edit. If Chordinal isn't installed, the folder is shown in the Finder instead. Nothing in Music Generator edits a song.
-
-## Chordinal
-
-Everything from here on, except Composing and Humanize, is Chordinal's. Each track's header in the arrangement has its mute, solo and a volume knob: double-click it to edit the track (a drum track opens the step grid), drag it to reorder, and drag instruments onto it from the browser at the left, where clicking an instrument or kit plays a preview. **Track ▸ Generate Part…** has the composer write one part (drums, bass, chords, pad, arpeggio, melody or countermelody) in a style you pick, over the chords already there, and **Generate Again** (`Cmd G`) writes it again from another seed.
+Each track's header in the arrangement has its mute, solo and a volume knob: double-click it to edit the track (a drum track opens the step grid), drag it to reorder, and drag instruments onto it from the browser at the left, where clicking an instrument or kit plays a preview. **Track ▸ Generate Part…** has the composer write one part (drums, bass, chords, pad, arpeggio, melody or countermelody) in a style you pick, over the chords already there, and **Generate Again** (`Cmd G`) writes it again from another seed.
 
 ## Composing
 
-In Music Generator, **New…** writes a song from a feeling, a genre or one of the songs: melody, countermelody, arpeggio, chords, pad, bass and drums, written by rule. Each choice always comes out the same; **Roll** a seed for another song in that style, and type a seed back in to get it again.
+The composer writes whole songs from a feeling, a genre or one of its songs: melody, countermelody, arpeggio, chords, pad, bass and drums, written by rule. Each choice always comes out the same, and a seed gives another song in that style. In Chordinal it writes one part at a time (**Generate Part…**); whole songs come from the command line (`just compose`, `just projects`) and go to the games.
 
 Twelve genre songs each tell a story, scene by scene: bossa nova, reggae, funk, synthwave, lo-fi hip hop, tango, country, celtic, chiptune, gospel, cinematic and blues, plus solo piano pieces with a left hand, rubato and ornaments. The game music loops; a boss fight switches into 7/4.
 

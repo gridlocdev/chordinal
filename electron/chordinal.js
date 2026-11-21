@@ -1,12 +1,12 @@
-// Chordinal's desktop app (the window and what it shares with Music Generator are in shell.js). Projects are folders
+// Chordinal's desktop app (the window, the settings, the menus and the SoundFonts are in shell.js). Projects are folders
 // anywhere on disk (Chordinal PRD §4), reached through tools/project-folders.mjs: only those the user picked or has in
 // Open Recent. New projects are saved in Documents/Chordinal/ unless the user picks somewhere else.
 //
 // Closing the window or quitting while the project has unsaved changes (§4.7): the page asks its own question, in the
 // window ("Save changes to …?"), saves if told to, then tells this side to close.
 //
-// A project folder handed over when Chordinal starts (on the command line, or by the Finder or Music Generator's Open
-// in Chordinal through macOS's open-file) opens instead of the last project; one handed over while it runs opens like
+// A project folder handed over when Chordinal starts (on the command line, or by the Finder through macOS's
+// open-file) opens instead of the last project; one handed over while it runs opens like
 // Open Recent, after the unsaved-changes question.
 import './headless-errors.js';   // first: a headless run exits on an uncaught error instead of showing a dialog
 import { app, BrowserWindow } from 'electron';

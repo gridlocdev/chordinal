@@ -37,7 +37,7 @@ test('a project file reads back as the project it was written from, with one lin
     assert.equal(back.tracks[0].clips[0].notes[1].vibrato, true);
     assert.ok(Math.abs(back.tracks[0].clips[0].notes[1].beats - 1 / 3) < 1e-4);
     assert.deepEqual(back.tracks.map(t => t.mixer), p.tracks.map(t => t.mixer));
-    assert.throws(()=> readProject('{"format":"something-else"}'), /not a Music Generator project/);
+    assert.throws(()=> readProject('{"format":"something-else"}'), /not a Chordinal project/);
     assert.throws(()=> readProject(JSON.stringify({ format: 'music-generator-project', version: 99 })), /version 99/);
 });
 

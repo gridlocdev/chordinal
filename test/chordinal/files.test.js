@@ -52,7 +52,7 @@ test('the first start opens a new project with nothing to save, and asks nothing
     assert.equal(asking.value, null);
 });
 
-test('a folder handed over at start-up (Open in Chordinal) opens instead of the last project; one handed over later asks first (§9.2)', async ()=>
+test('a folder handed over at start-up (from the command line or the Finder) opens instead of the last project; one handed over later asks first (§9.2)', async ()=>
 {
     const a = '/docs/Chordinal/Handed', b = '/docs/Chordinal/Later';
     for (const [dir, title] of [[a, 'Handed'], [b, 'Later']]) disk.set(dir, writeProject({ ...newSongProject(), title }));

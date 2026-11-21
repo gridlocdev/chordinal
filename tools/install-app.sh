@@ -1,24 +1,14 @@
 #!/usr/bin/env bash
-# Installs Music Generator or Chordinal as a desktop app that runs this checkout (its code and soundfonts/), so
-# changes here show up the next time it opens.
+# Installs Chordinal as a desktop app that runs this checkout (its code and soundfonts/), so changes here show up the
+# next time it opens.
 #
-#   install-app.sh [music-generator|chordinal]
-#
-# On macOS: ~/Applications/<name>.app, a renamed copy of the Electron in node_modules with its own name and bundle id,
-# so macOS asks for the microphone for it (Chordinal records whistling). On Linux: a launcher in ~/.local/share/applications. Run it again after
-# moving the checkout or updating Electron.
+# On macOS: ~/Applications/Chordinal.app, a renamed copy of the Electron in node_modules with its own name and bundle
+# id, so macOS asks for the microphone for it (Chordinal records whistling). On Linux: a launcher in
+# ~/.local/share/applications. Run it again after moving the checkout or updating Electron.
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
-case "${1:-music-generator}" in
-music-generator)
-    id=music-generator name='Music Generator' entry=electron/main.js icon=assets/icon
-    mic='' ;;
-chordinal)
-    id=chordinal name='Chordinal' entry=electron/chordinal.js icon=assets/chordinal-icon
-    mic="$name listens to your whistling to write it out as notes." ;;
-*)
-    sed -n '5p' "$0" >&2; exit 1 ;;
-esac
+id=chordinal name='Chordinal' entry=electron/chordinal.js icon=assets/chordinal-icon
+mic="$name listens to your whistling to write it out as notes."
 
 case "$(uname)" in
 Darwin)
@@ -56,7 +46,7 @@ EOF
     echo "installed $dest"
     ;;
 *)
-    echo "install the app with: npx electron ." >&2
+    echo "run the app with: just chordinal" >&2
     exit 1
     ;;
 esac

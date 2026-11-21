@@ -1,8 +1,8 @@
 # Development
 
-Music Generator is an Electron app. Its interface is [Preact](https://preactjs.com) with
+Chordinal is an Electron app. Its interface is [Preact](https://preactjs.com) with
 [signals](https://preactjs.com/guide/v10/signals/), written in JSX and bundled by
-[esbuild](https://esbuild.github.io) into `dist/app.js`. Everything under the interface (the
+[esbuild](https://esbuild.github.io) into `dist/chordinal.js`. Everything under the interface (the
 composer, the whistle transcription, the SoundFont 2 parser and the Web Audio sampler, all written
 from scratch) is plain JavaScript ES modules that also run as they are in Node, for the tools and
 tests. The rules in `AGENTS.md` at the repository root apply to everyone working on it, and the
@@ -15,14 +15,13 @@ You need Node.js, Python 3 and [just](https://github.com/casey/just).
 ```bash
 just deps        # install the pinned Preact, signals, esbuild and Electron into node_modules
 just soundfonts  # download GeneralUser GS, FluidR3_GM and MuseScore_General into soundfonts/
-just build       # bundle src/app/main.jsx and src/chordinal/main.jsx into dist/
-just app         # build, then run Music Generator in its own window
-just chordinal   # build, then run Chordinal
+just build       # bundle src/chordinal/main.jsx into dist/
+just chordinal   # build, then run Chordinal in its own window
 just dev         # rebuild on every change and reload the window
-just install     # install both as apps: ~/Applications/Music Generator.app and Chordinal.app on macOS
+just install     # install it as an app: ~/Applications/Chordinal.app on macOS
 ```
 
-`just build`, `just app`, `just dev` and `just install` run `just deps` first if anything is
+`just build`, `just chordinal`, `just dev` and `just install` run `just deps` first if anything is
 missing. `dist/` is ignored by git.
 
 ## Checking your work
@@ -38,8 +37,8 @@ just test    # node --test: the tests in test/ for lib/ and *-data.js files
 
 Songs are plain specs in `src/composer/`: `songs-data.js`, `genre-songs-data.js` (one
 per genre, each with a story), `game-songs-data.js` (the game music), `chip-songs-data.js`
-(chiptune in different moods) and `classical-songs-data.js` (solo piano). Each is a preset in the
-app's New dialog (New → Song), which composes it into a new project. The spec format and how the
+(chiptune in different moods) and `classical-songs-data.js` (solo piano). Each is a song the
+composer writes (`just compose <id>`). The spec format and how the
 composer reads it are in [composing.md](composing.md#12-the-song-spec-writing-a-song).
 
 The songs are also kept as project files in `projects/`, which open like any other project and can
@@ -94,7 +93,7 @@ the chords there. Fix notes in the piano roll like any others.
 
 **New from melody** (in the piano roll's toolbar) takes the selected clip and the chords over it
 (guessing chords from the melody where none were whistled) and composes a band round it in a new
-project. In a saved project each take's audio is kept as `projects/<name>/takes/take-n.wav`
+project. In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav`
 (ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it
 again. Audio files dropped on a track are read the same way, at the project's tempo.
 
@@ -160,20 +159,15 @@ http://localhost:8010/tools/ab/ (or the next free port) that renders every song 
 and with your checkout, side by side, so you can hear what a change did. It shows each render's
 length, peak and loudness, has a blind mode, and saves the WAVs in `.ab/out/`, which git ignores.
 
-### The desktop apps
+### The desktop app
 
-`just app` runs Music Generator from the checkout in Electron, and `just chordinal` runs Chordinal. `just install` (`tools/install-app.sh music-generator`, then `chordinal`) makes each an app you open from the Dock: on macOS a copy of the Electron in `node_modules`, renamed to the app with its own bundle id and icon, whose only code is a stub that loads `electron/main.js` or `electron/chordinal.js` from the checkout, so it always runs what's checked out (as last built), with its `soundfonts/` (and Music Generator's `projects/`). Being installed apps, Music Generator's Open in Chordinal starts the installed Chordinal. On Linux it adds a launcher for each to `~/.local/share/applications`. Run it again after moving the checkout or updating Electron. To share them, make release builds (below).
+`just chordinal` runs Chordinal from the checkout in Electron (`electron/chordinal.js`). `just install` (`tools/install-app.sh`) makes it an app you open from the Dock: on macOS a copy of the Electron in `node_modules`, renamed to Chordinal with its own bundle id and icon, whose only code is a stub that loads `electron/chordinal.js` from the checkout, so it always runs what's checked out (as last built), with its `soundfonts/`. On Linux it adds a launcher to `~/.local/share/applications`. Run it again after moving the checkout or updating Electron. To share it, make release builds (below).
 
-`electron/shell.js` serves the repository on a private `app://game/` origin and lets that origin (and
-nothing else) use the microphone, for both apps. Music Generator's `electron/main.js` answers the `projects/` requests (`tools/project-files.mjs`: list the projects, save one, keep and list its takes). The
-settings (library, panel sizes, browser tab, last project, grid) go to `save.json` in Electron's user data
-folder through `electron/preload.cjs`. Only Chordinal records. On macOS `just chordinal` starts Electron with `open`, so the microphone prompt is for the app and not for the terminal. If you refused it, turn on Electron (or Chordinal, for the installed app) under System Settings → Privacy & Security → Microphone.
+`electron/shell.js` serves the repository on a private `app://game/` origin and lets that origin (and nothing else) use the microphone. The settings (library, panel sizes, browser tab, last project, grid, theme) go to `save.json` in Electron's user data folder (`Chordinal`) through `electron/preload.cjs`, beside Open Recent. Projects are folders anywhere on disk, saved in `Documents/Chordinal/` unless you pick somewhere else. On macOS `just chordinal` starts Electron with `open`, so the microphone prompt is for the app and not for the terminal. If you refused it, turn on Electron (or Chordinal, for the installed app) under System Settings → Privacy & Security → Microphone.
 
-Each app's icon is drawn by hand: Music Generator's in `assets/icon.svg`, Chordinal's in `assets/chordinal.svg`, each a tile on Apple's icon grid with a white glyph. `just icons` (`tools/make-icons.sh`, needs Inkscape) renders them into `assets/icon/` and `assets/chordinal-icon/`: `icon.icns` for the macOS app, which `just install` copies into the bundle, and `icon.ico` and `icon.png` for Windows and Linux (`icon` in each app's entry picks its window's). The rendered files are committed, so only a change to an SVG needs Inkscape.
+The icon is drawn by hand in `assets/chordinal.svg`, a tile on Apple's icon grid with a white glyph. `just icons` (`tools/make-icons.sh`, needs Inkscape) renders it into `assets/chordinal-icon/`: `icon.icns` for the macOS app, which `just install` copies into the bundle, and `icon.ico` and `icon.png` for Windows and Linux (`icon` in the app's entry picks its window's). The rendered files are committed, so only a change to the SVG needs Inkscape.
 
-`just chordinal` runs Chordinal from the same checkout (`electron/chordinal.js`). Its projects are folders anywhere on disk, saved in `Documents/Chordinal/` unless you pick somewhere else, and its settings and Open Recent are in its own user data folder (`Chordinal`), apart from Music Generator's.
-
-Two flags help while working on either:
+Two flags help while working on it:
 
 - `--dev` (what `just dev` passes) reloads the window whenever `dist/` changes.
 - `--headless` shows no window and mutes the audio, asks for no microphone, and keeps its settings
@@ -196,24 +190,17 @@ Two flags help while working on either:
 
 ### Release builds
 
-`just package` builds both installable apps for this OS with electron-builder, one config each in `packaging/`: `music-generator.json` into `release/music-generator/`, and `chordinal.json` into `release/chordinal/` (`just package chordinal` builds one). Chordinal's config swaps the entry (`extraMetadata.main`), the app id (`dev.gridloc.chordinal`), the name and the icon, and is the one that asks for the microphone. On macOS each is a `.dmg` and a `.zip` for Apple silicon and for Intel, ad-hoc signed and not notarized; on Windows an NSIS installer; on Linux a `.flatpak` bundle. The Flatpak needs `flatpak` and `flatpak-builder` and the Flathub remote (`flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo`), from which it installs the freedesktop runtime and the Electron base app it's built on (version `flatpak.runtimeVersion`). Both may use Wayland or X11, the GPU, the network (downloads) and PulseAudio or PipeWire (sound, and Chordinal's microphone); Music Generator gets `~/Documents`, and Chordinal the home folder, since its projects can be anywhere. Their settings and downloaded libraries go in `~/.var/app/<app id>/`. Each carries `dist/`, `src/`, `electron/`, the docs and the tools its main process uses, unpacked (no asar), plus, as resources, `soundfonts/GeneralUser-GS/` (downloaded first if it's missing) and, for Music Generator, every `projects/*/project.json`. `test/tools/packaging.test.js` follows each app's imports from its entry and page and fails when a file it loads isn't in its config's `files`.
+`just package` builds the installable app for this OS with electron-builder, from `packaging/chordinal.json`, into `release/chordinal/`. On macOS it is a `.dmg` and a `.zip` for Apple silicon and for Intel, ad-hoc signed and not notarized; on Windows an NSIS installer; on Linux a `.flatpak` bundle. The Flatpak needs `flatpak` and `flatpak-builder` and the Flathub remote (`flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo`), from which it installs the freedesktop runtime and the Electron base app it's built on (version `flatpak.runtimeVersion`). It may use Wayland or X11, the GPU, the network (downloads), PulseAudio or PipeWire (sound and the microphone), and the home folder, since projects can be anywhere. Its settings and downloaded libraries go in `~/.var/app/<app id>/`. It carries `dist/`, `src/`, `electron/`, the docs and the tools its main process uses, unpacked (no asar), plus, as a resource, `soundfonts/GeneralUser-GS/` (downloaded first if it's missing). `test/tools/packaging.test.js` follows the app's imports from its entry and page and fails when a file it loads isn't in the config's `files`.
 
-A release build keeps its files in other places than the checkout (`app.isPackaged` in `electron/shell.js` and `electron/main.js`), and Music Generator's Open in Chordinal starts the installed Chordinal on macOS (`open -a Chordinal`) and only shows the copied folder elsewhere:
+A release build takes its SoundFonts from the app's resources, then from `soundfonts/` in Electron's user data folder, where the Instruments tab's **Download** puts FluidR3_GM and MuseScore_General (`tools/soundfont-download.mjs`: the same sources as `tools/fetch-soundfonts.sh`, read as they stream in, into a temporary folder renamed when done; `app.isPackaged` in `electron/shell.js`).
 
-- projects are in `Documents/Music Generator/projects`, copied from the bundled ones the first
-  time it opens (if that folder isn't there);
-- SoundFonts come from the app's resources, then from `soundfonts/` in Electron's user data folder,
-  where the Instruments tab's **Download** puts FluidR3_GM and MuseScore_General
-  (`tools/soundfont-download.mjs`: the same sources as `tools/fetch-soundfonts.sh`, read as they
-  stream in, into a temporary folder renamed when done).
+A headless run uses a temporary user data and Documents folder, so a test of a release build can launch `release/chordinal/mac-arm64/Chordinal.app/Contents/MacOS/Chordinal --headless` with Playwright's `_electron.launch({ executablePath })`. `npx electron-builder --mac dir --arm64 --config packaging/chordinal.json` builds only the `.app`, which is quicker for that.
 
-A headless run uses a temporary Documents folder, so a test of a release build can launch `release/music-generator/mac-arm64/Music Generator.app/Contents/MacOS/Music Generator --headless` (or `release/chordinal/mac-arm64/Chordinal.app/Contents/MacOS/Chordinal --headless`) with Playwright's `_electron.launch({ executablePath })` and find the projects copied into `$TMPDIR/music-generator-headless-documents`. `npx electron-builder --mac dir --arm64 --config packaging/<app>.json` builds only the `.app`, which is quicker for that.
-
-To publish a release, set `version` in `package.json`, commit, and push a tag `v<version>`. `.github/workflows/release.yml` tests and builds both apps on macOS, Windows and Linux and attaches all the builds to one draft release on GitHub, so a fix to the code they share ships in both; check it and publish it there.
+To publish a release, set `version` in `package.json`, commit, and push a tag `v<version>`. `.github/workflows/release.yml` tests and builds the app on macOS, Windows and Linux and attaches the builds to one draft release on GitHub; check it and publish it there.
 
 ## Adding a command
 
-Add it to `COMMANDS` in `src/ui/commands.js` with a label, an `accelerator` (a Cmd shortcut the menu bar answers) or `shown` (a plain key the page answers, which still types in a text field; never one of the musical-typing letters `A`–`L`, `;`, `'`, `W E T Y U O P`, `Z`, `X`; a letter waits while the piano roll has the focus, since its letters play notes there), and `enabled`/`checked` if it has them. Mark it `field: true` if it changes the project and its Cmd shortcut should go to a text field that has focus instead (Cmd+Backspace deletes text there, not the track). Then put `item('id')` in the shared menus in `src/ui/menu-bar.js` (or an app's File menu in `src/app/menu-bar.js` or `src/chordinal/menu-bar.js`) and in any right-click menu in `src/ui/context-menus.js` it belongs in.
+Add it to `COMMANDS` in `src/ui/commands.js` with a label, an `accelerator` (a Cmd shortcut the menu bar answers) or `shown` (a plain key the page answers, which still types in a text field; never one of the musical-typing letters `A`–`L`, `;`, `'`, `W E T Y U O P`, `Z`, `X`; a letter waits while the piano roll has the focus, since its letters play notes there), and `enabled`/`checked` if it has them. Mark it `field: true` if it changes the project and its Cmd shortcut should go to a text field that has focus instead (Cmd+Backspace deletes text there, not the track). Then put `item('id')` in the shared menus in `src/ui/menu-bar.js` (or the File menu in `src/chordinal/menu-bar.js`) and in any right-click menu in `src/ui/context-menus.js` it belongs in.
 
 ## SoundFont libraries
 

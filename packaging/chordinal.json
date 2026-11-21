@@ -11,7 +11,7 @@
     "dist/**",
     "src/**",
     "electron/**",
-    "tools/project-files.mjs",
+    "tools/write-atomic.mjs",
     "tools/project-folders.mjs",
     "tools/settings-file.mjs",
     "tools/soundfont-download.mjs",

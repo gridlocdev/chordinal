@@ -42,7 +42,7 @@ test('the shortcuts left to a text field are the editing ones; File and View sho
 {
     const field = Object.keys(COMMANDS).filter(id => COMMANDS[id].field);
     assert.deepEqual(field.sort(), ['deleteTrack', 'duplicate', 'duplicateTrack', 'join', 'makePattern', 'newTrack', 'split', 'trackDown', 'trackUp']);
-    for (const id of ['save', 'saveAs', 'new', 'open', 'zoomIn', 'roll']) assert.ok(!COMMANDS[id].field, id);
+    for (const id of ['save', 'saveAs', 'revert', 'zoomIn', 'roll']) assert.ok(!COMMANDS[id].field, id);
 });
 
 test('the letters play notes only while the piano roll is showing and focused, and B toggles the browser everywhere else', ()=>

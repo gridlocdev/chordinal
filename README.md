@@ -1,12 +1,12 @@
-# Music Generator
+# Chordinal
 
-I built Music Generator to make it easier to create music for the games I make. It composes: pick a feeling, a genre or one of its songs, and it writes a whole song for you, from melody and chords to bass and drums. Its companion app, Chordinal, is a small DAW for making music by hand: open a song there to change it, or start from nothing.
+I built Chordinal to make it easier to create music for the games I make. It's a small DAW for making music by hand, with a composer that can write a part for you and a sketchpad that turns whistling into notes.
 
 ![The Warden boss fight open in the app: the transport across the top, the browser on the left, the arrangement with a row per track (melody muted), and the melody's piano roll at the bottom with its chords above](docs/images/daw.webp)
 
-- **Composes new songs.** **New…** writes a song from a feeling, a genre or one of the 38 songs it ships with, and **Roll** gives you another in the same style. **Open in Chordinal** hands it over to edit.
-- **Edits and mixes like a DAW (Chordinal).** A channel rack, a step grid, a piano roll, linked patterns and a mixer, with any instrument from three free sound libraries on any track, and **Generate Part…** to have the composer write one part.
-- **Turns whistling into notes (Chordinal).** Whistle a melody onto any track or a chord onto the chord track, then **New from Melody** composes a band around it.
+- **Edits and mixes like a DAW.** A step grid, a piano roll, linked patterns and a mixer, with any instrument from three free sound libraries on any track.
+- **Composes parts.** **Generate Part…** has the composer write a melody, chords, bass or drums in a feeling or a genre, and **Generate Again** rolls another.
+- **Turns whistling into notes.** Whistle a melody onto any track or a chord onto the chord track, then **New from Melody** composes a band around it.
 
 ## Getting started
 

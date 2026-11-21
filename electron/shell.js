@@ -1,9 +1,9 @@
-// What both desktop apps share (Chordinal PRD §3.1): one window running a page built into dist/, served over
+// The desktop app's window and what it serves (Chordinal PRD §3.1): one window running a page built into dist/, served over
 // app://game/ instead of file://, so modules and the mic's worklet load. It may use the microphone without asking each
 // time (macOS asks once, for the app), and the settings are kept in a file in the app's data folder, which is the
 // app's own. The SoundFonts are those in soundfonts/ when run from this checkout; installed from a release build, the
 // ones that came with the app and those downloaded into its data folder. With --dev the window reloads whenever dist/
-// is rebuilt. Each app's entry (main.js, chordinal.js) says what is its own: its name, its page, where its projects are.
+// is rebuilt. The entry (chordinal.js) says what is its own: its name, its page, where its projects are.
 import { app, BrowserWindow, dialog, ipcMain, net, protocol, session, shell, systemPreferences } from 'electron';
 import fs from 'node:fs/promises';
 import { watch } from 'node:fs';
@@ -31,18 +31,16 @@ export const exists = (file)=> fs.access(file).then(()=> true, ()=> false);
  * @typedef {object} Shell  what an app's entry hands its hooks
  * @property {boolean} headless
  * @property {boolean} packaged
- * @property {ReturnType<typeof screenCalls>} screen  dialogs, the Finder and other apps, kept off the screen headless
+ * @property {ReturnType<typeof screenCalls>} screen  dialogs and the Finder, kept off the screen headless
  * @property {Electron.IpcMain} ipcMain
  *
  * @typedef {object} AppConfig
  * @property {string} name  the app's name, which names its data folder
  * @property {string} id  a short name for the headless run's folders
- * @property {string} page  the page it loads, beside index.html
+ * @property {string} page  the page it loads, at the checkout's root
  * @property {string} icon  the folder in assets/ holding its icon.png, for the window on Windows and Linux
  * @property {boolean} [askMicrophone]  asks for the microphone at start-up (macOS)
  * @property {(shell: Shell)=> Promise<void>|void} [setup]  its own IPC, before the window opens
- * @property {(shell: Shell, url: string, method: string, body: ()=> Promise<Uint8Array>)=> Promise<Response|null>} [request]
- *   answers its own app:// requests (projects/), or null for the shared ones
  * @property {(shell: Shell, win: BrowserWindow)=> void} [window]  its own handling of the window
  */
 
@@ -63,7 +61,7 @@ export function startShell(config)
     /** the SoundFont folders, searched in order: the ones that came with the app, then the ones downloaded (the last) */
     const FONT_DIRS = ()=> PACKAGED ? [path.join(process.resourcesPath, 'soundfonts'), path.join(app.getPath('userData'), 'soundfonts')] : [path.join(ROOT, 'soundfonts')];
 
-    /** where a url of the page (index.html's folder) is on disk: a SoundFont, or a file of the app */
+    /** where a url of the page (the checkout's root) is on disk: a SoundFont, or a file of the app */
     async function fileOf(url)
     {
         const rel = decodeURIComponent(url).replace(/^\/+/, '');
@@ -76,7 +74,6 @@ export function startShell(config)
             }
             return null;
         }
-        if (rel.startsWith('projects/')) return null;
         return within(ROOT, rel);
     }
 
@@ -219,12 +216,10 @@ export function startShell(config)
     app.whenReady().then(async ()=>
     {
         await config.setup?.(ctx);
-        // the app's own requests (saving projects), then files of the app and SoundFonts only
+        // files of the app and SoundFonts only
         protocol.handle('app', async (request)=>
         {
             const { pathname } = new URL(request.url);
-            const own = await config.request?.(ctx, pathname, request.method, async ()=> new Uint8Array(await request.arrayBuffer()));
-            if (own) return own;
             const file = await fileOf(pathname);
             if (!file) return new Response('not found', { status: 404 });
             return net.fetch(pathToFileURL(file).toString());

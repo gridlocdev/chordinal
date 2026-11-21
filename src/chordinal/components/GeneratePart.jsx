@@ -8,8 +8,10 @@ import { styleName } from '../../composer/part.js';
 import { MODES, pitchName } from '../../lib/music-theory.js';
 import { project } from '../../ui/store.js';
 import { trackOf } from '../../ui/tracks.js';
-import { rollSeed } from '../../ui/components/NewProject.jsx';
 import { generating, closeGenerate, generatePart, defaultPart, rangeChoices, canAgain, PARTS } from '../generate.js';
+
+/** a short seed, easy to read back and type in again */
+export const rollSeed = ()=> Math.floor(Math.random() * 36 ** 4).toString(36).padStart(4, '0');
 
 const cap = (s)=> `${s[0].toUpperCase()}${s.slice(1)}`;
 const MODE_NAMES = Object.keys(MODES);
