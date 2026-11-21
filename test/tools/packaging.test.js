@@ -61,5 +61,7 @@ test('the app asks for the microphone, runs electron/chordinal.js, and keeps its
     assert.equal(ch.extraMetadata.productName, ch.productName);
     assert.ok(ch.mac.extendInfo.NSMicrophoneUsageDescription);
     assert.equal(pkg.main, 'electron/chordinal.js');
+    assert.equal(pkg.name, 'chordinal');
+    assert.equal(pkg.homepage, 'https://github.com/gridlocdev/chordinal');
     assert.equal(pkg.build, undefined, 'the build settings live in packaging/, not package.json');
 });

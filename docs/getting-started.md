@@ -2,7 +2,7 @@
 
 Chordinal is a ready-to-run download for each platform. Every download includes everything it needs, including the GeneralUser GS sound library, so you don't have to install Node.js or anything else first.
 
-Downloads are on the project's GitHub [Releases](https://github.com/gridlocdev/music-generator/releases) page. Pick the file for your system:
+Downloads are on the project's GitHub [Releases](https://github.com/gridlocdev/chordinal/releases) page. Pick the file for your system:
 
 | System | File | How to start it |
 |---|---|---|
