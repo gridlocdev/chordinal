@@ -16,11 +16,12 @@ const LIMIT_MS = 15000;
 const APPS = [
     { id: 'chordinal', entry: 'apps/desktop/dist/chordinal.js', ready: '.lane' },
 ];
+const PROFILE = path.join(os.tmpdir(), `chordinal-test-${process.pid}`);
 const built = existsSync(path.join(ROOT, 'apps/web/dist/chordinal.js'));
 
 async function launch({ entry, ready })
 {
-    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, entry), '--headless'], cwd: ROOT });
+    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, entry), '--headless', `--profile=${PROFILE}`], cwd: ROOT });
     const proc = app.process();
     let stderr = '';
     proc.stderr.on('data', (d)=> { stderr += d; });
@@ -62,7 +63,7 @@ for (const config of APPS)
             await run.page.evaluate((mark)=> { window.appStorage.write({ mark }); }, mark);
             await run.app.evaluate(({ BrowserWindow })=> BrowserWindow.getAllWindows()[0].close());
             assert.equal(await exitOf(run), 0, run.stderr());
-            const saved = JSON.parse(await fs.readFile(path.join(os.tmpdir(), `${config.id}-headless`, 'save.json'), 'utf8'));
+            const saved = JSON.parse(await fs.readFile(path.join(PROFILE, 'data', 'save.json'), 'utf8'));
             assert.equal(saved.mark, mark);
         }
         finally { if (run.proc.exitCode === null) run.proc.kill('SIGKILL'); }

@@ -39,3 +39,4 @@ export * from './store/browser-store.ts';
 export * from './store/native-store.ts';
 export * from './store/save-session.ts';
 export * from './store/classify-file.ts';
+export * from './commands/index.ts';

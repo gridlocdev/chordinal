@@ -17,7 +17,7 @@ import { paste, clipboard } from './clipboard.js';
 import { trackOf, addNewTrack, assignPreset, chooseInstrument, renameTrack, deleteTrack, duplicateTheTrack, moveTrackBy, setTrackColor,
     toggleMute, toggleSolo, setMix, newClipAt, splitClipsAt, joinWithNext, nextClip, setClipBars, quantizeClip,
     transposeClip, loopOver, clipRange, toggleClipMute, humanizeClip, scaleClip, reverseClip, makePatternOf, makeUniqueOf, renamePatternOf } from './tracks.js';
-import { item, snapItems, addMarkerAt, COMMANDS } from './commands.js';
+import { item, snapItems, addMarkerAt, catalog } from './commands.js';
 import { askTempo, askMeter, askTempoChange, askMeterChange } from './timeline.js';
 
 const COLOR_NAMES = ['Amber', 'Sky', 'Green', 'Pink', 'Violet', 'Orange', 'Grey'];
@@ -88,7 +88,7 @@ export function clipMenu(trackId, clipId, at)
         { label: 'Mute Clip', checked: !!c?.mute, run: ()=> toggleClipMute(trackId, clipId) },
         '-',
         ...(c?.pattern ? [{ label: 'Rename Pattern…', run: ()=> renamePatternOf(trackId, clipId) }, { label: 'Make Unique', run: ()=> makeUniqueOf(trackId, clipId) }]
-            : [{ label: 'Make Pattern', accelerator: 'CmdOrCtrl+P', run: ()=> makePatternOf(trackId, clipId) }]),
+            : [item('makePattern', { run: ()=> makePatternOf(trackId, clipId) })]),
         '-',
         { label: 'Quantize Notes', run: ()=> quantizeClip(trackId, clipId) },
         { label: 'Humanize', run: ()=> humanizeClip(trackId, clipId) },
@@ -147,8 +147,8 @@ export function rulerMenu(at)
         { label: 'Loop This Bar', run: ()=> loopOver({ from: bar, to: bar + barAt(p.meters, at).beatsPerBar }) },
         { label: 'Loop Off', enabled: !!p.loop, run: ()=> loopOver(null) },
         '-',
-        item('insertBars', { run: ()=> { seek(bar); COMMANDS.insertBars.run(); } }),
-        item('deleteBars', { run: ()=> { seek(bar); COMMANDS.deleteBars.run(); } }),
+        item('insertBars', { run: ()=> { seek(bar); catalog.get('insertBars')?.run(); } }),
+        item('deleteBars', { run: ()=> { seek(bar); catalog.get('deleteBars')?.run(); } }),
         '-',
         { label: 'Tempo Change Here…', run: ()=> askTempoChange(bar) },
         { label: 'Meter Change Here…', run: ()=> askMeterChange(bar) },

@@ -6,6 +6,6 @@
     "lib": ["ES2023", "DOM"],
     "types": []
   },
-  "include": ["src/store"],
+  "include": ["src/store", "src/commands"],
   "references": [{ "path": "../daw" }]
 }

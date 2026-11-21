@@ -1156,3 +1156,76 @@ input[type='range']::-webkit-slider-thumb {
   flex: 1;
   min-width: 0;
 }
+
+/* ── the command menu (⌘K) and the Keyboard Shortcuts window ────────────────────────────────────────────────────── */
+.dialog.command-menu {
+  align-self: start;
+  margin-top: 12vh;
+  width: min(560px, 92vw);
+  padding: 8px;
+  gap: 6px;
+}
+.dialog.command-menu input,
+.dialog.shortcuts input {
+  font-size: 14px;
+  padding: 8px 10px;
+}
+.dialog.command-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  max-height: 50vh;
+}
+.dialog.command-menu li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  cursor: default;
+}
+.dialog.command-menu li.on {
+  background: var(--accent-soft);
+}
+.dialog.command-menu li.off {
+  color: var(--faint);
+}
+.dialog.command-menu li .title {
+  flex: 1;
+}
+.dialog.command-menu li .group,
+.dialog.command-menu li.empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+.dialog kbd {
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.dialog.shortcuts {
+  width: min(560px, 92vw);
+}
+.dialog.shortcuts .list {
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+}
+.dialog.shortcuts h3 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.dialog.shortcuts dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 16px;
+}
+.dialog.shortcuts dt,
+.dialog.shortcuts dd {
+  margin: 0;
+}

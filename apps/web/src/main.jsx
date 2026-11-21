@@ -20,6 +20,7 @@ import { Arrange } from '@chordinal/ui/components';
 import { Editor } from '@chordinal/ui/components';
 import { ExportDialog } from '@chordinal/ui/components';
 import { Ask } from '@chordinal/ui/components';
+import { CommandMenu, ShortcutsDialog } from '@chordinal/ui/components';
 import { SidePanel } from './components/SidePanel.jsx';
 import { openTrack, addInstrumentTrack, addDrumTrack, dropInstrument } from './rack.js';
 import { GeneratePart } from './components/GeneratePart.jsx';
@@ -59,6 +60,8 @@ function App()
             <ExportDialog />
             <GeneratePart />
             <Ask />
+            <CommandMenu />
+            <ShortcutsDialog />
         </div>
     );
 }

@@ -12,7 +12,7 @@ globalThis.HTMLElement = HTMLElement;
 globalThis.document = { activeElement: null };
 
 const { handleKey } = await import('@chordinal/ui');
-const { COMMANDS } = await import('@chordinal/ui');
+const { catalog } = await import('@chordinal/ui');
 const { hist, selected, settings, setSettings } = await import('@chordinal/ui');
 const { focus, musicalTyping, takingKeys } = await import('@chordinal/ui');
 const { emptyProject, addTrack, makeTrack } = await import('@chordinal/daw');
@@ -40,9 +40,9 @@ test('Cmd+Backspace deletes the track, but not while typing in a text field', ()
 
 test('the shortcuts left to a text field are the editing ones; File and View shortcuts still work while typing', ()=>
 {
-    const field = Object.keys(COMMANDS).filter(id => COMMANDS[id].field);
+    const field = catalog.all.filter(c => c.field).map(c => c.id);
     assert.deepEqual(field.sort(), ['deleteTrack', 'duplicate', 'duplicateTrack', 'join', 'makePattern', 'newTrack', 'split', 'trackDown', 'trackUp']);
-    for (const id of ['save', 'saveAs', 'revert', 'zoomIn', 'roll']) assert.ok(!COMMANDS[id].field, id);
+    for (const id of ['save', 'saveAs', 'revert', 'zoomIn', 'roll']) assert.ok(!catalog.get(id).field, id);
 });
 
 test('the letters play notes only while the piano roll is showing and focused, and B toggles the browser everywhere else', ()=>
@@ -77,11 +77,11 @@ test('while a take records, the letters play notes wherever the focus is, and R 
         assert.equal(musicalTyping(), true);
         assert.equal(handleKey(key('KeyB')), false, 'B is a note during the take');
         assert.equal(settings.value.browserOpen, false);
-        const record = COMMANDS.record.run;
+        const command = catalog.get('record'), record = command.run;
         let stopped = 0;
-        COMMANDS.record.run = ()=> { stopped++; };
+        command.run = ()=> { stopped++; };
         try { assert.equal(handleKey(key('KeyR')), true); }
-        finally { COMMANDS.record.run = record; }
+        finally { command.run = record; }
         assert.equal(stopped, 1);
     }
     finally { takingKeys.value = false; }

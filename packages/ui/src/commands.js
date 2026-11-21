@@ -1,6 +1,7 @@
-// The app's commands: each with its label, shortcut, action and when it can be used, for the menu bar, the keys and
-// the right-click menus alike. Shortcuts with Cmd are answered by the menu bar (`accelerator`); plain keys, which
-// must still type in a text field, by the page (`shown`, matched in keys.js). The menu bar is built in menu-bar.js.
+// The shared commands, in the one catalog (commands/catalog.ts) the keys, the menu bar, the right-click menus, ⌘K and
+// the Keyboard Shortcuts window all read. Shortcuts with Cmd are answered by the native menu bar where there is one;
+// plain keys, which must still type in a text field, by the page (keys.js). The menu bar is built in menu-bar.js; an
+// app adds its own commands with `catalog.add`.
 //
 // What Edit's commands act on follows the part last clicked (focus.js): the picked notes in the piano roll, the
 // selected clip in the arrangement, or the stretch picked on the chord track.
@@ -27,10 +28,15 @@ import { exportDialog } from './bounce.js';
 import { importMidi } from './midi-import.js';
 import { audioEngine } from '@chordinal/playback';
 import { askTempo, askMeter } from './timeline.js';
-import { appDialog } from './dialogs.js';
+import { appDialog, overlay, toggleOverlay } from './dialogs.js';
+import { CommandCatalog } from './commands/index.ts';
+
+/** what holds the commands back: a dialog, ⌘K or the Keyboard Shortcuts window ('overlay'), or nothing */
+const busyWith = ()=> appDialog.value || exportDialog.value || asking.value || audioEngine.rendering || exporting.value ? 'dialog'
+    : overlay.value ? 'overlay' : null;
 
 /** a dialog is open: commands wait */
-export const busy = ()=> !!(appDialog.value || exportDialog.value || asking.value || audioEngine.rendering || exporting.value);
+export const busy = ()=> busyWith() !== null;
 
 // ── what the commands act on ─────────────────────────────────────────────────────────────────────────────────────────
 
@@ -131,118 +137,143 @@ const clipMuted = ()=> { const c = selectedClip.value; return !!c && !!findClip(
 
 const track = ()=> selectedTrack.value;
 
-/**
- * @typedef {{ label: string, run: ()=> any, accelerator?: string, shown?: string, enabled?: ()=> boolean,
- *   checked?: ()=> boolean, radio?: boolean, text?: string, field?: boolean }} Command
- * `field`: while a text field has focus, the command's shortcut is left to the field (Cmd+Backspace deletes to the start
- * of the line there, not the track); the menu item still runs it when clicked.
- * @type {Record<string, Command>}
- */
-export const COMMANDS = {
+const clipCommand = (fn)=> ()=> fn(selectedClip.value.track, selectedClip.value.clip);
+const onNotesOrClip = ()=> inRoll() || clipSelected();
+
+/** the shared commands: what each does, its shortcut and when it can be used (see commands/catalog.ts) */
+export const catalog = new CommandCatalog([
     // File
-    save: { label: 'Save', accelerator: 'CmdOrCtrl+S', run: save },
-    saveAs: { label: 'Save As…', accelerator: 'Shift+CmdOrCtrl+S', run: saveAs },
-    revert: { label: 'Revert to Saved', run: ()=> openProject(projectName.value), enabled: ()=> !!projectName.value && dirty.value },
-    importMidi: { label: 'Import MIDI File…', run: importMidi },
-    exportMidi: { label: 'Export as MIDI File…', accelerator: 'CmdOrCtrl+E', run: exportMidi },
-    exportAudio: { label: 'Export as Audio File…', accelerator: 'CmdOrCtrl+B', run: ()=> { exportDialog.value = true; }, enabled: ()=> project.value.tracks.some(t => t.clips.length) },
+    { id: 'save', group: 'File', title: 'Save', shortcut: 'mod+s', run: save, description: 'Save the project in its folder; the first save asks where.', keywords: 'write store keep' },
+    { id: 'saveAs', group: 'File', title: 'Save As…', shortcut: 'mod+shift+s', run: saveAs, description: 'Save a copy of the project in a new folder, with its takes.', keywords: 'copy duplicate rename' },
+    { id: 'revert', group: 'File', title: 'Revert to Saved', run: ()=> openProject(projectName.value), enabled: ()=> !!projectName.value && dirty.value,
+        description: 'Throw away the changes since the last save.', keywords: 'discard undo reload' },
+    { id: 'importMidi', group: 'File', title: 'Import MIDI File…', run: importMidi, description: 'Open a MIDI file as a new project.', keywords: 'mid load open' },
+    { id: 'exportMidi', group: 'File', title: 'Export as MIDI File…', shortcut: 'mod+e', run: exportMidi, description: 'Save the project as a MIDI file.', keywords: 'mid save' },
+    { id: 'exportAudio', group: 'File', title: 'Export as Audio File…', shortcut: 'mod+b', run: ()=> { exportDialog.value = true; },
+        enabled: ()=> project.value.tracks.some(t => t.clips.length), description: 'Render the mix, or each track, to WAV.', keywords: 'bounce render wav mixdown' },
     // Edit
-    undo: { label: 'Undo', accelerator: 'CmdOrCtrl+Z', text: 'undo', run: undo, enabled: ()=> hist.value.past.length > 0 },
-    redo: { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', text: 'redo', run: redo, enabled: ()=> hist.value.future.length > 0 },
-    cut: { label: 'Cut', accelerator: 'CmdOrCtrl+X', text: 'cut', run: cut, enabled: canCopy },
-    copy: { label: 'Copy', accelerator: 'CmdOrCtrl+C', text: 'copy', run: copy, enabled: canCopy },
-    paste: { label: 'Paste', accelerator: 'CmdOrCtrl+V', text: 'paste', run: ()=> paste(), enabled: ()=> !!clipboard.value && !!selected.value },
-    duplicate: { label: 'Duplicate', accelerator: 'CmdOrCtrl+D', field: true, run: duplicate, enabled: canCopy },
-    delete: { label: 'Delete', shown: 'Backspace', run: deleteSelection, enabled: canDelete },
-    selectAll: { label: 'Select All', accelerator: 'CmdOrCtrl+A', text: 'selectAll', run: ()=> { focus.value = 'roll'; pickAll(); }, enabled: ()=> !!track() },
-    deselect: { label: 'Deselect All', shown: 'Escape', run: ()=> { clearPicked(); selectedClip.value = null; chordRange.value = null; } },
-    split: { label: 'Split at Playhead', accelerator: 'CmdOrCtrl+T', field: true, run: ()=> splitClipsAt(beat.value, selectedClip.value?.track ?? null) },
-    join: { label: 'Join with Next Clip', accelerator: 'CmdOrCtrl+J', field: true, enabled: ()=> !!selectedClip.value && !!nextClip(selectedClip.value.track, selectedClip.value.clip),
-        run: ()=> joinWithNext(selectedClip.value.track, selectedClip.value.clip) },
-    quantize: { label: 'Quantize', shown: 'Q', enabled: ()=> inRoll() || clipSelected(),
-        run: ()=> inRoll() ? quantizePicked() : quantizeClip(selectedClip.value.track, selectedClip.value.clip) },
-    up: { label: 'Transpose Up', shown: 'Up', run: ()=> transposePicked(1), enabled: inRoll },
-    down: { label: 'Transpose Down', shown: 'Down', run: ()=> transposePicked(-1), enabled: inRoll },
-    octaveUp: { label: 'Octave Up', shown: 'Shift+Up', run: ()=> transposePicked(12), enabled: inRoll },
-    octaveDown: { label: 'Octave Down', shown: 'Shift+Down', run: ()=> transposePicked(-12), enabled: inRoll },
-    nudgeLeft: { label: 'Nudge Left', shown: 'Left', enabled: ()=> inRoll() || clipSelected(),
-        run: onSelection(()=> nudgePicked(-settings.value.grid), (t, c)=> nudgeClip(t, c, -barAt(project.value.meters, beat.value).beatsPerBar)) },
-    nudgeRight: { label: 'Nudge Right', shown: 'Right', enabled: ()=> inRoll() || clipSelected(),
-        run: onSelection(()=> nudgePicked(settings.value.grid), (t, c)=> nudgeClip(t, c, barAt(project.value.meters, beat.value).beatsPerBar)) },
-    humanize: { label: 'Humanize', enabled: ()=> inRoll() || clipSelected(), run: onSelection(humanizePicked, humanizeClip) },
-    doubleSpeed: { label: 'Double Speed', enabled: ()=> inRoll() || clipSelected(), run: onSelection(()=> scalePicked(0.5), (t, c)=> scaleClip(t, c, 0.5)) },
-    halfSpeed: { label: 'Half Speed', enabled: ()=> inRoll() || clipSelected(), run: onSelection(()=> scalePicked(2), (t, c)=> scaleClip(t, c, 2)) },
-    reverse: { label: 'Reverse', enabled: ()=> inRoll() || clipSelected(), run: onSelection(reversePicked, reverseClip) },
-    muteClip: { label: 'Mute Clip', shown: 'M', enabled: ()=> !!selectedClip.value, checked: clipMuted,
-        run: ()=> toggleClipMute(selectedClip.value.track, selectedClip.value.clip) },
-    makePattern: { label: 'Make Pattern', accelerator: 'CmdOrCtrl+P', field: true, enabled: ()=> !!selectedClip.value && !patternOf(selectedClip.value.track, selectedClip.value.clip),
-        run: ()=> makePatternOf(selectedClip.value.track, selectedClip.value.clip) },
-    makeUnique: { label: 'Make Unique', enabled: ()=> !!selectedClip.value && !!patternOf(selectedClip.value.track, selectedClip.value.clip),
-        run: ()=> makeUniqueOf(selectedClip.value.track, selectedClip.value.clip) },
-    insertBars: { label: 'Insert Bars at Playhead…', run: ()=> changeBars(true) },
-    deleteBars: { label: 'Delete Bars at Playhead…', run: ()=> changeBars(false) },
+    { id: 'undo', group: 'Edit', title: 'Undo', shortcut: 'mod+z', text: 'undo', run: undo, enabled: ()=> hist.value.past.length > 0, description: 'Take back the last change.', keywords: 'back revert' },
+    { id: 'redo', group: 'Edit', title: 'Redo', shortcut: 'mod+shift+z', text: 'redo', run: redo, enabled: ()=> hist.value.future.length > 0, description: 'Do again the change you took back.', keywords: 'again forward' },
+    { id: 'cut', group: 'Edit', title: 'Cut', shortcut: 'mod+x', text: 'cut', run: cut, enabled: canCopy, description: 'Copy the selected notes or clip, then delete them.' },
+    { id: 'copy', group: 'Edit', title: 'Copy', shortcut: 'mod+c', text: 'copy', run: copy, enabled: canCopy, description: 'Copy the selected notes or clip.' },
+    { id: 'paste', group: 'Edit', title: 'Paste', shortcut: 'mod+v', text: 'paste', run: ()=> paste(), enabled: ()=> !!clipboard.value && !!selected.value,
+        description: 'Paste at the playhead, on the selected track.' },
+    { id: 'duplicate', group: 'Edit', title: 'Duplicate', shortcut: 'mod+d', field: true, run: duplicate, enabled: canCopy, description: 'Put a copy of the selected notes or clip right after them.', keywords: 'dup clone repeat' },
+    { id: 'delete', group: 'Edit', title: 'Delete', shortcut: 'backspace', alternates: ['delete'], run: deleteSelection, enabled: canDelete,
+        description: 'Delete the selected notes, clip or chords.', keywords: 'remove erase' },
+    { id: 'selectAll', group: 'Edit', title: 'Select All', shortcut: 'mod+a', text: 'selectAll', run: ()=> { focus.value = 'roll'; pickAll(); }, enabled: ()=> !!track(),
+        description: 'Select every note in the piano roll.' },
+    { id: 'deselect', group: 'Edit', title: 'Deselect All', shortcut: 'esc', run: ()=> { clearPicked(); selectedClip.value = null; chordRange.value = null; },
+        description: 'Select no notes, clip or chords.', keywords: 'none clear' },
+    { id: 'split', group: 'Edit', title: 'Split at Playhead', shortcut: 'mod+t', field: true, run: ()=> splitClipsAt(beat.value, selectedClip.value?.track ?? null),
+        description: 'Cut the clips under the playhead in two.', keywords: 'cut divide' },
+    { id: 'join', group: 'Edit', title: 'Join with Next Clip', shortcut: 'mod+j', field: true, run: clipCommand(joinWithNext),
+        enabled: ()=> !!selectedClip.value && !!nextClip(selectedClip.value.track, selectedClip.value.clip), description: 'Make the selected clip and the one after it one clip.', keywords: 'merge glue combine' },
+    { id: 'quantize', group: 'Edit', title: 'Quantize', shortcut: 'q', enabled: onNotesOrClip, run: ()=> inRoll() ? quantizePicked() : clipCommand(quantizeClip)(),
+        description: 'Move the selected notes, or the clip’s, onto the grid.', keywords: 'snap align timing' },
+    { id: 'up', group: 'Edit', title: 'Transpose Up', shortcut: 'up', repeats: true, run: ()=> transposePicked(1), enabled: inRoll, description: 'Move the selected notes up a semitone.', keywords: 'pitch higher' },
+    { id: 'down', group: 'Edit', title: 'Transpose Down', shortcut: 'down', repeats: true, run: ()=> transposePicked(-1), enabled: inRoll, description: 'Move the selected notes down a semitone.', keywords: 'pitch lower' },
+    { id: 'octaveUp', group: 'Edit', title: 'Octave Up', shortcut: 'shift+up', repeats: true, run: ()=> transposePicked(12), enabled: inRoll, description: 'Move the selected notes up an octave.', keywords: 'transpose pitch' },
+    { id: 'octaveDown', group: 'Edit', title: 'Octave Down', shortcut: 'shift+down', repeats: true, run: ()=> transposePicked(-12), enabled: inRoll, description: 'Move the selected notes down an octave.', keywords: 'transpose pitch' },
+    { id: 'nudgeLeft', group: 'Edit', title: 'Nudge Left', shortcut: 'left', repeats: true, enabled: onNotesOrClip,
+        run: onSelection(()=> nudgePicked(-settings.value.grid), (t, c)=> nudgeClip(t, c, -barAt(project.value.meters, beat.value).beatsPerBar)),
+        description: 'Move the selected notes back a grid step, or the clip a bar.', keywords: 'earlier move' },
+    { id: 'nudgeRight', group: 'Edit', title: 'Nudge Right', shortcut: 'right', repeats: true, enabled: onNotesOrClip,
+        run: onSelection(()=> nudgePicked(settings.value.grid), (t, c)=> nudgeClip(t, c, barAt(project.value.meters, beat.value).beatsPerBar)),
+        description: 'Move the selected notes on a grid step, or the clip a bar.', keywords: 'later move' },
+    { id: 'humanize', group: 'Edit', title: 'Humanize', enabled: onNotesOrClip, run: onSelection(humanizePicked, humanizeClip),
+        description: 'Loosen the timing and velocity of the selected notes a little.', keywords: 'random feel groove' },
+    { id: 'doubleSpeed', group: 'Edit', title: 'Double Speed', enabled: onNotesOrClip, run: onSelection(()=> scalePicked(0.5), (t, c)=> scaleClip(t, c, 0.5)),
+        description: 'Make the selected notes twice as fast.', keywords: 'faster shorter scale' },
+    { id: 'halfSpeed', group: 'Edit', title: 'Half Speed', enabled: onNotesOrClip, run: onSelection(()=> scalePicked(2), (t, c)=> scaleClip(t, c, 2)),
+        description: 'Make the selected notes half as fast.', keywords: 'slower longer scale' },
+    { id: 'reverse', group: 'Edit', title: 'Reverse', enabled: onNotesOrClip, run: onSelection(reversePicked, reverseClip), description: 'Play the selected notes backwards.', keywords: 'backwards flip retrograde' },
+    { id: 'muteClip', group: 'Edit', title: 'Mute Clip', shortcut: 'm', enabled: ()=> !!selectedClip.value, checked: clipMuted, run: clipCommand(toggleClipMute),
+        description: 'Silence the selected clip, or play it again.', keywords: 'silence unmute' },
+    { id: 'makePattern', group: 'Edit', title: 'Make Pattern', shortcut: 'mod+p', field: true, run: clipCommand(makePatternOf),
+        enabled: ()=> !!selectedClip.value && !patternOf(selectedClip.value.track, selectedClip.value.clip), description: 'Make the selected clip a pattern, so its copies stay linked.', keywords: 'link loop' },
+    { id: 'makeUnique', group: 'Edit', title: 'Make Unique', run: clipCommand(makeUniqueOf),
+        enabled: ()=> !!selectedClip.value && !!patternOf(selectedClip.value.track, selectedClip.value.clip), description: 'Unlink the selected clip from its pattern.', keywords: 'unlink detach' },
+    { id: 'insertBars', group: 'Edit', title: 'Insert Bars at Playhead…', run: ()=> changeBars(true), description: 'Add empty bars at the playhead; everything after moves on.', keywords: 'add time space' },
+    { id: 'deleteBars', group: 'Edit', title: 'Delete Bars at Playhead…', run: ()=> changeBars(false), description: 'Take bars out at the playhead; everything after moves back.', keywords: 'remove time' },
     // Track
-    newTrack: { label: 'New Track', accelerator: 'Alt+CmdOrCtrl+N', field: true, run: ()=> addNewTrack({ after: selected.value }) },
-    duplicateTrack: { label: 'Duplicate Track', accelerator: 'Shift+CmdOrCtrl+D', field: true, run: ()=> duplicateTheTrack(selected.value), enabled: ()=> !!track() },
-    renameTrack: { label: 'Rename Track…', run: ()=> renameTrack(selected.value), enabled: ()=> !!track() },
-    instrument: { label: 'Choose Instrument…', run: ()=> chooseInstrument(selected.value), enabled: ()=> !!track() },
-    deleteTrack: { label: 'Delete Track', accelerator: 'CmdOrCtrl+Backspace', field: true, run: ()=> deleteTrack(selected.value), enabled: ()=> !!track() },
-    mute: { label: 'Mute', run: ()=> toggleMute(selected.value), checked: ()=> !!track()?.mixer.mute, enabled: ()=> !!track() },
-    solo: { label: 'Solo', run: ()=> toggleSolo(selected.value), checked: ()=> !!track()?.mixer.solo, enabled: ()=> !!track() },
-    trackUp: { label: 'Move Track Up', accelerator: 'Alt+CmdOrCtrl+Up', field: true, run: ()=> moveTrackBy(selected.value, -1), enabled: ()=> !!track() && project.value.tracks[0] !== track() },
-    trackDown: { label: 'Move Track Down', accelerator: 'Alt+CmdOrCtrl+Down', field: true, run: ()=> moveTrackBy(selected.value, 1), enabled: ()=> !!track() && project.value.tracks.at(-1) !== track() },
+    { id: 'newTrack', group: 'Track', title: 'New Track', shortcut: 'mod+alt+n', field: true, run: ()=> addNewTrack({ after: selected.value }),
+        description: 'Add an instrument track below the selected one.', keywords: 'add create instrument' },
+    { id: 'duplicateTrack', group: 'Track', title: 'Duplicate Track', shortcut: 'mod+shift+d', field: true, run: ()=> duplicateTheTrack(selected.value), enabled: ()=> !!track(),
+        description: 'Add a copy of the selected track, with its clips.', keywords: 'copy clone dup' },
+    { id: 'renameTrack', group: 'Track', title: 'Rename Track…', run: ()=> renameTrack(selected.value), enabled: ()=> !!track(), description: 'Give the selected track a new name.', keywords: 'name' },
+    { id: 'instrument', group: 'Track', title: 'Choose Instrument…', run: ()=> chooseInstrument(selected.value), enabled: ()=> !!track(),
+        description: 'Pick the sound the selected track plays.', keywords: 'sound preset patch program' },
+    { id: 'deleteTrack', group: 'Track', title: 'Delete Track', shortcut: 'mod+backspace', field: true, run: ()=> deleteTrack(selected.value), enabled: ()=> !!track(),
+        description: 'Delete the selected track and its clips.', keywords: 'remove' },
+    { id: 'mute', group: 'Track', title: 'Mute', run: ()=> toggleMute(selected.value), checked: ()=> !!track()?.mixer.mute, enabled: ()=> !!track(), description: 'Silence the selected track, or play it again.', keywords: 'silence unmute' },
+    { id: 'solo', group: 'Track', title: 'Solo', run: ()=> toggleSolo(selected.value), checked: ()=> !!track()?.mixer.solo, enabled: ()=> !!track(), description: 'Play only the soloed tracks.', keywords: 'alone isolate' },
+    { id: 'trackUp', group: 'Track', title: 'Move Track Up', shortcut: 'mod+alt+up', field: true, run: ()=> moveTrackBy(selected.value, -1),
+        enabled: ()=> !!track() && project.value.tracks[0] !== track(), description: 'Move the selected track up the list.', keywords: 'reorder' },
+    { id: 'trackDown', group: 'Track', title: 'Move Track Down', shortcut: 'mod+alt+down', field: true, run: ()=> moveTrackBy(selected.value, 1),
+        enabled: ()=> !!track() && project.value.tracks.at(-1) !== track(), description: 'Move the selected track down the list.', keywords: 'reorder' },
     // Transport
-    play: { label: 'Play or Stop', shown: 'Space', run: toggle },
-    end: { label: 'Go to End', shown: 'End', run: ()=> seek(projectEnd(project.value)) },
-    start: { label: 'Go to Start', shown: 'Return', run: ()=> seek(project.value.loop && playing.value ? project.value.loop.from : 0) },
-    prevBar: { label: 'Back a Bar', shown: ',', run: ()=> stepBar(-1) },
-    nextBar: { label: 'Forward a Bar', shown: '.', run: ()=> stepBar(1) },
-    prevMarker: { label: 'Previous Marker', shown: 'Alt+,', run: ()=> stepMarker(-1), enabled: ()=> project.value.markers.length > 0 },
-    nextMarker: { label: 'Next Marker', shown: 'Alt+.', run: ()=> stepMarker(1), enabled: ()=> project.value.markers.length > 0 },
-    record: { label: 'Record', shown: 'R', run: record, checked: ()=> !!recording.value },
-    metronome: { label: 'Metronome', run: ()=> setSettings({ metronome: !settings.value.metronome }), checked: ()=> settings.value.metronome },
-    click: { label: 'Click While Recording', run: ()=> setSettings({ click: !settings.value.click }), checked: ()=> settings.value.click },
-    loop: { label: 'Loop', shown: 'C', run: ()=> loopOver(project.value.loop ? null : selectionRange()), checked: ()=> !!project.value.loop },
-    loopSelection: { label: 'Loop Selection', accelerator: 'CmdOrCtrl+U', run: ()=> loopOver(selectionRange()) },
-    addMarker: { label: 'Add Marker at Playhead…', run: ()=> addMarkerAt() },
-    tempo: { label: 'Tempo…', run: askTempo },
-    meter: { label: 'Meter…', run: askMeter },
-    newFromMelody: { label: 'New from Melody', run: newFromMelody, enabled: ()=>
+    { id: 'play', group: 'Transport', title: 'Play or Stop', shortcut: 'space', run: toggle, description: 'Start or stop playing from the playhead.', keywords: 'pause start' },
+    { id: 'record', group: 'Transport', title: 'Record', shortcut: 'r', run: record, checked: ()=> !!recording.value, description: 'Record a melody on the selected track, or a chord on the chord track.', keywords: 'take capture' },
+    { id: 'start', group: 'Transport', title: 'Go to Start', shortcut: 'enter', run: ()=> seek(project.value.loop && playing.value ? project.value.loop.from : 0),
+        description: 'Move the playhead to the start (of the loop, while it plays).', keywords: 'beginning home rewind' },
+    { id: 'end', group: 'Transport', title: 'Go to End', shortcut: 'end', run: ()=> seek(projectEnd(project.value)), description: 'Move the playhead to the end of the project.' },
+    { id: 'prevBar', group: 'Transport', title: 'Back a Bar', shortcut: ',', repeats: true, run: ()=> stepBar(-1), description: 'Move the playhead back a bar.', keywords: 'rewind previous' },
+    { id: 'nextBar', group: 'Transport', title: 'Forward a Bar', shortcut: '.', repeats: true, run: ()=> stepBar(1), description: 'Move the playhead on a bar.', keywords: 'next skip' },
+    { id: 'prevMarker', group: 'Transport', title: 'Previous Marker', shortcut: 'alt+,', run: ()=> stepMarker(-1), enabled: ()=> project.value.markers.length > 0,
+        description: 'Move the playhead to the marker before it.', keywords: 'section back' },
+    { id: 'nextMarker', group: 'Transport', title: 'Next Marker', shortcut: 'alt+.', run: ()=> stepMarker(1), enabled: ()=> project.value.markers.length > 0,
+        description: 'Move the playhead to the next marker.', keywords: 'section forward' },
+    { id: 'loop', group: 'Transport', title: 'Loop', shortcut: 'c', run: ()=> loopOver(project.value.loop ? null : selectionRange()), checked: ()=> !!project.value.loop,
+        description: 'Loop the selection, or the section at the playhead; again turns it off.', keywords: 'cycle repeat' },
+    { id: 'loopSelection', group: 'Transport', title: 'Loop Selection', shortcut: 'mod+u', run: ()=> loopOver(selectionRange()), description: 'Move the loop to the selection.', keywords: 'cycle repeat' },
+    { id: 'metronome', group: 'Transport', title: 'Metronome', run: ()=> setSettings({ metronome: !settings.value.metronome }), checked: ()=> settings.value.metronome,
+        description: 'Click on every beat while playing.', keywords: 'click tick beat' },
+    { id: 'click', group: 'Transport', title: 'Click While Recording', run: ()=> setSettings({ click: !settings.value.click }), checked: ()=> settings.value.click,
+        description: 'Click on every beat while recording.', keywords: 'metronome count' },
+    { id: 'addMarker', group: 'Transport', title: 'Add Marker at Playhead…', run: ()=> addMarkerAt(), description: 'Name the place the playhead is at.', keywords: 'section label' },
+    { id: 'tempo', group: 'Transport', title: 'Tempo…', run: askTempo, description: 'Set the project’s tempo.', keywords: 'bpm speed' },
+    { id: 'meter', group: 'Transport', title: 'Meter…', run: askMeter, description: 'Set the project’s meter.', keywords: 'time signature' },
+    { id: 'newFromMelody', group: 'Transport', title: 'New from Melody', run: newFromMelody, enabled: ()=>
     {
         const c = selectedClip.value;
         return !!c && !!findClip(project.value, c.track, c.clip)?.notes.length;
-    } },
+    }, description: 'Start a new project around the selected clip’s melody.', keywords: 'generate song' },
     // View
-    browser: { label: 'Browser', shown: 'B', run: ()=> setSettings({ browserOpen: !settings.value.browserOpen }), checked: ()=> settings.value.browserOpen },
-    roll: { label: 'Piano Roll', accelerator: 'CmdOrCtrl+1', radio: true, run: ()=> setSettings({ editorTab: 'roll' }), checked: ()=> settings.value.editorTab === 'roll' },
-    mixer: { label: 'Mixer', accelerator: 'CmdOrCtrl+2', radio: true, run: ()=> setSettings({ editorTab: 'mixer' }), checked: ()=> settings.value.editorTab === 'mixer' },
-    stepGrid: { label: 'Step Grid', accelerator: 'CmdOrCtrl+3', radio: true, run: ()=> setSettings({ editorTab: 'grid' }), checked: ()=> settings.value.editorTab === 'grid' },
-    themeSystem: { label: 'System', radio: true, run: ()=> setSettings({ theme: 'system' }), checked: ()=> settings.value.theme === 'system' },
-    themeLight: { label: 'Light', radio: true, run: ()=> setSettings({ theme: 'light' }), checked: ()=> settings.value.theme === 'light' },
-    themeDark: { label: 'Dark', radio: true, run: ()=> setSettings({ theme: 'dark' }), checked: ()=> settings.value.theme === 'dark' },
-    zoomIn: { label: 'Zoom In', accelerator: 'CmdOrCtrl+=', run: ()=> zoomBy(ZOOM) },
-    zoomOut: { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', run: ()=> zoomBy(1 / ZOOM) },
-    fit: { label: 'Zoom to Fit', accelerator: 'CmdOrCtrl+0', run: ()=> { arrangeZoom.value = 0; } },
-    follow: { label: 'Follow Playhead', run: ()=> setSettings({ follow: !settings.value.follow }), checked: ()=> settings.value.follow },
-    ghosts: { label: 'Show Other Tracks’ Notes', run: ()=> setSettings({ ghosts: !settings.value.ghosts }), checked: ()=> settings.value.ghosts },
+    { id: 'browser', group: 'View', title: 'Browser', shortcut: 'b', run: ()=> setSettings({ browserOpen: !settings.value.browserOpen }), checked: ()=> settings.value.browserOpen,
+        description: 'Show or hide the browser of instruments, kits, projects and takes.', keywords: 'sidebar panel library' },
+    { id: 'roll', group: 'View', title: 'Piano Roll', shortcut: 'mod+1', radio: true, run: ()=> setSettings({ editorTab: 'roll' }), checked: ()=> settings.value.editorTab === 'roll',
+        description: 'Show the piano roll in the editor.', keywords: 'notes midi' },
+    { id: 'mixer', group: 'View', title: 'Mixer', shortcut: 'mod+2', radio: true, run: ()=> setSettings({ editorTab: 'mixer' }), checked: ()=> settings.value.editorTab === 'mixer',
+        description: 'Show the mixer in the editor.', keywords: 'volume pan faders' },
+    { id: 'stepGrid', group: 'View', title: 'Step Grid', shortcut: 'mod+3', radio: true, run: ()=> setSettings({ editorTab: 'grid' }), checked: ()=> settings.value.editorTab === 'grid',
+        description: 'Show the drum step grid in the editor.', keywords: 'drums beats sequencer' },
+    { id: 'zoomIn', group: 'View', title: 'Zoom In', shortcut: 'mod+=', alternates: ['mod++'], run: ()=> zoomBy(ZOOM), description: 'Show less time, larger.', keywords: 'bigger magnify' },
+    { id: 'zoomOut', group: 'View', title: 'Zoom Out', shortcut: 'mod+-', run: ()=> zoomBy(1 / ZOOM), description: 'Show more time, smaller.', keywords: 'smaller' },
+    { id: 'fit', group: 'View', title: 'Zoom to Fit', shortcut: 'mod+0', run: ()=> { arrangeZoom.value = 0; }, description: 'Fit the whole project in the arrangement.', keywords: 'all reset' },
+    { id: 'follow', group: 'View', title: 'Follow Playhead', run: ()=> setSettings({ follow: !settings.value.follow }), checked: ()=> settings.value.follow,
+        description: 'Scroll with the playhead while playing.', keywords: 'scroll track' },
+    { id: 'ghosts', group: 'View', title: 'Show Other Tracks’ Notes', run: ()=> setSettings({ ghosts: !settings.value.ghosts }), checked: ()=> settings.value.ghosts,
+        description: 'Show the other tracks’ notes faintly in the piano roll.', keywords: 'ghost notes' },
+    { id: 'themeSystem', group: 'View', title: 'System', radio: true, run: ()=> setSettings({ theme: 'system' }), checked: ()=> settings.value.theme === 'system',
+        description: 'Follow the system’s light or dark look.', keywords: 'theme appearance auto' },
+    { id: 'themeLight', group: 'View', title: 'Light', radio: true, run: ()=> setSettings({ theme: 'light' }), checked: ()=> settings.value.theme === 'light',
+        description: 'Use the light look.', keywords: 'theme appearance' },
+    { id: 'themeDark', group: 'View', title: 'Dark', radio: true, run: ()=> setSettings({ theme: 'dark' }), checked: ()=> settings.value.theme === 'dark',
+        description: 'Use the dark look.', keywords: 'theme appearance night' },
+    { id: 'commandMenu', group: 'View', title: 'Command Menu…', shortcut: 'mod+k', hidden: true, global: true, run: ()=> toggleOverlay('commands'),
+        description: 'Find any command by name and run it.', keywords: 'palette search' },
     // Help
-    readme: { label: 'Read Me', run: ()=> appMenu.open('README.md') },
-};
+    { id: 'shortcuts', group: 'Help', title: 'Keyboard Shortcuts', shortcut: 'mod+/', global: true, run: ()=> toggleOverlay('shortcuts'),
+        description: 'List every command with its shortcut.', keywords: 'keys hotkeys help' },
+    { id: 'readme', group: 'Help', title: 'Read Me', run: ()=> appMenu.open('README.md'), description: 'Open the guide to Chordinal.', keywords: 'help docs manual' },
+]);
 
-/** a command as a menu item; `extra` overrides its fields (a label, or a run with arguments) */
-export function item(id, extra = {})
-{
-    const c = COMMANDS[id];
-    const run = extra.run ?? c.run;
-    return {
-        id, label: c.label, accelerator: c.accelerator, shown: c.shown, text: c.text, field: c.field, radio: c.radio,
-        enabled: c.enabled ? c.enabled() : true,
-        ...(c.checked && { checked: c.checked() }),
-        ...extra,
-        // the bar is rebuilt a moment after a change, so a click or shortcut can come after the command was disabled
-        run: ()=> { if (!busy() && (!c.enabled || c.enabled())) run(); },
-    };
-}
+/** while a dialog is open the commands wait; ⌘K and ⌘/ may still swap their own window for the other */
+catalog.gate = (c)=> !busy() || (!!c.global && busyWith() === 'overlay');
+
+/** a command as a menu item; `extra` changes its label, or runs it with arguments */
+export const item = (id, extra = {})=> catalog.menuItem(id, extra);
 
 /** the snap grids, as radio items */
 export const snapItems = ()=> GRIDS.map(([g, name])=> ({ label: name, radio: true, checked: settings.value.grid === g, run: ()=> setSettings({ grid: g }) }));

@@ -13,3 +13,5 @@ export * from './Ruler.jsx';
 export * from './StepGrid.jsx';
 export * from './TrackRow.jsx';
 export * from './Transport.jsx';
+export * from './CommandMenu.jsx';
+export * from './ShortcutsDialog.jsx';

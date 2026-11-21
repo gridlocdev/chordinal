@@ -13,7 +13,9 @@ import { _electron } from 'playwright-core';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const LIMIT_MS = 15000;
 // where a headless Chordinal keeps its settings and Documents (electron/shell.js)
-const DATA = path.join(os.tmpdir(), 'chordinal-headless'), DOCS = path.join(os.tmpdir(), 'chordinal-headless-documents');
+// this file's own profile, so other test files running at the same time keep theirs
+const PROFILE = path.join(os.tmpdir(), `chordinal-test-${process.pid}`);
+const DATA = path.join(PROFILE, 'data'), DOCS = path.join(PROFILE, 'documents');
 
 async function until(what, fn)
 {
@@ -27,7 +29,7 @@ async function until(what, fn)
 
 async function launch(marker)
 {
-    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'apps/desktop/dist/chordinal.js'), '--headless'], cwd: ROOT });
+    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'apps/desktop/dist/chordinal.js'), '--headless', `--profile=${PROFILE}`], cwd: ROOT });
     const page = await app.firstWindow();
     await page.waitForLoadState('domcontentloaded');
     // if the headless gate ever breaks, a native dialog still stays off the screen: it leaves a marker and answers
@@ -210,6 +212,24 @@ test('the track headers and the browser: a header\'s double-click, + Drums, the 
         await until('the panel is hidden again', async ()=> !await page.$('.side-panel'));
         await page.keyboard.press('b');
         await until('the panel is back again', async ()=> !!await page.$('.side-panel'));
+        // the command menu runs the same commands as the keys and the menu bar; Cmd+/ lists them
+        await run.click('commandMenu');
+        await page.waitForSelector('.dialog.command-menu input:focus');
+        await page.keyboard.type('sidebar');
+        await page.keyboard.press('Enter');
+        await until('the command menu closed and hid the panel', async ()=> !await page.$('.dialog.command-menu') && !await page.$('.side-panel'));
+        await run.click('commandMenu');
+        await page.waitForSelector('.dialog.command-menu input:focus');
+        await page.keyboard.press('Escape');
+        await until('Esc closed the command menu', async ()=> !await page.$('.dialog.command-menu'));
+        assert.ok(!await page.$('.side-panel'), 'Esc ran nothing');
+        await run.click('shortcuts');
+        await page.waitForSelector('.dialog.shortcuts');
+        assert.match(await page.textContent('.dialog.shortcuts'), /Duplicate/);
+        await page.click('.dialog.shortcuts button:has-text("Done")');
+        await until('the shortcuts closed', async ()=> !await page.$('.dialog.shortcuts'));
+        await run.click('browser');
+        await until('the panel is back after the shortcuts', async ()=> !!await page.$('.side-panel'));
         // §9.3: whistling is Chordinal's: Record Melody on a track, Whistle a Chord once a stretch of the chord track is picked
         // (neither is clicked: a headless run never opens the microphone)
         const menuItem = (id)=> run.app.evaluate(({ Menu }, id)=> { const m = Menu.getApplicationMenu().getMenuItemById(id); return m && { enabled: m.enabled }; }, id);

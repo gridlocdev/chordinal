@@ -54,6 +54,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 2. The browser's width and the editor's height are draggable. Both are saved in Chordinal's settings. `B` hides and shows the browser.
 3. Tab switching follows `prd.md` §4.2.
 4. The look has a dark and a light theme. **View ▸ Theme** picks System (follows the OS), Light or Dark; the choice is saved in the settings. Motion stops when the OS asks for reduced motion, and the focused control has a visible ring.
+5. **⌘K** opens the command menu: type part of a command's name, or another word for it, and press Enter to run it. Disabled commands stay in the list, greyed. With nothing typed, the recent commands come first. **Help ▸ Keyboard Shortcuts** (`Cmd /`) lists every command with its shortcut. Both come from the same command list as the menu bar and the keys, and `docs/controls.md` is checked against it.
 
 ## §6 The track headers
 

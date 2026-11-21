@@ -74,12 +74,19 @@ export interface AppConfig {
 
 export function startShell(config: AppConfig): void {
   // --headless: for automated tests: no window on screen, no Dock icon, no sound, no microphone prompt, and settings
-  // kept apart from the real ones
+  // kept apart from the real ones: in `--profile=<folder>` if given (each test file its own), else in the temp folder
   const HEADLESS = process.argv.includes('--headless');
   app.setName(config.name);
   if (HEADLESS) {
-    app.setPath('userData', path.join(os.tmpdir(), `${config.id}-headless`));
-    app.setPath('documents', path.join(os.tmpdir(), `${config.id}-headless-documents`));
+    const profile = process.argv.find((a) => a.startsWith('--profile='))?.slice('--profile='.length);
+    app.setPath(
+      'userData',
+      profile ? path.join(profile, 'data') : path.join(os.tmpdir(), `${config.id}-headless`),
+    );
+    app.setPath(
+      'documents',
+      profile ? path.join(profile, 'documents') : path.join(os.tmpdir(), `${config.id}-headless-documents`),
+    );
   }
   const SAVE_FILE = () => path.join(app.getPath('userData'), 'save.json');
   const PACKAGED = app.isPackaged;
