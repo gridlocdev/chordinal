@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "lib": ["ES2023", "DOM"],
+    "types": []
+  },
+  "include": ["src"],
+  "exclude": ["src/mic-worklet.js"],
+  "references": [{ "path": "../lib" }, { "path": "../audio" }, { "path": "../daw" }, { "path": "../sketch" }]
+}

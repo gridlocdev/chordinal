@@ -6,7 +6,7 @@
   "description": "Playing projects, instruments, the mixer and the microphone through Web Audio",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.js",
+    ".": "./src/index.ts",
     "./mic-worklet.js": "./src/mic-worklet.js"
   },
   "sideEffects": false,

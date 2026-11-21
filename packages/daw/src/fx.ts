@@ -47,13 +47,14 @@ export interface PitchMoves {
  * next note glides on from it; mono cuts whatever else its track is sounding; program plays it on another program
  * of the track's bank; the rest are the synth's pitch moves (vibrato, scoops, bends, arp).
  */
-export type PlayedNote = Note & {
-  grid: number;
-  glideFrom?: number;
-  held?: boolean;
-  mono?: boolean;
-  program?: number;
-};
+export type PlayedNote = Note &
+  PitchMoves & {
+    grid: number;
+    glideFrom?: number;
+    held?: boolean;
+    mono?: boolean;
+    program?: number;
+  };
 
 /** tapeStop: every track winds down in pitch and speed into the beat; sendSwell: a track's delay send opens across a
  * stretch */

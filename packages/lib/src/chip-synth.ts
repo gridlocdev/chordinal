@@ -123,8 +123,8 @@ export interface ChipFontDefs {
   name?: string;
   bank: number;
   kitBank: number;
-  instruments: ChipInstrument[];
-  kits: ChipKit[];
+  instruments: readonly ChipInstrument[];
+  kits: readonly ChipKit[];
 }
 
 export function buildChipFont({ name = 'Chip', bank, kitBank, instruments, kits }: ChipFontDefs): Sf2Font {

@@ -44,6 +44,12 @@
     },
     {
       "path": "packages/ui/test"
+    },
+    {
+      "path": "packages/playback"
+    },
+    {
+      "path": "packages/playback/test"
     }
   ]
 }
