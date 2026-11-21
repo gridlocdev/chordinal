@@ -10,8 +10,8 @@ let recentList = /** @type {string[]} */ ([]);
 let pickSaveAnswer = '', pickOpenAnswer = '', handedAnswer = '', handedOver = (_dir)=> {};
 const toTop = (d)=> { recentList = [d, ...recentList.filter(x => x !== d)]; };
 /** @type {any} */ (globalThis).projectFolders = {
-    read: async (d)=> { if (!disk.has(d)) throw new Error('no such folder'); return disk.get(d); },
-    write: async (d, t)=> { disk.set(d, t); toTop(d); },
+    read: async (d)=> { if (!disk.has(d)) throw new Error('no such folder'); return { text: disk.get(d), version: disk.get(d) }; },
+    write: async (d, t)=> { disk.set(d, t); toTop(d); return t; },
     exists: async (d)=> disk.has(d),
     used: async (d)=> toTop(d),
     recent: async ()=> recentList.map(p => ({ path: p, name: p.split('/').at(-1), exists: disk.has(p) })),

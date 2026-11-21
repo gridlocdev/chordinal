@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { openProject, save, saveAs, edit } from '@chordinal/ui';
 import { setPlace } from '@chordinal/ui';
-import { asking, answer } from '@chordinal/ui';
+import { asking, answer, ConflictError } from '@chordinal/ui';
 import { projectName, dirty } from '@chordinal/ui';
 import { emptyProject } from '@chordinal/daw';
 import { writeProject } from '@chordinal/daw';
@@ -17,12 +17,16 @@ const writes = /** @type {string[]} */ ([]);
 let slow = 0, failing = false;
 setPlace({
     files: {
-        read: async (name)=> { if (!disk.has(name)) throw new Error('not found'); return disk.get(name); },
-        write: async (name, text)=>
+        // a project's version is its text, which is enough for a pretend disk
+        read: async (name)=> { if (!disk.has(name)) throw new Error('not found'); return { text: disk.get(name), version: disk.get(name) }; },
+        write: async (name, text, expected)=>
         {
             if (failing) throw new Error('disk full');
             if (slow) { const wait = slow; slow = 0; await new Promise(r => setTimeout(r, wait)); }
+            const now = disk.get(name);
+            if (expected !== null && now !== undefined && now !== expected && now !== text) throw new ConflictError(name);
             disk.set(name, text); writes.push(text);
+            return text;
         },
         takes: async ()=> [], readTake: async ()=> new ArrayBuffer(0), writeTake: async ()=> {},
     },

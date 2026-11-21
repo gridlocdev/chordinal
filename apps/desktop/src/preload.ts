@@ -43,7 +43,8 @@ contextBridge.exposeInMainWorld('projectFolders', {
   clear: () => ipcRenderer.invoke('folders:clear'),
   exists: (dir: string) => ipcRenderer.invoke('folders:exists', dir),
   read: (dir: string) => ipcRenderer.invoke('folders:read', dir),
-  write: (dir: string, text: string) => ipcRenderer.invoke('folders:write', dir, text),
+  write: (dir: string, text: string, expected: string | null) =>
+    ipcRenderer.invoke('folders:write', dir, text, expected),
   used: (dir: string) => ipcRenderer.invoke('folders:used', dir),
   takes: (dir: string) => ipcRenderer.invoke('folders:takes', dir),
   readTake: (dir: string, file: string) => ipcRenderer.invoke('folders:readTake', dir, file),

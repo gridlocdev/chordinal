@@ -20,6 +20,30 @@
     },
     {
       "path": "packages/audio/test"
+    },
+    {
+      "path": "apps/desktop"
+    },
+    {
+      "path": "apps/desktop/test"
+    },
+    {
+      "path": "packages/daw"
+    },
+    {
+      "path": "packages/daw/test"
+    },
+    {
+      "path": "packages/sketch"
+    },
+    {
+      "path": "packages/sketch/test"
+    },
+    {
+      "path": "packages/ui"
+    },
+    {
+      "path": "packages/ui/test"
     }
   ]
 }

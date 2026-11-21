@@ -53,7 +53,9 @@ startShell({
     ipc.handle('folders:clear', () => folders.clear());
     ipc.handle('folders:exists', (_e, dir: unknown) => folders.exists(dir).catch(() => false));
     ipc.handle('folders:read', (_e, dir: unknown) => folders.read(dir));
-    ipc.handle('folders:write', (_e, dir: unknown, text: unknown) => folders.write(dir, text));
+    ipc.handle('folders:write', (_e, dir: unknown, text: unknown, expected: unknown) =>
+      folders.write(dir, text, expected),
+    );
     ipc.handle('folders:used', (_e, dir: unknown) => folders.used(dir));
     ipc.handle('folders:takes', (_e, dir: unknown) => folders.takes(dir));
     ipc.handle('folders:readTake', (_e, dir: unknown, file: unknown) => folders.readTake(dir, file));

@@ -40,6 +40,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 6. **Save** (`Cmd S`) and **Save As…** (`Shift Cmd S`):
    - The first save of a new project asks for a name and a location. The default location is `Documents/Chordinal/`.
    - A project is a folder holding `project.json`. Saving is atomic: a temporary file, then a swap.
+   - If `project.json` changed on disk since it was opened or last saved, Save asks first: "<name> changed on disk since it was opened. Replace it with this version?", with Replace and Cancel. Cancel keeps both: the file on disk stays, the changes stay unsaved, and the next Save asks again. Nothing is ever overwritten without asking.
 7. Closing the window or quitting with unsaved changes asks the same question as New.
 8. The window title shows the project's name and a dot while it has unsaved changes.
 

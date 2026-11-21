@@ -3,7 +3,7 @@
 // folder; Save As asks for a folder (in Documents/Chordinal/ by default). Unsaved changes are asked about with Save,
 // Don't Save and Cancel, before New, Open and closing the window alike.
 import { signal, effect } from '@preact/signals';
-import { projectFolders, folderTitle, docWindow } from '@chordinal/ui';
+import { projectFolders, projectStore, folderTitle, docWindow } from '@chordinal/ui';
 import { emptyProject, makeTrack, addTrack } from '@chordinal/daw';
 import { setPlace } from '@chordinal/ui';
 import { openProject, openNew, discardOk } from '@chordinal/ui';
@@ -35,7 +35,7 @@ const askDiscard = async (title)=>
 export function useProjectFolders()
 {
     setPlace({
-        files: projectFolders,
+        files: projectStore(),
         where: (dir)=> `“${folderTitle(dir)}”`,
         chooseName: async (title)=>
         {

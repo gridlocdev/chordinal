@@ -17,8 +17,8 @@ const folder = (name)=> { if (!disk.has(name)) disk.set(name, { text: null, take
 let next = '';
 setPlace({
     files: {
-        read: async (name)=> { const t = disk.get(name)?.text; if (t == null) throw new Error('missing'); return t; },
-        write: async (name, text)=> { folder(name).text = text; },
+        read: async (name)=> { const t = disk.get(name)?.text; if (t == null) throw new Error('missing'); return { text: t, version: t }; },
+        write: async (name, text)=> { folder(name).text = text; return text; },
         takes: async (name)=> [...(disk.get(name)?.takes.keys() ?? [])],
         readTake: async (name, file)=> folder(name).takes.get(file).slice().buffer,
         writeTake: async (name, file, bytes)=> { folder(name).takes.set(file, new Uint8Array(bytes)); },

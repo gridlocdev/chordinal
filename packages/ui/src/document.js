@@ -3,7 +3,7 @@
 // question go, is set at start-up (place.js).
 import { emptyProject } from '@chordinal/daw';
 import { history, commit, undo as undoStep, redo as redoStep } from '@chordinal/daw';
-import { readProject, writeProject } from '@chordinal/daw';
+import { writeProject } from '@chordinal/daw';
 import { compose } from '@chordinal/composer';
 import { toProject } from '@chordinal/composer';
 import { hist, project, projectName, saved, dirty, selected, selectedClip, picked, chordRange, beat, status, setSettings } from './store.js';
@@ -11,10 +11,14 @@ import { stop } from './player.js';
 import { focus } from './focus.js';
 import { askYes } from './ask.js';
 import { place } from './place.js';
+import { ConflictError } from './store/project-store.ts';
+import { classifyFile } from './store/classify-file.ts';
+import { NEW, step, expectedOf } from './store/save-session.ts';
 
 let mergeKey = null;
-/** the open project's file as last read or written, to tell when it changes on disk */
-let onDisk = null;
+/** the open project's relation to where it's kept: its version token there, a save on its way, a conflict
+ * @type {import('./store/save-session.ts').SaveState} */
+let session = NEW;
 
 /**
  * Changes the project. Edits with the same merge key one after another (a fader dragged) are one undo step.
@@ -50,6 +54,7 @@ function show(p, name, clean = false)
     hist.value = history(p);
     saved.value = name || clean ? p : null;
     projectName.value = name;
+    session = NEW;
     selected.value = p.tracks[0]?.id ?? null;
     selectedClip.value = null;
     picked.value = new Set();
@@ -74,9 +79,11 @@ export async function openProject(name)
     if (!await discardOk()) return false;
     try
     {
-        const text = await place.files.read(name);
-        show(readProject(text), name);
-        onDisk = text;
+        const { text, version } = await place.files.read(name);
+        const file = classifyFile(text);
+        if (file.kind !== 'project') throw new Error(file.message);
+        show(file.project, name);
+        session = step(session, { type: 'opened', version });
         place.opened?.(name);
         return true;
     }
@@ -117,21 +124,39 @@ async function saveNow()
 {
     const name = projectName.value, p = project.value;
     if (!name) return false;
+    session = step(session, { type: 'save' });
+    const expected = expectedOf(session);
+    if (expected === undefined) return false;     // saves run one at a time, so this can't happen
     try
     {
         const text = writeProject(p);
-        // the file changed on disk since it was read or written here (another app, a regenerated song): ask first
-        const current = onDisk === null ? null : await place.files.read(name).catch(()=> null);
-        if (current !== null && current !== onDisk && current !== text
-            && !await askYes(`${place.where(name)} changed on disk since it was opened. Replace it with this version?`, 'Replace')) return false;
-        await place.files.write(name, text);
-        onDisk = text;
+        let version;
+        try { version = await place.files.write(name, text, expected); }
+        catch (e)
+        {
+            if (!(e instanceof ConflictError)) throw e;
+            // it changed where it's kept since it was read or written here (another app, a regenerated song): ask
+            session = step(session, { type: 'conflict' });
+            if (!await askYes(`${place.where(name)} changed on disk since it was opened. Replace it with this version?`, 'Replace'))
+            {
+                session = step(session, { type: 'cancel' });
+                return false;
+            }
+            session = step(session, { type: 'replace' });
+            version = await place.files.write(name, text, null);
+        }
+        session = step(session, { type: 'done', version });
         saved.value = p;
         status.value = `Saved ${place.where(name)}`;
         place.saved?.(name);
         return true;
     }
-    catch (e) { status.value = `Couldn't save ${place.where(name)}: ${e.message}`; return false; }
+    catch (e)
+    {
+        session = step(session, { type: 'failed' });
+        status.value = `Couldn't save ${place.where(name)}: ${e.message}`;
+        return false;
+    }
 }
 
 /** the takes of the project's old folder, copied into its new one after a Save As (those already there are kept) */
@@ -154,15 +179,15 @@ export async function saveAs()
     if (!chosen) return false;
     const { name, title } = chosen;
     edit(p => p.title === title ? p : { ...p, title });
-    const before = { name: projectName.value, onDisk };
+    const before = { name: projectName.value, session };
     projectName.value = name;
-    if (name !== before.name) onDisk = null;     // a new file, or one the user just agreed to replace
+    if (name !== before.name) session = step(session, { type: 'savedAs' });     // a new place, or one the user agreed to replace
     if (await queueSave())
     {
         setSettings({ project: name });
         if (before.name && name !== before.name) await copyTakes(before.name, name);
         return true;
     }
-    if (projectName.value === name) { projectName.value = before.name; onDisk = before.onDisk; }
+    if (projectName.value === name) { projectName.value = before.name; session = before.session; }
     return false;
 }
