@@ -22,7 +22,7 @@
 - A new app icon: a chord on one stem with a flag. `just run-desktop` shows it, and the name Chordinal in the menu bar, instead of Electron's.
 - A dropdown under the browser's tabs jumps to an instrument family or a group of projects, so you don't have to scroll.
 - Changing the octave with `Z` or `X` scrolls the piano roll to the keys you're playing.
-- **New from Melody…** opens a panel beside the song it makes: pick the feeling, genre, tempo, key, form, band and feel, and hear each change at once. Then replace the project with the song, or save the project and open the song as a new one.
+- **New from Melody…** opens a panel beside the song it makes: pick the feeling, genre, tempo, key, form, band and feel, and hear each change at once. Lock the choices you like and Roll the rest, and go back to any recent version to compare. Then replace the project with the song, or save the project and open the song as a new one.
 - While you record a melody, its notes appear in the piano roll as you play, and when you stop, the playhead goes back to the start of the clip.
 - Recording isn't only for whistling: **Whistle a Chord** is now **Record a Chord**, and a melody recorded with no track selected goes on a new track called Melody. `just whistle` is now `just transcribe`.
 - Saving is safer: a project changed on disk since you opened it asks before it's replaced, and saves and opens never overlap.

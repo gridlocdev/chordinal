@@ -32,6 +32,18 @@ test.describe('New from Melody', () => {
     await expect(tempo).not.toHaveValue('120');
     await expect(panel.getByRole('combobox', { name: 'Drums' })).not.toHaveValue('');
     await expect(trackHeader(page, 'Drums')).toBeVisible();
+
+    // a locked tempo stays through Roll; each change is a version to go back to
+    await panel.getByRole('button', { name: 'Lock Tempo' }).click();
+    await expect(panel.getByRole('button', { name: 'Lock Tempo' })).toHaveAttribute('aria-pressed', 'true');
+    const jazzTempo = await tempo.inputValue();
+    await panel.getByRole('button', { name: 'Roll', exact: true }).click();
+    await expect(tempo).toHaveValue(jazzTempo);
+    const versions = panel.getByRole('group', { name: 'Versions' });
+    await expect(versions.getByRole('button')).toHaveCount(3);
+    await versions.getByRole('button', { name: 'Version 1' }).click();
+    await expect(tempo).toHaveValue('120');
+    await expect(versions.getByRole('button', { name: 'Version 1' })).toHaveAttribute('aria-pressed', 'true');
     await page.screenshot({ path: '.e2e-results/melody-song.png' });
 
     await panel.getByRole('button', { name: 'Cancel' }).click();

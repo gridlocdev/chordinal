@@ -15,7 +15,11 @@ import {
   cancelMelodySong,
   replaceWithMelodySong,
   saveAndCreateMelodySong,
+  roll,
+  toggleLock,
+  pickVersion,
 } from '../src/melody-song.ts';
+import type { MelodySong } from '../src/melody-song.ts';
 
 globalThis.requestAnimationFrame ??= () => 0;
 globalThis.cancelAnimationFrame ??= () => {};
@@ -139,4 +143,60 @@ test('opening another project while the song is previewed puts the project back 
   assert.equal(await openProject('other'), true);
   assert.equal(customizer.value, null);
   assert.equal(project.value.title, 'Other');
+});
+
+/** a seeded stand-in for Math.random */
+function seeded(n: number): () => number {
+  return () => (n = (n * 1103515245 + 12345) % 2 ** 31) / 2 ** 31;
+}
+
+test('a locked choice stays through a new feeling and through Roll; the rest can change', () => {
+  newFromMelody();
+  const { key, mode } = customizer.value!.choices;
+  assert.ok(customizer.value?.locked.has('key'), 'the melody’s key starts locked');
+  customize({ tempo: 77 });
+  toggleLock('tempo');
+  toggleLock('band.lead');
+  const lead = customizer.value!.choices.band.lead;
+  customize({ feeling: 'heroic' });
+  assert.equal(customizer.value?.choices.tempo, 77);
+  assert.equal(tempo(), 77);
+  const seeds = new Set<string>();
+  for (let i = 0; i < 6; i++) {
+    roll(seeded(i + 1));
+    const c: MelodySong = customizer.value!.choices;
+    assert.equal(c.tempo, 77);
+    assert.equal(c.key, key);
+    assert.equal(c.mode, mode);
+    assert.equal(c.band.lead, lead);
+    seeds.add(c.seed);
+  }
+  assert.ok(seeds.size > 1, 'Roll picks a new seed');
+  // a locked choice can still be changed by hand
+  customize({ tempo: 140 });
+  assert.equal(tempo(), 140);
+  toggleLock('tempo');
+  assert.ok(!customizer.value?.locked.has('tempo'));
+});
+
+test('each change is a version; going back to one puts its song in the window and keeps the list', () => {
+  newFromMelody();
+  assert.equal(customizer.value?.versions.length, 1);
+  customize({ tempo: 90 });
+  customize({ tempo: 110 });
+  customize({ tempo: 110 }); // nothing new
+  assert.equal(customizer.value?.versions.length, 3);
+  assert.equal(customizer.value?.at, 2);
+  pickVersion(1);
+  assert.equal(customizer.value?.at, 1);
+  assert.equal(customizer.value?.versions.length, 3);
+  assert.equal(tempo(), 90);
+  // a change from a version gone back to goes at the end
+  customize({ tempo: 95 });
+  assert.equal(customizer.value?.versions.length, 4);
+  assert.equal(customizer.value?.at, 3);
+  // the list keeps the last twelve
+  for (let i = 0; i < 15; i++) customize({ tempo: 60 + i });
+  assert.equal(customizer.value?.versions.length, 12);
+  assert.equal(customizer.value?.versions.at(-1)?.tempo, 74);
 });

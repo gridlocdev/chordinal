@@ -1,6 +1,6 @@
 // New from Melody's customizer (PRD §9.4), docked on the right while the song it makes is previewed in the window:
-// style and pace, song form, band and feel. Every change composes the song again; Cancel, Replace This Project and
-// Save and Create New end it.
+// Roll and the versions heard so far, then style and pace, song form, band and feel, each with a lock. Every change
+// composes the song again; Cancel, Replace This Project and Save and Create New end it.
 import { useEffect, useRef } from 'preact/hooks';
 import type { ComponentChildren, TargetedKeyboardEvent } from 'preact';
 import { EMOTIONS, GENRES, FORMS, GROOVES, ROLES, ROLE_NAMES, styleName } from '@chordinal/composer';
@@ -14,10 +14,14 @@ import {
   replaceWithMelodySong,
   saveAndCreateMelodySong,
   melodySections,
-  rollSeed,
+  roll,
+  toggleLock,
+  pickVersion,
+  versionName,
   KEY_NAMES,
   ONCE,
 } from '../melody-song.ts';
+import type { Customizer, LockKey } from '../melody-song.ts';
 import type { MelodySong as Choices } from '../melody-song.ts';
 
 const cap = (s: string) => `${s.charAt(0).toUpperCase()}${s.slice(1)}`;
@@ -45,7 +49,71 @@ function Group({ title, children }: { title: string; children: ComponentChildren
   );
 }
 
-function Panel({ c, error }: { c: Choices; error: string }) {
+/** a padlock, shut or open */
+const padlock = (shut: boolean) => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+    <rect x="3.5" y="7" width="9" height="6.5" rx="1.2" fill={shut ? 'currentColor' : 'none'} />
+    <path d={shut ? 'M5.5 7V5a2.5 2.5 0 0 1 5 0v2' : 'M5.5 7V5a2.5 2.5 0 0 1 4.9-.7'} />
+  </svg>
+);
+
+/** a choice's label and control, and its lock when it has one */
+function Field({
+  name,
+  lock,
+  locked,
+  off,
+  children,
+}: {
+  name: string;
+  lock?: LockKey;
+  locked: ReadonlySet<LockKey>;
+  off?: boolean;
+  children: ComponentChildren;
+}) {
+  const on = lock !== undefined && locked.has(lock);
+  return (
+    <>
+      <label class={off ? 'off' : ''}>
+        {name} {children}
+      </label>
+      {lock === undefined ? (
+        <span />
+      ) : (
+        <button
+          class={`lock${on ? ' on' : ''}`}
+          aria-pressed={on}
+          aria-label={`Lock ${name}`}
+          title={on ? `${name} is locked: Roll and a new style keep it` : `Lock ${name} so Roll keeps it`}
+          onClick={() => toggleLock(lock)}
+        >
+          {padlock(on)}
+        </button>
+      )}
+    </>
+  );
+}
+
+/** the versions heard so far, to go back to and compare */
+function Versions({ versions, at }: { versions: readonly Choices[]; at: number }) {
+  return (
+    <div class="versions" role="group" aria-label="Versions">
+      {versions.map((v, i) => (
+        <button
+          aria-pressed={i === at}
+          aria-label={`Version ${i + 1}`}
+          title={`Version ${i + 1}: ${versionName(v)}`}
+          onClick={() => pickVersion(i)}
+        >
+          {i + 1}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Panel({ state }: { state: Customizer }) {
+  const { choices: c, error, locked } = state;
   const first = useRef<HTMLSelectElement>(null);
   useEffect(() => first.current?.focus(), []);
   const set = (patch: Partial<Choices>) => customize(patch);
@@ -60,8 +128,7 @@ function Panel({ c, error }: { c: Choices; error: string }) {
     const list = instruments(role === 'drums'),
       at = c.band[role];
     return (
-      <label>
-        {ROLE_NAMES[role]}{' '}
+      <Field name={ROLE_NAMES[role]} lock={`band.${role}`} locked={locked}>
         <select
           name={`band-${role}`}
           value={at === null ? '' : String(at)}
@@ -78,17 +145,26 @@ function Panel({ c, error }: { c: Choices; error: string }) {
             <option value={String(i.program)}>{i.name}</option>
           ))}
         </select>
-      </label>
+      </Field>
     );
   };
   return (
     <aside class="customizer" role="complementary" aria-label="Song from melody" onKeyDown={keys}>
       <h2>Song from Melody</h2>
       <p class="hint">Each change composes the song again. Your project is kept until you choose below.</p>
+      <div class="reroll">
+        <button
+          class="primary"
+          onClick={() => roll()}
+          title="A new seed, feeling, genre and key, but for what's locked"
+        >
+          Roll
+        </button>
+        <Versions versions={state.versions} at={state.at} />
+      </div>
       <div class="groups">
         <Group title="Style and pace">
-          <label>
-            Feeling{' '}
+          <Field name="Feeling" lock="feeling" locked={locked}>
             <select
               ref={first}
               name="feeling"
@@ -99,18 +175,16 @@ function Panel({ c, error }: { c: Choices; error: string }) {
                 <option value={f}>{cap(f)}</option>
               ))}
             </select>
-          </label>
-          <label>
-            Genre{' '}
+          </Field>
+          <Field name="Genre" lock="genre" locked={locked}>
             <select name="genre" value={c.genre} onChange={(e) => set({ genre: e.currentTarget.value })}>
               <option value="">None</option>
               {Object.keys(GENRES).map((g) => (
                 <option value={g}>{styleName(g)}</option>
               ))}
             </select>
-          </label>
-          <label>
-            Tempo{' '}
+          </Field>
+          <Field name="Tempo" lock="tempo" locked={locked}>
             <span class="row">
               <input
                 type="number"
@@ -126,9 +200,8 @@ function Panel({ c, error }: { c: Choices; error: string }) {
               />
               <span class="hint">bpm</span>
             </span>
-          </label>
-          <label>
-            Key{' '}
+          </Field>
+          <Field name="Key" lock="key" locked={locked}>
             <span class="row">
               <select name="key" value={c.key} onChange={(e) => set({ key: e.currentTarget.value })}>
                 {KEY_NAMES.map((k) => (
@@ -141,29 +214,23 @@ function Panel({ c, error }: { c: Choices; error: string }) {
                 ))}
               </select>
             </span>
-          </label>
-          <label>
-            Seed{' '}
+          </Field>
+          <Field name="Seed" lock="seed" locked={locked}>
             <span class="row">
               <input name="seed" value={c.seed} onChange={(e) => set({ seed: e.currentTarget.value })} />
-              <button onClick={() => set({ seed: rollSeed() })} title="Compose it again with a new seed">
-                Roll
-              </button>
             </span>
-          </label>
+          </Field>
         </Group>
         <Group title="Song form">
-          <label>
-            Form{' '}
+          <Field name="Form" lock="form" locked={locked}>
             <select name="form" value={c.form} onChange={(e) => set({ form: e.currentTarget.value })}>
               <option value={ONCE}>Melody once</option>
               {Object.keys(FORMS).map((f) => (
                 <option value={f}>{words(f)}</option>
               ))}
             </select>
-          </label>
-          <label class={sections.length ? '' : 'off'}>
-            Melody in{' '}
+          </Field>
+          <Field name="Melody in" locked={locked} off={!sections.length}>
             <select
               name="melodyIn"
               value={c.melodyIn}
@@ -174,20 +241,18 @@ function Panel({ c, error }: { c: Choices; error: string }) {
                 <option value={t}>{words(t)}</option>
               ))}
             </select>
-          </label>
+          </Field>
         </Group>
         <Group title="Band">{ROLES.map(band)}</Group>
         <Group title="Feel">
-          <label>
-            Groove{' '}
+          <Field name="Groove" lock="groove" locked={locked}>
             <select name="groove" value={c.groove} onChange={(e) => set({ groove: e.currentTarget.value })}>
               {Object.keys(GROOVES).map((g) => (
                 <option value={g}>{words(g)}</option>
               ))}
             </select>
-          </label>
-          <label>
-            Swing{' '}
+          </Field>
+          <Field name="Swing" lock="swing" locked={locked}>
             <input
               type="range"
               name="swing"
@@ -197,9 +262,8 @@ function Panel({ c, error }: { c: Choices; error: string }) {
               value={c.swing}
               onChange={(e) => set({ swing: Number(e.currentTarget.value) })}
             />
-          </label>
-          <label>
-            Dynamics{' '}
+          </Field>
+          <Field name="Dynamics" lock="dynamics" locked={locked}>
             <input
               type="range"
               name="dynamics"
@@ -209,9 +273,8 @@ function Panel({ c, error }: { c: Choices; error: string }) {
               value={c.dynamics}
               onChange={(e) => set({ dynamics: Number(e.currentTarget.value) })}
             />
-          </label>
-          <label>
-            Lift{' '}
+          </Field>
+          <Field name="Lift" lock="lift" locked={locked}>
             <span class="row">
               <input
                 type="checkbox"
@@ -221,9 +284,8 @@ function Panel({ c, error }: { c: Choices; error: string }) {
               />
               <span class="hint">the last chorus goes up a step</span>
             </span>
-          </label>
-          <label>
-            Ritardando{' '}
+          </Field>
+          <Field name="Ritardando" lock="ritardando" locked={locked}>
             <span class="row">
               <input
                 type="checkbox"
@@ -233,7 +295,7 @@ function Panel({ c, error }: { c: Choices; error: string }) {
               />
               <span class="hint">the end slows down</span>
             </span>
-          </label>
+          </Field>
         </Group>
       </div>
       {error && (
@@ -266,5 +328,5 @@ function Panel({ c, error }: { c: Choices; error: string }) {
 /** the customizer, while a song from a melody is previewed */
 export function MelodySong() {
   const c = customizer.value;
-  return c ? <Panel c={c.choices} error={c.error} /> : null;
+  return c ? <Panel state={c} /> : null;
 }

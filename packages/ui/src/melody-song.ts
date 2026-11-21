@@ -8,8 +8,9 @@ import { guessChords, bpmAt, pitchClass, MODES } from '@chordinal/lib';
 import type { Mode } from '@chordinal/lib';
 import { beatsPerBar, meterAt, findClip, history } from '@chordinal/daw';
 import type { History, Project } from '@chordinal/daw';
-import { compose, toProject, planSong, genreProfile, EMOTIONS, FORMS, ROLES } from '@chordinal/composer';
-import type { SongSpec } from '@chordinal/composer';
+import { compose, toProject, planSong, genreProfile, styleName } from '@chordinal/composer';
+import { EMOTIONS, GENRES, FORMS, ROLES } from '@chordinal/composer';
+import type { Role, SongSpec } from '@chordinal/composer';
 import { chordsOf, sketchSection, melodySongSpec, ONCE, SKETCH_EMOTION } from '@chordinal/sketch';
 import type { MelodySong, SketchBand, SketchSection } from '@chordinal/sketch';
 import {
@@ -56,9 +57,35 @@ interface Stash {
   beat: number;
 }
 
-/** the customizer, while it's open: what it chose, and the last thing composing said when it failed */
+/** a choice that can be locked: a lock keeps it through Roll and through a new feeling's or genre's defaults. The
+ * key locks its mode too, and the form its melody section. */
+export type LockKey =
+  | 'feeling'
+  | 'genre'
+  | 'tempo'
+  | 'key'
+  | 'seed'
+  | 'form'
+  | `band.${Role}`
+  | 'groove'
+  | 'swing'
+  | 'dynamics'
+  | 'lift'
+  | 'ritardando';
+
+/** the locks the customizer opens with: the melody's own key and mode */
+export const START_LOCKS: readonly LockKey[] = ['key'];
+
+/** the versions the customizer keeps to go back to, newest last */
+export const VERSIONS = 12;
+
+/** the customizer, while it's open: what it chose, what's locked, the versions heard so far and which one is in the
+ * window, and the last thing composing said when it failed */
 export interface Customizer {
   choices: MelodySong;
+  locked: ReadonlySet<LockKey>;
+  versions: readonly MelodySong[];
+  at: number;
   error: string;
 }
 
@@ -108,15 +135,83 @@ export function styleDefaults(c: MelodySong, meter: string): MelodySong {
   };
 }
 
-/** a change to the choices, with what follows from it: a new feeling or genre brings its own defaults, a new form its
- * own melody section */
-export function changed(c: MelodySong, patch: Partial<MelodySong>, meter: string): MelodySong {
+/** the locked choices of `was` put back over `next`, but for those changed by hand in `patch` */
+export function keepLocked(
+  next: MelodySong,
+  was: MelodySong,
+  locked: ReadonlySet<LockKey>,
+  patch: Partial<MelodySong> = {},
+): MelodySong {
+  const out = { ...next, band: { ...next.band } };
+  for (const k of locked) {
+    if (k.startsWith('band.')) {
+      const role = k.slice(5) as Role;
+      if (!patch.band || patch.band[role] === was.band[role]) out.band[role] = was.band[role];
+    } else if (k === 'key') {
+      if (patch.key === undefined) out.key = was.key;
+      if (patch.mode === undefined) out.mode = was.mode;
+    } else if (k === 'form') {
+      if (patch.form === undefined && patch.melodyIn === undefined) {
+        out.form = was.form;
+        out.melodyIn = was.melodyIn;
+      }
+    } else {
+      const f = k as Exclude<LockKey, `band.${Role}` | 'key' | 'form'>;
+      if (patch[f] === undefined) (out as Record<string, unknown>)[f] = was[f];
+    }
+  }
+  return out;
+}
+
+/** a change to the choices, with what follows from it: a new feeling or genre brings its own defaults, but for what's
+ * locked; a new form its own melody section */
+export function changed(
+  c: MelodySong,
+  patch: Partial<MelodySong>,
+  meter: string,
+  locked: ReadonlySet<LockKey> = new Set(),
+): MelodySong {
   let next = { ...c, ...patch };
-  if (patch.feeling !== undefined || patch.genre !== undefined) next = styleDefaults(next, meter);
-  else if (patch.form !== undefined && !melodySections(next.form).includes(next.melodyIn))
+  if (patch.feeling !== undefined || patch.genre !== undefined)
+    next = keepLocked(styleDefaults(next, meter), c, locked, patch);
+  if (!melodySections(next.form).includes(next.melodyIn) && next.form !== ONCE)
     next = { ...next, melodyIn: defaultSection(next.form) };
   return next;
 }
+
+/** one of a list, at random */
+const pick = <T>(list: readonly T[], rng: () => number): T => list[Math.floor(rng() * list.length)]!;
+
+/** Roll: a new seed, and new picks for the feeling, genre, key, lift and ending, but for what's locked; the feeling's
+ * and genre's defaults follow, but for what's locked. A genre is left out a third of the time. */
+export function rolled(
+  c: MelodySong,
+  locked: ReadonlySet<LockKey>,
+  meter: string,
+  rng: () => number = Math.random,
+): MelodySong {
+  const free = (k: LockKey) => !locked.has(k);
+  const patch: Partial<MelodySong> = {};
+  if (free('seed')) patch.seed = rollSeed(rng);
+  if (free('feeling')) patch.feeling = pick(Object.keys(EMOTIONS), rng);
+  if (free('genre')) patch.genre = rng() < 1 / 3 ? '' : pick(Object.keys(GENRES), rng);
+  if (free('key')) {
+    patch.key = pick(KEY_NAMES, rng);
+    patch.mode = pick(['major', 'minor', 'dorian', 'mixolydian'], rng);
+  }
+  if (free('lift')) patch.lift = rng() < 0.3;
+  if (free('ritardando')) patch.ritardando = rng() < 0.3;
+  // nothing to bring new defaults: the free choices of the style still change with the seed's plan
+  const style = patch.feeling ?? patch.genre;
+  const next = changed(c, patch, meter, locked);
+  return style === undefined ? keepLocked(styleDefaults(next, meter), c, locked, patch) : next;
+}
+
+/** what a version is, in a few words: its feeling, genre, tempo and key */
+export const versionName = (c: MelodySong): string =>
+  [styleName(c.feeling), c.genre && styleName(c.genre), `${c.tempo} bpm`, `${c.key} ${c.mode}`]
+    .filter(Boolean)
+    .join(' · ');
 
 /** the preview's project for the choices */
 export function songFor(c: MelodySong, src: Source): Project {
@@ -126,8 +221,8 @@ export function songFor(c: MelodySong, src: Source): Project {
 }
 
 /** a short seed, easy to read back and type in again */
-export const rollSeed = (): string =>
-  Math.floor(Math.random() * 36 ** 4)
+export const rollSeed = (rng: () => number = Math.random): string =>
+  Math.floor(rng() * 36 ** 4)
     .toString(36)
     .padStart(4, '0');
 
@@ -191,7 +286,13 @@ export function newFromMelody(): void {
     return;
   }
   enter(song);
-  customizer.value = { choices: opening, error: '' };
+  customizer.value = {
+    choices: opening,
+    locked: new Set(START_LOCKS),
+    versions: [opening],
+    at: 0,
+    error: '',
+  };
 }
 
 /** the window shows the song in place of the project, which is kept to put back */
@@ -215,18 +316,51 @@ function enter(song: Project): void {
   beat.value = 0;
 }
 
-/** changes the choices and composes the song again; it keeps playing from where it is, and each track keeps its mute
- * and solo */
+/** changes the choices and composes the song again */
 export function customize(patch: Partial<MelodySong>): void {
   const c = customizer.value;
   if (!c || !source) return;
-  let choices = { ...c.choices, ...patch },
+  const meter = source.meter;
+  show(() => changed(c.choices, patch, meter, c.locked));
+}
+
+/** Roll: a new seed and new choices for what isn't locked, composed again */
+export function roll(rng: () => number = Math.random): void {
+  const c = customizer.value;
+  if (!c || !source) return;
+  const meter = source.meter;
+  show(() => rolled(c.choices, c.locked, meter, rng));
+}
+
+/** locks or unlocks a choice */
+export function toggleLock(k: LockKey): void {
+  const c = customizer.value;
+  if (!c) return;
+  const locked = new Set(c.locked);
+  if (!locked.delete(k)) locked.add(k);
+  customizer.value = { ...c, locked };
+}
+
+/** goes back to a version heard before, as it was; it stays where it is in the list */
+export function pickVersion(at: number): void {
+  const c = customizer.value,
+    v = c?.versions[at];
+  if (!c || !v || at === c.at) return;
+  show(() => v, at);
+}
+
+/** composes the song for the choices made by `make` and puts it in the window; it keeps playing from where it is, and
+ * each track keeps its mute and solo. A new version goes at the end of the list; `at` is a version gone back to. */
+function show(make: () => MelodySong, at?: number): void {
+  const c = customizer.value;
+  if (!c || !source) return;
+  let choices = c.choices,
     song: Project;
   try {
-    choices = changed(c.choices, patch, source.meter);
+    choices = make();
     song = songFor(choices, source);
   } catch (e) {
-    customizer.value = { choices, error: errorText(e) };
+    customizer.value = { ...c, choices, error: errorText(e) };
     return;
   }
   const was = new Map(project.value.tracks.map((t) => [t.name, t.mixer]));
@@ -242,7 +376,9 @@ export function customize(patch: Partial<MelodySong>): void {
   selected.value = song.tracks.find((t) => t.name === sel)?.id ?? song.tracks[0]?.id ?? null;
   selectedClip.value = null;
   picked.value = new Set();
-  customizer.value = { choices, error: '' };
+  const same = JSON.stringify(choices) === JSON.stringify(c.versions[c.at]);
+  const versions = at === undefined && !same ? [...c.versions, choices].slice(-VERSIONS) : c.versions;
+  customizer.value = { ...c, choices, versions, at: at ?? (same ? c.at : versions.length - 1), error: '' };
 }
 
 /** puts the project back as it was, and closes the customizer; returns the song as it was in the window */
