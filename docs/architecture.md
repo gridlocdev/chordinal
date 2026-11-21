@@ -1,6 +1,6 @@
 # Architecture
 
-A desktop app (Electron) with a DAW-style UI in [Preact](https://preactjs.com) and [signals](https://preactjs.com/guide/v10/signals). Vite builds `apps/web/index.html` and everything `apps/web/src/main.tsx` imports into `apps/web/dist/` (`chordinal.js`, `chordinal.css`, `just build`); esbuild bundles the desktop main process and preload into `apps/desktop/dist/`. The code is a pnpm workspace: engine packages in `packages/`, the page in `apps/web/` and the Electron shell in `apps/desktop/` (see [Layout](#layout)). `apps/web/src/` holds the app's shell, layout, File menu and files, its browser (`apps/web/src/components/`, with what it and the track headers do in `apps/web/src/rack.ts`), Generate Part… (`apps/web/src/generate.ts`), and Record Melody and Whistle a Chord (`apps/web/src/whistle.ts`, over the shared recorder in `packages/ui/src/recording.ts`); the views and actions are in `packages/ui/src/`. Everything below `packages/ui/src/` is plain ES modules with no DOM in the music logic, so the tools in `tools/` and the tests in `test/` run it in Node as it is.
+A desktop app (Electron), whose page also runs in a plain browser, with a DAW-style UI in [Preact](https://preactjs.com) and [signals](https://preactjs.com/guide/v10/signals). Vite builds `apps/web/index.html` and everything `apps/web/src/main.tsx` imports into `apps/web/dist/` (`chordinal.js`, `chordinal.css`, `just build`); esbuild bundles the desktop main process and preload into `apps/desktop/dist/`. The code is a pnpm workspace: engine packages in `packages/`, the page in `apps/web/` and the Electron shell in `apps/desktop/` (see [Layout](#layout)). `apps/web/src/` holds the app's shell, layout, File menu and files, its browser (`apps/web/src/components/`, with what it and the track headers do in `apps/web/src/rack.ts`), Generate Part… (`apps/web/src/generate.ts`), and Record Melody and Whistle a Chord (`apps/web/src/whistle.ts`, over the shared recorder in `packages/ui/src/recording.ts`); the views and actions are in `packages/ui/src/`. Everything below `packages/ui/src/` is plain ES modules with no DOM in the music logic, so the tools in `tools/` and the tests in `test/` run it in Node as it is.
 
 ## This app
 
@@ -127,13 +127,13 @@ A beat is a quarter note; a note's beat is from its clip's start. `marker.meta`,
 
 ## Layout
 
-A pnpm workspace. Each package is `@chordinal/<name>`, imported by that name through its `src/index.js`, never by a path inside it.
+A pnpm workspace. Each package is `@chordinal/<name>`, imported by that name through its `src/index.ts`, never by a path inside it. Each `index.ts` names what it exports (no `export *`).
 
 | Package | Holds | May import |
 |---|---|---|
 | `packages/lib` | pure helpers: SoundFont parsing, music theory, pitch tracking, transcription, files | nothing |
 | `packages/audio` | the SoundFont libraries and their catalog, the chip instruments' data, the library in use | lib |
-| `packages/daw` | projects, their file, edits and undo, the parts playback schedules, the MIDI FX hook | lib, audio |
+| `packages/daw` | projects, their file, edits and undo, the parts playback schedules, the MIDI FX hook | lib |
 | `packages/composer` | composing projects and the Humanize FX | lib, audio, daw |
 | `packages/sketch` | whistle → notes: reading takes, the melody as a song spec | lib, daw |
 | `packages/playback` | everything on Web Audio: the AudioContext, instruments, the mixer, the player, the mic and the recorder | lib, audio, daw, sketch |
@@ -142,15 +142,15 @@ A pnpm workspace. Each package is `@chordinal/<name>`, imported by that name thr
 | `apps/desktop` | the Electron shell: the window, menus, project folders, settings, SoundFont downloads | audio (the library list) |
 | `apps/cli` | the `chordinal` command line: compose, export and render, in Node; its render page in a hidden Electron window | lib, audio, daw, composer and Node; its page (`src/page/`) also playback, but not Node |
 
-`lib`, `audio`, `daw`, `composer` and `sketch` are the engine: no DOM, no Node and no Preact. `composer` and `sketch` don't import each other. `eslint.config.js` enforces all of this.
+`lib`, `audio`, `daw`, `composer` and `sketch` are the engine: no DOM, no Node and no Preact. `composer` and `sketch` don't import each other. `eslint.config.js` and `test/architecture.test.ts` enforce all of this.
 
 ## Rules
 
 - Imports only point down the table. For upward needs, pass a callback or a parameter.
-- Content (songs, tables, tuning) goes in `*-data.js` files that import nothing.
+- Content (songs, tables, tuning) goes in `*-data.ts` files that import nothing (types aside).
 - State the UI shows lives in signals in `packages/ui/src/store.ts` (the recording in progress in `packages/ui/src/recording.ts`). Components read it and call actions; they don't keep copies.
-- Files are named for what they do. No `utils.js`, `helpers.js`, `misc.js`.
-- `lib/` and `*-data.js` import no DOM code, and are covered by tests in `test/`.
+- Files are named for what they do. No `utils.ts`, `helpers.ts`, `misc.ts`.
+- The engine is covered by tests in each package's `test/`; the engine's edits and the save session also by seeded random-operation tests that check the project's invariants (`checkInvariants` in `packages/daw/src/invariants.ts`) after every step.
 
 ## Checking
 
@@ -158,5 +158,9 @@ A pnpm workspace. Each package is `@chordinal/<name>`, imported by that name thr
 just check    # prettier, eslint (the layer rules), tsc, the bundle, then the tests
 just test     # node --test and vitest
 ```
+
+`test/architecture.test.ts` checks what ESLint can't: the layers in each `package.json`, the pure engine, that only `native-bridge.ts` names the desktop bridge, that projects are reached only through the store, one place for key listeners, that every command id is in the catalog, named exports, and no `any`, `@ts-ignore`, `@ts-expect-error` or `eslint-disable` outside `test/architecture-exceptions.json`. Each failure says how to fix it.
+
+A random-operation test prints the seed of a failing run. Replay it with `SEED=<n> npx vitest run <file>`, try more seeds with `RUNS=<n>`, and start elsewhere with `SEED_BASE=<n>`.
 
 Setting up, the other `just` recipes and the tools are in [development.md](development.md).
