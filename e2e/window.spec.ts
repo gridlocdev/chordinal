@@ -1,4 +1,5 @@
-// The window: the command menu, the Keyboard Shortcuts window, the theme and the status bar (Chordinal PRD §5.4–§5.7).
+// The window: the command menu, the Keyboard Shortcuts window, the theme and the status bar (Chordinal PRD §5.4–§5.7),
+// and the browser's section dropdown (§7.3).
 import {
   commandMenu,
   expect,
@@ -103,6 +104,34 @@ test.describe('The window', () => {
     await page.screenshot({ path: test.info().outputPath('status-bar.png') });
     await page.keyboard.press('KeyZ');
     await expect(keys).toHaveText(/^Keys C5–F6/);
+    expect(errors).toEqual([]);
+  });
+
+  test("the browser's dropdown jumps to a section and follows the scroll", async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    const browser = page.locator('.browser');
+    await browser.getByRole('button', { name: 'Instruments', exact: true }).click();
+    const jump = browser.getByRole('combobox', { name: 'Go to section' });
+    const sections = await jump.locator('option').allTextContents();
+    expect(sections.length).toBeGreaterThan(1);
+    await expect(jump).toHaveValue('0');
+
+    const last = sections.length - 1;
+    await jump.selectOption(String(last));
+    const list = browser.locator('.list');
+    const head = list.locator('.group', { hasText: sections[last] });
+    await expect(head).toBeInViewport();
+    const [listTop, headTop] = await Promise.all([list.boundingBox(), head.boundingBox()]);
+    expect(Math.abs((headTop?.y ?? 0) - (listTop?.y ?? 0))).toBeLessThan(2);
+
+    await list.evaluate((el) => el.scrollTo(0, 0));
+    await expect(jump).toHaveValue('0');
+
+    await browser.getByRole('button', { name: 'Kits', exact: true }).click();
+    await expect(jump).toBeHidden();
+    await browser.getByRole('button', { name: 'Projects', exact: true }).click();
+    await expect(jump.locator('option')).toHaveText(['Recent', 'Documents/Chordinal']);
     expect(errors).toEqual([]);
   });
 });

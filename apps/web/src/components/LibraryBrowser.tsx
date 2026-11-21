@@ -2,7 +2,8 @@
 // projects (Open Recent and those in Documents/Chordinal/), and the open project's whistled takes (§9.3). Click an
 // instrument or a kit to hear it, double-click to put it on the selected track, or drag it onto a track or the channel
 // rack. Click a take to read it onto the selected track at the playhead, or drag it onto a track.
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import type { ComponentChildren } from 'preact';
 import { signal } from '@preact/signals';
 import { soundfontLibrary } from '@chordinal/audio';
 import type { LibraryPreset } from '@chordinal/audio';
@@ -54,6 +55,69 @@ function Preset({ p }: PresetProps) {
   );
 }
 
+/**
+ * Where a section heading sits in the list's content. The headings are sticky, so their own offsetTop moves once they
+ * stick: measure from the row under them instead.
+ */
+function headTop(head: HTMLElement): number {
+  const next = head.nextElementSibling;
+  return next instanceof HTMLElement ? next.offsetTop - head.offsetHeight : head.offsetTop;
+}
+
+/** the index of the last section heading at or above the top of the list */
+function sectionAtTop(list: HTMLElement): number {
+  let at = 0;
+  list.querySelectorAll<HTMLElement>('.group').forEach((h, i) => {
+    if (headTop(h) <= list.scrollTop + 1) at = i;
+  });
+  return at;
+}
+
+interface SectionListProps {
+  sections: string[];
+  children: ComponentChildren;
+}
+
+/**
+ * The scrolling list, with a dropdown above it to jump to a section when there's more than one (PRD §7.3). The
+ * sections are the list's `.group` headings, in order.
+ */
+function SectionList({ sections, children }: SectionListProps) {
+  const list = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState(0);
+  const key = sections.join('\n');
+  useEffect(() => {
+    if (list.current) setAt(sectionAtTop(list.current));
+  }, [key]);
+  const jump = (i: number) => {
+    const el = list.current;
+    const head = el?.querySelectorAll<HTMLElement>('.group')[i];
+    if (!el || !head) return;
+    el.scrollTop = headTop(head);
+    setAt(i);
+  };
+  return (
+    <>
+      {sections.length > 1 && (
+        <div class="sections">
+          <select
+            aria-label="Go to section"
+            value={String(Math.min(at, sections.length - 1))}
+            onChange={(e) => jump(Number(e.currentTarget.value))}
+          >
+            {sections.map((s, i) => (
+              <option value={String(i)}>{s}</option>
+            ))}
+          </select>
+        </div>
+      )}
+      <div class="list" ref={list} onScroll={(e) => setAt(sectionAtTop(e.currentTarget))}>
+        {children}
+      </div>
+    </>
+  );
+}
+
 /** the kits, or the melodic instruments by family */
 interface PresetsProps {
   kit: boolean;
@@ -66,7 +130,7 @@ function Presets({ kit }: PresetsProps) {
     : instrumentGroups(presets);
   return (
     <>
-      <div class="list">
+      <SectionList sections={kit ? [] : groups.map(([group]) => group)}>
         {groups.map(([group, list]) => (
           <>
             {!kit && <div class="group">{group}</div>}
@@ -75,7 +139,7 @@ function Presets({ kit }: PresetsProps) {
             ))}
           </>
         ))}
-      </div>
+      </SectionList>
       <div class="foot">
         <LibraryPicker />
       </div>
@@ -108,7 +172,7 @@ function Projects() {
     </div>
   );
   return (
-    <div class="list">
+    <SectionList sections={['Recent', 'Documents/Chordinal']}>
       <div class="group">Recent</div>
       {recent.value.length ? (
         recent.value.map((p) => item(p, !p.exists))
@@ -117,7 +181,7 @@ function Projects() {
       )}
       <div class="group">Documents/Chordinal</div>
       {library.length ? library.map((p) => item(p)) : <div class="empty">No projects saved there yet.</div>}
-    </div>
+    </SectionList>
   );
 }
 

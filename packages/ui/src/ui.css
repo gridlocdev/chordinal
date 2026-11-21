@@ -572,7 +572,15 @@ input[type='range']::-webkit-slider-thumb {
   border-radius: 2px;
   background: var(--accent);
 }
+.browser .sections {
+  flex: none;
+  padding: 8px 12px 2px;
+}
+.browser .sections select {
+  width: 100%;
+}
 .list {
+  position: relative;
   flex: 1;
   overflow-y: auto;
   padding: 0 6px 8px;

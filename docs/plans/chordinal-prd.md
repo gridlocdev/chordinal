@@ -79,7 +79,8 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
    - **Projects**: the recent projects and the folder `Documents/Chordinal/`.
    - **Takes**: the open project's whistled takes (§9.3), to read onto a track again.
 2. Clicking an instrument plays a short preview on middle C. Clicking a kit plays a kick, a snare and a closed hat.
-3. Later work adds the Synths, Effects and Samples tabs (§11).
+3. When a tab's list has more than one section (the instrument families, or Recent and Documents/Chordinal), a dropdown across the full width under the tabs lists them. Picking one scrolls the list to that section's heading, and while the list scrolls the dropdown names the section at the top.
+4. Later work adds the Synths, Effects and Samples tabs (§11).
 
 ## §8 Generate Part…
 
