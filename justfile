@@ -209,12 +209,12 @@ projects *songs:
 harmony *songs:
     node tools/harmony-report.mjs "$@"
 
-# e.g. just whistle scratch/hook.m4a --tempo 60 --meter 3/4 · --key Eb --mode major to skip the key guess
-# Transcribe a whistled melody into a section's `melody:` notation (any file ffmpeg reads, or a folder of them).
+# e.g. just transcribe scratch/hook.m4a --tempo 60 --meter 3/4 · --key Eb --mode major to skip the key guess
+# Transcribe a recorded melody into a section's `melody:` notation (any file ffmpeg reads, or a folder of them).
 [group('music')]
 [positional-arguments]
-whistle +args:
-    node tools/whistle.mjs "$@"
+transcribe +args:
+    node tools/transcribe.mjs "$@"
 
 # Report how an NSF file's songs are built (keep the files in reference/, which git ignores).
 [group('music')]
@@ -294,3 +294,4 @@ alias web := preview-web
 alias package := package-desktop
 alias install := install-desktop
 alias deps := setup
+alias whistle := transcribe

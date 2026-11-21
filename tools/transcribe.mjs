@@ -1,8 +1,8 @@
-// Transcribes a whistled melody into the composer's scale-degree notation, ready for a section's `melody:`.
-//   node tools/whistle.mjs take.wav --tempo 60 [--meter 3/4] [--key Eb] [--mode major] [--json out.json]
-//   node tools/whistle.mjs scratch/lanterns-hook            (every audio file in the folder)
-//   node tools/whistle.mjs chords.wav --tempo 60 --chords   (an arpeggio take: its progression)
-// --tempo is the tempo you whistled at, roughly; it can be slower than the song's, since the notation counts beats.
+// Transcribes a recorded melody into the composer's scale-degree notation, ready for a section's `melody:`.
+//   node tools/transcribe.mjs take.wav --tempo 60 [--meter 3/4] [--key Eb] [--mode major] [--json out.json]
+//   node tools/transcribe.mjs scratch/lanterns-hook            (every audio file in the folder)
+//   node tools/transcribe.mjs chords.wav --tempo 60 --chords   (an arpeggio take: its progression)
+// --tempo is the tempo you recorded at, roughly; it can be slower than the song's, since the notation counts beats.
 // Without --key it guesses the key and shows the runners-up. Needs ffmpeg for anything but plain .wav.
 import { spawnSync } from 'node:child_process';
 import { readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -24,7 +24,7 @@ const chordsAt = args.indexOf('--chords');
 const asChords = chordsAt >= 0 && !!args.splice(chordsAt, 1);
 if (!args.length || !(tempo > 0))
 {
-    console.error('usage: node tools/whistle.mjs file-or-folder… --tempo <bpm you whistled at> [--chords] [--meter 3/4] [--key Eb] [--mode major] [--json out.json]');
+    console.error('usage: node tools/transcribe.mjs file-or-folder… --tempo <bpm you recorded at> [--chords] [--meter 3/4] [--key Eb] [--mode major] [--json out.json]');
     process.exit(1);
 }
 const beatsPerBar = Number(meter.split('/')[0]) * (meter.endsWith('/8') ? 0.5 : 1);
@@ -40,7 +40,7 @@ for (const file of files)
     const samples = new Float32Array(ff.stdout.buffer, ff.stdout.byteOffset, ff.stdout.length >> 2);
     const frames = trackPitch(samples, RATE);
     const t = transcribe(frames, { tempo });
-    if (!t.notes.length) { console.log(`── ${basename(file)}: no whistled notes found\n`); continue; }
+    if (!t.notes.length) { console.log(`── ${basename(file)}: no notes found\n`); continue; }
     const guesses = guessKeys(t.notes);
     const given = keyName ? { key: keyName, tonic: pitchClass(keyName), mode: modeName ?? 'major' } : null;
     if (asChords)
@@ -48,7 +48,7 @@ for (const file of files)
         // an arpeggio take: the chords decide between keys the notes alone can't tell apart
         const { key, chords } = given ? { key: given, chords: guessChords(t.notes, { ...given, beatsPerBar }) } : chordKey(t.notes, guesses, beatsPerBar);
         const progression = toProgression(chords, beatsPerBar);
-        console.log(`── ${basename(file)}: ${chords.length} chords over ${t.notes.length} notes, whistled at ≈ ${Math.round(t.tempo)} bpm`);
+        console.log(`── ${basename(file)}: ${chords.length} chords over ${t.notes.length} notes, recorded at ≈ ${Math.round(t.tempo)} bpm`);
         console.log(`  key: ${key.key} ${key.mode}${given ? '' : `   (also ${guesses.filter(g => g !== key).slice(0, 3).map(g => `${g.key} ${g.mode}`).join(', ')})`}`);
         for (const c of chords)
             console.log(`  bar ${(c.beat / beatsPerBar + 1).toFixed(c.beat % beatsPerBar ? 1 : 0).padEnd(4)} ${c.symbol.padEnd(9)} or ${c.others.map(o => o.symbol).join(', ')}`);
@@ -61,7 +61,7 @@ for (const file of files)
     const vib = vibratoSummary(t.notes);
     const range = [Math.min(...t.notes.map(n => n.key)), Math.max(...t.notes.map(n => n.key))];
     const offCents = t.notes.filter(n => Math.abs(n.cents) > 30);
-    console.log(`── ${basename(file)}: ${t.notes.length} notes ${noteName(range[0])}–${noteName(range[1])}, whistled at ≈ ${Math.round(t.tempo)} bpm, `
+    console.log(`── ${basename(file)}: ${t.notes.length} notes ${noteName(range[0])}–${noteName(range[1])}, recorded at ≈ ${Math.round(t.tempo)} bpm, `
         + `${Math.round(t.offset * 100) >= 0 ? '+' : ''}${Math.round(t.offset * 100)} cents from A440`);
     console.log(`  key: ${key.key} ${key.mode}${keyName ? '' : `   (also ${guesses.slice(1, 4).map(g => `${g.key} ${g.mode}`).join(', ')})`}`);
     if (vib) console.log(`  vibrato on ${vib.notes} notes: ${vib.rate} Hz, ±${vib.cents} cents   → the song's style: { vibrato: { rate: ${vib.rate}, cents: ${vib.cents} } }`);

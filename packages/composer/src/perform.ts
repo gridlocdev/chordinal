@@ -152,7 +152,7 @@ export function perform(
 
 // late vibrato on held notes of the voices that sing. A section with notes marked `~` (a hand-written or whistled
 // melody) is played as marked instead: those notes vibrate, on any melodic instrument and whatever their length, at
-// the style's vibrato (a whistled take's rate and depth, from `just whistle`), and the rest of that section's notes don't
+// the style's vibrato (a whistled take's rate and depth, from `just transcribe`), and the rest of that section's notes don't
 // Every `~` mark is played or dropped here, so no note leaves with vibrato: true.
 function addVibrato(
   notes: WorkingNote[],

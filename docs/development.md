@@ -103,16 +103,16 @@ Then the chords: drag over the chord track above the tracks (bars, or beats with
 
 **From the command line.**
 
-`just whistle <file or folder> --tempo <bpm>` (`tools/whistle.mjs`, needs ffmpeg for anything but `.wav`) turns a recorded melody into a section's `melody:` line. `--tempo` is the speed you recorded at, roughly: the tool fits the beat grid within ±10% of it, and since the notation counts beats you can record slower than the song plays. It snaps notes to 8ths or triplets, beat by beat (a triplet is written `5:1/3`), keeps staccato notes however short, guesses the key (or takes `--key Eb --mode major`), writes `~` on notes with vibrato, and flags notes more than 30 cents off. `--meter 3/4` places the bar lines; `--json out.json` keeps the notes. Keep takes in `scratch/`: git ignores that folder, so they stay on your machine.
+`just transcribe <file or folder> --tempo <bpm>` (`tools/transcribe.mjs`, needs ffmpeg for anything but `.wav`) turns a recorded melody into a section's `melody:` line. `--tempo` is the speed you recorded at, roughly: the tool fits the beat grid within ±10% of it, and since the notation counts beats you can record slower than the song plays. It snaps notes to 8ths or triplets, beat by beat (a triplet is written `5:1/3`), keeps staccato notes however short, guesses the key (or takes `--key Eb --mode major`), writes `~` on notes with vibrato, and flags notes more than 30 cents off. `--meter 3/4` places the bar lines; `--json out.json` keeps the notes. Keep takes in `scratch/`: git ignores that folder, so they stay on your machine.
 
 ```bash
-just whistle scratch/lantern-hook.m4a --tempo 60 --meter 3/4
+just transcribe scratch/lantern-hook.m4a --tempo 60 --meter 3/4
 ```
 
 **Chords.** With `--chords` the take is read as arpeggios: sound each chord's notes, in any order and octave, and the tool finds the chords and where they change (on beats; bar lines and half bars are likelier), and prints a `progression:` with each chord's runners-up. Only the chord is kept, so the composer voices it to fit the song. Start an arpeggio on the chord's third or seventh for an inversion (3-5-8 is `I/3`); starting on the fifth is just the chord. A 7th chord needs its 7th recorded in its own bar. Between relative keys (G major and E minor) it keeps the one whose chords fit best, which usually means the one the take starts and ends on.
 
 ```bash
-just whistle scratch/lantern-chords.m4a --tempo 60 --meter 3/4 --chords
+just transcribe scratch/lantern-chords.m4a --tempo 60 --meter 3/4 --chords
 ```
 
 Tips: start each note with a consonant (a soft "t" or "d") when repeating a pitch, so it is heard as a new note, and leave a second of silence before the first note.

@@ -22,7 +22,7 @@
 - A new app icon: a chord on one stem with a flag. `just run-desktop` shows it, and the name Chordinal in the menu bar, instead of Electron's.
 - A dropdown under the browser's tabs jumps to an instrument family or a group of projects, so you don't have to scroll.
 - Changing the octave with `Z` or `X` scrolls the piano roll to the keys you're playing.
-- Recording isn't only for whistling: **Whistle a Chord** is now **Record a Chord**, and a melody recorded with no track selected goes on a new track called Melody.
+- Recording isn't only for whistling: **Whistle a Chord** is now **Record a Chord**, and a melody recorded with no track selected goes on a new track called Melody. `just whistle` is now `just transcribe`; the old name still works.
 - Saving is safer: a project changed on disk since you opened it asks before it's replaced, and saves and opens never overlap.
 - Questions wait their turn instead of replacing one another.
 - Pattern names lose stray spaces at either end.
