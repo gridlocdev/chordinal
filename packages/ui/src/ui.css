@@ -218,7 +218,7 @@ input[type='range']::-webkit-slider-thumb {
   display: grid;
   grid-template:
     'top top' 52px 'browser arrange' 1fr 'browser split' 5px 'browser editor' var(--editor-h, 300px)
-    / var(--browser-w, 260px) 1fr;
+    'status status' 26px / var(--browser-w, 260px) 1fr;
 }
 .app.no-browser {
   grid-template-columns: 0 1fr;
@@ -245,6 +245,64 @@ input[type='range']::-webkit-slider-thumb {
 }
 .editor {
   grid-area: editor;
+}
+
+/* ── macOS's unified title bar (PRD §5.8): the top bar is the title bar, with the traffic lights at its left ─────── */
+.unified .transport {
+  padding-left: 84px;
+  -webkit-app-region: drag;
+}
+.unified.fullscreen .transport {
+  padding-left: 12px;
+}
+.unified :is(button, input, select, textarea, a, label, [role='menu'], [role='dialog'], .lcd) {
+  -webkit-app-region: no-drag;
+}
+
+/* ── the status bar (PRD §5.6): the notice on the left, what the keys play and the save state on the right ───────── */
+.status-bar {
+  grid-area: status;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  padding: 0 12px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.status-bar .notice {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.status-bar .notice .text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status-bar .notice.error {
+  color: var(--rec);
+}
+.status-bar .notice .dismiss {
+  padding: 0 6px;
+  line-height: 18px;
+}
+.status-bar .facts {
+  display: flex;
+  gap: 16px;
+}
+.status-bar .keys {
+  color: var(--text);
+}
+.status-bar .keys.idle {
+  color: var(--faint);
+}
+.status-bar .unsaved {
+  color: var(--accent);
 }
 
 /* ── the top bar: the project on the left, the transport in the middle, the file and the volume on the right ─────── */
@@ -286,13 +344,6 @@ input[type='range']::-webkit-slider-thumb {
   border-radius: 50%;
   background: var(--accent);
   vertical-align: 1px;
-}
-.transport .status {
-  color: var(--muted);
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .transport .center {
   display: flex;

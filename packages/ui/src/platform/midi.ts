@@ -15,20 +15,20 @@ export const midi = {
     return () => listeners.delete(fn);
   },
   /**
-   * Asks for MIDI access and listens to every input. onInputs gets the input count now and whenever
+   * Asks for MIDI access and listens to every input. onInputs gets the inputs' names now and whenever
    * a device is plugged in or removed. Resolves false when MIDI is unavailable or the user declined.
    */
-  async init(onInputs?: (count: number) => void): Promise<boolean> {
+  async init(onInputs?: (names: string[]) => void): Promise<boolean> {
     if (!this.available) return false;
     try {
       const access = await navigator.requestMIDIAccess();
       const attach = () => {
-        let count = 0;
+        const names: string[] = [];
         access.inputs.forEach((input) => {
           input.onmidimessage = onMessage;
-          count++;
+          if (input.state !== 'disconnected') names.push(input.name || 'MIDI keyboard');
         });
-        onInputs?.(count);
+        onInputs?.(names);
       };
       attach();
       access.onstatechange = attach;

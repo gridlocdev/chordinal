@@ -3,7 +3,7 @@
 import { midiProject, addMidiTracks } from '@chordinal/daw';
 import { readMidi } from '@chordinal/lib';
 import { appMenu } from './platform/app-menu.ts';
-import { project, selected, status } from './store.ts';
+import { project, selected, notify } from './store.ts';
 import { edit, openNew } from './document.ts';
 import { errorText } from './errors.ts';
 
@@ -16,9 +16,9 @@ export async function importMidi(): Promise<void> {
   try {
     const p = midiProject(new Uint8Array(file.bytes), file.name.replace(/\.[^.]+$/, ''));
     if (await openNew(p))
-      status.value = `Imported ${file.name}: ${p.tracks.length} track${p.tracks.length === 1 ? '' : 's'}`;
+      notify(`Imported ${file.name}: ${p.tracks.length} track${p.tracks.length === 1 ? '' : 's'}`);
   } catch (e) {
-    status.value = `Couldn't import ${file.name}: ${errorText(e)}`;
+    notify(`Couldn't import ${file.name}: ${errorText(e)}`, 'error');
   }
 }
 
@@ -28,15 +28,15 @@ export async function dropMidi(files: Iterable<File>, at: number): Promise<void>
     try {
       const midi = readMidi(new Uint8Array(await file.arrayBuffer()));
       if (!midi.tracks.length) {
-        status.value = `${file.name} has no notes`;
+        notify(`${file.name} has no notes`);
         continue;
       }
       const before = project.value.tracks.length;
       edit((p) => addMidiTracks(p, midi, at));
       selected.value = project.value.tracks[before]?.id ?? selected.value;
-      status.value = `Added ${midi.tracks.length} track${midi.tracks.length === 1 ? '' : 's'} from ${file.name}`;
+      notify(`Added ${midi.tracks.length} track${midi.tracks.length === 1 ? '' : 's'} from ${file.name}`);
     } catch (e) {
-      status.value = `Couldn't read ${file.name}: ${errorText(e)}`;
+      notify(`Couldn't read ${file.name}: ${errorText(e)}`, 'error');
     }
   }
 }

@@ -12,7 +12,7 @@ import { setPlace } from '@chordinal/ui';
 import { openProject, openNew, discardOk } from '@chordinal/ui';
 import { askChoice, askText, askYes } from '@chordinal/ui';
 import { onDisk } from '@chordinal/ui';
-import { project, projectName, dirty, settings, setSettings, saveSettingsNow, status } from '@chordinal/ui';
+import { project, projectName, dirty, settings, setSettings, saveSettingsNow, notify } from '@chordinal/ui';
 
 /** Open Recent: the last projects opened or saved, newest first */
 export const recent: Signal<NativeRecent[]> = signal([]);
@@ -84,7 +84,7 @@ export async function openFolder(): Promise<void> {
 /** a project in Open Recent; one that is gone is said so, and leaves the list (§4.5) */
 export async function openRecent(dir: string): Promise<void> {
   if (!(await projectFolders.exists(dir))) {
-    status.value = `${folderTitle(dir)} was moved or deleted`;
+    notify(`${folderTitle(dir)} was moved or deleted`, 'error');
     await projectFolders.forget(dir);
     await refreshRecent();
     return;

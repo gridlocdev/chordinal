@@ -56,7 +56,7 @@ export async function waitForApp(page: Page): Promise<void> {
 
 /**
  * Failed requests the app expects and handles, by status, method and URL. The test server doesn't serve the
- * SoundFont libraries, so an instrument from one can't load; the app says so in the status line and plays on.
+ * SoundFont libraries, so an instrument from one can't load; the app says so in the status bar and plays on.
  */
 const EXPECTED: readonly { status: number; method: string; url: RegExp }[] = [
   { status: 404, method: 'GET', url: /\/soundfonts\// },

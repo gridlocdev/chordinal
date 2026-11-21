@@ -79,3 +79,10 @@ export const snapToGrid = (b: number, grid: number, altKey: boolean): number =>
 /** the beat snapped to the grid, unless Alt */
 export const snap = (b: number, e: { altKey: boolean }): number =>
   snapToGrid(b, settings.value.grid, e.altKey);
+
+/** the view moved up or down, as little as it takes, so keys lo to hi are all in its `rows` lanes (PRD §5.7) */
+export function showKeys(v: RollView, lo: number, hi: number, rows: number): RollView {
+  if (lo >= v.low && hi <= v.low + rows - 1) return v;
+  const low = hi - lo + 1 > rows || lo < v.low ? lo : hi - rows + 1;
+  return { ...v, low: Math.max(0, low) };
+}

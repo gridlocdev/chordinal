@@ -30,7 +30,18 @@ import { onPlayed } from './live.ts';
 import type { PlayedKey } from './live.ts';
 import { takingKeys } from './focus.ts';
 import { sketchSection, sketchSpec } from '@chordinal/sketch';
-import { project, projectName, selected, selectedClip, chordRange, beat, status, settings } from './store.ts';
+import {
+  project,
+  projectName,
+  selected,
+  selectedClip,
+  chordRange,
+  beat,
+  status,
+  statusTone,
+  notify,
+  settings,
+} from './store.ts';
 import type { ChordRange } from './store.ts';
 import { edit, newProject } from './document.ts';
 import { stop } from './player.ts';
@@ -101,7 +112,7 @@ function placeTake(trackId: string, start: number, take: Pick<TakeReading, 'note
     .filter((n) => n.beat >= 0)
     .map((n) => ({ beat: n.beat, beats: n.beats, key: n.key, vel: VELOCITY }));
   if (!notes.length) {
-    status.value = `No notes heard in ${label}.`;
+    notify(`No notes heard in ${label}.`);
     return;
   }
   const bpb = barAt(project.value.meters, start).beatsPerBar;
@@ -112,7 +123,7 @@ function placeTake(trackId: string, start: number, take: Pick<TakeReading, 'note
     return addClip(p, trackId, { id: clip, start, beats, notes });
   });
   selectedClip.value = { track: trackId, clip };
-  status.value = `${notes.length} notes from ${label}`;
+  notify(`${notes.length} notes from ${label}`);
 }
 
 /** notes played on the keys during a take: into the clip under its start (the selected one first), else a new clip */
@@ -125,7 +136,7 @@ function placePlayed(trackId: string, start: number, notes: Note[]): void {
     return out.project;
   });
   selectedClip.value = { track: trackId, clip };
-  status.value = `${notes.length} played note${notes.length === 1 ? '' : 's'} recorded`;
+  notify(`${notes.length} played note${notes.length === 1 ? '' : 's'} recorded`);
 }
 
 /** keeps a take's audio beside a saved project */
@@ -161,7 +172,7 @@ export async function record(): Promise<void> {
     // a melody can still be played on the keys; a chord is only ever whistled
     heard = `No microphone: ${errorText(e)}.`;
     if (kind === 'chord' || !hasAudio()) {
-      status.value = `${heard} You can still drop audio files on a track.`;
+      notify(`${heard} You can still drop audio files on a track.`, 'error');
       return;
     }
   }
@@ -184,7 +195,7 @@ export async function record(): Promise<void> {
   takingKeys.value = kind === 'melody';
   recording.value = { kind, track, start: at, range, rec, played, unhear, mic: !heard };
   const doing = heard ? `${heard} Recording the keys you play…` : 'Recording…';
-  status.value = kind === 'chord' ? 'Whistle the chord as an arpeggio, then press ● again' : doing;
+  notify(kind === 'chord' ? 'Whistle the chord as an arpeggio, then press ● again' : doing, 'busy');
   const step = () => {
     const r = recording.value;
     if (!r) return;
@@ -195,7 +206,7 @@ export async function record(): Promise<void> {
     // the playhead follows the take as heard, from its bar once the count-in is over
     if (r.kind === 'melody')
       beat.value = r.start + Math.max(0, (r.rec.playhead - r.rec.origin) / r.rec.beatSec);
-    status.value = r.rec.countIn ? `Count-in: ${r.rec.countIn}` : r.kind === 'chord' ? status.value : doing;
+    notify(r.rec.countIn ? `Count-in: ${r.rec.countIn}` : r.kind === 'chord' ? status.value : doing, 'busy');
     frame = requestAnimationFrame(step);
   };
   step();
@@ -229,12 +240,12 @@ export async function finish(): Promise<void> {
     return;
   }
   if (!r.mic) {
-    status.value = 'No keys were played in that take.';
+    notify('No keys were played in that take.');
     return;
   }
   const take = stopRecording(r.rec);
   if (!take) {
-    status.value = 'That take was too short to read.';
+    notify('That take was too short to read.');
     return;
   }
   if (r.kind === 'chord') chordTake(take, r.range);
@@ -247,10 +258,10 @@ export async function finish(): Promise<void> {
       'the take',
     );
   const file = await keepAudio(take).catch((e: unknown) => {
-    status.value = errorText(e);
+    notify(errorText(e), 'error');
     return '';
   });
-  if (file) status.value += ` · audio kept in takes/${file}`;
+  if (file) notify(`${status.value} · audio kept in takes/${file}`, statusTone.value);
 }
 
 /** a chord whistled over the stretch picked as it started: named in the project's key and put on the chord track there */
@@ -259,7 +270,7 @@ function chordTake(take: MicTake, range: ChordRange | null): void {
   const key = keyFor(notes.map((n) => ({ beat: n.time, beats: n.seconds, key: n.key })));
   const named = nameChord(notes, key);
   if (!range || !named) {
-    status.value = 'No notes heard in that chord.';
+    notify('No notes heard in that chord.');
     return;
   }
   const parsed = parseChord(named.symbol, key.tonic, key.mode);
@@ -277,7 +288,9 @@ function chordTake(take: MicTake, range: ChordRange | null): void {
     ),
   }));
   chordRange.value = null;
-  status.value = `${chord.name}${named.others.length ? ` (or ${named.others.map((o) => chordName(parseChord(o.symbol, key.tonic, key.mode))).join(', ')})` : ''}`;
+  notify(
+    `${chord.name}${named.others.length ? ` (or ${named.others.map((o) => chordName(parseChord(o.symbol, key.tonic, key.mode))).join(', ')})` : ''}`,
+  );
 }
 
 /** audio files dropped on a track: each read as a whistled melody at the project's tempo, in a clip from the bar at `at` */
@@ -285,7 +298,7 @@ export async function dropAudio(trackId: string, files: Iterable<File>, at: numb
   selected.value = trackId;
   let start = barAt(project.value.meters, at).start;
   for (const file of files) {
-    status.value = `Reading ${file.name}…`;
+    notify(`Reading ${file.name}…`, 'busy');
     try {
       const { samples, rate } = await mic.decode(await file.arrayBuffer());
       const p = project.value;
@@ -303,7 +316,7 @@ export async function dropAudio(trackId: string, files: Iterable<File>, at: numb
       const c = sel && findClip(project.value, trackId, sel.clip);
       if (c) start = c.start + c.beats;
     } catch (err) {
-      status.value = `${file.name}: ${errorText(err)}`;
+      notify(`${file.name}: ${errorText(err)}`, 'error');
     }
   }
 }
@@ -313,7 +326,7 @@ export async function dropTake(trackId: string, file: string, at: number): Promi
   const name = projectName.value;
   if (!name) return;
   const bytes = await place.files.readTake(name, file).catch((e: unknown) => {
-    status.value = errorText(e);
+    notify(errorText(e), 'error');
     return null;
   });
   if (bytes) await dropAudio(trackId, [new File([bytes], file, { type: 'audio/wav' })], at);
@@ -327,7 +340,7 @@ export function newFromMelody(): void {
     p = project.value;
   const clip = sel && findClip(p, sel.track, sel.clip);
   if (!clip?.notes.length) {
-    status.value = 'Select a clip with a melody in it first.';
+    notify('Select a clip with a melody in it first.');
     return;
   }
   const meter = sigAt(p.meters, clip.start),

@@ -27,7 +27,17 @@ export { focus, musicalTyping, takingKeys } from './focus.ts';
 export type { FocusPart } from './focus.ts';
 export { handleKey } from './keys.ts';
 export { checkLibraries, chooseLibrary, downloadLibrary } from './libraries.ts';
-export { connectMidi, held, liveName, onPlayed, press, release, startLive } from './live.ts';
+export {
+  connectMidi,
+  held,
+  liveName,
+  midiInputs,
+  onPlayed,
+  press,
+  release,
+  startLive,
+  typedRange,
+} from './live.ts';
 export type { PlayedKey } from './live.ts';
 export { editMenu, startMenus, trackMenu, transportMenu, viewMenu } from './menu-bar.ts';
 export type { Menu } from './menu-bar.ts';
@@ -63,7 +73,14 @@ export type { MenuEntry, MenuItem, OpenedFile } from './platform/app-menu.ts';
 export { NOTE_KEYS, OCTAVE_KEYS, typing } from './platform/keys.ts';
 export { midi } from './platform/midi.ts';
 export type { MidiMessage } from './platform/midi.ts';
-export { docWindow, folderTitle, onDisk, projectFolders, projectStore } from './platform/project-folders.ts';
+export {
+  docWindow,
+  folderTitle,
+  onDisk,
+  projectFolders,
+  projectStore,
+  startChrome,
+} from './platform/project-folders.ts';
 export { soundfonts } from './platform/soundfonts.ts';
 export { SETTINGS_KEY, browserStorage, storage } from './platform/storage.ts';
 export { heardDifferently, play, reload, seek, stop, toggle } from './player.ts';
@@ -105,8 +122,11 @@ export {
   selectedTrack,
   setSettings,
   settings,
+  notify,
   status,
+  statusTone,
 } from './store.ts';
+export { NOTICE_MS, startNotices } from './notices.ts';
 export type {
   BrowserTab,
   ChordRange,
@@ -114,6 +134,7 @@ export type {
   EditorTab,
   Levels,
   LibraryDownload,
+  NoticeTone,
   Settings,
   ThemeChoice,
 } from './store.ts';
@@ -201,6 +222,7 @@ export {
   band,
   geometry,
   rollGeometry,
+  showKeys,
   snap,
   snapToGrid,
   view,

@@ -92,11 +92,15 @@ export interface ChordinalNative {
     pickOpen(): Promise<string>;
     pickSave(name: string): Promise<string>;
   };
-  /** the window: whether it has unsaved changes, and its close question */
+  /** the window: whether it has unsaved changes, its close question, and how it's framed */
   window: {
     dirty(on: boolean): void;
     onClosing(fn: () => void): void;
     close(): void;
+    /** 'unified' when the page's top row is the title bar (macOS), 'native' when the window has its own */
+    chrome: 'unified' | 'native';
+    /** told when the window enters or leaves full screen */
+    onFullScreen(fn: (full: boolean) => void): void;
   };
 }
 

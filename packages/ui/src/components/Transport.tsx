@@ -1,5 +1,5 @@
-// The bar across the top. On the left, the browser's toggle, the project's title (a dot when there are changes to save)
-// and what's loading; in the middle, go to start, stop, play, record and the metronome, then a display of where the
+// The bar across the top (on macOS also the window's title bar, PRD §5.8). On the left, the browser's toggle and the
+// project's title (a dot when there are changes to save); in the middle, go to start, stop, play, record and the metronome, then a display of where the
 // playhead is, the tempo and meter (both editable), the key and the section; on the right, New, Save, Save as and the
 // master volume.
 import type { ComponentChildren } from 'preact';
@@ -10,7 +10,7 @@ import { setTempo, setMeter } from '@chordinal/daw';
 import type { MeterChange } from '@chordinal/daw';
 import { bpmAt } from '@chordinal/lib';
 import { noteName } from '@chordinal/lib';
-import { project, dirty, beat, playing, status, settings, setSettings } from '../store.ts';
+import { project, dirty, beat, playing, settings, setSettings } from '../store.ts';
 import { edit, save, saveAs } from '../document.ts';
 import { play, stop, seek } from '../player.ts';
 import { recording, record } from '../recording.ts';
@@ -136,11 +136,6 @@ export function Transport({ onNew, newLabel = 'New' }: TransportProps) {
             {p.title}
             {dirty.value && <span class="dirty" aria-label="not saved" />}
           </div>
-          {status.value && (
-            <div class="status" role="status">
-              {status.value}
-            </div>
-          )}
         </div>
       </div>
       <div class="center">

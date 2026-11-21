@@ -226,7 +226,11 @@ export function startShell(config: AppConfig): void {
 
   // ------------------------------------------------------------ window
   function createWindow() {
+    // macOS: no title bar; the page's top row is the title bar, with the traffic lights in it (PRD §5.8). The lights'
+    // centre lines up with the 52 px row's.
+    const unified = process.platform === 'darwin';
     const win = new BrowserWindow({
+      ...(unified ? { titleBarStyle: 'hidden' as const, trafficLightPosition: { x: 18, y: 20 } } : {}),
       width: 1280,
       height: 800,
       minWidth: 800,
@@ -242,8 +246,12 @@ export function startShell(config: AppConfig): void {
         sandbox: true,
         nodeIntegration: false,
         backgroundThrottling: !HEADLESS,
+        additionalArguments: [`--chordinal-chrome=${unified ? 'unified' : 'native'}`],
       },
     });
+    // full screen hides the lights, so the page gives back the room it kept for them
+    win.on('enter-full-screen', () => win.webContents.send('window:fullScreen', true));
+    win.on('leave-full-screen', () => win.webContents.send('window:fullScreen', false));
     if (HEADLESS) win.webContents.setAudioMuted(true);
     else win.once('ready-to-show', () => win.show());
     // web links open in the browser, never in the app's window; nothing else (file:, custom schemes) is opened

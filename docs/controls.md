@@ -91,7 +91,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | What | Keys |
 | --- | --- |
 | Play the selected track's instrument (click the piano roll first; while it has the focus, `B`, `C`, `M`, `Q` and `R` wait until you click elsewhere, or use the menus) | `A S D F G H J K L ; '` white keys, `W E T Y U O P` black keys |
-| An octave down or up, while playing it | `Z`, `X` |
+| An octave down or up, while playing it (the piano roll scrolls to keep those keys in view; the status bar shows the range) | `Z`, `X` |
 | Move through the command menu's list, run the command, close it | `↑` `↓` or `Tab` `Shift Tab`, `Return`, `Esc` |
 | Draw a note without the grid | `Alt` while drawing |
 | Copy a clip as you drag it | `Alt` drag |

@@ -1,7 +1,7 @@
 // The SoundFont libraries: the one picked, falling back to one that's installed, and downloading the others.
 import { soundfontLibrary } from '@chordinal/audio';
 import { soundfonts } from './platform/soundfonts.ts';
-import { settings, setSettings, installedLibraries, libraryDownload, status } from './store.ts';
+import { settings, setSettings, installedLibraries, libraryDownload, notify } from './store.ts';
 import { reload } from './player.ts';
 import { errorText } from './errors.ts';
 
@@ -36,10 +36,10 @@ export async function downloadLibrary(id: string): Promise<void> {
     });
     await checkLibraries();
     chooseLibrary(id);
-    status.value = `Downloaded ${name}`;
+    notify(`Downloaded ${name}`);
   } catch (e) {
     console.error(e);
-    status.value = `Could not download ${name}: ${errorText(e)}`;
+    notify(`Could not download ${name}: ${errorText(e)}`, 'error');
   } finally {
     libraryDownload.value = null;
   }

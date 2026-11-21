@@ -1,5 +1,5 @@
 // Chordinal's shell, run headless (no window on screen, no dialog): start-up, Save As to a chosen folder, the close
-// question, reopening at the next start, and a missing project at start-up (Chordinal PRD §4).
+// question, reopening at the next start, and a missing project at start-up (Chordinal PRD §4); the macOS title bar (§5.8).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
@@ -73,6 +73,18 @@ test('Chordinal starts on a new project, saves it to a chosen folder, asks befor
         assert.equal(await page.title(), 'Untitled — Chordinal');
         assert.deepEqual(await page.$$eval('.track[data-id]', l => l.length), 2, 'a drum track and a Grand Piano track');
         assert.deepEqual(await app.evaluate(()=> globalThis.headlessPrompts), []);
+
+        // §5.8: on macOS the top bar is the title bar: room for the traffic lights, and it drags the window but its buttons don't
+        const unified = process.platform === 'darwin';
+        await until('the page knows how it is framed', async ()=> await page.evaluate(()=> document.documentElement.classList.contains('unified')) === unified);
+        const chrome = await page.evaluate(()=>
+        {
+            const bar = document.querySelector('.transport'), button = bar.querySelector('button');
+            const region = (el)=> getComputedStyle(el).getPropertyValue('-webkit-app-region') || getComputedStyle(el).getPropertyValue('app-region');
+            return { padding: getComputedStyle(bar).paddingLeft, bar: region(bar), button: region(button) };
+        });
+        if (unified) assert.deepEqual(chrome, { padding: '84px', bar: 'drag', button: 'no-drag' });
+        else assert.equal(chrome.padding, '12px');
 
         // §4.8: an unsaved change shows a dot
         await click('newTrack');

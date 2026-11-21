@@ -48,14 +48,19 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 ## §5 The window
 
 1. One window, docked, laid out like this:
-   - Across the top: the browser's toggle, the project's title (a dot while there are changes to save) and what's loading on the left; the transport buttons and a display (bar and beat, tempo, meter, key, section) in the middle; New, Save, Save as and the master volume on the right.
+   - Across the top: the browser's toggle and the project's title (a dot while there are changes to save) on the left; the transport buttons and a display (bar and beat, tempo, meter, key, section) in the middle; New, Save, Save as and the master volume on the right.
    - Left: the browser (§7).
    - Centre: the arrangement (ruler, markers, chord track, and a row per track whose header is the track's channel, §6).
    - Bottom: the editor, with tabs Piano Roll, Mixer and Step Grid (`Cmd 1`, `Cmd 2`, `Cmd 3`). The tabs and the open view's toolbar share one bar.
+   - Along the bottom edge: the status bar (item 6).
 2. The browser's width and the editor's height are draggable. Both are saved in Chordinal's settings. `B` hides and shows the browser.
 3. Tab switching follows `prd.md` §4.2.
 4. The look has a dark and a light theme. **View ▸ Theme** picks System (follows the OS), Light or Dark; the choice is saved in the settings. Motion stops when the OS asks for reduced motion, and the focused control has a visible ring.
 5. **⌘K** opens the command menu: type part of a command's name, or another word for it, and press Enter to run it. Disabled commands stay in the list, greyed. With nothing typed, the recent commands come first. **Help ▸ Keyboard Shortcuts** (`Cmd /`) lists every command with its shortcut. Both come from the same command list as the menu bar and the keys, and `docs/controls.md` is checked against it.
+
+6. The status bar runs along the bottom of the window. At its left is the latest notice: what just happened ("Saved Demo", "12 notes from the take"), what's under way ("Bouncing…", the count-in), or what went wrong ("Couldn't load Grand Piano: …"). A notice of what happened goes after 6 seconds; one under way stays until it's done; an error stays until it's dismissed (its ×) or the next notice. At its right: what the letter keys play, as `Keys C4–F5 · Grand Piano` (the lowest and highest key, and the instrument), dimmed while they don't play (the piano roll isn't the part last clicked, and no take is running), with a tip naming `Z` and `X`; the MIDI keyboard's name while one is connected; and "Not saved" while the project has changes to save.
+7. Changing the octave (`Z`, `X`) scrolls the piano roll, when needed, so every key the letter keys play is in view.
+8. On macOS the window has no title bar: the top row is the title bar, with the window's close, minimise and zoom buttons at its left, and dragging its empty parts moves the window (double-clicking zooms it, as the system settings say). In full screen the room for the buttons goes. Windows, Linux and the browser keep their own frame.
 
 ## §6 The track headers
 

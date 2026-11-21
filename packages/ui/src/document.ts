@@ -19,7 +19,7 @@ import {
   picked,
   chordRange,
   beat,
-  status,
+  notify,
   setSettings,
 } from './store.ts';
 import { stop } from './player.ts';
@@ -105,7 +105,7 @@ function show(p: Project, name: string, clean = false): void {
   focus.value = 'arrange';
   chordRange.value = null;
   beat.value = 0;
-  status.value = '';
+  notify('');
   if (name) setSettings({ project: name });
 }
 
@@ -129,7 +129,7 @@ export async function openProject(name: string): Promise<boolean> {
       place.opened?.(name);
       return true;
     } catch (e) {
-      status.value = `Couldn't open ${place.where(name)}: ${errorText(e)}`;
+      notify(`Couldn't open ${place.where(name)}: ${errorText(e)}`, 'error');
       return false;
     }
   });
@@ -199,12 +199,12 @@ async function saveNow(): Promise<boolean> {
     }
     session = step(session, { type: 'done', version });
     saved.value = p;
-    status.value = `Saved ${place.where(name)}`;
+    notify(`Saved ${place.where(name)}`);
     place.saved?.(name);
     return true;
   } catch (e) {
     session = step(session, { type: 'failed' });
-    status.value = `Couldn't save ${place.where(name)}: ${errorText(e)}`;
+    notify(`Couldn't save ${place.where(name)}: ${errorText(e)}`, 'error');
     return false;
   }
 }
@@ -217,7 +217,7 @@ async function copyTakes(from: string, to: string): Promise<void> {
       if (!there.has(file))
         await place.files.writeTake(to, file, new Uint8Array(await place.files.readTake(from, file)));
   } catch (e) {
-    status.value = `Saved ${place.where(to)}, but couldn't copy its takes: ${errorText(e)}`;
+    notify(`Saved ${place.where(to)}, but couldn't copy its takes: ${errorText(e)}`, 'error');
   }
 }
 

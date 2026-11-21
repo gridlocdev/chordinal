@@ -163,8 +163,16 @@ export const mix: ReadonlySignal<ChannelMix[]> = computed(() => {
 export const playing: Signal<boolean> = signal(false);
 /** the playhead, in beats */
 export const beat: Signal<number> = signal(0);
-/** what's loading or what went wrong, shown in the transport */
+/** the status bar's notice (PRD §5.6): what just happened, what's under way, or what went wrong; '' for none */
 export const status: Signal<string> = signal('');
+/** what kind of notice `status` is: 'done' goes after a while (notices.ts), 'busy' and 'error' stay */
+export type NoticeTone = 'done' | 'busy' | 'error';
+export const statusTone: Signal<NoticeTone> = signal('done');
+/** shows a notice in the status bar, replacing the one there; '' clears it */
+export function notify(text: string, tone: NoticeTone = 'done'): void {
+  statusTone.value = tone;
+  status.value = text;
+}
 /** true from an export's start to its end, loading included: nothing else plays meanwhile */
 export const exporting: Signal<boolean> = signal(false);
 /** while playing: each track's level (peak 0..1) and the master's, for the mixer's meters */

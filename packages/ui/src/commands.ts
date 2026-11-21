@@ -24,7 +24,7 @@ import {
   playing,
   settings,
   setSettings,
-  status,
+  notify,
   exporting,
 } from './store.ts';
 import { edit, undo, redo, save, saveAs, openProject } from './document.ts';
@@ -168,7 +168,7 @@ export async function addMarkerAt(at: number = beat.value): Promise<void> {
 async function exportMidi(): Promise<void> {
   const p = project.value;
   const file = await appMenu.saveFile(`${projectName.value || 'untitled'}.mid`, projectMidi(p));
-  if (file) status.value = `Exported ${file}`;
+  if (file) notify(`Exported ${file}`);
 }
 
 /** asks how many bars, then puts in (or takes out) that many from the bar the playhead is in */

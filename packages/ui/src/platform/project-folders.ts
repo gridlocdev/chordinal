@@ -56,3 +56,15 @@ export const docWindow = {
   onClosing: (fn: () => void): void => win?.onClosing(fn),
   close: (): void => win?.close(),
 };
+
+/**
+ * Frames the page for its window (PRD §5.8): on macOS's unified title bar `<html>` gets `unified`, and `fullscreen`
+ * while the window is full screen, so the stylesheet keeps room for the traffic lights and makes the top row drag the
+ * window. A browser, Windows and Linux keep their own frame and get neither.
+ */
+export function startChrome(): void {
+  if (win?.chrome !== 'unified') return;
+  const html = document.documentElement.classList;
+  html.add('unified');
+  win.onFullScreen((full) => html.toggle('fullscreen', full));
+}

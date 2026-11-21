@@ -4,7 +4,7 @@ import { loadSoundFont, findPreset, createInstrument } from '@chordinal/playback
 import type { Instrument } from '@chordinal/playback';
 import { audioEngine } from '@chordinal/playback';
 import type { LibraryPreset } from '@chordinal/audio';
-import { status } from './store.ts';
+import { notify } from './store.ts';
 import { errorText } from './errors.ts';
 
 const MIDDLE_C = 60,
@@ -53,7 +53,7 @@ export async function preview(preset: PreviewPreset): Promise<void> {
     );
     current = { inst, timers };
   } catch (e) {
-    if (id === asked) status.value = `Couldn't play ${preset.name}: ${errorText(e)}`;
+    if (id === asked) notify(`Couldn't play ${preset.name}: ${errorText(e)}`, 'error');
   }
 }
 

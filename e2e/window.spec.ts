@@ -1,5 +1,14 @@
-// The window: the command menu, the Keyboard Shortcuts window and the theme (Chordinal PRD §5.4, §5.5).
-import { commandMenu, expect, openApp, runCommand, storedSettings, test, watchErrors } from './fixtures.ts';
+// The window: the command menu, the Keyboard Shortcuts window, the theme and the status bar (Chordinal PRD §5.4–§5.7).
+import {
+  commandMenu,
+  expect,
+  openApp,
+  runCommand,
+  storedSettings,
+  test,
+  trackHeader,
+  watchErrors,
+} from './fixtures.ts';
 
 test.describe('The window', () => {
   test('⌘K runs a command and Escape closes it', async ({ page }) => {
@@ -61,6 +70,39 @@ test.describe('The window', () => {
     await expect(dialog.getByRole('combobox').first()).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+
+  test('the status bar says what the letter keys play, and Z and X move them and the piano roll', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    const bar = page.locator('footer.status-bar');
+    const keys = bar.getByText(/^Keys /);
+    await expect(keys).toHaveText(/^Keys C4–F5/);
+    await expect(keys).toHaveClass(/idle/);
+
+    await trackHeader(page, 'Grand Piano').click();
+    await page.getByRole('tab', { name: 'Piano Roll' }).click();
+    const roll = page.getByTestId('piano-roll');
+    const box = await roll.boundingBox();
+    if (!box) throw new Error('no piano roll');
+    // the roll's keyboard: a press gives the roll the focus without drawing a note
+    await page.mouse.click(box.x + 10, box.y + box.height / 2);
+    await expect(keys).not.toHaveClass(/idle/);
+    await expect(page).toHaveTitle('Untitled — Chordinal');
+
+    const before = await roll.screenshot();
+    await page.keyboard.press('KeyX');
+    await page.keyboard.press('KeyX');
+    await expect(keys).toHaveText(/^Keys C6–F7/);
+    await expect
+      .poll(async () => (await roll.screenshot()).equals(before), { message: 'the roll scrolls up to them' })
+      .toBe(false);
+    await page.screenshot({ path: test.info().outputPath('status-bar.png') });
+    await page.keyboard.press('KeyZ');
+    await expect(keys).toHaveText(/^Keys C5–F6/);
     expect(errors).toEqual([]);
   });
 });

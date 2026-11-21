@@ -11,7 +11,7 @@ import { audioEngine } from '@chordinal/playback';
 import type { Instrument } from '@chordinal/playback';
 import type { LibraryPreset } from '@chordinal/audio';
 import type { Track } from '@chordinal/daw';
-import { settings, setSettings, selectedTrack, status } from './store.ts';
+import { settings, setSettings, selectedTrack, notify } from './store.ts';
 import { musicalTyping } from './focus.ts';
 import { errorText } from './errors.ts';
 
@@ -69,7 +69,7 @@ async function load(entry: LibraryPreset): Promise<void> {
     instrument.setSustain(pedal);
     liveName.value = preset.name;
   } catch (e) {
-    if (id === loading) status.value = `Couldn't load ${entry.name}: ${errorText(e)}`;
+    if (id === loading) notify(`Couldn't load ${entry.name}: ${errorText(e)}`, 'error');
   }
 }
 
@@ -101,7 +101,19 @@ function releaseAll(): void {
   typed.clear();
 }
 
-export const connectMidi = (): Promise<boolean> => midi.init(() => {});
+/** the connected MIDI keyboards' names, for the status bar */
+export const midiInputs: Signal<string[]> = signal([]);
+export const connectMidi = (): Promise<boolean> =>
+  midi.init((names) => {
+    midiInputs.value = names;
+  });
+
+const TYPED = Object.values(NOTE_KEYS);
+/** the lowest and highest key the letter keys play in an octave */
+export const typedRange = (octave: number): { lo: number; hi: number } => ({
+  lo: octaveC(octave) + Math.min(...TYPED),
+  hi: octaveC(octave) + Math.max(...TYPED),
+});
 
 /** wires the keyboard and MIDI, and reloads the instrument whenever the selected track's preset changes */
 export function startLive(): void {

@@ -5,11 +5,12 @@
 // space picks the notes in a rectangle; other tracks' notes show faintly behind; Delete removes,
 // ↑ ↓ transpose (Shift: an octave), Cmd+A selects the clip's notes. Drag in the velocity strip to set velocity.
 // Right-click a note or the background for more. Everything snaps to the grid picked in the toolbar (RollToolbar, in the editor's bar); hold Alt to place
-// freely. Press a key in the gutter to hear it (drag to glide across keys); its lane lights while it sounds. The wheel scrolls (Shift: across), Cmd/Ctrl + wheel zooms.
-import { useEffect } from 'preact/hooks';
-import { project, selected, selectedTrack, picked } from '../store.ts';
+// freely. Changing the letter keys' octave (Z, X) scrolls their keys into view. Press a key in the gutter to hear it (drag to glide across keys); its lane lights while it sounds. The wheel scrolls (Shift: across), Cmd/Ctrl + wheel zooms.
+import { useEffect, useRef } from 'preact/hooks';
+import { project, selected, selectedTrack, picked, settings } from '../store.ts';
+import { typedRange } from '../live.ts';
 import { useCanvas } from './canvas.ts';
-import { view } from './roll-view.ts';
+import { view, geometry, showKeys } from './roll-view.ts';
 import { drawRoll } from './roll-draw.ts';
 import { wheel, down, hover, menu } from './roll-input.ts';
 import { RollPlayhead } from './RollPlayhead.tsx';
@@ -26,6 +27,18 @@ function Roll() {
   }, [track?.id]);
 
   const ref = useCanvas((g, w, h) => drawRoll(g, w, h, p, track));
+  // a new octave for the letter keys: the view moves, if it must, so every key they play is in view (PRD §5.7)
+  const octave = settings.value.octave;
+  const lastOctave = useRef(octave);
+  useEffect(() => {
+    if (octave === lastOctave.current) return;
+    lastOctave.current = octave;
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    const { lo, hi } = typedRange(octave);
+    const L = geometry(r.width, r.height).L;
+    view.value = showKeys(view.value, lo, hi, L.hi - L.lo); // the top lane may be cut off
+  }, [octave]);
   return (
     <div
       class="roll"

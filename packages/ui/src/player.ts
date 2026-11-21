@@ -7,7 +7,7 @@ import type { PlaybackHandle } from '@chordinal/playback';
 import { projectEnd } from '@chordinal/daw';
 import type { Mixer, Project } from '@chordinal/daw';
 import { audioEngine } from '@chordinal/playback';
-import { project, mix, playing, beat, status, settings, levels, exporting } from './store.ts';
+import { project, mix, playing, beat, notify, settings, levels, exporting } from './store.ts';
 import { errorText } from './errors.ts';
 
 let handle: PlaybackHandle | null = null;
@@ -18,7 +18,7 @@ const FALL = 0.92; // what's left of a meter's level a frame later
 
 export async function play(): Promise<void> {
   if (audioEngine.rendering || exporting.value) {
-    status.value = 'Wait for the export to finish';
+    notify('Wait for the export to finish');
     return;
   }
   const p = project.value;
@@ -27,7 +27,7 @@ export async function play(): Promise<void> {
   playing.value = true;
   try {
     const instruments = await loadInstruments(p.tracks, (text) => {
-      if (id === starting) status.value = text;
+      if (id === starting) notify(text, 'busy');
     });
     if (id !== starting) return;
     // an edit while the instruments loaded: start again with what's there now (and its instruments)
@@ -35,11 +35,11 @@ export async function play(): Promise<void> {
     const from = beat.value >= projectEnd(p) ? 0 : beat.value;
     heard = p;
     handle = playProject(p, instruments, { from, mix: mix.value, click: settings.value.metronome });
-    status.value = '';
+    notify('');
     follow(handle);
   } catch (e) {
     if (id === starting) {
-      status.value = `Couldn't play: ${errorText(e)}`;
+      notify(`Couldn't play: ${errorText(e)}`, 'error');
       playing.value = false;
     }
   }

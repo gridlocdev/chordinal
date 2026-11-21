@@ -11,6 +11,9 @@ ipcRenderer.on('soundfonts:progress', (_e, id: string, loaded: number, total: nu
   progress.forEach((fn) => fn(id, loaded, total)),
 );
 
+/** how the window is framed, from the main process (shell.ts): 'unified' on macOS, where the page's top row is the title bar */
+const chrome = process.argv.includes('--chordinal-chrome=unified') ? 'unified' : 'native';
+
 const bridge: ChordinalNative = {
   storage: {
     load: () => ipcRenderer.invoke('save:load'),
@@ -62,6 +65,10 @@ const bridge: ChordinalNative = {
       ipcRenderer.on('doc:closing', () => fn());
     },
     close: () => ipcRenderer.send('doc:close'),
+    chrome,
+    onFullScreen: (fn) => {
+      ipcRenderer.on('window:fullScreen', (_e, full: boolean) => fn(full));
+    },
   },
 };
 

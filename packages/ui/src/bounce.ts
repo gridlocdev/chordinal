@@ -12,7 +12,7 @@ import { beatToSeconds } from '@chordinal/lib';
 import { encodeWavChannels, normalize, peakOf } from '@chordinal/lib';
 import { audioEngine } from '@chordinal/playback';
 import { appMenu } from './platform/app-menu.ts';
-import { project, projectName, mix, status, exporting } from './store.ts';
+import { project, projectName, mix, notify, exporting } from './store.ts';
 import { stop } from './player.ts';
 import { errorText } from './errors.ts';
 
@@ -125,16 +125,16 @@ async function exportAudio({ range = null, stems = false, normalized = false, ta
   const gains = mix.value;
   try {
     const instruments = await loadInstruments(p.tracks, (text) => {
-      status.value = text;
+      notify(text, 'busy');
     });
     if (!stems) {
-      status.value = 'Bouncing…';
+      notify('Bouncing…', 'busy');
       const { channels, rate } = await render(p, instruments, from, to, tail, gains);
       const file = await appMenu.saveFile(
         `${name}.wav`,
         encodeWavChannels(normalized ? normalize(channels, PEAK_DB) : channels, rate),
       );
-      status.value = file ? `Exported ${file}` : '';
+      notify(file ? `Exported ${file}` : '');
       return;
     }
     // a track is exported if it is heard and has a clip in the range
@@ -146,12 +146,12 @@ async function exportAudio({ range = null, stems = false, normalized = false, ta
           track.clips.some((c) => c.start < to && c.start + c.beats > from && c.notes.length && !c.mute),
       );
     if (!audible.length) {
-      status.value = 'No track to export: none is heard in that range';
+      notify('No track to export: none is heard in that range');
       return;
     }
     const folder = await appMenu.chooseFolder(`${name} stems`);
     if (!folder) {
-      status.value = '';
+      notify('');
       return;
     }
     const used = new Set<string>();
@@ -182,11 +182,14 @@ async function exportAudio({ range = null, stems = false, normalized = false, ta
       write: (n, bytes) => Promise.resolve(appMenu.writeInFolder(stemAt(n).file, bytes)),
       normalized,
       say: (n, measuring) => {
-        status.value = `${measuring ? 'Measuring' : 'Bouncing'} ${stemAt(n).track.name} (${n + 1} of ${stemsOut.length})…`;
+        notify(
+          `${measuring ? 'Measuring' : 'Bouncing'} ${stemAt(n).track.name} (${n + 1} of ${stemsOut.length})…`,
+          'busy',
+        );
       },
     });
-    status.value = `Exported ${stemsOut.length} tracks to ${folder}`;
+    notify(`Exported ${stemsOut.length} tracks to ${folder}`);
   } catch (e) {
-    status.value = `Couldn't export: ${errorText(e)}`;
+    notify(`Couldn't export: ${errorText(e)}`, 'error');
   }
 }
