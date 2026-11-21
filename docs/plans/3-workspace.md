@@ -22,6 +22,6 @@ Decisions:
 - [x] **8. UI.** The views ported to TSX in `packages/ui` and `apps/web` (Vite), view by view, with logic in tested modules; the browser build runs on its own. Waits on 6 and 7.
 - [x] **9. Electron shell.** `apps/desktop` in TypeScript: app:// scheme, one bridge, sender checks, headless mode; the userData path kept. Waits on 8.
 - [x] **10. CLI and the games.** `apps/cli`: `compose`, `export` and `render <songs.js> <folder>`, run headlessly with the real engine. Blast Complex, Comet and Little Lantern switched to it, one commit in each repo. Waits on 5 and 9.
-- [ ] **11. Checks, docs and release.** Architecture test, random-operation tests for the engine and the save session, Playwright scenarios, `AGENTS.md`, README and `docs/`, CHANGELOG ("Before you update"), CI and the release workflow; version 1.0.0. Waits on 10.
+- [x] **11. Checks, docs and release.** Architecture test, random-operation tests for the engine and the save session, Playwright scenarios, `AGENTS.md`, README and `docs/`, CHANGELOG ("Before you update"), CI and the release workflow; version 1.0.0. Waits on 10.
 
 The open slice from `2-chordinal.md` (7, a track's chain) waits until slice 5 has landed.

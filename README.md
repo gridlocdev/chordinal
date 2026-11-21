@@ -12,7 +12,7 @@ I built Chordinal to make it easier to create music for the games I make. It's a
 
 Download the latest version for macOS, Windows or Linux from the [Releases](../../releases) page. Nothing else needs installing.
 
-See [Getting started](docs/getting-started.md) for which file to pick, the first-launch warnings, and building it yourself.
+See [Getting started](docs/getting-started.md) for which file to pick, the first-launch warnings, and building it yourself. From a checkout, `just web` runs it in your web browser instead, and `just cli help` lists the command-line tools.
 
 ## Learn more
 

@@ -37,7 +37,7 @@ dev: build
         npx electron apps/desktop/dist/chordinal.js --dev
     fi
 
-# everything a commit must pass: formatting, lint (with the layer rules), types, the page's bundle and the tests
+# everything a commit must pass: formatting, lint (with the layer rules), types, the page's bundle, the tests and the browser scenarios
 check: deps
     npx prettier --check .
     npx eslint .
@@ -45,11 +45,28 @@ check: deps
     node tools/build.mjs
     node --test 'test/**/*.test.js'
     npx vitest run
+    pnpm exec playwright test -c e2e/playwright.config.ts
 
 # run the tests: node --test for the JavaScript, Vitest for the TypeScript
 test: build
     node --test 'test/**/*.test.js'
     npx vitest run
+
+# run the browser scenarios: the browser build in headless, muted Chromium (results in .e2e-results/)
+# e.g. just e2e   ·   just e2e drums   ·   SEED=4 just e2e random-ui
+[positional-arguments]
+e2e *args: build
+    pnpm exec playwright test -c e2e/playwright.config.ts "$@"
+
+# run Chordinal in your web browser: serves the page and soundfonts/ on 127.0.0.1 (port 8020 or the next free one)
+web: build
+    node tools/serve-web.mjs
+
+# drive the browser build headless and print what happened (see e2e/drive.ts for the steps)
+# e.g. just drive cmd:Mixer shot:mixer   ·   just drive --dark aria
+[positional-arguments]
+drive *steps: build
+    node e2e/drive.ts "$@"
 
 # report how an NSF file's songs are built (keep the files in reference/, which git ignores)
 nsf file *songs:

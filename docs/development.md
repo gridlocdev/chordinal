@@ -27,6 +27,22 @@ just check   # syntax-check every module, build the bundle without writing it, t
 just test    # node --test: the tests in test/ for lib/ and *-data.js files
 ```
 
+### In a browser
+
+`just web` builds the page and serves it with the SoundFont libraries in `soundfonts/` at http://127.0.0.1:8020/ (or the next free port). Without the desktop app the page keeps its projects and settings in the browser (IndexedDB and localStorage).
+
+### Browser scenarios
+
+`just e2e` builds the page and runs the scenarios in `e2e/` against the browser build (`apps/web/dist`), served on 127.0.0.1:8823, in headless, muted Chromium from Playwright. They cover start-up, a drum beat in the step grid with play and stop, notes in the piano roll with undo and redo, saving and reopening a project, New with unsaved changes, the ⌘K menu, the shortcuts window and the theme. Pass a file name or Playwright options to run fewer: `just e2e drums`.
+
+`random-ui.spec.ts` clicks and presses keys at random on the visible controls and fails on any page error or lost focus. It prints the seed of a failing run; replay it with `SEED=4 just e2e random-ui`. `RUNS` (default 3) and `STEPS` (default 40) set how much it does. It never records, opens file pickers or downloads.
+
+Each test starts from a fresh browser profile, so projects (IndexedDB) and settings (localStorage) start empty. The SoundFont libraries aren't served, so instruments from them don't load; the scenarios don't listen to the sound. The microphone is refused, and a test that asks for it fails. Results, traces of failed tests and screenshots go to `.e2e-results/`, which git ignores.
+
+`just drive` runs steps against the same build for a quick look without writing a test, for example `just drive cmd:Mixer shot:mixer` or `just drive --dark aria`. The steps are listed at the top of `e2e/drive.ts`.
+
+The whole run takes about 25 seconds, so `just check` runs it too.
+
 ## Writing songs
 
 Songs are plain specs in `packages/composer/src/`: `songs-data.ts`, `genre-songs-data.ts` (one

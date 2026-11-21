@@ -1,6 +1,6 @@
 {
   "name": "@chordinal/cli",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Chordinal on the command line: compose a song, export projects, render a game's soundtrack",

@@ -22,3 +22,5 @@ jobs:
       # the Electron tests run hidden, but Electron on Linux still needs a display
       - run: xvfb-run -a node --test 'test/**/*.test.js'
       - run: npx vitest run
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright test -c e2e/playwright.config.ts

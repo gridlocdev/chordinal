@@ -1,6 +1,6 @@
 {
   "name": "chordinal",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Write, whistle and arrange music: a small DAW with a part composer and a whistle-to-notes sketchpad",
@@ -26,6 +26,7 @@
     "@chordinal/sketch": "workspace:*",
     "@chordinal/ui": "workspace:*",
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
     "@preact/signals": "2.11.4",
     "@types/node": "22.20.5",
     "electron": "44.9.2",
