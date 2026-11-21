@@ -8,10 +8,9 @@
 #   icon.icns  macOS bundle icon (full canvas, keeps Apple's margin), 16-1024 px
 #   icon.ico   Windows icon (tile only), 16-256 px, PNG-compressed entries
 #   icon.png   window/Linux icon (tile only), 256 px
-#   icon-dock.png  the Dock's icon in a development run on macOS (full canvas), 512 px
 set -euo pipefail
 
-[[ $# -ge 2 ]] || { sed -n '2,12p' "$0"; exit 1; }
+[[ $# -ge 2 ]] || { sed -n '2,11p' "$0"; exit 1; }
 SRC="$1"; OUT="$2"; shift 2
 WORK="build/icons"
 while [[ $# -gt 0 ]]; do
@@ -50,7 +49,6 @@ for size in 16 24 32 48 64 128 256; do
   render "$WORK/tile.svg" "$WORK/tile-$size.png" "$size"
 done
 cp "$WORK/tile-256.png" "$OUT/icon.png"
-render "$SRC" "$OUT/icon-dock.png" 512
 # An ICO is a directory of PNG images (supported since Windows Vista); 256 is stored as 0.
 python3 - "$WORK" "$OUT/icon.ico" <<'PY'
 import struct, sys

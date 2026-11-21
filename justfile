@@ -2,7 +2,7 @@
 set shell := ["bash", "-cu"]
 
 app_name := "Chordinal"
-electron_app := "node_modules/electron/dist/Electron.app"
+dev_app := "build/dev/Chordinal.app"
 entry := "apps/desktop/dist/chordinal.js"
 
 default:
@@ -10,27 +10,28 @@ default:
 
 # ── Run (dev) ─────────────────────────────────────────────────────────────
 
-# On macOS it starts through `open`, so the microphone prompt names the app, not the terminal.
+# On macOS it opens a renamed copy of Electron (build/dev/Chordinal.app, remade when Electron or the icon changes), so
+# the menu bar, the Dock and the microphone prompt say Chordinal, not Electron or the terminal.
 # Desktop app in its own window (builds first). Projects are folders anywhere, Documents/Chordinal/ by default.
 [group('run')]
-run-desktop: build
+run-desktop: build _dev-app
     #!/usr/bin/env bash
     set -euo pipefail
     if [ "$(uname)" = Darwin ]; then
-        open -W -n "{{ electron_app }}" --args "$PWD/{{ entry }}"
+        open -W -n "{{ dev_app }}"
     else
         npx electron "{{ entry }}"
     fi
 
 # Desktop app in dev mode: rebuilds on every change and reloads the window.
 [group('run')]
-run-desktop-watch: build
+run-desktop-watch: build _dev-app
     #!/usr/bin/env bash
     set -euo pipefail
     node tools/build.mjs --watch & watcher=$!
     trap 'kill $watcher' EXIT INT TERM
     if [ "$(uname)" = Darwin ]; then
-        open -W -n "{{ electron_app }}" --args "$PWD/{{ entry }}" --dev
+        open -W -n "{{ dev_app }}" --args --dev
     else
         npx electron "{{ entry }}" --dev
     fi
@@ -270,6 +271,21 @@ clean-all: clean
 _deps:
     @[ -d node_modules/preact ] && [ -d node_modules/esbuild ] && [ -d node_modules/electron ] && [ -d node_modules/typescript ] || pnpm install
     @[ -f node_modules/electron/path.txt ] || node node_modules/electron/install.js
+
+# The macOS copy of Electron that run-desktop opens, remade when it's missing or older than Electron, the icon or the
+# script that makes it.
+[private]
+_dev-app:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ "$(uname)" = Darwin ] || exit 0
+    plist="{{ dev_app }}/Contents/Info.plist"
+    for f in node_modules/electron/dist/Electron.app/Contents/Info.plist apps/desktop/assets/icon/icon.icns tools/install-app.sh; do
+        if [ ! -f "$plist" ] || [ "$f" -nt "$plist" ]; then
+            bash tools/install-app.sh --dev "$(dirname "{{ dev_app }}")" >/dev/null
+            break
+        fi
+    done
 
 # Earlier names, kept so nothing that uses them breaks.
 alias chordinal := run-desktop

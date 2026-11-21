@@ -315,8 +315,6 @@ export function startShell(config: AppConfig): void {
     if (config.askMicrophone && process.platform === 'darwin' && !HEADLESS)
       await systemPreferences.askForMediaAccess('microphone');
     if (HEADLESS) app.dock?.hide();
-    // a development run starts as Electron.app, whose Dock icon is Electron's; a packaged or installed app has its own
-    else if (!PACKAGED) app.dock?.setIcon(path.join(ROOT, 'assets', 'icon', 'icon-dock.png'));
     createWindow();
     app.on('activate', () => {
       if (!BrowserWindow.getAllWindows().length) createWindow();

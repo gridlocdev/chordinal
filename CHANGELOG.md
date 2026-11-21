@@ -19,7 +19,7 @@
 ### Improvements
 
 - A status bar along the bottom shows notices, what the letter keys play, the MIDI keyboard and whether the project is saved. On macOS the window has no separate title bar: the browser runs to the top, with the window buttons above it, and the transport row is the rest of the title bar.
-- A new app icon: a chord on one stem with a flag. It shows in the Dock in development runs too.
+- A new app icon: a chord on one stem with a flag. `just run-desktop` shows it, and the name Chordinal in the menu bar, instead of Electron's.
 - A dropdown under the browser's tabs jumps to an instrument family or a group of projects, so you don't have to scroll.
 - Changing the octave with `Z` or `X` scrolls the piano roll to the keys you're playing.
 - Saving is safer: a project changed on disk since you opened it asks before it's replaced, and saves and opens never overlap.
