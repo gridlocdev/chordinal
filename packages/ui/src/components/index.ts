@@ -17,7 +17,7 @@ export { GridToolbar, StepGrid } from './StepGrid.tsx';
 export { PRESET, TRACK, TrackRow, carries } from './TrackRow.tsx';
 export type { TrackRowProps } from './TrackRow.tsx';
 export { StatusBar } from './StatusBar.tsx';
-export { Transport, modeName, position } from './Transport.tsx';
+export { BrowserToggle, Transport, modeName, position } from './Transport.tsx';
 export type { TransportProps } from './Transport.tsx';
 export { CommandMenu } from './CommandMenu.tsx';
 export { ShortcutsDialog } from './ShortcutsDialog.tsx';

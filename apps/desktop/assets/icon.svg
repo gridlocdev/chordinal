@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Chordinal's icon source, an 824-unit tile at (100,100) on a
-     1024 canvas. tools/make-icons.sh crops to the tile for Windows and Linux. The glyph is a three-note chord on
-     one stem. -->
+<!-- Chordinal's icon source, an 824-unit tile at (100,100) on a 1024 canvas. tools/make-icons.sh crops to the tile
+     for Windows and Linux. The glyph is a chord: three noteheads a third apart on one stem, with a flag. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
     <linearGradient id="tile" gradientUnits="userSpaceOnUse" x1="0" y1="100" x2="0" y2="924">
@@ -12,10 +11,11 @@
 
   <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" />
 
-  <g fill="#FFFFFF" transform="translate(12 19)">
-    <ellipse cx="500" cy="700" rx="84" ry="62" transform="rotate(-22 500 700)" />
-    <ellipse cx="500" cy="554" rx="84" ry="62" transform="rotate(-22 500 554)" />
-    <ellipse cx="500" cy="408" rx="84" ry="62" transform="rotate(-22 500 408)" />
-    <rect x="537" y="220" width="44" height="466" />
+  <g id="glyph" fill="#FFFFFF" transform="translate(-31 21)">
+    <ellipse cx="480" cy="690" rx="86" ry="60" transform="rotate(-22 480 690)" />
+    <ellipse cx="480" cy="530" rx="86" ry="60" transform="rotate(-22 480 530)" />
+    <ellipse cx="480" cy="370" rx="86" ry="60" transform="rotate(-22 480 370)" />
+    <rect x="516" y="228" width="44" height="440" />
+    <path d="M 516 228 L 560 228 C 580 300 650 320 676 390 C 706 456 696 522 662 574 C 678 506 666 456 630 424 C 604 394 576 384 560 380 Z" />
   </g>
 </svg>

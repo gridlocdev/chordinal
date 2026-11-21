@@ -74,17 +74,43 @@ test('Chordinal starts on a new project, saves it to a chosen folder, asks befor
         assert.deepEqual(await page.$$eval('.track[data-id]', l => l.length), 2, 'a drum track and a Grand Piano track');
         assert.deepEqual(await app.evaluate(()=> globalThis.headlessPrompts), []);
 
-        // §5.8: on macOS the top bar is the title bar: room for the traffic lights, and it drags the window but its buttons don't
+        // §5.8: on macOS the browser runs to the top and its top row holds the traffic lights and the browser's toggle; the
+        // transport beside it is the rest of the title bar. Both drag the window, their buttons don't. With the browser
+        // hidden, the transport makes room for the lights.
         const unified = process.platform === 'darwin';
         await until('the page knows how it is framed', async ()=> await page.evaluate(()=> document.documentElement.classList.contains('unified')) === unified);
-        const chrome = await page.evaluate(()=>
+        const chrome = ()=> page.evaluate(()=>
         {
-            const bar = document.querySelector('.transport'), button = bar.querySelector('button');
-            const region = (el)=> getComputedStyle(el).getPropertyValue('-webkit-app-region') || getComputedStyle(el).getPropertyValue('app-region');
-            return { padding: getComputedStyle(bar).paddingLeft, bar: region(bar), button: region(button) };
+            const style = (el)=> el ? getComputedStyle(el) : null;
+            const region = (el)=> style(el).getPropertyValue('-webkit-app-region') || style(el).getPropertyValue('app-region');
+            const bar = document.querySelector('.transport'), top = document.querySelector('.side-top');
+            const shown = [...document.querySelectorAll('.panel-toggle')].filter(b => b.getClientRects().length).map(b => b.closest('.side-top') ? 'browser' : 'transport');
+            return {
+                bar: { padding: style(bar).paddingLeft, region: region(bar), button: region(bar.querySelector('button')) },
+                top: top && style(top).display !== 'none' ? { padding: style(top).paddingLeft, region: region(top), y: top.getBoundingClientRect().top, height: top.getBoundingClientRect().height, button: region(top.querySelector('button')) } : null,
+                toggle: shown,
+            };
         });
-        if (unified) assert.deepEqual(chrome, { padding: '84px', bar: 'drag', button: 'no-drag' });
-        else assert.equal(chrome.padding, '12px');
+        if (unified)
+        {
+            assert.deepEqual(await chrome(), {
+                bar: { padding: '12px', region: 'drag', button: 'no-drag' },
+                top: { padding: '84px', region: 'drag', y: 0, height: 52, button: 'no-drag' },
+                toggle: ['browser'],
+            });
+            await page.click('.side-top .panel-toggle');
+            await until('the browser hides', async ()=> (await chrome()).top === null);
+            assert.deepEqual(await chrome(), { bar: { padding: '84px', region: 'drag', button: 'no-drag' }, top: null, toggle: ['transport'] });
+            await page.click('.transport .panel-toggle');
+            await until('the browser comes back', async ()=> (await chrome()).top !== null);
+        }
+        else
+        {
+            const c = await chrome();
+            assert.equal(c.bar.padding, '12px');
+            assert.equal(c.top, null);
+            assert.deepEqual(c.toggle, ['transport']);
+        }
 
         // §4.8: an unsaved change shows a dot
         await click('newTrack');

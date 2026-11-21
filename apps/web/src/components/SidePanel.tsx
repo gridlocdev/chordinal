@@ -1,7 +1,9 @@
 // The browser on the left (Chordinal PRD §5): its right edge drags, and the width is kept in the settings. B hides and
-// shows it.
+// shows it. On macOS it runs to the top of the window, and its top row holds the window's buttons and the browser's
+// toggle (§5.8); elsewhere that row is hidden.
 import type { TargetedPointerEvent } from 'preact';
 import { settings, setSettings } from '@chordinal/ui';
+import { BrowserToggle } from '@chordinal/ui/components';
 import { LibraryBrowser } from './LibraryBrowser.tsx';
 
 export const LEFT_W = [200, 0.5] as const; // px, and at most this much of the window
@@ -26,6 +28,9 @@ export function SidePanel() {
   };
   return (
     <div class="side-panel">
+      <div class="side-top">
+        <BrowserToggle />
+      </div>
       <LibraryBrowser />
       <div class="edge" onPointerDown={edge} title="Drag to resize" />
     </div>

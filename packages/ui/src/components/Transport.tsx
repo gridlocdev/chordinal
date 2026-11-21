@@ -110,6 +110,23 @@ const Cell = ({ label, children, title = '' }: CellProps) => (
   </div>
 );
 
+/**
+ * Shows or hides the browser (B). It sits at the transport's left; on macOS, while the browser is shown, the one in the
+ * browser's top row takes its place next to the window's buttons (PRD §5.8).
+ */
+export function BrowserToggle() {
+  return (
+    <button
+      class={`ghost panel-toggle ${settings.value.browserOpen ? '' : 'off'}`}
+      title="Show or hide the browser (B)"
+      aria-label="Show or hide the browser"
+      onClick={() => setSettings({ browserOpen: !settings.value.browserOpen })}
+    >
+      {ICON.panel}
+    </button>
+  );
+}
+
 export interface TransportProps {
   /** what New does: the app's own new project */
   onNew: () => void;
@@ -124,13 +141,7 @@ export function Transport({ onNew, newLabel = 'New' }: TransportProps) {
   return (
     <div class="transport">
       <div class="side">
-        <button
-          class={`ghost panel-toggle ${settings.value.browserOpen ? '' : 'off'}`}
-          title="Show or hide the browser (B)"
-          onClick={() => setSettings({ browserOpen: !settings.value.browserOpen })}
-        >
-          {ICON.panel}
-        </button>
+        <BrowserToggle />
         <div class="doc">
           <div class="title" title={dirty.value ? 'Changes not saved yet' : ''}>
             {p.title}

@@ -247,12 +247,38 @@ input[type='range']::-webkit-slider-thumb {
   grid-area: editor;
 }
 
-/* ── macOS's unified title bar (PRD §5.8): the top bar is the title bar, with the traffic lights at its left ─────── */
+/* ── macOS's unified title bar (PRD §5.8): the browser runs to the top, and its top row holds the traffic lights and
+   the browser's toggle; the transport beside it is the rest of the title bar. With the browser hidden, the transport
+   makes room for the lights itself. In full screen the lights go, and so does their room. ──────────────────────────── */
+.side-top {
+  display: none;
+}
+.unified .app:not(.no-browser) {
+  grid-template:
+    'browser top' 52px 'browser arrange' 1fr 'browser split' 5px 'browser editor' var(--editor-h, 300px)
+    'status status' 26px / var(--browser-w, 260px) 1fr;
+}
+.unified .side-top {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  height: 52px;
+  padding: 0 8px 0 84px;
+  -webkit-app-region: drag;
+}
 .unified .transport {
   padding-left: 84px;
   -webkit-app-region: drag;
 }
-.unified.fullscreen .transport {
+.unified .app:not(.no-browser) .transport {
+  padding-left: 12px;
+}
+.unified .app:not(.no-browser) .transport .panel-toggle {
+  display: none;
+}
+.unified.fullscreen .transport,
+.unified.fullscreen .side-top {
   padding-left: 12px;
 }
 .unified :is(button, input, select, textarea, a, label, [role='menu'], [role='dialog'], .lcd) {
@@ -308,7 +334,8 @@ input[type='range']::-webkit-slider-thumb {
 /* ── the top bar: the project on the left, the transport in the middle, the file and the volume on the right ─────── */
 .transport {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  /* the right-hand buttons keep their width: when the row is tight the middle moves left and the title shortens */
+  grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
   gap: 16px;
   padding: 0 12px;
@@ -323,6 +350,9 @@ input[type='range']::-webkit-slider-thumb {
 }
 .transport .side.end {
   justify-content: flex-end;
+}
+.transport button {
+  white-space: nowrap;
 }
 .transport .doc {
   display: flex;
