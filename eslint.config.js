@@ -2,9 +2,9 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
-/** Packages are used through their entry points, never through their other source files. */
+/** Packages are used through their entry points, never through their other source files. `@chordinal/ui/native-bridge` is the desktop bridge's interface, which the preload imports as types alone. */
 const DEEP_IMPORTS = {
-  regex: '^(@chordinal/[^/]+/(?!components$|ui\\.css$|mic-worklet\\.js$)|(\\.\\./)+packages/)',
+  regex: '^(@chordinal/[^/]+/(?!components$|ui\\.css$|mic-worklet\\.js$|native-bridge$)|(\\.\\./)+packages/)',
   message: "Import from the package's entry point (@chordinal/daw, @chordinal/ui, …), not from its files.",
 };
 

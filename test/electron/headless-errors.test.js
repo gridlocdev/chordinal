@@ -60,7 +60,7 @@ for (const config of APPS)
         try
         {
             const mark = `closed-during-save-${Date.now()}`;
-            await run.page.evaluate((mark)=> { window.appStorage.write({ mark }); }, mark);
+            await run.page.evaluate((mark)=> { window.chordinalNative.storage.write({ mark }); }, mark);
             await run.app.evaluate(({ BrowserWindow })=> BrowserWindow.getAllWindows()[0].close());
             assert.equal(await exitOf(run), 0, run.stderr());
             const saved = JSON.parse(await fs.readFile(path.join(PROFILE, 'data', 'save.json'), 'utf8'));

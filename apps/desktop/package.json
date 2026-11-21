@@ -10,6 +10,7 @@
   "license": "MIT",
   "main": "dist/chordinal.js",
   "devDependencies": {
-    "@chordinal/audio": "workspace:*"
+    "@chordinal/audio": "workspace:*",
+    "@chordinal/ui": "workspace:*"
   }
 }

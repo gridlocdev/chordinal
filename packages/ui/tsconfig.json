@@ -6,6 +6,6 @@
     "lib": ["ES2023", "DOM"],
     "types": []
   },
-  "include": ["src/store", "src/commands"],
+  "include": ["src/store", "src/commands", "src/platform/native-bridge.ts"],
   "references": [{ "path": "../daw" }]
 }

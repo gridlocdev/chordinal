@@ -1,6 +1,7 @@
-// The app's saved settings: one JSON object, kept by the desktop app in a file in its data folder (electron/main.js,
-// through window.appStorage from apps/desktop/src/preload.ts). Load once at start; save hands over the whole object.
-const backend = /** @type {any} */ (globalThis).appStorage;
+// The app's saved settings: one JSON object, kept by the desktop app in a file in its data folder (apps/desktop/src/shell.ts,
+// through the desktop bridge, native-bridge.ts). Load once at start; save hands over the whole object.
+import { nativeBridge } from './native-bridge.ts';
+const backend = nativeBridge()?.storage;
 
 export const storage = {
     /** @returns {Promise<Record<string, any>>} */

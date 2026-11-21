@@ -1,10 +1,10 @@
 // The desktop app's project store: folders on disk, through the bridge its preload gives the page
-// (apps/desktop/src/preload.ts, window.projectFolders). The main process checks the version tokens, so two windows or
+// (apps/desktop/src/preload.ts, `chordinalNative.projects`). The main process checks the version tokens, so two windows or
 // another app can't slip a change in between the check and the write; its CONFLICT errors become ConflictErrors here.
 import { ConflictError } from './project-store.ts';
 import type { ProjectStore, Stored, Version } from './project-store.ts';
 
-/** the part of window.projectFolders the store uses */
+/** the part of the bridge's `projects` the store uses */
 export interface FoldersBridge {
   read(dir: string): Promise<Stored>;
   write(dir: string, text: string, expected: Version | null): Promise<Version>;

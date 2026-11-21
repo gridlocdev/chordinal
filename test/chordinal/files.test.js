@@ -9,7 +9,7 @@ const disk = new Map();
 let recentList = /** @type {string[]} */ ([]);
 let pickSaveAnswer = '', pickOpenAnswer = '', handedAnswer = '', handedOver = (_dir)=> {};
 const toTop = (d)=> { recentList = [d, ...recentList.filter(x => x !== d)]; };
-/** @type {any} */ (globalThis).projectFolders = {
+/** @type {any} */ (globalThis).chordinalNative = { projects: {
     read: async (d)=> { if (!disk.has(d)) throw new Error('no such folder'); return { text: disk.get(d), version: disk.get(d) }; },
     write: async (d, t)=> { disk.set(d, t); toTop(d); return t; },
     exists: async (d)=> disk.has(d),
@@ -22,7 +22,7 @@ const toTop = (d)=> { recentList = [d, ...recentList.filter(x => x !== d)]; };
     pickOpen: async ()=> pickOpenAnswer,
     handed: async ()=> { const d = handedAnswer; handedAnswer = ''; return d; },
     onHandedOver: (fn)=> { handedOver = fn; },
-};
+} };
 
 const { newSongProject, newSong, openFolder, openRecent, startUp, recent, useProjectFolders } = await import('../../apps/web/src/files.js');
 const { edit, save } = await import('@chordinal/ui');

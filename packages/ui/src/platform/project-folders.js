@@ -3,8 +3,9 @@
 import { nativeStore } from '../store/native-store.ts';
 import { browserStore } from '../store/browser-store.ts';
 import { idbKeyValue } from '../store/idb-keyval.ts';
+import { nativeBridge } from './native-bridge.ts';
 
-const backend = /** @type {any} */ (globalThis).projectFolders;
+const backend = nativeBridge()?.projects;
 
 /** a folder's last part, the project's name in menus and messages: '/Users/me/Documents/Chordinal/Night Drive' → 'Night Drive' */
 export const folderTitle = (dir)=> String(dir).split(/[\\/]/).filter(Boolean).at(-1) ?? '';
@@ -36,7 +37,7 @@ export const projectFolders = {
 };
 
 /** the window's side of closing: telling it about unsaved changes, hearing it wants to close, and closing */
-const win = /** @type {any} */ (globalThis).docWindow;
+const win = nativeBridge()?.window;
 export const docWindow = {
     dirty: (on)=> win?.dirty(on),
     onClosing: (fn)=> win?.onClosing(fn),

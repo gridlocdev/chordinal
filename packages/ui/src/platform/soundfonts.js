@@ -1,6 +1,7 @@
 // The SoundFont libraries on this machine: which are installed, and downloading one. The desktop app checks and
-// downloads them (apps/desktop/src/shell.ts, through window.soundfonts from apps/desktop/src/preload.ts).
-const backend = /** @type {any} */ (globalThis).soundfonts;
+// downloads them (apps/desktop/src/shell.ts, through the desktop bridge, platform/native-bridge.ts).
+import { nativeBridge } from './native-bridge.ts';
+const backend = nativeBridge()?.soundfonts;
 /** @type {Set<(id: string, loaded: number, total: number)=> void>} */
 const listeners = new Set();
 backend?.onProgress((id, loaded, total)=> listeners.forEach(fn => fn(id, loaded, total)));

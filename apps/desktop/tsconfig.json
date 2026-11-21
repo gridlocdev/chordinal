@@ -6,5 +6,5 @@
     "types": ["node"]
   },
   "include": ["src"],
-  "references": [{ "path": "../../packages/audio" }]
+  "references": [{ "path": "../../packages/audio" }, { "path": "../../packages/ui" }]
 }
