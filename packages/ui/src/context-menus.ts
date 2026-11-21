@@ -266,7 +266,7 @@ export function chordMenu(at: number): void {
   chordRange.value = range;
   appMenu.popup([
     {
-      label: 'Whistle a Chord Here',
+      label: 'Record a Chord Here',
       run: () => {
         chordRange.value = range;
         void record();

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Write, whistle and arrange music: a small DAW with a part composer and a whistle-to-notes sketchpad",
+  "description": "Write, record and arrange music: a small DAW with a part composer and a sketchpad that turns recorded melodies into notes",
   "author": "gridlocdev",
   "homepage": "https://github.com/gridlocdev/chordinal",
   "license": "MIT",

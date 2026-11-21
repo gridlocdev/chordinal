@@ -1,5 +1,5 @@
 // Chordinal's menu bar: its File menu (§4: New, Open…, Open Recent, Save, Save As…), Track ▸ Generate Part… (§8) and
-// Record Melody, Transport ▸ Whistle a Chord and New from Melody (§9.3), and Help, around the shared menus
+// Record Melody, Transport ▸ Record a Chord and New from Melody (§9.3), and Help, around the shared menus
 // (packages/ui/src/menu-bar.ts). The app's own commands join the shared catalog here.
 import { projectName, chordRange } from '@chordinal/ui';
 import { recording } from '@chordinal/ui';
@@ -8,7 +8,7 @@ import { editMenu, trackMenu, transportMenu, viewMenu, startMenus } from '@chord
 import type { Menu, MenuEntry } from '@chordinal/ui';
 import { recent, newSong, openFolder, openRecent, clearRecent, revealProject } from './files.ts';
 import { openGenerate } from './generate.ts';
-import { recordMelody, whistleChord } from './whistle.ts';
+import { recordMelody, recordChord } from './whistle.ts';
 
 const kind = () => recording.value?.kind;
 
@@ -64,18 +64,18 @@ catalog.add([
     run: () => recordMelody(),
     checked: () => kind() === 'melody',
     enabled: () => kind() !== 'chord',
-    description: 'Whistle or play a melody onto the selected track.',
-    keywords: 'whistle sing hum take',
+    description: 'Record a melody from the microphone, or play it, onto the selected track.',
+    keywords: 'sing hum whistle voice microphone take',
   },
   {
-    id: 'whistleChord',
+    id: 'recordChord',
     group: 'Transport',
-    title: 'Whistle a Chord',
-    run: whistleChord,
+    title: 'Record a Chord',
+    run: recordChord,
     checked: () => kind() === 'chord',
     enabled: () => kind() === 'chord' || (!kind() && !!chordRange.value),
-    description: 'Whistle the notes of a chord onto the stretch picked on the chord track.',
-    keywords: 'sing hum',
+    description: 'Record the notes of a chord onto the stretch picked on the chord track.',
+    keywords: 'sing hum whistle voice microphone arpeggio',
   },
 ]);
 
@@ -120,7 +120,7 @@ function menuBar(): MenuEntry[] {
     fileMenu(),
     editMenu(),
     trackMenu([item('generatePart'), item('recordMelody')]),
-    transportMenu(['-', item('whistleChord'), item('newFromMelody')]),
+    transportMenu(['-', item('recordChord'), item('newFromMelody')]),
     viewMenu([item('commandMenu'), item('browser'), '-']),
     { label: 'Help', submenu: [item('shortcuts'), item('readme')] },
   ];

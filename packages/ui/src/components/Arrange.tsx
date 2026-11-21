@@ -148,10 +148,10 @@ export function Arrange({ actions }: ArrangeProps) {
           <div class="track chords">
             <div
               class="head"
-              title="Drag across the chord track to pick a stretch, then press ● and whistle the chord"
+              title="Drag across the chord track to pick a stretch, then press ● and sound the chord's notes"
             >
               <span class="name">Chords</span>
-              <span class="inst">{range ? 'Press ● and whistle the chord' : 'Drag to pick a stretch'}</span>
+              <span class="inst">{range ? 'Press ● and sound the chord' : 'Drag to pick a stretch'}</span>
             </div>
             <ChordLane beats={beats} ppb={ppb} />
           </div>

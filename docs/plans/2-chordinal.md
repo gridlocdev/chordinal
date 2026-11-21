@@ -6,7 +6,7 @@ Each slice leaves `just check` and `just test` green and names the Chordinal PRD
 - [x] **2. The Chordinal shell** (§3.1, §4). Its entry, `just chordinal`, start-up, New, Open, Open Recent, Save As to a chosen folder, and the close questions. Waits on 1.
 - [x] **3. The left panel** (§5, §6, §7). The channel rack and the browser tabs. Waits on 2.
 - [x] **4. Generate Part…** (§8). Waits on 2.
-- [x] **5. Music Generator slimmed down** (§9). Open in Chordinal, and whistling moved to Chordinal. Waits on 2.
+- [x] **5. Music Generator slimmed down** (§9). Open in Chordinal, and recording melodies moved to Chordinal. Waits on 2.
 - [x] **6. Packaging** (§3.3). Both apps and their icons. Waits on 5.
 - [ ] **7. A track's chain: instrument, inserts, strip** (groundwork for §11.1, before its interview). Today the player only plays SoundFont instruments, and a channel strip (`input → user → low cut → tone → fader → pan`) has no place for an effect. The player reaches into the strip's nodes by name (`tone.frequency`, `fader.gain`, `delaySend.gain`, `panner`) and lists the automation targets itself, and the level meters are wired outside the mixer. With no change in sound:
   - Define an `Instrument` type (`noteOn`, `noteOff`, `glide`, `tapeStop`, `dispose`) that the SoundFont instrument meets, so a synth can meet it later.

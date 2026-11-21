@@ -6,7 +6,7 @@ Music Generator is already a small DAW: tracks with SoundFont instruments, a pia
 
 1. Build a drum part the way a pattern sequencer does: a grid of steps per kit piece, clicked on and off, heard as it loops.
 2. Reuse a part across the song: place a pattern many times, edit it once, and every copy changes.
-3. Keep everything else working as it does now: the piano roll, the composer, whistling, import and export, and the games' use of the composer (§8).
+3. Keep everything else working as it does now: the piano roll, the composer, recording melodies, import and export, and the games' use of the composer (§8).
 
 ## §2 Non-goals for this work
 

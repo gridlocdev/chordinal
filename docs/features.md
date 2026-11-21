@@ -1,6 +1,6 @@
 # Features
 
-**Chordinal** is a DAW laid out like one (a transport, a browser, an arrangement, a step grid, a piano roll and a mixer), in a dark or a light theme, where you make music by hand, have the composer write parts, and turn whistling into notes.
+**Chordinal** is a DAW laid out like one (a transport, a browser, an arrangement, a step grid, a piano roll and a mixer), in a dark or a light theme, where you make music by hand, have the composer write parts, and turn melodies you record into notes.
 
 ## Projects
 
@@ -34,9 +34,9 @@ The **Step Grid** tab edits a drum clip as rows of drum sounds and columns of st
 
 Make a clip a **pattern** and its copies stay linked: edit one, in the step grid or the piano roll, and every copy changes. A linked clip shows `⧉` and the pattern's name. **Make Unique** turns one copy back into an ordinary clip, and splitting or joining a copy does the same to the pieces.
 
-## Whistling
+## Recording
 
-**Track ▸ Record Melody** (or **●**, or `R`) and whistle a melody over a click onto any track, vibrato included. Or play it on the letter keys or a MIDI keyboard during the take, with no microphone needed: the notes go into the clip the take starts in (the selected one first, so every clip of its pattern gets them, growing it to fit), or into a new clip if there's none. Pick a stretch of the chord track and whistle a chord's notes to set the chord there. **New from melody** composes a band around the selected clip.
+**Track ▸ Record Melody** (or **●**, or `R`) and sing, hum or play a melody into the microphone over a click onto any track, vibrato included. It reads one clear line at a time in a high register (about 300 to 4,000 Hz). Or play it on the letter keys or a MIDI keyboard during the take, with no microphone needed: the notes go into the clip the take starts in (the selected one first, so every clip of its pattern gets them, growing it to fit), or into a new clip if there's none. Pick a stretch of the chord track and sound the chord's notes one at a time (**Transport ▸ Record a Chord**) to set the chord there. **New from melody** composes a band around the selected clip.
 
 A saved project keeps its takes in its folder's `takes/`, listed in the browser's **Takes** tab to read onto a track again, and an audio file dropped on a track is read the same way.
 

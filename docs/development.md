@@ -1,6 +1,6 @@
 # Development
 
-Chordinal is an Electron app. Its interface is [Preact](https://preactjs.com) with [signals](https://preactjs.com/guide/v10/signals/), built by [Vite](https://vite.dev) into `apps/web/dist/`; esbuild bundles the desktop main process. Everything under the interface (the composer, the whistle transcription, the SoundFont 2 parser and the Web Audio sampler, all written from scratch) is TypeScript or JavaScript ES modules that also run as they are in Node, for the tools and tests. The rules in `AGENTS.md` at the repository root apply to everyone working on it, and the code layout and its layer rules are in [architecture.md](architecture.md).
+Chordinal is an Electron app. Its interface is [Preact](https://preactjs.com) with [signals](https://preactjs.com/guide/v10/signals/), built by [Vite](https://vite.dev) into `apps/web/dist/`; esbuild bundles the desktop main process. Everything under the interface (the composer, the melody transcription, the SoundFont 2 parser and the Web Audio sampler, all written from scratch) is TypeScript or JavaScript ES modules that also run as they are in Node, for the tools and tests. The rules in `AGENTS.md` at the repository root apply to everyone working on it, and the code layout and its layer rules are in [architecture.md](architecture.md).
 
 ## Getting set up
 
@@ -91,55 +91,31 @@ composes every genre bright and dark, then the catalog, and prints each one's sh
 triads, its chord colours and cadences, the 4-chord progressions shared across songs and the most
 alike pairs, each genre's melody (pace, steps and leaps, syncopation, range) with the nearest, and each genre's sound and shape (tempo, key, form, lead, sends, pocket). Name songs to see only those (`just harmony spook-swing feel:tender`).
 
-### Transcribing a whistled melody
+### Transcribing a recorded melody
 
-**In the app.** Select a track (or none, and a Whistle track is added) and press **●** (or `R`).
-After a bar of count-in, at the project's tempo and meter where the playhead is, whistle the melody.
-The click is a low tick under the pitch tracker's range, but use headphones anyway. Nothing else
-plays while you record, so the band can't leak into the take. The playhead follows the take and
-notes are written out about a beat behind it. When you stop, the whole take is read again on the
-click's grid and put in a new clip from the bar you started in.
+The pitch tracker follows one clear line in a high register (about 300 to 4,000 Hz): a high voice singing or humming, or any other clear tone. A low voice sits under that range, so try it an octave higher.
 
-Then the chords: drag over the chord track above the tracks (bars, or beats with Shift held), press
-`R` and whistle the chord's notes as an arpeggio, in any order and octave, in your own time. Press
-`R` again and the chord is named in the project's key from the notes you held longest, and replaces
-the chords there. Fix notes in the piano roll like any others.
+**In the app.** Select a track (or none, and a Melody track is added) and press **●** (or `R`). After a bar of count-in, at the project's tempo and meter where the playhead is, sing the melody. The click is a low tick under the pitch tracker's range, but use headphones anyway. Nothing else plays while you record, so the band can't leak into the take. The playhead follows the take and notes are written out about a beat behind it. When you stop, the whole take is read again on the click's grid and put in a new clip from the bar you started in.
 
-**New from melody** (in the piano roll's toolbar) takes the selected clip and the chords over it
-(guessing chords from the melody where none were whistled) and composes a band round it in a new
-project. In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav`
-(ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it
-again. Audio files dropped on a track are read the same way, at the project's tempo.
+Then the chords: drag over the chord track above the tracks (bars, or beats with Shift held), press `R` (or **Transport ▸ Record a Chord**) and sound the chord's notes one at a time as an arpeggio, in any order and octave, in your own time. Press `R` again and the chord is named in the project's key from the notes you held longest, and replaces the chords there. Fix notes in the piano roll like any others.
+
+**New from melody** (in the piano roll's toolbar) takes the selected clip and the chords over it (guessing chords from the melody where none were recorded) and composes a band round it in a new project. In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav` (ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it again. Audio files dropped on a track are read the same way, at the project's tempo.
 
 **From the command line.**
 
-`just whistle <file or folder> --tempo <bpm>` (`tools/whistle.mjs`, needs ffmpeg for anything but
-`.wav`) turns a whistled recording into a section's `melody:` line. `--tempo` is the speed you
-whistled at, roughly: the tool fits the beat grid within ±10% of it, and since the notation counts
-beats you can whistle slower than the song plays. It snaps notes to 8ths or triplets, beat by beat
-(a triplet is written `5:1/3`), keeps staccato notes however short, guesses the key (or takes
-`--key Eb --mode major`), writes `~` on notes with vibrato, and flags notes more than 30 cents off.
-`--meter 3/4` places the bar lines; `--json out.json` keeps the notes. Keep takes in `scratch/`: git
-ignores that folder, so they stay on your machine.
+`just whistle <file or folder> --tempo <bpm>` (`tools/whistle.mjs`, needs ffmpeg for anything but `.wav`) turns a recorded melody into a section's `melody:` line. `--tempo` is the speed you recorded at, roughly: the tool fits the beat grid within ±10% of it, and since the notation counts beats you can record slower than the song plays. It snaps notes to 8ths or triplets, beat by beat (a triplet is written `5:1/3`), keeps staccato notes however short, guesses the key (or takes `--key Eb --mode major`), writes `~` on notes with vibrato, and flags notes more than 30 cents off. `--meter 3/4` places the bar lines; `--json out.json` keeps the notes. Keep takes in `scratch/`: git ignores that folder, so they stay on your machine.
 
 ```bash
 just whistle scratch/lantern-hook.m4a --tempo 60 --meter 3/4
 ```
 
-**Chords.** With `--chords` the take is read as arpeggios: whistle each chord's notes, in any order and
-octave, and the tool finds the chords and where they change (on beats; bar lines and half bars are
-likelier), and prints a `progression:` with each chord's runners-up. Only the chord is kept, so
-the composer voices it to fit the song. Start an arpeggio on the chord's third or seventh for an
-inversion (3-5-8 is `I/3`); starting on the fifth is just the chord. A 7th chord needs its 7th
-whistled in its own bar. Between relative keys (G major and E minor) it keeps the one whose
-chords fit best, which usually means the one the take starts and ends on.
+**Chords.** With `--chords` the take is read as arpeggios: sound each chord's notes, in any order and octave, and the tool finds the chords and where they change (on beats; bar lines and half bars are likelier), and prints a `progression:` with each chord's runners-up. Only the chord is kept, so the composer voices it to fit the song. Start an arpeggio on the chord's third or seventh for an inversion (3-5-8 is `I/3`); starting on the fifth is just the chord. A 7th chord needs its 7th recorded in its own bar. Between relative keys (G major and E minor) it keeps the one whose chords fit best, which usually means the one the take starts and ends on.
 
 ```bash
 just whistle scratch/lantern-chords.m4a --tempo 60 --meter 3/4 --chords
 ```
 
-Tips: start each note with your tongue (a soft "t") when repeating a pitch, so it is heard as a new
-note, and leave a second of silence before the first note.
+Tips: start each note with a consonant (a soft "t" or "d") when repeating a pitch, so it is heard as a new note, and leave a second of silence before the first note.
 
 ### Studying NES soundtracks
 

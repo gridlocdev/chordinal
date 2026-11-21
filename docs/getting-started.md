@@ -27,11 +27,11 @@ The builds aren't signed with a paid developer certificate yet, so your system m
 
 ## The microphone
 
-The first time you whistle into Chordinal, macOS asks whether Chordinal may use the microphone. If you said no, turn it on under **System Settings → Privacy & Security → Microphone**. On Windows, check **Settings → Privacy & security → Microphone**, and in the Flatpak, check its permissions in Flatseal.
+The first time you record into Chordinal, macOS asks whether Chordinal may use the microphone. If you said no, turn it on under **System Settings → Privacy & Security → Microphone**. On Windows, check **Settings → Privacy & security → Microphone**, and in the Flatpak, check its permissions in Flatseal.
 
 ## Where your files go
 
-- **Projects** are folders wherever you save them, in `Documents/Chordinal/` unless you pick somewhere else. Each holds a `project.json` and, in `takes/`, the whistled takes.
+- **Projects** are folders wherever you save them, in `Documents/Chordinal/` unless you pick somewhere else. Each holds a `project.json` and, in `takes/`, the recorded takes.
 - **Sound libraries:** GeneralUser GS comes with the app. FluidR3_GM (148 MB) and MuseScore_General (216 MB) download when you press **Download** in Chordinal's **Instruments** tab.
 
 ## Run it from source

@@ -108,8 +108,8 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Import a MIDI file as a new project, or drop one on a track to add its tracks from that bar | File ▸ Import MIDI File…, or drag it in |
 | Paste where you clicked | right-click, **Paste Here** |
 | Loop | drag along the ruler; right-click a clip, a marker or the ruler |
-| Record a melody (whistled, or played on the keys or a MIDI keyboard) | **●** |
-| Set a chord | drag over the chord track, then `R` and whistle its notes |
+| Record a melody (into the microphone, or played on the keys or a MIDI keyboard) | **●** |
+| Set a chord | drag over the chord track, then `R` and sound the chord's notes one at a time |
 | Hear a note | press a key on the piano roll's keyboard (drag up or down to glide), or play the letter keys or a MIDI keyboard; the row of each key sounding lights up |
 | Draw a note | click empty space in the piano roll |
 | Move or resize a note | drag it, or drag its right edge |

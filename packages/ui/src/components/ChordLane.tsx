@@ -1,4 +1,4 @@
-// The chord track: the project's chords, and a stretch dragged out to whistle a chord for.
+// The chord track: the project's chords, and a stretch dragged out to record a chord for.
 import type { TargetedMouseEvent, TargetedPointerEvent } from 'preact';
 import { barAt } from '@chordinal/daw';
 import { project, chordRange } from '../store.ts';

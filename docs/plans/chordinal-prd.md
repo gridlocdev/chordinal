@@ -77,7 +77,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
    - **Instruments**: the SoundFont libraries and the chip instruments, grouped by General MIDI family.
    - **Kits**: the drum kits.
    - **Projects**: the recent projects and the folder `Documents/Chordinal/`.
-   - **Takes**: the open project's whistled takes (§9.3), to read onto a track again.
+   - **Takes**: the open project's recorded takes (§9.3), to read onto a track again.
 2. Clicking an instrument plays a short preview on middle C. Clicking a kit plays a kick, a snare and a closed hat.
 3. When a tab's list has more than one section (the instrument families, or Recent and Documents/Chordinal), a dropdown across the full width under the tabs lists them. Picking one scrolls the list to that section's heading, and while the list scrolls the dropdown names the section at the top.
 4. Later work adds the Synths, Effects and Samples tabs (§11).
@@ -95,11 +95,11 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 5. If the composer can't write the part for the meter (for example a style that doesn't support 7/8), the dialog says "<Style> can't write <part> in <meter>." and adds nothing.
 6. This uses the composer through a new function beside `compose` and `toProject`. Their signatures and output don't change.
 
-## §9 Whistling and the tools
+## §9 Recording and the tools
 
 1. Music Generator, the second app this section once described, was dropped. Its New dialog lives on as Generate Part (§8) and `just compose`.
 2. Its songs are the projects in `projects/`, opened in Chordinal with **Open…**.
-3. Whistling is a Chordinal feature: **Record Melody** on a track, and the chord track's whistle-a-chord.
+3. Recording is a Chordinal feature: **Record Melody** on a track, and **Record a Chord** on the chord track.
 4. `just compose`, `just projects`, `just export`, `just whistle` and the other tools keep working as they do now.
 
 ## §10 Patterns and the step grid
@@ -133,6 +133,6 @@ Each gets its own interview and PRD section before it's built.
 
 1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid (§11.2).
 2. Music Generator is dropped; the composer stays as Generate Part, the CLI and the games' API (§9.1).
-3. Whistling lives in Chordinal (§9.3).
+3. Recording lives in Chordinal (§9.3).
 
 The slices are in [2-chordinal.md](2-chordinal.md).

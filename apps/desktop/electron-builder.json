@@ -46,7 +46,7 @@
     "identity": "-",
     "hardenedRuntime": false,
     "extendInfo": {
-      "NSMicrophoneUsageDescription": "Chordinal listens to the microphone to turn whistled melodies and chords into notes."
+      "NSMicrophoneUsageDescription": "Chordinal listens to the microphone to turn the melodies and chords you record into notes."
     }
   },
   "win": {

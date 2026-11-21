@@ -1,5 +1,5 @@
 // The browser under the channel rack (Chordinal PRD §7): the instruments by General MIDI family, the drum kits, the
-// projects (Open Recent and those in Documents/Chordinal/), and the open project's whistled takes (§9.3). Click an
+// projects (Open Recent and those in Documents/Chordinal/), and the open project's recorded takes (§9.3). Click an
 // instrument or a kit to hear it, double-click to put it on the selected track, or drag it onto a track or the channel
 // rack. Click a take to read it onto the selected track at the playhead, or drag it onto a track.
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
@@ -207,7 +207,7 @@ function Takes() {
   if (!name)
     return (
       <div class="list">
-        <div class="empty">Save the project to keep its whistled takes.</div>
+        <div class="empty">Save the project to keep its recorded takes.</div>
       </div>
     );
   return (

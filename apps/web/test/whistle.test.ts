@@ -1,4 +1,4 @@
-// Record Melody and Whistle a Chord pick the shared recorder's take (Chordinal PRD §9.3). There is no microphone in
+// Record Melody and Record a Chord pick the shared recorder's take (Chordinal PRD §9.3). There is no microphone in
 // Node, so each stops at "No microphone", having picked its track or stretch first.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 globalThis.requestAnimationFrame ??= () => 0;
 globalThis.cancelAnimationFrame ??= () => {};
 
-const { recordMelody, whistleChord } = await import('../src/whistle.ts');
+const { recordMelody, recordChord } = await import('../src/whistle.ts');
 const { hist, project, selected, chordRange, status } = await import('@chordinal/ui');
 const { emptyProject, addTrack, makeTrack } = await import('@chordinal/daw');
 const { history } = await import('@chordinal/daw');
@@ -31,14 +31,14 @@ test('Record Melody on a track selects it and records a melody, not the chord pi
   assert.equal(project.value.tracks.length, 1, 'no track added before the microphone answered');
 });
 
-test('Whistle a Chord does nothing until a stretch of the chord track is picked, and keeps that stretch', async () => {
+test('Record a Chord does nothing until a stretch of the chord track is picked, and keeps that stretch', async () => {
   start();
   chordRange.value = null;
   status.value = '';
-  await whistleChord();
+  await recordChord();
   assert.equal(status.value, '');
   chordRange.value = { beat: 4, beats: 4 };
-  await whistleChord();
+  await recordChord();
   assert.deepEqual(chordRange.value, { beat: 4, beats: 4 });
   assert.match(status.value, /^No microphone/);
 });

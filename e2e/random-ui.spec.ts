@@ -25,7 +25,6 @@ const STEP_PAUSE_MS = 50;
 /** ⌘K commands left out, by title: recording, file pickers, downloads, the clipboard, and leaving the page */
 const SKIP_COMMANDS = [
   /record/i,
-  /whistle/i,
   /^open/i,
   /^import/i,
   /^export/i,

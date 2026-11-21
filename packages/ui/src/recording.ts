@@ -47,7 +47,7 @@ import { edit, newProject } from './document.ts';
 import { stop } from './player.ts';
 import { errorText } from './errors.ts';
 
-const WHISTLE = { name: 'Whistle', instrument: { bank: 0, program: 73 } }; // a flute
+const MELODY = { name: 'Melody', instrument: { bank: 0, program: 73 } }; // a flute
 const VELOCITY = 90;
 const DEFAULT_SIG = '4/4'; // a project always has a meter; this is only for one that somehow has none
 
@@ -92,13 +92,13 @@ function keyFor(notes: { key: number; beats: number }[]): NamedKey {
   return (notes.length ? guessKeys(notes)[0] : undefined) ?? { key: 'C', tonic: 0, mode: 'major' };
 }
 
-/** the selected track, or a new whistle track */
+/** the selected track, or a new melody track */
 function targetTrack(): string {
   const sel = selected.value;
   if (sel !== null && project.value.tracks.some((t) => t.id === sel)) return sel;
   let id = '';
   edit((p) => {
-    const t = makeTrack(p, WHISTLE);
+    const t = makeTrack(p, MELODY);
     id = t.id;
     return addTrack(p, t);
   });
@@ -195,7 +195,7 @@ export async function record(): Promise<void> {
   takingKeys.value = kind === 'melody';
   recording.value = { kind, track, start: at, range, rec, played, unhear, mic: !heard };
   const doing = heard ? `${heard} Recording the keys you play…` : 'Recording…';
-  notify(kind === 'chord' ? 'Whistle the chord as an arpeggio, then press ● again' : doing, 'busy');
+  notify(kind === 'chord' ? "Sound the chord's notes one at a time, then press ● again" : doing, 'busy');
   const step = () => {
     const r = recording.value;
     if (!r) return;
