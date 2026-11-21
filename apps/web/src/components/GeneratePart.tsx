@@ -1,7 +1,7 @@
 // The Generate Part… dialog (Chordinal PRD §8): the part, the style, the seed (with Roll), the range, and a key when
 // the project has none. Generate writes it and keeps the dialog open; Generate Again (⌘G) rolls a new seed and
 // replaces the last generated clip.
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { TargetedKeyboardEvent } from 'preact';
 import { EMOTIONS } from '@chordinal/composer';
 import { GENRES } from '@chordinal/composer';
@@ -60,6 +60,9 @@ function Dialog({ trackId }: DialogProps) {
     mode: 'major',
   }));
   const [message, setMessage] = useState('');
+  // the dialog takes the keyboard as it opens, so keys pressed now don't reach the window behind it
+  const first = useRef<HTMLSelectElement>(null);
+  useEffect(() => first.current?.focus(), []);
   const set = (patch: Partial<Form>) => setForm({ ...form, ...patch });
   const range = (ranges.find((r) => r.id === form.range) ?? ranges[0])?.range ?? { from: 0, to: 0 };
   const run = (again: boolean) => {
@@ -97,6 +100,7 @@ function Dialog({ trackId }: DialogProps) {
           <label>
             Part{' '}
             <select
+              ref={first}
               name="part"
               value={form.part}
               onChange={(e) => {

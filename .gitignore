@@ -32,3 +32,6 @@ release/
 
 # TypeScript build info
 *.tsbuildinfo
+
+# the browser scenarios' screenshots and traces; `just e2e` and `just drive` make them
+.e2e-results/

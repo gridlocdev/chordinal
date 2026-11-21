@@ -7,6 +7,7 @@ reference
 scratch
 soundfonts
 .ab
+.e2e-results
 pnpm-lock.yaml
 projects
 docs

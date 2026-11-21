@@ -10,7 +10,8 @@ import { emptyProject, makeTrack, addTrack } from '@chordinal/daw';
 import type { Project } from '@chordinal/daw';
 import { setPlace } from '@chordinal/ui';
 import { openProject, openNew, discardOk } from '@chordinal/ui';
-import { askChoice } from '@chordinal/ui';
+import { askChoice, askText, askYes } from '@chordinal/ui';
+import { onDisk } from '@chordinal/ui';
 import { project, projectName, dirty, settings, setSettings, saveSettingsNow, status } from '@chordinal/ui';
 
 /** Open Recent: the last projects opened or saved, newest first */
@@ -34,13 +35,29 @@ const askDiscard = async (title: string) => {
   return a === 'yes' ? 'save' : a === 'other' ? 'discard' : null;
 };
 
+/**
+ * Save As in the web build, which has no folders: the name the project is kept under in the browser, or '' when
+ * cancelled. A name already in use is replaced only when the user says so (PRD §4.6: nothing is overwritten silently).
+ */
+async function askBrowserName(title: string): Promise<string> {
+  let suggested = title;
+  for (;;) {
+    const name =
+      (await askText('Save the project as', suggested, 'Save'))?.replace(/[\\/]/g, '-').trim() ?? '';
+    if (!name || !(await projectFolders.exists(name))) return name;
+    if (await askYes(`A project named “${name}” is already saved in this browser. Replace it?`, 'Replace'))
+      return name;
+    suggested = name;
+  }
+}
+
 /** Chordinal's place for projects, used by the shared document code */
 export function useProjectFolders(): void {
   setPlace({
     files: projectStore(),
     where: (dir) => `“${folderTitle(dir)}”`,
     chooseName: async (title) => {
-      const dir = await projectFolders.pickSave(title);
+      const dir = onDisk ? await projectFolders.pickSave(title) : await askBrowserName(title);
       return dir ? { name: dir, title: folderTitle(dir) } : null;
     },
     opened: (dir) => {

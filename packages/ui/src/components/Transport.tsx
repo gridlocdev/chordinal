@@ -155,6 +155,7 @@ export function Transport({ onNew, newLabel = 'New' }: TransportProps) {
             class={`play ${playing.value ? 'on' : ''}`}
             title="Play (Space)"
             aria-label="Play"
+            aria-pressed={playing.value}
             onClick={() => play()}
           >
             {ICON.play}

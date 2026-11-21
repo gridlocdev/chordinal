@@ -224,7 +224,12 @@ function Grid({ track, clip }: GridProps) {
   const now = useComputed(() => playingStep(clip));
   const ref = useCanvas((g, w, h) => drawGrid(g, w, h, track, clip, now.value));
   return (
-    <div class="roll" onPointerDown={(e) => down(e, track, clip)} onContextMenu={(e) => menu(e, track, clip)}>
+    <div
+      class="roll"
+      data-testid="step-grid"
+      onPointerDown={(e) => down(e, track, clip)}
+      onContextMenu={(e) => menu(e, track, clip)}
+    >
       <canvas ref={ref} />
     </div>
   );

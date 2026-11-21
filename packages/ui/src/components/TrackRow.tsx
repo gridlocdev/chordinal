@@ -300,6 +300,8 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
     >
       <div
         class="head"
+        role="group"
+        aria-label={`${track.name} track`}
         draggable
         onDragStart={(e) => {
           e.dataTransfer?.setData(TRACK, track.id);

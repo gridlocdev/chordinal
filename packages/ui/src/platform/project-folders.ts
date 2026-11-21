@@ -16,10 +16,20 @@ export const folderTitle = (dir: string): string => String(dir).split(/[\\/]/).f
 export const projectStore = (): ProjectStore =>
   backend ? nativeStore(backend) : browserStore(idbKeyValue(), () => crypto.randomUUID());
 
+/** whether projects are folders on disk (the desktop app); in the web build they're kept in the browser by name */
+export const onDisk: boolean = backend !== undefined;
+
 /** Open Recent, the dialogs and the Finder; reading and writing projects goes through projectStore */
 export const projectFolders = {
-  /** whether the folder still holds a project the page may open */
-  exists: (dir: string): Promise<boolean> => backend?.exists(dir) ?? Promise.resolve(false),
+  /** whether the folder still holds a project the page may open (in the web build: one saved in the browser) */
+  exists: (dir: string): Promise<boolean> =>
+    backend?.exists(dir) ??
+    projectStore()
+      .read(dir)
+      .then(
+        () => true,
+        () => false,
+      ),
   /** a project opened goes to the top of Open Recent */
   used: (dir: string): Promise<void> => backend?.used(dir) ?? Promise.resolve(),
   /** Open Recent, newest first */

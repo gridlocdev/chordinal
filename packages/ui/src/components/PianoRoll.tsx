@@ -29,6 +29,7 @@ function Roll() {
   return (
     <div
       class="roll"
+      data-testid="piano-roll"
       onWheel={wheel}
       onPointerDown={(e) => down(e, p, track)}
       onPointerMove={(e) => hover(e, track)}

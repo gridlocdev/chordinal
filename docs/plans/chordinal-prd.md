@@ -43,6 +43,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
    - If `project.json` changed on disk since it was opened or last saved, Save asks first: "<name> changed on disk since it was opened. Replace it with this version?", with Replace and Cancel. Cancel keeps both: the file on disk stays, the changes stay unsaved, and the next Save asks again. Nothing is ever overwritten without asking.
 7. Closing the window or quitting with unsaved changes asks the same question as New.
 8. The window title shows the project's name and a dot while it has unsaved changes.
+9. In a browser (no desktop app), projects are kept in the browser by name. The first save asks only for a name ("Save the project as"); a name already saved asks "A project named <name> is already saved in this browser. Replace it?", with Replace and Cancel, and Cancel goes back to the name. Settings are kept in the browser too, and start-up reopens the last project as on the desktop. Open… and Open Recent don’t list the browser’s projects yet (§11).
 
 ## §5 The window
 
@@ -114,6 +115,7 @@ Each gets its own interview and PRD section before it's built.
    - Drum rows can play a one-shot sample (drop a `.wav` on a row) instead of a kit sound.
    - The browser gains a Samples tab.
 4. **Pattern browser**: a list of the project's patterns, dragged onto lanes.
+5. **Opening projects in a browser**: Open… and Open Recent list the projects kept in the browser, with rename and delete (to a trash first).
 
 ## §12 What must not change
 

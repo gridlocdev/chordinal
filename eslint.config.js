@@ -26,7 +26,7 @@ const APP_PATHS = { regex: '^(\\.\\./)+(apps/)?(web|desktop)/', message: 'The CL
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/out/**', '**/release/**', 'build/**', 'export/**', 'reference/**', 'scratch/**', '.ab/**', '**/node_modules/**'],
+    ignores: ['**/dist/**', '**/out/**', '**/release/**', 'build/**', 'export/**', 'reference/**', 'scratch/**', '.ab/**', '.e2e-results/**', '**/node_modules/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
