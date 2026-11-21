@@ -50,4 +50,44 @@ test.describe('Editing', () => {
     expect(new Set(notes.map(([, , key]) => key)).size).toBe(3);
     expect(errors).toEqual([]);
   });
+
+  test("a key pressed on the roll's keyboard or typed lights its row while it sounds", async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Grand Piano').click();
+    await page.getByRole('tab', { name: 'Piano Roll' }).click();
+    const roll = page.getByTestId('piano-roll');
+    await expect(roll).toBeVisible();
+    const box = await roll.boundingBox();
+    if (!box) throw new Error('no piano roll');
+    // a pixel of the row out to the right, away from any note
+    const y = STRIP + 100;
+    const row = async () =>
+      (
+        await page.screenshot({ clip: { x: box.x + box.width - 40, y: box.y + y, width: 4, height: 2 } })
+      ).toString('base64');
+    const before = await row();
+
+    await page.mouse.move(box.x + 10, box.y + y);
+    await page.mouse.down();
+    await expect.poll(row, { message: 'the row lights while the key is held' }).not.toBe(before);
+    await page.screenshot({ path: test.info().outputPath('held-key.png') });
+    await page.mouse.up();
+    await expect.poll(row, { message: 'and goes back when it is let go' }).toBe(before);
+
+    // the press gave the roll the focus, so the letter keys play it: A is C in the current octave
+    const unlit = await roll.screenshot();
+    await page.keyboard.down('KeyA');
+    await expect
+      .poll(async () => (await roll.screenshot()).equals(unlit), { message: 'a typed key lights its row' })
+      .toBe(false);
+    await page.screenshot({ path: test.info().outputPath('typed-key.png') });
+    await page.keyboard.up('KeyA');
+    await expect
+      .poll(async () => (await roll.screenshot()).equals(unlit), { message: 'and lets it go with the key' })
+      .toBe(true);
+
+    await expect(page).toHaveTitle('Untitled — Chordinal');
+    expect(errors).toEqual([]);
+  });
 });

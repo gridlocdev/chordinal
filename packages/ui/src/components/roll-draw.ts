@@ -23,6 +23,7 @@ function colours(t: Palette) {
     inKey: t['grid-key'],
     tonic: alpha(t.accent, 0.13),
     held: t.select,
+    heldLane: alpha(t.select, 0.18),
     beat: t['grid-beat'],
     bar: t['grid-bar'],
     outside: t.outside,
@@ -75,6 +76,11 @@ function lanes(g: CanvasRenderingContext2D, L: Lanes, key: Project['key'], w: nu
       y = L.y(k);
     g.fillStyle = tonic ? C.tonic : scale?.has(pc) ? C.inKey : C.lane;
     g.fillRect(GUTTER, y + 1, w - GUTTER, L.laneH - 1);
+    // a key that sounds (clicked in the gutter, typed or played on a MIDI keyboard) lights its lane
+    if (on.has(k)) {
+      g.fillStyle = C.heldLane;
+      g.fillRect(GUTTER, y + 1, w - GUTTER, L.laneH - 1);
+    }
     // the white keys under every lane, the black ones over them; a line where two white keys meet (B|C and E|F)
     g.fillStyle = on.has(k) && !BLACK.has(pc) ? C.held : C.keyWhite;
     g.fillRect(0, y, GUTTER - 1, L.laneH);

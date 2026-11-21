@@ -66,7 +66,10 @@ export function down(e: RollPress, p: Project, track: Track | null): void {
   const G = geometry(r.width, r.height);
   const px = e.clientX - r.left,
     py = e.clientY - r.top;
-  if (px < GUTTER) return;
+  if (px < GUTTER) {
+    if (py >= STRIP + 4 && py < G.bottom) playKeys(el, e.pointerId, r.top, py, G.keyAt);
+    return;
+  }
   if (py < STRIP + 4) {
     seek(G.beatAt(px));
     return;
@@ -199,6 +202,36 @@ export function down(e: RollPress, p: Project, track: Track | null): void {
       press(now);
       sounding = now;
     }
+  };
+  const up = () => {
+    release(sounding);
+    el.removeEventListener('pointermove', move);
+    el.removeEventListener('pointerup', up);
+    el.removeEventListener('pointercancel', up);
+  };
+  el.addEventListener('pointermove', move);
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+}
+
+/** the keyboard in the gutter: a press plays its key until the pointer lets go, and a drag glides to the keys it
+ * passes over; the key's lane lights up while it sounds (roll-draw.ts) */
+function playKeys(
+  el: RollTarget,
+  pointerId: number,
+  top: number,
+  py: number,
+  keyAt: (y: number) => number,
+): void {
+  let sounding = keyAt(py);
+  press(sounding);
+  el.setPointerCapture(pointerId);
+  const move = (m: RollMove) => {
+    const now = keyAt(m.clientY - top);
+    if (now === sounding) return;
+    release(sounding);
+    press(now);
+    sounding = now;
   };
   const up = () => {
     release(sounding);

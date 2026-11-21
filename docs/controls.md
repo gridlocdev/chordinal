@@ -110,6 +110,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Loop | drag along the ruler; right-click a clip, a marker or the ruler |
 | Record a melody (whistled, or played on the keys or a MIDI keyboard) | **●** |
 | Set a chord | drag over the chord track, then `R` and whistle its notes |
+| Hear a note | press a key on the piano roll's keyboard (drag up or down to glide), or play the letter keys or a MIDI keyboard; the row of each key sounding lights up |
 | Draw a note | click empty space in the piano roll |
 | Move or resize a note | drag it, or drag its right edge |
 | Select notes | `Shift` click adds or removes one, `Shift` drag on empty space adds a rectangle of them |
