@@ -10,8 +10,9 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@chordinal/lib": "workspace:*",
     "@chordinal/audio": "workspace:*",
-    "@chordinal/daw": "workspace:*"
+    "@chordinal/daw": "workspace:*",
+    "@chordinal/lib": "workspace:*",
+    "@chordinal/perform": "workspace:*"
   }
 }

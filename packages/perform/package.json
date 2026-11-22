@@ -1,0 +1,16 @@
+{
+  "name": "@chordinal/perform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "How a song is played: the Humanize MIDI FX (timing, swing, ghost notes, scoops, vibrato, ear candy): pure",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@chordinal/lib": "workspace:*",
+    "@chordinal/daw": "workspace:*"
+  }
+}

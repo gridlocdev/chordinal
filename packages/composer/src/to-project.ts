@@ -3,7 +3,7 @@
 // mix-plan.ts, and the Humanize MIDI FX on every track so it's played as the composer means it. Pure.
 import { emptyProject } from '@chordinal/daw';
 import { planMix } from './mix-plan.ts';
-import { DUCK, AUTO_PAN } from './performance-data.ts';
+import { DUCK, AUTO_PAN } from './mix-data.ts';
 import { ROLE_COLORS } from './composer-data.ts';
 import { METERS } from './patterns-data.ts';
 import type { Clip, MeterChange, Project } from '@chordinal/daw';
@@ -85,6 +85,8 @@ export function toProject(score: Score): Project {
       sound: score.sound,
       salt: score.title,
       genre: score.genre,
+      ...(score.pocket && { pocket: score.pocket }),
+      ...(score.tight !== undefined && { tight: score.tight }),
     },
     chords: score.chords,
     tracks,

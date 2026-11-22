@@ -9,7 +9,7 @@ import { loadInstruments, playProject, LEAD_IN, audioEngine, dbToGain } from '@c
 import type { PlaybackHandle } from '@chordinal/playback';
 import { beatToSeconds } from '@chordinal/lib';
 import { soundfontLibrary } from '@chordinal/audio';
-import { humanizeFx, HUMANIZE } from '@chordinal/composer';
+import { humanizeFx, HUMANIZE } from '@chordinal/perform';
 import type { DecodeJob, Job, PlayJob } from '../jobs.ts';
 
 const FADER_FLOOR_DB = -40; // a fader at the bottom is silent, as in the app

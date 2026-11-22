@@ -4,7 +4,7 @@ export type { CatalogEntry } from './catalog.ts';
 export { CHIP_SONGS } from './chip-songs-data.ts';
 export { echoTrack } from './chip.ts';
 export { CLASSICAL_SONGS } from './classical-songs-data.ts';
-export { compose, describe, instrumentFor, sectionSeek } from './compose.ts';
+export { compose, describe, instrumentFor, sectionSeek, swungTracks } from './compose.ts';
 export type { Score, ScoreChord, ScoreNote, ScoreSection, ScoreTrack, TrackRole } from './compose.ts';
 export {
   ARRANGEMENT,
@@ -50,9 +50,6 @@ export type {
   Role,
   SectionDef,
 } from './composer-data.ts';
-export { EAR_CANDY } from './ear-candy-data.ts';
-export { planEarCandy } from './ear-candy.ts';
-export type { Candy } from './ear-candy.ts';
 export { GAME_SONGS } from './game-songs-data.ts';
 export { GENRES } from './genre-data.ts';
 export type { Genre, GenreFeel, GenreMix, SplitProgressions } from './genre-data.ts';
@@ -75,8 +72,6 @@ export {
   sectionChords,
 } from './harmony.ts';
 export type { Pitched, SongChord, Timeline } from './harmony.ts';
-export { HUMANIZE, HUMANIZE_ROLES, humanizeFx, scoreOf } from './humanize-fx.ts';
-export type { HumanizedTrack, ProjectScore } from './humanize-fx.ts';
 export { repeatPhrases, varyMelody } from './melody-repeats.ts';
 export { keyUnder, notesPerBeat, songMotif, writeMelody } from './melody.ts';
 export type { SongMotif } from './melody.ts';
@@ -145,10 +140,8 @@ export type {
   Meter,
   PlainArp,
 } from './patterns-data.ts';
-export { perform, swungTracks } from './perform.ts';
-export type { PerformScore, PerformSection, PerformTrack, PerformedNote } from './perform.ts';
-export { AUTO_PAN, CHIP, DUCK, EXPRESSION, MIX, MOVEMENT } from './performance-data.ts';
-export type { Expression, Strip, VibratoRule } from './performance-data.ts';
+export { AUTO_PAN, DUCK, MIX, MOVEMENT } from './mix-data.ts';
+export type { Strip } from './mix-data.ts';
 export { energyShape, genreProfile, planSong } from './plan.ts';
 export type { Plan, SectionPlan, SectionSpec, Song, SongSpec, Texture, WrittenSong } from './plan.ts';
 export {

@@ -1,11 +1,12 @@
 // Where things fall in time: chords over bars, metric accents from a meter's beat groups, swing, and which bar a
 // beat is in when sections have meters of their own. Shared by the melody, the parts and the performance.
 import { DYNAMICS, type Role } from './composer-data.ts';
+import { clamp, compound, swingTime, swingAmount, sectionAt } from '@chordinal/perform';
+import type { Grouped } from '@chordinal/perform';
 
-/** the part of a meter the timing helpers read: its beat groups, in beats */
-export interface Grouped {
-  groups: number[];
-}
+// the timing a performance reads too is @chordinal/perform's
+export { clamp, compound, swingTime, swingAmount, sectionAt };
+export type { Grouped };
 /** a chord laid over the beats it lasts */
 export interface Timed<C> {
   chord: C;
@@ -30,7 +31,6 @@ export interface BarPlace {
 
 export const STEP = 0.25; // beats per pattern step (a sixteenth note)
 export const mod = (n: number, m: number): number => ((n % m) + m) % m;
-export const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 const near = (a: number, b: number): boolean => Math.abs(a - b) < 1e-9;
 
 // lays the progression over the section's bars, repeating it as needed and cutting it at the end
@@ -61,9 +61,6 @@ export function groupStarts(meter: Grouped): number[] {
   return out;
 }
 
-/** a meter whose groups split beats (6/8, 12/8, 7/8): its eighths are the pulse, so it isn't swung */
-export const compound = (meter: Grouped): boolean => meter.groups.some((g) => !Number.isInteger(g));
-
 /** downbeat, strong (a group's start), weak (another beat), offbeat (an eighth between) or sixteenth */
 export function metricWeight(meter: Grouped, inBar: number): MetricWeight {
   if (inBar < 1e-9) return 'downbeat';
@@ -91,26 +88,6 @@ export function velocity(
     (DYNAMICS.base + energy * DYNAMICS.span + DYNAMICS.role[role] + accent) * (0.6 + 0.6 * sec.dynamics);
   return clamp(Math.round(v), 1, 127);
 }
-
-/**
- * Swing as a time warp, applied to every start and end at playback so the whole song shares one feel.
- * The second `sub` of each pair lands at `amount` of the pair: 0.5 is straight, 2/3 a full triplet.
- * sub: 0.5 swings eighths, 0.25 sixteenths
- */
-export function swingTime(beat: number, amount: number, sub = 0.5): number {
-  const pair = sub * 2;
-  const base = Math.floor(beat / pair + 1e-9) * pair;
-  const frac = (beat - base) / pair;
-  const warped = frac < 0.5 ? frac * (amount / 0.5) : amount + (frac - 0.5) * ((1 - amount) / 0.5);
-  return base + warped * pair;
-}
-
-/** a spec's swing (0 straight … 1 triplet) as a swingTime amount */
-export const swingAmount = (swing: number): number => 0.5 + swing / 6;
-
-/** the section a beat falls in (the first, before it starts) */
-export const sectionAt = <S extends { beat: number }>(sections: S[], beat: number): S =>
-  (sections.findLast((s) => s.beat <= beat + 1e-9) ?? sections[0])!;
 
 /** The bar a beat falls in, counting across sections with different meters. */
 export function barAt(sections: Span[], beat: number): BarPlace {

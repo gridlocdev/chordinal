@@ -3,7 +3,7 @@
 import { bpmAt } from '@chordinal/lib';
 import { STEP } from './meter.ts';
 import type { TempoSegment } from '@chordinal/lib';
-import { CHIP } from './performance-data.ts';
+import { CHIP } from '@chordinal/perform';
 import type { ScoreNote, ScoreTrack } from './compose.ts';
 
 /**

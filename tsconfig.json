@@ -40,6 +40,12 @@
       "path": "packages/sketch/test"
     },
     {
+      "path": "packages/perform"
+    },
+    {
+      "path": "packages/perform/test"
+    },
+    {
       "path": "packages/composer"
     },
     {

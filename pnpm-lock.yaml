@@ -23,6 +23,9 @@ importers:
       '@chordinal/lib':
         specifier: workspace:*
         version: link:packages/lib
+      '@chordinal/perform':
+        specifier: workspace:*
+        version: link:packages/perform
       '@chordinal/playback':
         specifier: workspace:*
         version: link:packages/playback
@@ -92,6 +95,9 @@ importers:
       '@chordinal/lib':
         specifier: workspace:*
         version: link:../../packages/lib
+      '@chordinal/perform':
+        specifier: workspace:*
+        version: link:../../packages/perform
       '@chordinal/playback':
         specifier: workspace:*
         version: link:../../packages/playback
@@ -119,6 +125,9 @@ importers:
       '@chordinal/lib':
         specifier: workspace:*
         version: link:../../packages/lib
+      '@chordinal/perform':
+        specifier: workspace:*
+        version: link:../../packages/perform
       '@chordinal/playback':
         specifier: workspace:*
         version: link:../../packages/playback
@@ -156,6 +165,9 @@ importers:
       '@chordinal/lib':
         specifier: workspace:*
         version: link:../lib
+      '@chordinal/perform':
+        specifier: workspace:*
+        version: link:../perform
 
   packages/daw:
     dependencies:
@@ -164,6 +176,15 @@ importers:
         version: link:../lib
 
   packages/lib: {}
+
+  packages/perform:
+    dependencies:
+      '@chordinal/daw':
+        specifier: workspace:*
+        version: link:../daw
+      '@chordinal/lib':
+        specifier: workspace:*
+        version: link:../lib
 
   packages/playback:
     dependencies:

@@ -9,19 +9,44 @@
 // The score stays on the grid for the view and the MIDI file; the Humanize MIDI FX (humanize-fx.ts) runs this.
 import { hash } from '@chordinal/lib';
 import { EXPRESSION, CHIP } from './performance-data.ts';
-import { DRUM_KEYS } from './patterns-data.ts';
+import { DRUM_KEYS, METERS } from './perform-data.ts';
 import { beatToSeconds, bpmAt } from '@chordinal/lib';
-import { clamp, compound, swingTime, swingAmount, sectionAt as sectionOf } from './meter.ts';
-import { meterOf } from './meter-patterns.ts';
-import { METERS } from './patterns-data.ts';
+import { clamp, compound, swingTime, swingAmount, sectionAt as sectionOf } from './time.ts';
 import { planEarCandy } from './ear-candy.ts';
 import { EAR_CANDY } from './ear-candy-data.ts';
-import { genreProfile } from './plan.ts';
 import type { TempoSegment } from '@chordinal/lib';
 import type { Note, PitchMoves, PlayedNote, Vibrato } from '@chordinal/daw';
 import type { Candy } from './ear-candy.ts';
-import type { Score, ScoreNote, ScoreTrack } from './compose.ts';
-import type { Style } from './song-craft-data.ts';
+
+/**
+ * A note of the score.
+ *   anticipates: the beat a note pulled a sixteenth early belongs on; cycle: a tracker arpeggio's semitones over the
+ *   key, stepped through while the note sounds (the view and the MIDI file show the key alone); ornament: one of
+ *   the quick notes of a trill, turn, mordent or grace note, before the note it decorates
+ *   vibrato: marked `~` in a hand-written melody; the performance gives it vibrato
+ *   written: an ornamented note's own beat, before the ornament took the start of it
+ */
+export interface ScoreNote {
+  key: number;
+  beat: number;
+  beats: number;
+  vel: number;
+  anticipates?: number;
+  cycle?: number[];
+  ornament?: boolean;
+  vibrato?: true;
+  written?: number;
+}
+
+/** the style knobs a performance reads (0..1, swell a multiplier); vibrato is a whistled take's own */
+export interface PerformStyle {
+  scoops: number;
+  ghosts: number;
+  earCandy: number;
+  swell: number;
+  vibrato?: Partial<{ rate: number; cents: number; delay: number; ramp: number }>;
+}
+export const PERFORM_KNOBS = ['scoops', 'ghosts', 'earCandy', 'swell'] as const;
 
 /**
  * A performed note.
@@ -78,10 +103,13 @@ export interface PerformScore {
   beats: number;
   swing: number;
   swingSub: number;
-  style?: Partial<Style>;
+  style?: Partial<PerformStyle>;
   seed: string;
   sound?: string;
   genre: string;
+  /** the genre's pocket: how far behind (or, below 0, ahead of) the beat each part sits, and how tight it plays */
+  pocket?: Partial<Record<string, number>>;
+  tight?: number;
 }
 
 type Unit = (...parts: (string | number)[]) => number;
@@ -102,11 +130,11 @@ export function perform(
   const unit: Unit = (...parts) =>
     hash(score.title, pass, ...parts.map((p) => (typeof p === 'number' ? Math.round(p * 1000) : p))) /
     2 ** 32;
-  const style: Partial<Style> = score.style ?? {};
+  const style: Partial<PerformStyle> = score.style ?? {};
   const sectionAt: SectionOf = (beat) => sectionOf(score.sections, beat);
   // the genre's pocket: how far behind (or, below 0, ahead of) the beat each part sits, and how tight it plays
-  const { pocket = {}, tight = 1 } = genreProfile(score.genre).feel ?? {};
-  const pocketOf: Partial<Record<string, number>> = pocket;
+  const pocketOf = score.pocket ?? {},
+    tight = score.tight ?? 1;
   return score.tracks.map((t) => {
     let notes = t.notes.map(({ anticipates, ...n }): WorkingNote => ({ ...n, grid: anticipates ?? n.beat }));
     const melodic = t.bank < 128;
@@ -379,7 +407,8 @@ function swing(
   for (const n of notes) {
     const s = sectionAt(n.beat);
     // a meter the composer has no pattern for (one set by hand, like 9/8) plays straight
-    if (!METERS[s.meter] || compound(meterOf(s.meter))) continue;
+    const meter = METERS[s.meter];
+    if (!meter || compound(meter)) continue;
     const start = s.beat + swingTime(n.beat - s.beat, amount, score.swingSub);
     const end = s.beat + swingTime(n.beat + n.beats - s.beat, amount, score.swingSub);
     n.beat = start;
@@ -387,14 +416,15 @@ function swing(
   }
 }
 
-/** The score with its swing applied and nothing else, for a file that should sound like the song (a MIDI export). */
-export function swungTracks(score: Score): ScoreTrack[] {
-  if (!score.swing) return score.tracks;
-  return score.tracks.map((t) => {
-    const notes = t.notes.map((n) => ({ key: n.key, beat: n.beat, beats: n.beats, vel: n.vel }));
-    swing(notes, score, (beat) => sectionOf(score.sections, beat));
-    return { ...t, notes };
-  });
+/** A part's notes with the song's swing applied and nothing else, for a file that should sound like the song (a MIDI
+ * export). */
+export function swungNotes(
+  notes: readonly ScoreNote[],
+  score: Pick<PerformScore, 'swing' | 'swingSub' | 'sections'>,
+): ScoreNote[] {
+  const out = notes.map((n) => ({ key: n.key, beat: n.beat, beats: n.beats, vel: n.vel }));
+  if (score.swing) swing(out, score, (beat) => sectionOf(score.sections, beat));
+  return out;
 }
 
 // a note must end before the same key sounds again (after drifting, or in a fill of overlapping drum hits),

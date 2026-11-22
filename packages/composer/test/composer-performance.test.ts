@@ -1,14 +1,16 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { compose } from '@chordinal/composer';
-import { perform, swungTracks } from '@chordinal/composer';
+import { perform } from '@chordinal/perform';
+import { swungTracks } from '@chordinal/composer';
 import { planMix } from '@chordinal/composer';
 import { valueAt } from '@chordinal/daw';
 import type { Keyframe } from '@chordinal/daw';
 import { SECTIONS } from '@chordinal/composer';
-import { EXPRESSION, MOVEMENT, DUCK, CHIP } from '@chordinal/composer';
-import { EAR_CANDY } from '@chordinal/composer';
-import { planEarCandy } from '@chordinal/composer';
+import { MOVEMENT, DUCK } from '@chordinal/composer';
+import { EXPRESSION, CHIP } from '@chordinal/perform';
+import { EAR_CANDY } from '@chordinal/perform';
+import { planEarCandy } from '@chordinal/perform';
 import { swingTime, swingAmount } from '@chordinal/composer';
 import { beatToSeconds } from '@chordinal/lib';
 import { SONGS } from '@chordinal/composer';
@@ -17,7 +19,8 @@ import { GAME_SONGS } from '@chordinal/composer';
 import { CHIP_SONGS } from '@chordinal/composer';
 import { CLASSICAL_SONGS } from '@chordinal/composer';
 import { CHIP_BANK, CHIP_KIT_BANK } from '@chordinal/audio';
-import type { Candy, PerformedNote, Score, SongSpec } from '@chordinal/composer';
+import type { Score, SongSpec } from '@chordinal/composer';
+import type { Candy, PerformedNote } from '@chordinal/perform';
 import { at, must } from './at.ts';
 
 const ALL = [...SONGS, ...GENRE_SONGS, ...GAME_SONGS, ...CHIP_SONGS, ...CLASSICAL_SONGS];
@@ -69,8 +72,9 @@ test("a genre's pocket: lo-fi's chords and snare sit behind the beat, and the ki
     const i = score.tracks.findIndex((t) => t.role === role);
     const pick = (notes: PerformedNote[]): PerformedNote[] =>
       notes.filter((n) => !n.ghost && !n.candy && keep(n));
+    const { pocket: _pocket, tight: _tight, ...plain } = score;
     const a = pick(at(perform(score), i)),
-      b = pick(at(perform({ ...score, genre: '' }), i));
+      b = pick(at(perform({ ...plain, genre: '' }), i));
     return (a.reduce((sum, n, k) => sum + n.beat - at(b, k).beat, 0) / a.length) * spb * 1000;
   };
   assert.ok(late(lofi, 'chords') > 15, `chords ${late(lofi, 'chords').toFixed(1)} ms`);

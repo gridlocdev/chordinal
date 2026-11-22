@@ -9,10 +9,11 @@
     "chordinal": "dist/chordinal.mjs"
   },
   "dependencies": {
-    "@chordinal/lib": "workspace:*",
     "@chordinal/audio": "workspace:*",
-    "@chordinal/daw": "workspace:*",
     "@chordinal/composer": "workspace:*",
+    "@chordinal/daw": "workspace:*",
+    "@chordinal/lib": "workspace:*",
+    "@chordinal/perform": "workspace:*",
     "@chordinal/playback": "workspace:*"
   }
 }

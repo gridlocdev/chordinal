@@ -9,7 +9,7 @@ import { render } from 'preact';
 import type { TargetedPointerEvent } from 'preact';
 import { audioEngine } from '@chordinal/playback';
 import { registerFx } from '@chordinal/daw';
-import { HUMANIZE, humanizeFx } from '@chordinal/composer';
+import { HUMANIZE, humanizeFx } from '@chordinal/perform';
 import { settings, setSettings, loadSettings, customizer } from '@chordinal/ui';
 import { startTheme, startChrome } from '@chordinal/ui';
 import { checkLibraries } from '@chordinal/ui';

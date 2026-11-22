@@ -29,28 +29,24 @@ import type { SectionSpec, SongSpec } from './plan.ts';
 import type { Style } from './song-craft-data.ts';
 import type { MelodyNote } from './notation.ts';
 import type { PartMemory } from './parts.ts';
+import { swungNotes } from '@chordinal/perform';
+import type { ScoreNote } from '@chordinal/perform';
 
 export { parseMelody } from './notation.ts';
 
-/**
- * A note of the score.
- *   anticipates: the beat a note pulled a sixteenth early belongs on; cycle: a tracker arpeggio's semitones over the
- *   key, stepped through while the note sounds (the view and the MIDI file show the key alone); ornament: one of
- *   the quick notes of a trill, turn, mordent or grace note (ornaments.ts), before the note it decorates
- *   vibrato: marked `~` in a hand-written melody; the performance gives it vibrato (perform.ts)
- *   written: an ornamented note's own beat, before the ornament took the start of it
- */
-export interface ScoreNote {
-  key: number;
-  beat: number;
-  beats: number;
-  vel: number;
-  anticipates?: number;
-  cycle?: number[];
-  ornament?: boolean;
-  vibrato?: true;
-  written?: number;
+/** The score with its swing applied and nothing else, for a file that should sound like the song (a MIDI export). */
+export function swungTracks(score: Score): ScoreTrack[] {
+  if (!score.swing) return score.tracks;
+  return score.tracks.map((t) => ({ ...t, notes: swungNotes(t.notes, score) }));
 }
+
+/** the genre's pocket and tightness, as the performance reads them */
+function pocketOf(genre: string | undefined): Pick<Score, 'pocket' | 'tight'> {
+  const { pocket, tight } = genreProfile(genre).feel ?? {};
+  return { ...(pocket && { pocket }), ...(tight !== undefined && { tight }) };
+}
+/** a note of the score (the performance's own) */
+export type { ScoreNote };
 /** a part of the score: one of the roles, or a chip song's echo */
 export type TrackRole = Role | 'echo';
 export interface ScoreTrack {
@@ -103,6 +99,9 @@ export interface Score {
   style: Style;
   seed: string;
   motif: number[];
+  /** the genre's pocket and tightness, which the performance reads (from the project's groove, once written) */
+  pocket?: Partial<Record<string, number>>;
+  tight?: number;
 }
 
 /**
@@ -253,6 +252,7 @@ export function compose(spec: SongSpec): Score {
   return {
     title: spec.title ?? spec.id ?? 'Untitled',
     genre: spec.genre ?? '',
+    ...pocketOf(spec.genre),
     story: spec.story ?? '',
     emotion: plan.emotion,
     sound: song.sound,

@@ -1,10 +1,10 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { compose } from '@chordinal/composer';
-import { perform } from '@chordinal/composer';
-import { planEarCandy } from '@chordinal/composer';
+import { perform } from '@chordinal/perform';
+import { planEarCandy } from '@chordinal/perform';
 import { toProject } from '@chordinal/composer';
-import { humanizeFx } from '@chordinal/composer';
+import { humanizeFx } from '@chordinal/perform';
 import { CATALOG } from '@chordinal/composer';
 import { writeProject, readProject } from '@chordinal/daw';
 import { trackNotes } from '@chordinal/daw';

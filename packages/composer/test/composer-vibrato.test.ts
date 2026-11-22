@@ -1,9 +1,10 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { compose } from '@chordinal/composer';
-import { perform } from '@chordinal/composer';
-import { EXPRESSION } from '@chordinal/composer';
-import type { PerformedNote, Score, SongSpec, Style } from '@chordinal/composer';
+import { perform } from '@chordinal/perform';
+import { EXPRESSION } from '@chordinal/perform';
+import type { Score, SongSpec, Style } from '@chordinal/composer';
+import type { PerformedNote } from '@chordinal/perform';
 import { at } from './at.ts';
 
 // a short song: a hand-written verse with ~ marks, and a composed chorus that keeps the automatic vibrato

@@ -27,6 +27,7 @@
     "@chordinal/daw": "workspace:*",
     "@chordinal/desktop": "workspace:*",
     "@chordinal/lib": "workspace:*",
+    "@chordinal/perform": "workspace:*",
     "@chordinal/playback": "workspace:*",
     "@chordinal/sketch": "workspace:*",
     "@chordinal/ui": "workspace:*",

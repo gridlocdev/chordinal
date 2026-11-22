@@ -1,11 +1,14 @@
 // The composer's knowledge as tables: emotions, song forms, section roles, cadences, the arrangement and the melody's
 // rules. Content only, imports nothing but types. Grooves and part patterns are in patterns-data.ts, how a song develops in
-// song-craft-data.ts, its performance and mix in performance-data.ts, its ear candy in ear-candy-data.ts.
+// song-craft-data.ts, its mix in mix-data.ts; its performance is @chordinal/perform's.
 // docs/composing.md explains every table and why its values are what they are.
 import type { Extension, Mode } from '@chordinal/lib';
+import { ROLES } from '@chordinal/perform';
+import type { Role } from '@chordinal/perform';
 
-/** the parts a song is written for, in track order */
-export type Role = 'lead' | 'counter' | 'arp' | 'chords' | 'pad' | 'bass' | 'drums';
+/** the parts a song is written for, in track order (the performance's own) */
+export { ROLES };
+export type { Role };
 /** a program per part (General MIDI, or the chip bank's); null leaves the part out */
 export type Band = Partial<Record<Role, number | null>>;
 /** chord colour: one way for every plain triad, or a list of { how, chance }, each chord taking the first that comes up */
@@ -658,7 +661,6 @@ export const ARRANGEMENT: Record<Exclude<Role, 'lead'>, number> = {
   counter: 0.8,
 };
 // track order top-left → bottom-right on screen, and in exported files
-export const ROLES: Role[] = ['lead', 'counter', 'arp', 'chords', 'pad', 'bass', 'drums'];
 export const ROLE_NAMES: Record<Role, string> = {
   lead: 'Melody',
   counter: 'Countermelody',

@@ -6,7 +6,8 @@
 import { beatToSeconds } from '@chordinal/lib';
 import { valueAt } from '@chordinal/daw';
 import { SECTIONS } from './composer-data.ts';
-import { MIX, DUCK, MOVEMENT, EXPRESSION } from './performance-data.ts';
+import { MIX, DUCK, MOVEMENT } from './mix-data.ts';
+import { EXPRESSION } from '@chordinal/perform';
 import { genreProfile } from './plan.ts';
 import type { Keyframe } from '@chordinal/daw';
 import type { Score, ScoreNote, ScoreSection, ScoreTrack } from './compose.ts';

@@ -1,17 +1,16 @@
 // The Humanize MIDI FX: plays a project's tracks the way perform.ts plays a composed score, with ear candy, ghost
 // notes, swing, scoops, glides, vibrato and timing that breathes, a little differently on each pass round a loop.
 // It reads each track's role from its FX settings, the sections from the markers' meta, and swing and style from the
-// project's groove, so a song made by the composer plays as composed, and a track added by hand can join in.
+// project's groove (with the genre's pocket), so a song made by the composer plays as composed, and a track added by hand can join in.
 import { trackNotes } from '@chordinal/daw';
 import { beatsPerBar, meterAt } from '@chordinal/daw';
 import type { FxEvent, FxType, Project } from '@chordinal/daw';
 import { perform } from './perform.ts';
-import type { PerformScore, PerformTrack } from './perform.ts';
+import { PERFORM_KNOBS } from './perform.ts';
+import type { PerformScore, PerformStyle, PerformTrack } from './perform.ts';
 import { planEarCandy } from './ear-candy.ts';
 import { EAR_CANDY } from './ear-candy-data.ts';
-import { ROLES } from './composer-data.ts';
-import { STYLES } from './song-craft-data.ts';
-import type { Style } from './song-craft-data.ts';
+import { ROLES } from './perform-data.ts';
 
 export const HUMANIZE = 'humanize';
 export const HUMANIZE_ROLES = [...ROLES, 'echo'];
@@ -20,17 +19,19 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 const text = (v: unknown, otherwise: string): string => (typeof v === 'string' ? v : otherwise);
 const num = (v: unknown, otherwise: number): number => (typeof v === 'number' ? v : otherwise);
 
-type StyleKnob = Exclude<keyof Style, 'vibrato'>;
-const isKnob = (k: string): k is StyleKnob => k !== 'vibrato' && Object.hasOwn(STYLES.plain, k);
+type StyleKnob = (typeof PERFORM_KNOBS)[number];
+const isKnob = (k: string): k is StyleKnob => (PERFORM_KNOBS as readonly string[]).includes(k);
+const isPocket = (v: unknown): v is Record<string, number> =>
+  isRecord(v) && Object.values(v).every((x) => typeof x === 'number');
 
 /** the style the project's groove keeps: its number knobs, and a whistled take's vibrato */
-function grooveStyle(v: unknown): Partial<Style> {
+function grooveStyle(v: unknown): Partial<PerformStyle> {
   if (!isRecord(v)) return {};
-  const style: Partial<Style> = {};
+  const style: Partial<PerformStyle> = {};
   for (const [k, x] of Object.entries(v)) if (isKnob(k) && typeof x === 'number') style[k] = x;
   const vib = v.vibrato;
   if (isRecord(vib)) {
-    const own: NonNullable<Style['vibrato']> = {};
+    const own: NonNullable<PerformStyle['vibrato']> = {};
     for (const k of ['rate', 'cents', 'delay', 'ramp'] as const) {
       const x = vib[k];
       if (typeof x === 'number') own[k] = x;
@@ -119,6 +120,8 @@ export function scoreOf(project: Project): ProjectScore {
     seed: text(g.seed, project.title),
     sound: text(g.sound, 'gm'),
     genre: text(g.genre, ''),
+    ...(isPocket(g.pocket) && { pocket: g.pocket }),
+    ...(typeof g.tight === 'number' && { tight: g.tight }),
   };
 }
 
