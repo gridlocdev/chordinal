@@ -174,25 +174,6 @@ e2e-desktop: build
 export +args: build-cli
     node apps/cli/dist/chordinal.mjs export "$@" --out export
 
-# e.g. just transcribe scratch/hook.m4a --tempo 60 --meter 3/4 · --key Eb --mode major to skip the key guess
-# Transcribe a recorded melody into scale-degree notation (any file ffmpeg reads, or a folder of them).
-[group('music')]
-[positional-arguments]
-transcribe +args:
-    node tools/transcribe.mjs "$@"
-
-# Report how an NSF file's songs are built (keep the files in reference/, which git ignores).
-[group('music')]
-[positional-arguments]
-nsf file *songs:
-    node tools/nsf-report.mjs "$@"
-
-# Report how recorded game music's lead moves (any file ffmpeg reads; keep them in reference/).
-[group('music')]
-[positional-arguments]
-audio +files:
-    node tools/audio-report.mjs "$@"
-
 # Rebuild the SoundFont catalog after adding or replacing .sf2 files (packages/audio/src/soundfont-*-data.ts).
 [group('music')]
 catalog:

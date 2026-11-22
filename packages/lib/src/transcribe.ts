@@ -1,13 +1,11 @@
-// Turns a pitch track (pitch-track.ts) of a whistled melody into notes in 8ths and triplets, finds its key and writes
-// it in the composer's scale-degree notation (`parseMelody` in notation.ts reads it back), `~` marking notes with vibrato. Pure.
+// Turns a pitch track (pitch-track.ts) of a whistled melody into notes in 8ths and triplets, finds its key and marks
+// the notes with vibrato. Pure.
 //
 // The steps: the take's tuning offset (whistlers sit a steady few cents off); note starts from silences, dips in level
 // and changes of pitch; the beat grid that best fits those starts near the tempo given (whistling slower than the song
-// is fine: the notation counts beats, not seconds); each beat split in 8ths or triplets, whichever its note starts fit;
+// is fine: the notes count beats, not seconds); each beat split in 8ths or triplets, whichever its note starts fit;
 // a pitch for each slot from the curve with vibrato averaged out; repeated slots merged into one note unless a start
 // falls between them; vibrato measured on each note's own wobble.
-
-import { MODES, degreeToKey, keyToDegree, type Mode } from './music-theory.ts';
 
 /** what transcribe reads of a pitch-track frame */
 export interface Frame {
@@ -588,119 +586,4 @@ export function guessKeys(notes: { key: number; beats: number }[]): KeyGuess[] {
     });
   }
   return out.sort((a, b) => b.score - a.score);
-}
-
-/**
- * A key as a scale degree and accidental in the notation's octave. Between two scale steps it's spelt flat, except
- * a raised 4th, and in minor modes a raised 6th or 7th (the melodic and harmonic minor's leading notes).
- */
-export function spellDegree(
-  key: number,
-  tonic: number,
-  mode: Mode,
-  octave: number,
-): { degree: number; accidental: number } {
-  const guess = keyToDegree(tonic, mode, key, octave);
-  // a scale's keys are 1 to 2 semitones apart, so a key off the scale always has a step a little below and above it
-  let below = guess - 2,
-    above = guess + 2;
-  let aboveFound = false;
-  for (let d = guess - 2; d <= guess + 2; d++) {
-    const k = degreeToKey(tonic, mode, d, octave);
-    if (k === key) return { degree: d, accidental: 0 };
-    if (k < key) below = d;
-    else if (!aboveFound) {
-      above = d;
-      aboveFound = true;
-    }
-  }
-  const sharpBy = key - degreeToKey(tonic, mode, below, octave),
-    flatBy = degreeToKey(tonic, mode, above, octave) - key;
-  const step = mod(below - 1, 7) + 1,
-    minor = MODES[mode][2] === 3;
-  const preferSharp = (step === 4 && MODES[mode][3] === 5) || (minor && (step === 6 || step === 7));
-  if (sharpBy < flatBy || (sharpBy === flatBy && preferSharp)) return { degree: below, accidental: sharpBy };
-  return { degree: above, accidental: -flatBy };
-}
-
-/** a length in beats: one that isn't a whole number of 16ths (a triplet's) as a fraction, `1/3` or `7/6`, so they add up exactly */
-function beatText(b: number): string {
-  const twelfths = Math.round(b * 12);
-  if (Math.abs(b * 12 - twelfths) < 1e-6 && twelfths % 3 !== 0) {
-    const gcd = (x: number, y: number): number => (y ? gcd(y, x % y) : x),
-      g = gcd(twelfths, 12);
-    return `${twelfths / g}/${12 / g}`;
-  }
-  return String(Math.round(b * 1000) / 1000);
-}
-
-/**
- * Notes as the composer's melody notation: `degree[~][:beats]`, rests between notes, a `|` at each bar line.
- * The octave is chosen so the degrees sit mostly between 1 and 8 (8 = the tonic above); outside 1–14 a degree is
- * written with ' or , instead.
- */
-export function toNotation(
-  notes: { beat: number; beats: number; key: number; vibrato?: object | null }[],
-  {
-    tonic,
-    mode,
-    beatsPerBar = 4,
-    octave = null,
-  }: { tonic: number; mode: Mode; beatsPerBar?: number; octave?: number | null },
-): string {
-  if (!notes.length) return '';
-  let oct = octave ?? 0;
-  if (octave === null) {
-    const mid = median(notes.map((n) => n.key));
-    let best = Infinity;
-    for (let o = 0; o <= 9; o++) {
-      const dist = Math.abs(keyToDegree(tonic, mode, mid, o) - 4.5);
-      if (dist < best) {
-        best = dist;
-        oct = o;
-      }
-    }
-  }
-  const out: string[] = [];
-  let t = 0;
-  const bar = (b: number) => {
-    if (b > 0 && Math.abs(b / beatsPerBar - Math.round(b / beatsPerBar)) < 1e-6) out.push('|');
-  };
-  for (const n of notes) {
-    if (n.beat > t + 1e-6) {
-      bar(t);
-      out.push(`r${n.beat - t === 1 ? '' : ':' + beatText(n.beat - t)}`);
-      t = n.beat;
-    }
-    bar(t);
-    const spelt = spellDegree(n.key, tonic, mode, oct);
-    let degree = spelt.degree;
-    const accidental = spelt.accidental;
-    let marks = '';
-    while (degree < 1) {
-      degree += 7;
-      marks += ',';
-    }
-    while (degree > 14) {
-      degree -= 7;
-      marks += "'";
-    }
-    const acc = accidental < 0 ? 'b'.repeat(-accidental) : '#'.repeat(accidental);
-    out.push(`${acc}${degree}${marks}${n.vibrato ? '~' : ''}${n.beats === 1 ? '' : ':' + beatText(n.beats)}`);
-    t = n.beat + n.beats;
-  }
-  return out.join(' ');
-}
-
-/** the take's vibrato as one setting: the median rate and depth of the notes that have it, depth in cents */
-export function vibratoSummary(
-  notes: { vibrato?: Vibrato | null }[],
-): { rate: number; cents: number; notes: number } | null {
-  const v = notes.flatMap((n) => (n.vibrato ? [n.vibrato] : []));
-  if (!v.length) return null;
-  return {
-    rate: Math.round(median(v.map((x) => x.rate)) * 10) / 10,
-    cents: Math.round(median(v.map((x) => x.depth)) * 100),
-    notes: v.length,
-  };
 }

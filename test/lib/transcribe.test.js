@@ -1,10 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { trackPitch } from '@chordinal/lib';
-import { transcribe, readLive, tuningOffset, measureVibrato, guessKeys, spellDegree, toNotation, vibratoSummary, noteStarts, clickGrid, freeNotes } from '@chordinal/lib';
-import { parseMelody } from '@chordinal/lib';
-import { pitchClass } from '@chordinal/lib';
-import { RATE, whistle, fromNotation } from './whistle-synth.js';
+import { transcribe, readLive, tuningOffset, measureVibrato, guessKeys, noteStarts, clickGrid, freeNotes } from '@chordinal/lib';
+import { RATE, whistle, notesOf, namesOf } from './whistle-synth.js';
 
 const near = (a, b, eps)=> assert.ok(Math.abs(a - b) < eps, `${a} ≉ ${b}`);
 
@@ -24,36 +22,34 @@ test('tuning offset: a take whistled 30 cents sharp is put back on the semitones
 
 test('transcribe: the Lanterns chorus whistled sharp, at a slower, rough tempo, comes back exactly', ()=>
 {
-    const text = '3 5 8 | 7:2 5 | 6 8 10 | 10:2 7 | 8:1.5 6:0.5 4 | 5 3 5 | 9:2 7 | 8:3';
+    const text = 'G5 Bb5 Eb6 | D6:2 Bb5 | C6 Eb6 G6 | G6:2 D6 | Eb6:1.5 C6:0.5 Ab5 | Bb5 G5 Bb5 | F6:2 D6 | Eb6:3';
     // whistled at 66 bpm, the player thinks "about 70"; the song itself is 84
-    const s = whistle(fromNotation(text, 'Eb', 'major'), { tempo: 66, cents: 28 });
+    const s = whistle(notesOf(text), { tempo: 66, cents: 28 });
     const t = transcribe(trackPitch(s, RATE), { tempo: 70 });
     near(t.tempo, 66, 1);
     near(t.offset, 0.28, 0.05);
-    assert.equal(toNotation(t.notes, { tonic: pitchClass('Eb'), mode: 'major', beatsPerBar: 3 }), text);
+    assert.equal(namesOf(t.notes, { beatsPerBar: 3, flats: true }), text);
 });
 
 test('transcribe: repeated notes split where they are tongued, and held ones stay whole', ()=>
 {
-    const text = '5:0.5 5:0.5 5 3:2 | 1 1 1:2';
-    const s = whistle(fromNotation(text, 'C', 'major'), { tempo: 80 });
+    const text = 'G5:0.5 G5:0.5 G5 E5:2 | C5 C5 C5:2';
+    const s = whistle(notesOf(text), { tempo: 80 });
     const t = transcribe(trackPitch(s, RATE), { tempo: 80 });
-    assert.equal(toNotation(t.notes, { tonic: 0, mode: 'major' }), text);
+    assert.equal(namesOf(t.notes), text);
 });
 
-test('transcribe: vibrato is marked with ~ on the notes that have it, centred, not split into notes', ()=>
+test('transcribe: vibrato is found on the notes that have it, centred, not split into notes', ()=>
 {
-    const notes = fromNotation('1 3 5:2 | 4:2 3:2', 'G', 'major');
+    const notes = notesOf('G5 B5 D6:2 | C6:2 B5:2');
     notes[2].vibrato = { rate: 6, depth: 0.45 };
     notes[4].vibrato = { rate: 5.5, depth: 0.3 };
     const s = whistle(notes, { tempo: 72, cents: -15 });
     const t = transcribe(trackPitch(s, RATE), { tempo: 72 });
-    assert.equal(toNotation(t.notes, { tonic: pitchClass('G'), mode: 'major' }), '1 3 5~:2 | 4:2 3~:2');
+    assert.equal(namesOf(t.notes), 'G5 B5 D6~:2 | C6:2 B5~:2');
     near(t.notes[2].vibrato.rate, 6, 0.5);
     near(t.notes[2].vibrato.depth, 0.45, 0.1);
     near(t.notes[2].cents, 0, 10);
-    const v = vibratoSummary(t.notes);
-    assert.equal(v.notes, 2);
 });
 
 test('vibrato: a straight note, jitter, or a slow drift is not vibrato', ()=>
@@ -70,51 +66,35 @@ test('vibrato: a straight note, jitter, or a slow drift is not vibrato', ()=>
 
 test('keys: a tune ending at home is heard in its key, major or minor', ()=>
 {
-    const eb = fromNotation('1 2 3 5 | 6 5 3 2 | 4 3 2 7, | 1:4', 'Eb', 'major');
+    const eb = notesOf('Eb5 F5 G5 Bb5 | C6 Bb5 G5 F5 | Ab5 G5 F5 D5 | Eb5:4');
     assert.deepEqual([guessKeys(eb)[0].key, guessKeys(eb)[0].mode], ['Eb', 'major']);
-    const am = fromNotation('1 b3 4 5 | b6 5 4 b3 | 2 #7, 1:2', 'A', 'major');
+    const am = notesOf('A5 C6 D6 E6 | F6 E6 D6 C6 | B5 G#5 A5:2');
     assert.deepEqual([guessKeys(am)[0].key, guessKeys(am)[0].mode], ['A', 'minor']);
-});
-
-test('spelling: notes between scale steps are flat, except #4 in major and #6/#7 in minor', ()=>
-{
-    const spell = (key, mode)=> { const { degree, accidental } = spellDegree(60 + key, 0, mode, 4); return `${accidental < 0 ? 'b' : accidental > 0 ? '#' : ''}${degree}`; };
-    assert.deepEqual([1, 3, 6, 8, 10].map(k => spell(k, 'major')), ['b2', 'b3', '#4', 'b6', 'b7']);
-    assert.deepEqual([9, 11].map(k => spell(k, 'minor')), ['#6', '#7']);
-});
-
-test('notation: rests and bar lines, and every transcription reads back through the notation parser', ()=>
-{
-    const notes = [{ beat: 0.5, beats: 1.5, key: 76 }, { beat: 4, beats: 1, key: 79, vibrato: { rate: 6, depth: 0.3 } }, { beat: 5, beats: 3, key: 84 }];
-    const text = toNotation(notes, { tonic: 0, mode: 'major' });
-    assert.equal(text, 'r:0.5 3:1.5 r:2 | 5~ 8:3');
-    const back = parseMelody(text).notes;
-    assert.deepEqual(back.map(n => [n.beat, n.degree, !!n.vibrato]), [[0.5, 3, false], [4, 5, true], [5, 8, false]]);
 });
 
 test('transcribe: a legato line with no breaks between notes is split by its pitch changes', ()=>
 {
-    const text = '1:0.5 2:0.5 3:0.5 4:0.5 5 3 | 2:1.5 7,:0.5 1:2';
-    const notes = fromNotation(text, 'D', 'minor').map(n => ({ ...n, gap: 0 }));
+    const text = 'D5:0.5 E5:0.5 F5:0.5 G5:0.5 A5 F5 | E5:1.5 C5:0.5 D5:2';
+    const notes = notesOf(text).map(n => ({ ...n, gap: 0 }));
     const s = whistle(notes, { tempo: 90, cents: 12 });
     const t = transcribe(trackPitch(s, RATE), { tempo: 88 });
-    assert.equal(toNotation(t.notes, { tonic: pitchClass('D'), mode: 'minor' }), text);
+    assert.equal(namesOf(t.notes), text);
 });
 
 test('transcribe: triplets come back as thirds of a beat, among straight 8ths, and read back to whole beats', ()=>
 {
-    const text = '1:1/3 2:1/3 3:1/3 4 5:0.5 4:0.5 3:1/3 2:1/3 1:1/3 | 5:2 r:2/3 3:1/3 1';
-    const s = whistle(fromNotation(text, 'Db', 'major'), { tempo: 70 });
+    const text = 'Db5:1/3 Eb5:1/3 F5:1/3 Gb5 Ab5:0.5 Gb5:0.5 F5:1/3 Eb5:1/3 Db5:1/3 | Ab5:2 r:2/3 F5:1/3 Db5';
+    const s = whistle(notesOf(text), { tempo: 70 });
     const t = transcribe(trackPitch(s, RATE), { tempo: 70 });
-    assert.equal(toNotation(t.notes, { tonic: pitchClass('Db'), mode: 'major' }), text);
-    assert.deepEqual(parseMelody(text).notes.map(n => Math.round(n.beat * 1e9) / 1e9).filter(Number.isInteger), [0, 1, 2, 3, 4, 7]);
+    assert.equal(namesOf(t.notes, { flats: true }), text);
+    assert.deepEqual(notesOf(text).map(n => Math.round(n.beat * 1e9) / 1e9).filter(Number.isInteger), [0, 1, 2, 3, 4, 7]);
 });
 
 test('transcribe: short staccato notes, much shorter than their 8th, are kept', ()=>
 {
-    const text = '1:0.5 3:0.5 5:0.5 8:0.5 7:0.5 5:0.5 3 | 2:0.5 4:0.5 6:0.5 5:0.5 1:2';
+    const text = 'C5:0.5 E5:0.5 G5:0.5 C6:0.5 B5:0.5 G5:0.5 E5 | D5:0.5 F5:0.5 A5:0.5 G5:0.5 C5:2';
     // each note sounds for about 0.1 s of its 0.43 s
-    const notes = fromNotation(text, 'C', 'major').map(n => ({ ...n, gap: n.beats * 60 / 70 - 0.1 }));
+    const notes = notesOf(text).map(n => ({ ...n, gap: n.beats * 60 / 70 - 0.1 }));
     const t = transcribe(trackPitch(whistle(notes, { tempo: 70 }), RATE), { tempo: 70 });
     assert.deepEqual(t.notes.map(n => n.key), notes.map(n => n.key));
 });
@@ -122,19 +102,19 @@ test('transcribe: short staccato notes, much shorter than their 8th, are kept', 
 test('click grid: a take recorded against a click keeps its bar lines, through latency and a player behind the beat', ()=>
 {
     // a bar of count-in at 90 bpm, then the tune, whistled 70 ms late (the click reaching the ear, the whistle the mic)
-    const text = '5 3 2 1 | 3:2 1:0.5 6,:0.5 1 | 4 6 8 6 | 7:2 5:2';
+    const text = 'D6 B5 A5 G5 | B5:2 G5:0.5 E5:0.5 G5 | C6 E6 G6 E6 | F#6:2 D6:2';
     const count = 4 * 60 / 90;
-    const notes = fromNotation(text, 'G', 'major').map(n => ({ ...n, beat: n.beat + 4 + 0.07 * 90 / 60 }));
+    const notes = notesOf(text).map(n => ({ ...n, beat: n.beat + 4 + 0.07 * 90 / 60 }));
     const frames = trackPitch(whistle(notes, { tempo: 90, lead: 0 }), RATE);
     const grid = clickGrid(noteStarts(frames), 90, count);
     near(grid.origin, count + 0.07, 0.03);
     const t = transcribe(frames, { tempo: 90, grid });
-    assert.equal(toNotation(t.notes, { tonic: pitchClass('G'), mode: 'major' }), text);
+    assert.equal(namesOf(t.notes), text);
 });
 
 test('free notes: notes whistled with no beat come back in order, glides dropped, repeats split where tongued', ()=>
 {
-    const s = whistle(fromNotation('1 3:2 5:0.5 5:0.5 8:3', 'D', 'major'), { tempo: 110, cents: -20 });
+    const s = whistle(notesOf('D5 F#5:2 A5:0.5 A5:0.5 | D6:3'), { tempo: 110, cents: -20 });
     const notes = freeNotes(trackPitch(s, RATE));
     assert.deepEqual(notes.map(n => n.key), [74, 78, 81, 81, 86]);
     near(notes[1].seconds, 2 * 60 / 110, 0.12);
@@ -143,9 +123,9 @@ test('free notes: notes whistled with no beat come back in order, glides dropped
 
 test('live reading: a take read a little at a time, as it is recorded, gives the notes whistled up to a beat behind', ()=>
 {
-    const text = '5 3 2 1 | 3:2 1:0.5 6,:0.5 1 | 4 6 8 6 | 7:2 5:2 | 5 6 8 10 | 9:1.5 8:0.5 6 5 | 3 5 6 1 | 2:4';
+    const text = 'D6 B5 A5 G5 | B5:2 G5:0.5 E5:0.5 G5 | C6 E6 G6 E6 | F#6:2 D6:2 | D6 E6 G6 B6 | A6:1.5 G6:0.5 E6 D6 | B5 D6 E6 G5 | A5:4';
     const count = 4 * 60 / 90;
-    const notes = fromNotation(text, 'G', 'major').map(n => ({ ...n, beat: n.beat + 4 + 0.05 * 90 / 60 }));
+    const notes = notesOf(text).map(n => ({ ...n, beat: n.beat + 4 + 0.05 * 90 / 60 }));
     const frames = trackPitch(whistle(notes, { tempo: 90, lead: 0, cents: 20 }), RATE);
     const offset = tuningOffset(frames);
     const behind = 60 / 90;
@@ -160,7 +140,7 @@ test('live reading: a take read a little at a time, as it is recorded, gives the
     assert.ok(live.fixed);
     near(live.grid.origin, count + 0.05, 0.03);
     // every note but the last, still held when the take ends
-    assert.equal(toNotation(live.notes, { tonic: pitchClass('G'), mode: 'major' }), text.replace(/ \| 2:4$/, ''));
+    assert.equal(namesOf(live.notes), text.replace(/ \| A5:4$/, ''));
     // notes once given stay given: the count never goes down
     assert.ok(seen.every((n, i)=> i === 0 || n >= seen[i - 1] - 1));
 });

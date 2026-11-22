@@ -1,5 +1,4 @@
-// Keys, modes, scale degrees and Roman-numeral chords, as MIDI numbers. Pure. Voicings are in voicing.ts.
-// The rules behind these choices are in docs/composing.md.
+// Keys, modes, scale degrees and Roman-numeral chords, as MIDI numbers. Pure.
 
 const PITCH_CLASSES: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -32,22 +31,6 @@ export type Mode = keyof typeof MODES;
 const mod = (n: number, m: number): number => ((n % m) + m) % m;
 /** the semitones above the tonic of a scale step, counting from 0 and wrapping round the octave */
 const stepOf = (scale: Scale, i: number): number => scale[mod(i, 7)] ?? 0;
-
-/** true for modes with a minor third: minor, dorian, phrygian, locrian, harmonic and melodic minor */
-export const isMinorMode = (mode: Mode): boolean => MODES[mode][2] === 3;
-
-/**
- * Moves a key by scale steps, not semitones, so a harmony stays in the key: +2 is a third above, +5 a sixth,
- * −2 a third below. A key outside the scale (a chromatic passing note) moves by a minor third instead.
- */
-export function diatonicShift(key: number, steps: number, tonic: number, mode: Mode): number {
-  const scale: Scale = MODES[mode];
-  const rel = key - tonic;
-  const deg = scale.indexOf(mod(rel, 12));
-  if (deg < 0) return key + (steps > 0 ? 3 : steps < 0 ? -3 : 0);
-  const d = deg + steps;
-  return tonic + (Math.floor(rel / 12) + Math.floor(d / 7)) * 12 + stepOf(scale, d);
-}
 
 /** 'C' → 0, 'F#' → 6, 'Bb' → 10 */
 export function pitchClass(name: string): number {
@@ -176,46 +159,9 @@ export function degreePitchClass(text: string | number, tonic: number, mode: Mod
   return mod(degreeToKey(tonic, mode, Number(m[2]), 4, m[1] === 'b' ? -1 : m[1] === '#' ? 1 : 0), 12);
 }
 
-/** the pitch class the bass plays under a chord: its slash bass, else its root */
-export const bassOf = (chord: { root: number; bass?: number }): number => chord.bass ?? chord.root;
-
 /** the chord's pitch classes */
 export const chordPitchClasses = (chord: { root: number; tones: number[] }): number[] =>
   chord.tones.map((t) => mod(chord.root + t, 12));
-
-const TONE_STEPS = [0, 1, 1, 2, 2, 3, 4, 4, 4, 5, 6, 6];
-
-/**
- * The scale steps above its root a chord tone stands on: 3 and 4 semitones are a third, 6 a diminished fifth, 9 a
- * diminished seventh in a diminished chord and a sixth otherwise, 14 a ninth.
- */
-export function toneStep(t: number, tones: number[]): number {
-  if (t === 9) return tones.includes(6) && !tones.includes(7) ? 6 : 5;
-  return TONE_STEPS[t % 12] ?? 0;
-}
-
-/**
- * A scale key moved onto the chord's own version of its step, so a line follows a chord from outside the mode:
- * G to G# under E major in A minor, A to Ab under the borrowed iv in C, B to Bb under bVII. A step the chord doesn't
- * use keeps its scale note (G stays G under Fm in C: a ninth, not a clash). Chord tones and chromatic keys stay.
- */
-export function alterToChord(key: number, chord: Chord, tonic: number, mode: Mode): number {
-  if (!chord.step || !inScale(tonic, mode, key)) return key;
-  const pc = mod(key, 12);
-  if (chordPitchClasses(chord).includes(pc)) return key;
-  for (const t of chord.tones) {
-    const natural = mod(tonic + stepOf(MODES[mode], chord.step - 1 + toneStep(t, chord.tones)), 12);
-    if (natural === pc) return key + mod(chord.root + t - pc + 6, 12) - 6;
-  }
-  return key;
-}
-
-/** the scale key a chord's altered tone stands for, undoing alterToChord: G for G# under E major in A minor */
-export function unalter(key: number, chord: Chord, tonic: number, mode: Mode): number {
-  if (inScale(tonic, mode, key)) return key;
-  for (const d of [-1, 1, -2, 2]) if (alterToChord(key + d, chord, tonic, mode) === key) return key + d;
-  return key;
-}
 
 /** a chord's name in letters, e.g. 'Am7' for vi7 in C */
 export function chordName(chord: { root: number; tones: number[]; bass?: number }, flats = false): string {
@@ -241,55 +187,6 @@ export function chordName(chord: { root: number; tones: number[]; bass?: number 
         : '';
   const add = ninth && !seventh ? 'add9' : '';
   return name + third + seventh + sus + add + over;
-}
-
-/** 'I V vi IV' or 'i:2 VI III VII:0.5 v7:0.5' → chords with lengths in bars (default 1). '|' is ignored. */
-export function parseProgression(text: string, tonic: number, mode: Mode): { chord: Chord; bars: number }[] {
-  return text
-    .split(/\s+/)
-    .filter((t) => t && t !== '|')
-    .map((token) => {
-      const [sym = '', len] = token.split(':');
-      const bars = len === undefined ? 1 : Number(len);
-      if (!(bars > 0)) throw new Error(`bad chord length: ${token}`);
-      return { chord: parseChord(sym, tonic, mode), bars };
-    });
-}
-
-/** how extendChord fills out a plain triad */
-export type Extension = 'sevenths' | 'ninths' | 'dominant' | 'add9' | 'sixths' | 'sus2' | 'sus4';
-
-/**
- * A plain triad played the way a genre plays it; chords already written with a 7th, 6th, sus or added note stay.
- *   sevenths  the 7th the key gives it: Cmaj7, Dm7, G7, Bm7b5 in C; a major chord whose major 7th is outside the key
- *             (V, a secondary dominant, bVII in minor) takes the minor 7th, a diminished one a diminished 7th
- *   ninths    sevenths plus the 9th, when the key has it (no b9 on iii)
- *   dominant  every major chord a dominant 7th, every minor one m7: the blues and funk
- *   add9      major and minor triads with an added 9th, when the key has it: pop shimmer
- *   sixths    major and minor triads with an added 6th, when the key has it: C6, Dm6 in dorian; swing and lounge
- *   sus2      the 3rd swapped for the 2nd, when the key has it: open, unresolved, neither major nor minor
- *   sus4      the 3rd swapped for the 4th, when the key has it: a fanfare's lift, waiting to land
- */
-export function extendChord<C extends { root: number; tones: number[] }>(
-  chord: C,
-  how: Extension | null | undefined,
-  tonic: number,
-  mode: Mode,
-): C {
-  const t = chord.tones;
-  if (!how || t.length !== 3 || (t[1] !== 3 && t[1] !== 4)) return chord;
-  const fits = (n: number) => inScale(tonic, mode, chord.root + n);
-  const ninth = fits(2) ? [14] : [];
-  if (how === 'add9') return t[2] === 7 ? { ...chord, tones: [...t, ...ninth] } : chord;
-  if (how === 'sixths') return t[2] === 7 && fits(9) ? { ...chord, tones: [...t, 9] } : chord;
-  if (how === 'sus2') return t[2] === 7 && fits(2) ? { ...chord, tones: [0, 2, 7] } : chord;
-  if (how === 'sus4') return t[2] === 7 && fits(5) ? { ...chord, tones: [0, 5, 7] } : chord;
-  let seventh: number | null | undefined;
-  if (how === 'dominant') seventh = t[2] === 7 ? 10 : null;
-  else if (t[2] === 6) seventh = fits(10) ? 10 : 9;
-  else if (t[2] === 7) seventh = t[1] === 3 ? 10 : fits(11) ? 11 : 10;
-  if (seventh == null) return chord;
-  return { ...chord, tones: [...t, seventh, ...(how === 'ninths' && seventh !== 9 ? ninth : [])] };
 }
 
 /** a stable 32-bit hash of any strings/numbers (FNV-1a), for choices that must be the same every time */

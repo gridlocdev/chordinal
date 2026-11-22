@@ -1,5 +1,5 @@
-// Names the chords of a whistled arpeggio take and finds where they change, as a progression the composer reads
-// ('I V/7 vi:2 IV'). Only each chord's identity is kept; the composer voices it to fit the song. Pure.
+// Names the chords of a whistled arpeggio take and finds where they change, as Roman-numeral symbols in the key
+// ('I', 'V/7', 'vi'). Only each chord's identity is kept, not its voicing. Pure.
 //
 // Each stretch of notes is scored against a vocabulary of chords in the key: weighted notes inside the chord count
 // for it, notes outside against, unheard chord tones cost a little (so a 7th chord needs its 7th), and chords outside
@@ -8,7 +8,7 @@
 // back down; an arpeggio going up and down jumps too, so on a bar line it counts for nothing);
 // common moves (down a fifth, to the tonic) cost less. The first note of a stretch, when it's also the lowest and is
 // the chord's third or seventh, puts that degree in the bass: 3-5-8 is I/3. A fifth isn't taken: whistlers often start
-// an arpeggio on it for range, and I/5 is a cadential six-four to the composer.
+// an arpeggio on it for range, and I/5 would be a cadential six-four.
 
 import {
   MODES,
@@ -392,16 +392,4 @@ export function nameChord(
     score: best.score,
     others: rest.slice(0, 3).map(({ symbol, score }) => ({ symbol, score })),
   };
-}
-
-const barsText = (bars: number) => String(Math.round(bars * 1000) / 1000);
-
-/** chords as a progression: lengths in bars after ':', 1 left out */
-export function toProgression(chords: { symbol: string; beats: number }[], beatsPerBar = 4): string {
-  const out: string[] = [];
-  for (const c of chords) {
-    const bars = c.beats / beatsPerBar;
-    out.push(`${c.symbol}${bars === 1 ? '' : ':' + barsText(bars)}`);
-  }
-  return out.join(' ');
 }

@@ -120,38 +120,6 @@ function rekey<T extends Pick<TakeReading, 'notes' | 'chords'> & Partial<TakeRea
       : [];
 }
 
-/** a chord guessed for a stretch with no whistled chord: cut from the guess `src` */
-export interface GuessedSpan<G> extends Span {
-  symbol: string;
-  guessed: true;
-  src: G;
-}
-
-/** the chords over a take: whistled ones, and guessed ones ({ guessed: true, src }) cut to fit the stretches between */
-export function chordsOf<C extends Span, G extends Span & { symbol: string }>(take: {
-  chords: C[];
-  notes: Span[];
-  guesses?: G[] | null;
-}): (C | GuessedSpan<G>)[] {
-  const whistled = [...take.chords].sort((a, b) => a.beat - b.beat);
-  const gaps: [number, number][] = [];
-  let at = 0;
-  for (const c of whistled) {
-    if (c.beat > at) gaps.push([at, c.beat]);
-    at = Math.max(at, c.beat + c.beats);
-  }
-  const last = Math.max(end(take.notes), end(take.guesses ?? []));
-  if (last > at) gaps.push([at, last]);
-  const guessed: GuessedSpan<G>[] = [];
-  for (const g of take.guesses ?? [])
-    for (const [a, b] of gaps) {
-      const from = Math.max(a, g.beat),
-        to = Math.min(b, g.beat + g.beats);
-      if (to > from) guessed.push({ beat: from, beats: to - from, symbol: g.symbol, guessed: true, src: g });
-    }
-  return [...whistled, ...guessed].sort((a, b) => a.beat - b.beat);
-}
-
 /** what's left of a chord outside a stretch: nothing, one piece or two */
 export function cut<C extends Span>(c: C, a: number, b: number): C[] {
   if (c.beat + c.beats <= a || c.beat >= b) return [c];

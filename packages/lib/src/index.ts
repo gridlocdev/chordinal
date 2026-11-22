@@ -19,15 +19,7 @@ export type {
   Wave,
   WaveShape,
 } from './chip-synth.ts';
-export {
-  CHORD_GUESS,
-  chordKey,
-  chordVocabulary,
-  guessChords,
-  nameChord,
-  scoreChord,
-  toProgression,
-} from './chord-guess.ts';
+export { CHORD_GUESS, chordKey, chordVocabulary, guessChords, nameChord, scoreChord } from './chord-guess.ts';
 export type {
   BeatNote,
   ChordKind,
@@ -44,30 +36,20 @@ export { reverbImpulse } from './impulse.ts';
 export type { ImpulseOptions } from './impulse.ts';
 export { readMidi, varLen, writeMidi } from './midi-file.ts';
 export type { MidiFile, MidiMeter, MidiNote, MidiSong, MidiTempo, MidiTrack } from './midi-file.ts';
-export { augment, develop, fragment, invert, join, retrograde, sequence } from './motif.ts';
-export type { Motif, MotifNote } from './motif.ts';
 export {
   MODES,
-  alterToChord,
-  bassOf,
   chordName,
   chordPitchClasses,
   degreePitchClass,
   degreeToKey,
-  diatonicShift,
-  extendChord,
   hash,
   inScale,
-  isMinorMode,
   keyToDegree,
   parseChord,
-  parseProgression,
   pitchClass,
   pitchName,
-  toneStep,
-  unalter,
 } from './music-theory.ts';
-export type { Chord, Extension, Mode, Scale } from './music-theory.ts';
+export type { Chord, Mode, Scale } from './music-theory.ts';
 export { isBlackKey, noteName, octaveC } from './notes.ts';
 export { PITCH_FLOOR, gateFrames, trackPitch } from './pitch-track.ts';
 export type { PitchFrame, PitchTrackOptions } from './pitch-track.ts';
@@ -99,11 +81,8 @@ export {
   noteStarts,
   readLive,
   smoothPitch,
-  spellDegree,
-  toNotation,
   transcribe,
   tuningOffset,
-  vibratoSummary,
   withoutGlides,
 } from './transcribe.ts';
 export type {
@@ -117,7 +96,4 @@ export type {
   Transcription,
   Vibrato,
 } from './transcribe.ts';
-export { notatedMelody, parseMelody } from './notation.ts';
-export type { MelodyNote } from './notation.ts';
-export { dropTwo, shellClasses, voiceChord } from './voicing.ts';
 export { encodeWav, encodeWavChannels, normalize, peakOf } from './wav.ts';

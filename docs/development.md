@@ -74,46 +74,7 @@ Then the chords: drag over the chord track above the tracks (bars, or beats with
 
 In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav` (ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it again. Audio files dropped on a track are read the same way, at the project's tempo.
 
-**From the command line.**
-
-`just transcribe <file or folder> --tempo <bpm>` (`tools/transcribe.mjs`, needs ffmpeg for anything but `.wav`) turns a recorded melody into scale-degree notation (`parseMelody` in `packages/lib` reads it back). `--tempo` is the speed you recorded at, roughly: the tool fits the beat grid within ±10% of it, and since the notation counts beats you can record slower than the song plays. It snaps notes to 8ths or triplets, beat by beat (a triplet is written `5:1/3`), keeps staccato notes however short, guesses the key (or takes `--key Eb --mode major`), writes `~` on notes with vibrato, and flags notes more than 30 cents off. `--meter 3/4` places the bar lines; `--json out.json` keeps the notes. Keep takes in `scratch/`: git ignores that folder, so they stay on your machine.
-
-```bash
-just transcribe scratch/lantern-hook.m4a --tempo 60 --meter 3/4
-```
-
-**Chords.** With `--chords` the take is read as arpeggios: sound each chord's notes, in any order and octave, and the tool finds the chords and where they change (on beats; bar lines and half bars are likelier), and prints a `progression:` with each chord's runners-up. Only the chord is kept, not its voicing. Start an arpeggio on the chord's third or seventh for an inversion (3-5-8 is `I/3`); starting on the fifth is just the chord. A 7th chord needs its 7th recorded in its own bar. Between relative keys (G major and E minor) it keeps the one whose chords fit best, which usually means the one the take starts and ends on.
-
-```bash
-just transcribe scratch/lantern-chords.m4a --tempo 60 --meter 3/4 --chords
-```
-
-Tips: start each note with a consonant (a soft "t" or "d") when repeating a pitch, so it is heard as a new note, and leave a second of silence before the first note.
-
-### Studying NES soundtracks
-
-`just nsf <file.nsf> [songs…]` (`tools/nsf-report.mjs`) plays an NSF file's music driver in a
-6502 emulator and reports what each song does: each channel's range and duty, the row length, how
-the lead moves (interval sizes, turns, leaps), note lengths, vibrato, slides, arpeggios, echo
-channels, drum hits and the loop. `--json out.json` saves the notes too. Keep the files in
-`reference/`, which git ignores; they are for learning techniques, not for copying tunes into the
-song lists. It reads the 2A03 and the VRC6 expansion; other expansion chips are ignored.
-
-```bash
-just nsf reference/Shovel_Knight_Music.nsf 1 4
-```
-
-For music that isn't an NSF (an OGG or MP3 soundtrack), `just audio <files…>`
-(`tools/audio-report.mjs`, needs ffmpeg) follows the loudest high pitched line and reports the same
-lead statistics, plus the tempo and how much of the lead stays on seven pitch classes. It is a
-guess from the mixed sound: checked against Mega Man 2 rendered from its NSF it picks the right
-note 67–85% of the time. It counts too few repeated notes and too many leaps, and it can't see
-fast arpeggios. Busy mixes with pads, reverb or a loud bass confuse it more. Compare its numbers
-with each other rather than with `just nsf`'s.
-
-```bash
-just audio reference/vvvvvv/ogg/*.ogg
-```
+**From the command line.** Chordinal Melody Composer, a separate repository, has `just transcribe`, which writes a recorded melody in its notation for a song spec.
 
 ### The desktop app
 
