@@ -63,12 +63,12 @@ test.describe('The window', () => {
   });
 
   // found by random use (seed 1): opened from ⌘K, the dialog left the keyboard on the window behind it
-  test('Generate Part… takes the keyboard when it opens', async ({ page }) => {
+  test('a dialog opened from ⌘K takes the keyboard', async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);
-    await runCommand(page, 'Generate Part');
-    const dialog = page.getByRole('dialog', { name: 'Generate part' });
-    await expect(dialog.getByRole('combobox').first()).toBeFocused();
+    await runCommand(page, 'Meter');
+    const dialog = page.getByRole('dialog', { name: /^Meter/ });
+    await expect(dialog.getByRole('textbox')).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     expect(errors).toEqual([]);

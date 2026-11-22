@@ -118,14 +118,11 @@ export interface Levels {
 /** the project and its undo history */
 export const hist: Signal<History> = signal(history(emptyProject()));
 export const project: ReadonlySignal<Project> = computed(() => hist.value.present);
-/** its folder in projects/, or '' when it has never been saved */
+/** its folder, or '' when it has never been saved */
 export const projectName: Signal<string> = signal('');
 /** the project as last saved or opened, to tell whether there are changes to save; null when it never was */
 export const saved: Signal<Project | null> = signal(hist.value.present);
 export const dirty: ReadonlySignal<boolean> = computed(() => project.value !== saved.value);
-/** New from Melody's preview, while its customizer is open (PRD §9.4): the project in the window is the song, not the
- * project, which `cancel` puts back */
-export const songPreview: Signal<{ cancel: () => void } | null> = signal(null);
 /** the ids of the SoundFont libraries on this machine */
 export const installedLibraries: Signal<string[]> = signal([]);
 /** the library being downloaded, and how far along */

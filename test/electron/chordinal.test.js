@@ -206,19 +206,6 @@ test('the track headers and the browser: a header\'s double-click, + Drums, the 
         await page.click('.add-track button:has-text("Drums")');
         assert.equal(await page.$$eval('.track[data-id]', l => l.length), 3);
 
-        // §8: Generate Part… on the new drum track: a pattern of drums, then Generate Again (⌘G) in its place
-        await run.click('generatePart');
-        await page.waitForSelector('.dialog.generate');
-        assert.equal(await page.inputValue('.dialog.generate select[name=part]'), 'drums');
-        await page.click('.dialog.generate button.primary');
-        await until('it wrote the part', async ()=> (await page.textContent('.dialog.generate .message')).startsWith('Wrote drums'));
-        const seed = await page.inputValue('.dialog.generate input[name=seed]');
-        await page.focus('.dialog.generate select[name=part]');
-        await page.keyboard.press('Meta+g');
-        await until('a new seed', async ()=> await page.inputValue('.dialog.generate input[name=seed]') !== seed);
-        await page.click('.dialog.generate button.other');
-        assert.equal(await page.$('.dialog.generate'), null);
-
         // §7.1: the tabs
         await page.click('.side-panel .tabs button:nth-child(2)');
         assert.ok((await page.$$eval('.side-panel .browser .item', l => l.map(x => x.textContent))).some(n => n.startsWith('Standard')), 'the kits are listed');

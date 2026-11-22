@@ -6,7 +6,7 @@ import type { Signal } from '@preact/signals';
 /** the windows drawn over the app: ⌘K's command menu and the Keyboard Shortcuts window */
 export type Overlay = 'commands' | 'shortcuts';
 
-/** a dialog of the app's own is open (Generate Part…): the shortcuts wait, as for the others */
+/** a dialog of the app's own is open: the shortcuts wait, as for the others */
 export const appDialog: Signal<boolean> = signal(false);
 
 /** ⌘K's command menu or the Keyboard Shortcuts window, drawn over the window; null when neither is */

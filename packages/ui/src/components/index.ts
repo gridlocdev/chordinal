@@ -8,7 +8,6 @@ export { ExportDialog } from './ExportDialog.tsx';
 export { Knob } from './Knob.tsx';
 export type { KnobProps } from './Knob.tsx';
 export { LibraryPicker } from './LibraryPicker.tsx';
-export { MelodySong } from './MelodySong.tsx';
 export { Mixer } from './Mixer.tsx';
 export { PianoRoll } from './PianoRoll.tsx';
 export { RollPlayhead } from './RollPlayhead.tsx';

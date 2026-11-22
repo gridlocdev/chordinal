@@ -1,5 +1,5 @@
 // The built CLI (apps/cli/dist/chordinal.mjs, `node tools/build.mjs`) end to end, in temporary folders: `render` on
-// a tiny soundtrack (test/cli/fixtures/soundtrack.json, two project folders), and `compose --project` then `export` of that project. Each starts
+// a tiny soundtrack (test/cli/fixtures/soundtrack.json, two project folders), and `export` of one of those projects. Each starts
 // the CLI's hidden render browser, which the CLI ends.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -32,7 +32,7 @@ test('help lists the commands, and a command explains itself', ()=>
     try
     {
         const help = cli(dir, 'help');
-        for (const c of ['compose', 'export', 'render']) assert.match(help, new RegExp(`\\b${c}\\b`));
+        for (const c of ['export', 'render']) assert.match(help, new RegExp(`\\b${c}\\b`));
         assert.match(cli(dir, 'render', '--help'), /usage: chordinal render <soundtrack\.json> <folder>/);
         const bad = spawnSync(process.execPath, [CLI, 'render', 'x.json', 'out', '--library', 'nope'], { cwd: dir, encoding: 'utf8' });
         assert.equal(bad.status, 2);
@@ -81,16 +81,12 @@ test('render: a looping and a one-shot track to mp3s and the tracks-data file', 
     finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('compose --project writes a project folder, and export makes its MIDI and WAV', { timeout: 60000 }, ()=>
+test('export makes a project folder’s MIDI and WAV', { timeout: 60000 }, ()=>
 {
     const dir = tmp();
     try
     {
-        assert.match(cli(dir, 'compose', path.join(FIXTURES, 'tiny-song.json'), '--project', 'tiny'), /wrote tiny[/\\]project\.json/);
-        const project = JSON.parse(fs.readFileSync(path.join(dir, 'tiny', 'project.json'), 'utf8'));
-        assert.equal(project.title, 'Tiny');
-        assert.ok(project.tracks.length > 0);
-
+        fs.cpSync(path.join(FIXTURES, 'loop'), path.join(dir, 'tiny'), { recursive: true });
         cli(dir, 'export', 'tiny', '--out', 'exported');
         const midi = fs.readFileSync(path.join(dir, 'exported', 'tiny.mid'));
         assert.equal(midi.subarray(0, 4).toString(), 'MThd');

@@ -1,6 +1,6 @@
 // A made-up whistle for the transcription tests: notes as sine waves with breath noise, detune, vibrato and timing
 // wobble. Not a test file itself.
-import { parseMelody } from '@chordinal/composer';
+import { parseMelody } from '@chordinal/lib';
 import { degreeToKey, pitchClass } from '@chordinal/lib';
 
 export const RATE = 22050;

@@ -81,7 +81,7 @@ const pasteHere = (trackId: string, at: number): MenuItem => ({
 });
 const playheadHere = (at: number): MenuItem => ({ label: 'Move Playhead Here', run: () => seek(at) });
 
-/** items an app adds to every track's menu, after Choose Instrument… (Chordinal's Generate Part…) */
+/** items an app adds to every track's menu, after Choose Instrument… (Chordinal's Record Melody) */
 let appTrackItems: (trackId: string) => MenuEntry[] = () => [];
 export const setTrackItems = (fn: (trackId: string) => MenuEntry[]): void => {
   appTrackItems = fn;
@@ -172,7 +172,6 @@ export function clipMenu(trackId: string, clipId: string, at: number): void {
     },
     '-',
     { label: 'Loop This Clip', run: () => loopOver(clipRange(trackId, clipId)) },
-    item('newFromMelody'),
   ]);
 }
 
@@ -338,7 +337,6 @@ export function rollMenu(trackId: string, at: number): void {
     { label: 'Snap', submenu: snapItems() },
     '-',
     playheadHere(at),
-    item('newFromMelody'),
   ]);
 }
 

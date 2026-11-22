@@ -1,4 +1,4 @@
-// Transcribes a recorded melody into the composer's scale-degree notation, ready for a section's `melody:`.
+// Transcribes a recorded melody into scale-degree notation (`parseMelody` in @chordinal/lib reads it back).
 //   node tools/transcribe.mjs take.wav --tempo 60 [--meter 3/4] [--key Eb] [--mode major] [--json out.json]
 //   node tools/transcribe.mjs scratch/lanterns-hook            (every audio file in the folder)
 //   node tools/transcribe.mjs chords.wav --tempo 60 --chords   (an arpeggio take: its progression)

@@ -1,6 +1,6 @@
 # Development
 
-Chordinal is an Electron app. Its interface is [Preact](https://preactjs.com) with [signals](https://preactjs.com/guide/v10/signals/), built by [Vite](https://vite.dev) into `apps/web/dist/`; esbuild bundles the desktop main process. Everything under the interface (the composer, the melody transcription, the SoundFont 2 parser and the Web Audio sampler, all written from scratch) is TypeScript or JavaScript ES modules that also run as they are in Node, for the tools and tests. The rules in `AGENTS.md` at the repository root apply to everyone working on it, and the code layout and its layer rules are in [architecture.md](architecture.md).
+Chordinal is an Electron app. Its interface is [Preact](https://preactjs.com) with [signals](https://preactjs.com/guide/v10/signals/), built by [Vite](https://vite.dev) into `apps/web/dist/`; esbuild bundles the desktop main process. Everything under the interface (the melody transcription, the SoundFont 2 parser and the Web Audio sampler, all written from scratch) is TypeScript or JavaScript ES modules that also run as they are in Node, for the tools and tests. The rules in `AGENTS.md` at the repository root apply to everyone working on it, and the code layout and its layer rules are in [architecture.md](architecture.md).
 
 ## Getting set up
 
@@ -42,40 +42,16 @@ Each test starts from a fresh browser profile, so projects (IndexedDB) and setti
 
 The whole run takes about 25 seconds, so `just check` runs it too.
 
-## Writing songs
+## The command line
 
-Songs are plain specs in `packages/composer/src/`: `songs-data.ts`, `genre-songs-data.ts` (one
-per genre, each with a story), `game-songs-data.ts` (the game music), `chip-songs-data.ts`
-(chiptune in different moods) and `classical-songs-data.ts` (solo piano). Each is a song the
-composer writes (`just compose <id>`). The spec format and how the
-composer reads it are in [composing.md](composing.md#12-the-song-spec-writing-a-song).
+`apps/cli` is Chordinal's command line, `chordinal`, on the same engine as the app. `just cli <command> …` builds it (`node tools/build.mjs --cli`, into `apps/cli/dist/`) and runs it from the folder you're in; `just export` is a shortcut for one of its commands. `just cli help` lists the commands, and `just cli <command> --help` explains one. `export` and `render` play projects in a hidden, muted Electron window (no Dock icon), which the CLI ends when it's done; they take `--library <id>` for another SoundFont library: generaluser (the default), fluidr3 or musescore.
 
-The songs are also kept as project files in `projects/`, which open like any other project and can
-be edited and saved. `just projects` (`tools/make-projects.mjs`) writes them again from the specs:
-all of them, or the ids you name (`just projects first-light`). It overwrites the edits made to
-those projects in the app, so commit or save under another name first.
-
-### The command line
-
-`apps/cli` is Chordinal's command line, `chordinal`, on the same engine as the app. `just cli <command> …` builds it (`node tools/build.mjs --cli`, into `apps/cli/dist/`) and runs it from the folder you're in; `just compose` and `just export` are shortcuts for two of its commands. `just cli help` lists the commands, and `just cli <command> --help` explains one. `export` and `render` play projects in a hidden, muted Electron window (no Dock icon), which the CLI ends when it's done; they take `--library <id>` for another SoundFont library: generaluser (the default), fluidr3 or musescore.
-
-`compose` composes a song in Node and prints its plan. It takes a song id, `feel:<emotion>` or a path to a spec in JSON:
+`export` makes a `.mid` and a `.wav` of project folders, as the app's Export as MIDI and Export as Audio File make them (the whole song, the mix, a 3 s tail, not normalized), about ten seconds a song. `just export` exports the project folders you name to `export/` (not committed):
 
 ```bash
-just compose first-light                               # the plan
-just compose first-light --melody                      # and the lead line, bar by bar, as note names
-just compose first-light --midi first-light.mid        # and a Standard MIDI File
-just compose first-light --project my-songs/first      # and a project folder (project.json) the app opens
-just compose feel:tender
-```
-
-`export` makes a `.mid` and a `.wav` of project folders, as the app's Export as MIDI and Export as Audio File make them (the whole song, the mix, a 3 s tail, not normalized), about ten seconds a song. `just export` exports the projects in `projects/` to `export/` (not committed):
-
-```bash
-just export                                   # every project
-just export first-light creaking-halls        # just these
-just export first-light --mp3                 # and an MP3 (320 kbps; needs ffmpeg)
-just export --library fluidr3                 # on another SoundFont library
+just export songs/first-light songs/lanterns  # these projects
+just export songs/first-light --mp3           # and an MP3 (320 kbps; needs ffmpeg)
+just export songs/first-light --library fluidr3   # on another SoundFont library
 just cli export path/to/project --out out     # any project folder, into out/
 ```
 
@@ -86,10 +62,7 @@ just -f path/to/chordinal/justfile cli render music/soundtrack.json music --data
 just -f path/to/chordinal/justfile cli render music/soundtrack.json music title --data src/audio/tracks-data.js   # one track
 ```
 
-`just harmony` (`tools/harmony-report.mjs`) checks that songs don't all share the same chords. It
-composes every genre bright and dark, then the catalog, and prints each one's share of plain
-triads, its chord colours and cadences, the 4-chord progressions shared across songs and the most
-alike pairs, each genre's melody (pace, steps and leaps, syncopation, range) with the nearest, and each genre's sound and shape (tempo, key, form, lead, sends, pocket). Name songs to see only those (`just harmony spook-swing feel:tender`).
+Songs are composed in Chordinal Melody Composer, a separate repository next to this one, which writes them as project folders and calls this `render` for the games.
 
 ### Transcribing a recorded melody
 
@@ -99,17 +72,17 @@ The pitch tracker follows one clear line in a high register (about 300 to 4,000 
 
 Then the chords: drag over the chord track above the tracks (bars, or beats with Shift held), press `R` (or **Transport ▸ Record a Chord**) and sound the chord's notes one at a time as an arpeggio, in any order and octave, in your own time. Press `R` again and the chord is named in the project's key from the notes you held longest, and replaces the chords there. Fix notes in the piano roll like any others.
 
-**New from melody** (in the piano roll's toolbar) takes the selected clip and the chords over it (guessing chords from the melody where none were recorded) and composes a song round it, previewed in the window with the customizer on the right (`packages/ui/src/melody-song.ts`, `components/MelodySong.tsx`) until it replaces the project or opens as a new one. In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav` (ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it again. Audio files dropped on a track are read the same way, at the project's tempo.
+In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav` (ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it again. Audio files dropped on a track are read the same way, at the project's tempo.
 
 **From the command line.**
 
-`just transcribe <file or folder> --tempo <bpm>` (`tools/transcribe.mjs`, needs ffmpeg for anything but `.wav`) turns a recorded melody into a section's `melody:` line. `--tempo` is the speed you recorded at, roughly: the tool fits the beat grid within ±10% of it, and since the notation counts beats you can record slower than the song plays. It snaps notes to 8ths or triplets, beat by beat (a triplet is written `5:1/3`), keeps staccato notes however short, guesses the key (or takes `--key Eb --mode major`), writes `~` on notes with vibrato, and flags notes more than 30 cents off. `--meter 3/4` places the bar lines; `--json out.json` keeps the notes. Keep takes in `scratch/`: git ignores that folder, so they stay on your machine.
+`just transcribe <file or folder> --tempo <bpm>` (`tools/transcribe.mjs`, needs ffmpeg for anything but `.wav`) turns a recorded melody into scale-degree notation (`parseMelody` in `packages/lib` reads it back). `--tempo` is the speed you recorded at, roughly: the tool fits the beat grid within ±10% of it, and since the notation counts beats you can record slower than the song plays. It snaps notes to 8ths or triplets, beat by beat (a triplet is written `5:1/3`), keeps staccato notes however short, guesses the key (or takes `--key Eb --mode major`), writes `~` on notes with vibrato, and flags notes more than 30 cents off. `--meter 3/4` places the bar lines; `--json out.json` keeps the notes. Keep takes in `scratch/`: git ignores that folder, so they stay on your machine.
 
 ```bash
 just transcribe scratch/lantern-hook.m4a --tempo 60 --meter 3/4
 ```
 
-**Chords.** With `--chords` the take is read as arpeggios: sound each chord's notes, in any order and octave, and the tool finds the chords and where they change (on beats; bar lines and half bars are likelier), and prints a `progression:` with each chord's runners-up. Only the chord is kept, so the composer voices it to fit the song. Start an arpeggio on the chord's third or seventh for an inversion (3-5-8 is `I/3`); starting on the fifth is just the chord. A 7th chord needs its 7th recorded in its own bar. Between relative keys (G major and E minor) it keeps the one whose chords fit best, which usually means the one the take starts and ends on.
+**Chords.** With `--chords` the take is read as arpeggios: sound each chord's notes, in any order and octave, and the tool finds the chords and where they change (on beats; bar lines and half bars are likelier), and prints a `progression:` with each chord's runners-up. Only the chord is kept, not its voicing. Start an arpeggio on the chord's third or seventh for an inversion (3-5-8 is `I/3`); starting on the fifth is just the chord. A 7th chord needs its 7th recorded in its own bar. Between relative keys (G major and E minor) it keeps the one whose chords fit best, which usually means the one the take starts and ends on.
 
 ```bash
 just transcribe scratch/lantern-chords.m4a --tempo 60 --meter 3/4 --chords
@@ -141,13 +114,6 @@ with each other rather than with `just nsf`'s.
 ```bash
 just audio reference/vvvvvv/ogg/*.ogg
 ```
-
-### Comparing versions by ear
-
-`just ab` (or `just ab <commit>`, default `main`) serves a page at
-http://localhost:8010/tools/ab/ (or the next free port) that renders every song with that commit
-and with your checkout, side by side, so you can hear what a change did. It shows each render's
-length, peak and loudness, has a blind mode, and saves the WAVs in `.ab/out/`, which git ignores.
 
 ### The desktop app
 
@@ -241,17 +207,17 @@ at the top of `chip-synth.ts`:
   program 2) has its kick, snare, clap and toms on the sample channel and its hats on the noise
   channel, as the later NES soundtracks did.
 
-Keep each program in its General MIDI family (80–87 leads, 38–39 bass, 88–95 pads), so the
-composer's vibrato, slide and scoop rules still pick it up. `CHIP_ROLES` is the instrument each part
+Keep each program in its General MIDI family (80–87 leads, 38–39 bass, 88–95 pads), so
+Humanize's vibrato, slide and scoop rules still pick it up. `CHIP_ROLES` is the instrument each part
 falls back to when the band names one the chip bank doesn't have.
 
 ## Adding to the interface
 
 The interface lives in `packages/ui/src/`: the state as signals in `store.ts`, what the controls do in
 `document.ts` (open, save, New and `edit`), `player.ts`, `recording.ts` and `live.ts`, and the
-views in `components/`. A view reads signals and calls actions; it doesn't touch the audio engine or
-the composer itself. Every change to the project goes through `edit(p => …)` with one of the pure
+views in `components/`. A view reads signals and calls actions; it doesn't touch the audio engine
+itself. Every change to the project goes through `edit(p => …)` with one of the pure
 edits in `packages/daw/src/` (`project.ts`, `timeline.ts`, `note-edits.ts`), so it can be undone; add a new edit there, with a test. DAW logic that isn't about
-songs goes in `packages/daw/`; music logic goes in `packages/composer/` or `packages/sketch/`, which know nothing of the interface and don't import each other,
+songs goes in `packages/daw/`; music logic goes in `packages/sketch/` or `packages/perform/`, which know nothing of the interface,
 and content goes in a `*-data.js` file with a test. Show a control only when there is code behind
 it. The full rules are in [architecture.md](architecture.md#rules).

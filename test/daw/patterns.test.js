@@ -6,9 +6,7 @@ import { insertTime, deleteTime } from '@chordinal/daw';
 import { scaleNotes } from '@chordinal/daw';
 import { history, commit } from '@chordinal/daw';
 import { writeProject, readProject } from '@chordinal/daw';
-import { compose } from '@chordinal/composer';
-import { toProject } from '@chordinal/composer';
-import { CATALOG } from '@chordinal/composer';
+import fs from 'node:fs';
 
 const KICK = 36, SNARE = 38;
 const round = (x)=> Math.round(x * 1e3) / 1e3;
@@ -86,11 +84,12 @@ test('a project with patterns writes as version 2 and reads back the same (PRD �
     assert.throws(()=> readProject(JSON.stringify({ format: 'music-generator-project', version: 3 })), /version 3; this app reads versions 1 and 2/);
 });
 
-test('composed projects stay version 1 with no patterns (PRD §8)', ()=>
+test('projects without patterns stay version 1 (PRD §8)', ()=>
 {
-    for (const entry of CATALOG.slice(0, 4))
+    const dir = new URL('../fixtures/projects/', import.meta.url);
+    for (const name of fs.readdirSync(dir))
     {
-        const project = toProject(compose(entry.spec));
+        const project = readProject(fs.readFileSync(new URL(`${name}/project.json`, dir), 'utf8'));
         assert.equal(project.patterns, undefined);
         const text = writeProject(project);
         assert.equal(JSON.parse(text).version, 1);

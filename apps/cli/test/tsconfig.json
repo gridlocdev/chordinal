@@ -10,7 +10,6 @@
     { "path": ".." },
     { "path": "../../../packages/lib" },
     { "path": "../../../packages/audio" },
-    { "path": "../../../packages/daw" },
-    { "path": "../../../packages/composer" }
+    { "path": "../../../packages/daw" }
   ]
 }

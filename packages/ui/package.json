@@ -20,7 +20,6 @@
     "@chordinal/lib": "workspace:*",
     "@chordinal/audio": "workspace:*",
     "@chordinal/daw": "workspace:*",
-    "@chordinal/composer": "workspace:*",
     "@chordinal/sketch": "workspace:*",
     "@chordinal/playback": "workspace:*",
     "@preact/signals": "2.11.4",

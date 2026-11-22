@@ -13,13 +13,12 @@ const LAYERS = {
   lib: [],
   audio: ['lib'],
   daw: ['lib'],
-  composer: ['lib', 'audio', 'daw'],
   sketch: ['lib', 'daw'],
   playback: ['lib', 'audio', 'daw', 'sketch'],
-  ui: ['lib', 'audio', 'daw', 'composer', 'sketch', 'playback'],
+  ui: ['lib', 'audio', 'daw', 'sketch', 'playback'],
 };
 const ALL = Object.keys(LAYERS);
-const PURE = ['lib', 'audio', 'daw', 'composer', 'sketch'];
+const PURE = ['lib', 'audio', 'daw', 'sketch'];
 /** the apps, which nothing imports from */
 const APPS = { group: ['@chordinal/ui', '@chordinal/ui/*', '@chordinal/desktop', '@chordinal/web'], message: 'The CLI uses the engine, never the UI or another app.' };
 const APP_PATHS = { regex: '^(\\.\\./)+(apps/)?(web|desktop)/', message: 'The CLI uses the engine, never the UI or another app.' };

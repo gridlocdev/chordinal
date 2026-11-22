@@ -11,9 +11,6 @@ importers:
       '@chordinal/audio':
         specifier: workspace:*
         version: link:packages/audio
-      '@chordinal/composer':
-        specifier: workspace:*
-        version: link:packages/composer
       '@chordinal/daw':
         specifier: workspace:*
         version: link:packages/daw
@@ -86,9 +83,6 @@ importers:
       '@chordinal/audio':
         specifier: workspace:*
         version: link:../../packages/audio
-      '@chordinal/composer':
-        specifier: workspace:*
-        version: link:../../packages/composer
       '@chordinal/daw':
         specifier: workspace:*
         version: link:../../packages/daw
@@ -116,9 +110,6 @@ importers:
       '@chordinal/audio':
         specifier: workspace:*
         version: link:../../packages/audio
-      '@chordinal/composer':
-        specifier: workspace:*
-        version: link:../../packages/composer
       '@chordinal/daw':
         specifier: workspace:*
         version: link:../../packages/daw
@@ -153,21 +144,6 @@ importers:
       '@chordinal/lib':
         specifier: workspace:*
         version: link:../lib
-
-  packages/composer:
-    dependencies:
-      '@chordinal/audio':
-        specifier: workspace:*
-        version: link:../audio
-      '@chordinal/daw':
-        specifier: workspace:*
-        version: link:../daw
-      '@chordinal/lib':
-        specifier: workspace:*
-        version: link:../lib
-      '@chordinal/perform':
-        specifier: workspace:*
-        version: link:../perform
 
   packages/daw:
     dependencies:
@@ -215,9 +191,6 @@ importers:
       '@chordinal/audio':
         specifier: workspace:*
         version: link:../audio
-      '@chordinal/composer':
-        specifier: workspace:*
-        version: link:../composer
       '@chordinal/daw':
         specifier: workspace:*
         version: link:../daw

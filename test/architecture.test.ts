@@ -23,16 +23,15 @@ const LAYERS: Record<string, readonly string[]> = {
   audio: ['lib'],
   daw: ['lib'],
   perform: ['lib', 'daw'],
-  composer: ['lib', 'audio', 'daw', 'perform'],
   sketch: ['lib', 'daw'],
   playback: ['lib', 'audio', 'daw', 'sketch'],
-  ui: ['lib', 'audio', 'daw', 'perform', 'composer', 'sketch', 'playback'],
-  web: ['lib', 'audio', 'daw', 'perform', 'composer', 'sketch', 'playback', 'ui'],
+  ui: ['lib', 'audio', 'daw', 'perform', 'sketch', 'playback'],
+  web: ['lib', 'audio', 'daw', 'perform', 'sketch', 'playback', 'ui'],
   desktop: ['audio', 'ui'],
-  cli: ['lib', 'audio', 'daw', 'perform', 'composer', 'playback'],
+  cli: ['lib', 'audio', 'daw', 'perform', 'playback'],
 };
 /** the engine: no browser, no Node, no Preact */
-const PURE = ['lib', 'audio', 'daw', 'perform', 'composer', 'sketch'];
+const PURE = ['lib', 'audio', 'daw', 'perform', 'sketch'];
 const ENGINE_GLOBALS = new Set([
   'window',
   'document',
@@ -184,15 +183,13 @@ interface Break {
 
 const FIXES: Record<string, string> = {
   layers:
-    'A package imports only the packages below it: lib; audio and daw on lib; perform on daw; composer on audio, daw and perform; sketch on daw; playback on audio, daw and sketch; ui on all of them; the web app on all of them; the desktop app on audio (and the bridge types of @chordinal/ui/native-bridge); the CLI on the engine, with playback only in src/page/. Move the code down a layer, or pass it in from above.',
+    'A package imports only the packages below it: lib; audio and daw on lib; perform on daw; sketch on daw; playback on audio, daw and sketch; ui on all of them; the web app on all of them; the desktop app on audio (and the bridge types of @chordinal/ui/native-bridge); the CLI on the engine, with playback only in src/page/. Move the code down a layer, or pass it in from above.',
   'package deps':
     'A package.json lists only the packages its layer may import (see the layers rule). Take the dependency out, or move the code that needs it up a layer.',
   'relative imports':
     'A relative import stays inside its own package or app. To use another package, import it by name (@chordinal/daw), from its entry point.',
-  'composer and sketch':
-    'composer and sketch are side by side: neither imports the other. Move what both need down into daw or lib.',
   'pure engine':
-    'lib, audio, daw, perform, composer and sketch run anywhere: no node: modules, no Preact, no window, document, navigator, storage, indexedDB, process or AudioContext. Take what the code needs as an argument, or move the code to playback, ui or an app.',
+    'lib, audio, daw, perform and sketch run anywhere: no node: modules, no Preact, no window, document, navigator, storage, indexedDB, process or AudioContext. Take what the code needs as an argument, or move the code to playback, ui or an app.',
   'desktop bridge':
     'Only packages/ui/src/platform/native-bridge.ts names the desktop bridge (chordinalNative), and only apps/desktop/src/preload.ts sets it. Call nativeBridge() from native-bridge.ts instead.',
   'projects through the store':
@@ -272,8 +269,6 @@ function findBreaks(): Break[] {
               ? page
               : layer.includes(dep);
         if (!allowed) add('layers', s, imp.line, `${s.part} imports ${imp.spec}`);
-        if ((s.part === 'composer' && dep === 'sketch') || (s.part === 'sketch' && dep === 'composer'))
-          add('composer and sketch', s, imp.line, `${s.part} imports ${imp.spec}`);
       }
       // relative imports stay in their own package
       if (imp.spec.startsWith('.')) {

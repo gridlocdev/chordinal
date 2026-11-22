@@ -247,98 +247,6 @@ input[type='range']::-webkit-slider-thumb {
   grid-area: editor;
 }
 
-/* New from Melody's customizer (PRD §9.4): a column on the right, beside the arrangement and the editor */
-.app.customizing {
-  grid-template:
-    'top top top' 52px 'browser arrange custom' 1fr 'browser split custom' 5px 'browser editor custom' var(
-      --editor-h,
-      300px
-    )
-    'status status status' 26px / var(--browser-w, 260px) 1fr 320px;
-}
-.app.customizing.no-browser {
-  grid-template-columns: 0 1fr 320px;
-}
-.customizer {
-  grid-area: custom;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 0;
-  padding: 14px;
-  background: var(--panel);
-  border-left: 1px solid var(--line);
-}
-.customizer h2 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-}
-.customizer .hint {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-}
-.customizer .error {
-  color: var(--rec);
-}
-.customizer .groups {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: grid;
-  align-content: start;
-  gap: 10px;
-}
-.customizer fieldset {
-  margin: 0;
-  padding: 6px 10px 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-.customizer legend {
-  color: var(--muted);
-  font-size: 12px;
-  padding: 0 4px;
-}
-.customizer .form {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 22px;
-  gap: 6px 10px;
-  align-items: center;
-}
-.customizer .form label {
-  display: contents;
-}
-.customizer .form label.off {
-  color: var(--muted);
-}
-.customizer .form select,
-.customizer .form input:not([type='checkbox']) {
-  min-width: 0;
-  width: 100%;
-}
-.customizer .row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  min-width: 0;
-}
-.customizer .row input[type='number'] {
-  width: 72px;
-}
-.customizer .actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 6px;
-}
-.customizer button.primary {
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-color: var(--accent);
-}
-
 /* ── macOS's unified title bar (PRD §5.8): the browser runs to the top, and its top row holds the traffic lights and
    the browser's toggle; the transport beside it is the rest of the title bar. With the browser hidden, the transport
    makes room for the lights itself. In full screen the lights go, and so does their room. ──────────────────────────── */
@@ -372,14 +280,6 @@ input[type='range']::-webkit-slider-thumb {
 .unified.fullscreen .transport,
 .unified.fullscreen .side-top {
   padding-left: 12px;
-}
-.unified .app.customizing:not(.no-browser) {
-  grid-template:
-    'browser top top' 52px 'browser arrange custom' 1fr 'browser split custom' 5px 'browser editor custom' var(
-      --editor-h,
-      300px
-    )
-    'status status status' 26px / var(--browser-w, 260px) 1fr 320px;
 }
 .unified :is(button, input, select, textarea, a, label, [role='menu'], [role='dialog'], .lcd) {
   -webkit-app-region: no-drag;
@@ -1336,15 +1236,6 @@ input[type='range']::-webkit-slider-thumb {
 .dialog.ask p {
   margin: 0;
 }
-.dialog.generate .seed {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.dialog.generate .seed input {
-  flex: 1;
-  min-width: 0;
-}
 
 /* ── the command menu (⌘K) and the Keyboard Shortcuts window ────────────────────────────────────────────────────── */
 .dialog.command-menu {
@@ -1417,47 +1308,4 @@ input[type='range']::-webkit-slider-thumb {
 .dialog.shortcuts dt,
 .dialog.shortcuts dd {
   margin: 0;
-}
-.customizer button.lock {
-  width: 22px;
-  height: 22px;
-  padding: 3px;
-  border: 0;
-  background: none;
-  color: var(--muted);
-  opacity: 0.55;
-}
-.customizer button.lock:hover,
-.customizer button.lock:focus-visible {
-  opacity: 1;
-}
-.customizer button.lock.on {
-  color: var(--accent);
-  opacity: 1;
-}
-.customizer button.lock svg {
-  width: 100%;
-  height: 100%;
-}
-.customizer .reroll {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  min-width: 0;
-}
-.customizer .versions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  min-width: 0;
-}
-.customizer .versions button {
-  min-width: 24px;
-  padding: 2px 5px;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.customizer .versions button[aria-pressed='true'] {
-  border-color: var(--accent);
-  font-weight: 600;
 }

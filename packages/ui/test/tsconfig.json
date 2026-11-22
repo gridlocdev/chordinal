@@ -15,7 +15,6 @@
     { "path": "../../audio" },
     { "path": "../../daw" },
     { "path": "../../sketch" },
-    { "path": "../../composer" },
     { "path": "../../playback" }
   ]
 }

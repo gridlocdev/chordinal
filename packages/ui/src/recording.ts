@@ -3,7 +3,7 @@
 // a MIDI keyboard, are recorded instead of the whistle, into the clip the take starts in (the selected one first;
 // a pattern's other clips share them), and need no microphone. With a stretch of the chord track picked, it
 // records a chord instead: an arpeggio whistled freely, named and put on the chord track. Audio files dropped on a
-// track are read the same way. A saved project keeps its takes' audio in projects/<name>/takes/.
+// track are read the same way. A saved project keeps its takes' audio in <project folder>/takes/.
 import { signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
 import { mic } from '@chordinal/playback';

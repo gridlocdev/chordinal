@@ -11,9 +11,9 @@ test('a project this app wrote is a project', () => {
   assert.equal(r.kind === 'project' && r.project.title, 'A');
 });
 
-test('a version 1 project from projects/ is a project', () => {
+test('a version 1 project from the composer is a project', () => {
   const text = fs.readFileSync(
-    path.resolve(import.meta.dirname, '../../../projects/first-light/project.json'),
+    path.resolve(import.meta.dirname, '../../../test/fixtures/projects/first-light/project.json'),
     'utf8',
   );
   assert.equal(classifyFile(text).kind, 'project');

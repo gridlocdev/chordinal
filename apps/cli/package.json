@@ -3,14 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Chordinal on the command line: compose a song, export projects, render a game's soundtrack",
+  "description": "Chordinal on the command line: export projects, render a game's soundtrack",
   "license": "MIT",
   "bin": {
     "chordinal": "dist/chordinal.mjs"
   },
   "dependencies": {
     "@chordinal/audio": "workspace:*",
-    "@chordinal/composer": "workspace:*",
     "@chordinal/daw": "workspace:*",
     "@chordinal/lib": "workspace:*",
     "@chordinal/perform": "workspace:*",

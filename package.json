@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Write, record and arrange music: a small DAW with a part composer and a sketchpad that turns recorded melodies into notes",
+  "description": "Write, record and arrange music: a small DAW with a sketchpad that turns recorded melodies into notes",
   "author": "gridlocdev",
   "homepage": "https://github.com/gridlocdev/chordinal",
   "license": "MIT",
@@ -23,7 +23,6 @@
   },
   "devDependencies": {
     "@chordinal/audio": "workspace:*",
-    "@chordinal/composer": "workspace:*",
     "@chordinal/daw": "workspace:*",
     "@chordinal/desktop": "workspace:*",
     "@chordinal/lib": "workspace:*",

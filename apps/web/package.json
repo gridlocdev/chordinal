@@ -7,7 +7,6 @@
   "license": "MIT",
   "dependencies": {
     "@chordinal/audio": "workspace:*",
-    "@chordinal/composer": "workspace:*",
     "@chordinal/daw": "workspace:*",
     "@chordinal/lib": "workspace:*",
     "@chordinal/perform": "workspace:*",

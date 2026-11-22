@@ -1,5 +1,5 @@
-// Chordinal's menu bar: its File menu (§4: New, Open…, Open Recent, Save, Save As…), Track ▸ Generate Part… (§8) and
-// Record Melody, Transport ▸ Record a Chord and New from Melody (§9.3, §9.4), and Help, around the shared menus
+// Chordinal's menu bar: its File menu (§4: New, Open…, Open Recent, Save, Save As…), Track ▸ Record Melody,
+// Transport ▸ Record a Chord (§9.3), and Help, around the shared menus
 // (packages/ui/src/menu-bar.ts). The app's own commands join the shared catalog here.
 import { projectName, chordRange } from '@chordinal/ui';
 import { recording } from '@chordinal/ui';
@@ -7,7 +7,6 @@ import { catalog, item, busy } from '@chordinal/ui';
 import { editMenu, trackMenu, transportMenu, viewMenu, startMenus } from '@chordinal/ui';
 import type { Menu, MenuEntry } from '@chordinal/ui';
 import { recent, newSong, openFolder, openRecent, clearRecent, revealProject } from './files.ts';
-import { openGenerate } from './generate.ts';
 import { recordMelody, recordChord } from './whistle.ts';
 
 const kind = () => recording.value?.kind;
@@ -48,14 +47,6 @@ catalog.add([
     enabled: () => !!projectName.value,
     description: 'Show the project’s folder in the Finder.',
     keywords: 'folder explorer reveal locate',
-  },
-  {
-    id: 'generatePart',
-    group: 'Track',
-    title: 'Generate Part…',
-    run: () => openGenerate(),
-    description: 'Write a drum, bass, chord or melody part with the composer.',
-    keywords: 'compose ai create auto',
   },
   {
     id: 'recordMelody',
@@ -119,8 +110,8 @@ function menuBar(): MenuEntry[] {
   return [
     fileMenu(),
     editMenu(),
-    trackMenu([item('generatePart'), item('recordMelody')]),
-    transportMenu(['-', item('recordChord'), item('newFromMelody')]),
+    trackMenu([item('recordMelody')]),
+    transportMenu(['-', item('recordChord')]),
     viewMenu([item('commandMenu'), item('browser'), '-']),
     { label: 'Help', submenu: [item('shortcuts'), item('readme')] },
   ];

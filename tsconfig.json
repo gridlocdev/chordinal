@@ -46,12 +46,6 @@
       "path": "packages/perform/test"
     },
     {
-      "path": "packages/composer"
-    },
-    {
-      "path": "packages/composer/test"
-    },
-    {
       "path": "packages/ui"
     },
     {

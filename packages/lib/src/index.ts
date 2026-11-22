@@ -117,5 +117,7 @@ export type {
   Transcription,
   Vibrato,
 } from './transcribe.ts';
+export { notatedMelody, parseMelody } from './notation.ts';
+export type { MelodyNote } from './notation.ts';
 export { dropTwo, shellClasses, voiceChord } from './voicing.ts';
 export { encodeWav, encodeWavChannels, normalize, peakOf } from './wav.ts';

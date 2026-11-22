@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { trackPitch } from '@chordinal/lib';
 import { transcribe, readLive, tuningOffset, measureVibrato, guessKeys, spellDegree, toNotation, vibratoSummary, noteStarts, clickGrid, freeNotes } from '@chordinal/lib';
-import { parseMelody } from '@chordinal/composer';
+import { parseMelody } from '@chordinal/lib';
 import { pitchClass } from '@chordinal/lib';
 import { RATE, whistle, fromNotation } from './whistle-synth.js';
 
@@ -83,7 +83,7 @@ test('spelling: notes between scale steps are flat, except #4 in major and #6/#7
     assert.deepEqual([9, 11].map(k => spell(k, 'minor')), ['#6', '#7']);
 });
 
-test('notation: rests and bar lines, and every transcription reads back through the composer parser', ()=>
+test('notation: rests and bar lines, and every transcription reads back through the notation parser', ()=>
 {
     const notes = [{ beat: 0.5, beats: 1.5, key: 76 }, { beat: 4, beats: 1, key: 79, vibrato: { rate: 6, depth: 0.3 } }, { beat: 5, beats: 3, key: 84 }];
     const text = toNotation(notes, { tonic: 0, mode: 'major' });

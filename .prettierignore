@@ -6,10 +6,8 @@ export
 reference
 scratch
 soundfonts
-.ab
 .e2e-results
 pnpm-lock.yaml
-projects
 docs
 *.md
 # JavaScript that is not ported to TypeScript yet keeps its own layout; each file is formatted as it is ported
@@ -19,3 +17,4 @@ docs
 *.cjs
 packages/audio/src/soundfont-catalog-data.ts
 test/cli/fixtures/*/project.json
+test/fixtures/projects/*/project.json

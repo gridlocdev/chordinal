@@ -1,14 +1,14 @@
 # Chordinal: a DAW for making music by hand (PRD)
 
-Chordinal is the desktop app in this repo, built for making music by hand: pick sounds, click in beats, draw notes, arrange parts, mix. It runs on the repo's engine (projects, player, instruments, mixer, piano roll, step grid, patterns) and offers the composer as one optional action, **Generate Part…**. The repo used to ship a second app, Music Generator, a generator window that handed its songs to Chordinal; it was dropped, and the composer lives on in Generate Part, the CLI and the games' API. Code that implements a section cites it (`Chordinal PRD §4.2`).
+Chordinal is the desktop app in this repo, built for making music by hand: pick sounds, click in beats, draw notes, arrange parts, mix. It runs on the repo's engine (projects, player, instruments, mixer, piano roll, step grid, patterns). It composes nothing itself: the composer, its songs and New from Melody moved to Chordinal Melody Composer, a separate repository that builds on these packages and writes projects Chordinal opens. Code that implements a section cites it (`Chordinal PRD §4.2`).
 
 The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal uses it as written.
 
 ## §1 Goals
 
-1. Start on an empty project or the last one, never on a list of generated songs. The main path is clicking things in by hand.
+1. Start on an empty project or the last one. The main path is clicking things in by hand.
 2. Work the way FL Studio and GarageBand users already work: a channel rack of instruments, a step grid for beats, a piano roll for melodies, a song built from patterns, and a mixer.
-3. Generating is optional: a part generated into a track, edited by hand afterwards like any other clip.
+3. Projects made elsewhere (by Chordinal Melody Composer, or imported from MIDI) open and are edited like any other.
 4. One engine, one project format, one place to fix bugs. The app shell sits on shared modules (`packages/ui/`) that hold no app-only code.
 
 ## §2 Non-goals
@@ -16,7 +16,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 - FL-style multi-track patterns. Parts are per-track clips, reused through linked patterns (`prd.md` §3).
 - Floating or detachable windows. Views are docked in one window.
 - Third-party plugins (VST, AU), notation, time-stretching audio.
-- Any change to the composer API that games use (§12).
+- Composing songs or parts. That is Chordinal Melody Composer's job.
 
 ## §3 One app, one repo
 
@@ -82,39 +82,17 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 3. When a tab's list has more than one section (the instrument families, or Recent and Documents/Chordinal), a dropdown across the full width under the tabs lists them. Picking one scrolls the list to that section's heading, and while the list scrolls the dropdown names the section at the top.
 4. Later work adds the Synths, Effects and Samples tabs (§11).
 
-## §8 Generate Part…
+## §8 Generate Part… (removed)
 
-1. **Track ▸ Generate Part…** (and the track header's right-click menu) opens a dialog. Choose:
-   - **Part**: drums, bass, chords, pad, arpeggio, melody or countermelody. The default comes from the track: drums on a drum track, melody otherwise.
-   - **Style**: the composer's feelings and genres.
-   - **Seed**: shown, with **Roll** to pick another.
-   - **Range**: the selection, the loop, or the whole project, defaulting to the first that exists.
-2. Generate Part uses the project's tempo, meter and key. If the project has no key, the dialog shows a key picker (default C major). If the project has a chord track over the range, the part follows those chords. If not, the composer writes chords for the range, and for parts that need them it fills the chord track too, in the same undo step.
-3. The result is one new clip on the selected track over the range: a pattern clip on a drum track, an ordinary clip otherwise. Clips already there are kept, and the new clip is laid over them. With no track selected, it adds a track with the part's usual instrument.
-4. Generating is one undo step. **Generate Again** (same dialog, `Cmd G` while it's open) rolls a new seed and replaces the last generated clip, if it hasn't been edited since.
-5. If the composer can't write the part for the meter (for example a style that doesn't support 7/8), the dialog says "<Style> can't write <part> in <meter>." and adds nothing.
-6. This uses the composer through a new function beside `compose` and `toProject`. Their signatures and output don't change.
+Generate Part was removed with the composer. Composing lives in Chordinal Melody Composer.
 
 ## §9 Recording and the tools
 
-1. Music Generator, the second app this section once described, was dropped. Its New dialog lives on as Generate Part (§8) and `just compose`.
-2. Its songs are the projects in `projects/`, opened in Chordinal with **Open…**.
+1. Music Generator, the second app this section once described, was dropped, and so was the composer: `just compose` and the songs moved to Chordinal Melody Composer.
+2. A folder handed over at start-up (from the command line or the Finder) opens instead of the last project; one handed over later asks first.
 3. Recording is a Chordinal feature: **Record Melody** on a track, and **Record a Chord** on the chord track. While a melody take records, its notes appear in the arrangement and the piano roll as they're played or heard, and the piano roll follows the playhead. When it stops, the playhead goes back to the start of the clip the notes went into (or of the take, if nothing was kept).
-4. **New from Melody…** (Transport menu, the piano roll's toolbar and the clip's right-click menu) composes a song around the selected clip's melody and the chords over it (guessed from the melody where there are none). The song is previewed in the window in place of the project, with a customizer docked on the right:
-   - **Style and pace**: a feeling and a genre (or none), the tempo, the key and mode, and the seed. A new feeling or genre brings its own tempo, form, band, groove, swing and dynamics; the key, mode and seed stay. The key and mode start as the melody's, and the tempo as the project's where the clip is. A new key moves the melody there; a new mode reads its scale degrees in that mode.
-   - **Song form**: the feeling's or genre's forms, or **Melody once** (the melody as one section, as it was played). **Melody in** picks the type of section that plays the melody (chorus, else A, else verse by default); the others are composed.
-   - **Band**: an instrument for each part (melody, countermelody, arpeggio, chords, pad, bass, drums), or None.
-   - **Feel**: the groove, swing, dynamics, **Lift** (the last chorus goes up a step) and **Ritardando** (the end slows down).
-   - **Locks**: every choice but Melody in has a lock beside it (the key's covers the mode, the form's covers Melody in, and each band part has its own). A locked choice keeps its value through **Roll** and through a new feeling's or genre's defaults; it can still be changed by hand. The key starts locked, so the song stays in the melody's key until it's unlocked.
-   - **Roll**, at the top: a new seed, feeling, genre (none a third of the time), key and mode, and Lift and Ritardando at random, but for what's locked; the feeling's and genre's defaults then follow, but for what's locked.
-   - **Versions**: each change that makes a different song adds a numbered version beside Roll (the last twelve are kept; each one's tooltip names its feeling, genre, tempo and key). Picking one puts its song back in the window as it was, so two can be compared while playback carries on; the next change from there adds a new version at the end.
-5. Every change composes the song again at once, and playback carries on from where it is. Each track keeps its mute and solo across changes. Edits to the preview are allowed but are replaced by the next change.
-6. The project is untouched until one of three buttons ends the preview:
-   - **Cancel** (or Escape in the customizer) puts the project back as it was.
-   - **Replace This Project** puts the song in the project's place, keeping its title and folder, as one undo step.
-   - **Save and Create New** saves the project (asking for a name if it has none), then opens the song as a new, unsaved project. If the project isn't saved, the preview stays.
-7. While the song is previewed, Save and Save As say to finish first and save nothing. Opening a project, starting a new one or closing the window cancels the preview first, then asks about the project's own unsaved changes as usual.
-8. `just compose`, `just projects`, `just export`, `just transcribe` and the other tools keep working as they do now.
+4. New from Melody moved to Chordinal Melody Composer, as a page of its own.
+5. `just export`, `just transcribe` and the other tools keep working as they do now.
 
 ## §10 Patterns and the step grid
 
@@ -139,14 +117,14 @@ Each gets its own interview and PRD section before it's built.
 
 ## §12 What must not change
 
-1. The games' API, exactly as `prd.md` §8: `compose`, `toProject`, `playProject`, `loadInstruments`, `registerFx`, the Humanize FX and `beatToSeconds`. Their signatures and output stay as they are.
-2. Every project in `projects/` opens and plays the same in Chordinal.
+1. What Chordinal Melody Composer and the games use: `playProject`, `loadInstruments`, `registerFx`, the Humanize FX, `beatToSeconds` and `chordinal render`. Their signatures and output stay as they are.
+2. Every project Chordinal Melody Composer writes opens and plays the same in Chordinal (the fixtures in `test/fixtures/projects/`).
 3. A project saved by an older build still opens: the format id and versions 1 and 2 stay readable.
 
 ## Decisions
 
 1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid (§11.2).
-2. Music Generator is dropped; the composer stays as Generate Part, the CLI and the games' API (§9.1).
+2. Music Generator is dropped, and the composer with it; composing lives in Chordinal Melody Composer (§9.1).
 3. Recording lives in Chordinal (§9.3).
 
 The slices are in [2-chordinal.md](2-chordinal.md).

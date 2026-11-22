@@ -18,26 +18,3 @@ export const LIVE = {
 
 // a soft, low tick: under the pitch tracker's 300 Hz, so a click the mic hears through speakers isn't read as a note
 export const CLICK = { hz: 190, accentHz: 250, seconds: 0.05, gain: 0.5, accentGain: 0.8 };
-
-/** a band's General MIDI programs by part; null: the part doesn't play */
-export interface SketchBand {
-  lead: number | null;
-  counter: number | null;
-  arp: number | null;
-  chords: number | null;
-  pad: number | null;
-  bass: number | null;
-  drums: number | null;
-}
-
-// the band a sketch is heard with: the whistle as a flute, piano chords, a bass, no drums
-export const SKETCH_BAND: SketchBand = {
-  lead: 73,
-  counter: null,
-  arp: null,
-  chords: 0,
-  pad: 89,
-  bass: 33,
-  drums: null,
-};
-export const SKETCH_EMOTION = 'tender';

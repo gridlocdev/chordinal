@@ -5,11 +5,10 @@
 // Paths are relative to the folder it's run from.
 import { UsageError } from './args.ts';
 import type { Command } from './command.ts';
-import { composeCommand } from './compose-command.ts';
 import { exportCommand } from './export-command.ts';
 import { renderCommand } from './render-command.ts';
 
-const COMMANDS: Command[] = [composeCommand, exportCommand, renderCommand];
+const COMMANDS: Command[] = [exportCommand, renderCommand];
 
 const usageOf = (c: Command): string => `usage: chordinal ${c.name} ${c.usage}`;
 

@@ -10,7 +10,7 @@ test('a project read and written again is the same text', () => {
   const text = writeProject(emptyProject({ title: 'Round Trip' }));
   assert.equal(writeProject(readProject(text)), text);
   const song = fs.readFileSync(
-    new URL('../../../projects/first-light/project.json', import.meta.url),
+    new URL('../../../test/fixtures/projects/first-light/project.json', import.meta.url),
     'utf8',
   );
   assert.equal(writeProject(readProject(song)), song);

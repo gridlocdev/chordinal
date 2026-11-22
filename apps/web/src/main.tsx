@@ -1,7 +1,7 @@
 // Chordinal: a DAW for making music by hand (Chordinal PRD). Loads the settings, reopens the last project or starts a
 // new one, wires musical typing and MIDI, and lays out the window: the transport across the top, the browser on the
-// left, the arrangement (whose track headers carry each track's mute, solo and volume), the editor below it, New from
-// Melody's customizer on the right while it's open (§9.4), and the status bar along the bottom (§5).
+// left, the arrangement (whose track headers carry each track's mute, solo and volume), the editor below it, and the
+// status bar along the bottom (§5).
 //
 // Its File menu is in menu-bar.ts, its files in files.ts; the views and commands are in packages/ui/src/.
 import '@chordinal/ui/ui.css';
@@ -10,7 +10,7 @@ import type { TargetedPointerEvent } from 'preact';
 import { audioEngine } from '@chordinal/playback';
 import { registerFx } from '@chordinal/daw';
 import { HUMANIZE, humanizeFx } from '@chordinal/perform';
-import { settings, setSettings, loadSettings, customizer } from '@chordinal/ui';
+import { settings, setSettings, loadSettings } from '@chordinal/ui';
 import { startTheme, startChrome } from '@chordinal/ui';
 import { checkLibraries } from '@chordinal/ui';
 import { startLive, connectMidi, startNotices } from '@chordinal/ui';
@@ -20,14 +20,12 @@ import { textMenu, setTrackItems } from '@chordinal/ui';
 import { Transport, StatusBar } from '@chordinal/ui/components';
 import { Arrange } from '@chordinal/ui/components';
 import { Editor } from '@chordinal/ui/components';
-import { ExportDialog, MelodySong } from '@chordinal/ui/components';
+import { ExportDialog } from '@chordinal/ui/components';
 import { Ask } from '@chordinal/ui/components';
 import type { ArrangeActions } from '@chordinal/ui/components';
 import { CommandMenu, ShortcutsDialog } from '@chordinal/ui/components';
 import { SidePanel } from './components/SidePanel.tsx';
 import { openTrack, addInstrumentTrack, addDrumTrack, dropInstrument } from './rack.ts';
-import { GeneratePart } from './components/GeneratePart.tsx';
-import { openGenerate } from './generate.ts';
 import { recordMelody } from './whistle.ts';
 import { useProjectFolders, startUp, watchWindow, newSong } from './files.ts';
 import { startChordinalMenus } from './menu-bar.ts';
@@ -67,7 +65,7 @@ function Split() {
 function App() {
   return (
     <div
-      class={`app chordinal ${settings.value.browserOpen ? '' : 'no-browser'} ${customizer.value ? 'customizing' : ''}`}
+      class={`app chordinal ${settings.value.browserOpen ? '' : 'no-browser'}`}
       style={{
         '--editor-h': `${settings.value.editorHeight}px`,
         '--browser-w': `${settings.value.leftWidth}px`,
@@ -78,10 +76,8 @@ function App() {
       <Arrange actions={TRACK_ACTIONS} />
       <Split />
       <Editor />
-      <MelodySong />
       <StatusBar />
       <ExportDialog />
-      <GeneratePart />
       <Ask />
       <CommandMenu />
       <ShortcutsDialog />
@@ -105,10 +101,7 @@ addEventListener('contextmenu', (e) => {
 });
 
 useProjectFolders();
-setTrackItems((trackId) => [
-  { label: 'Generate Part…', run: () => openGenerate(trackId) },
-  { label: 'Record Melody', run: () => recordMelody(trackId) },
-]);
+setTrackItems((trackId) => [{ label: 'Record Melody', run: () => recordMelody(trackId) }]);
 registerFx(HUMANIZE, humanizeFx);
 await loadSettings();
 startTheme();

@@ -167,50 +167,15 @@ e2e-desktop: build
 
 # ── Music ─────────────────────────────────────────────────────────────────
 
-# e.g. just compose first-light --melody --midi first-light.mid · just compose feel:tender --project scratch/tender
-# Compose a song without the app: its plan, optionally its melody, a .mid file and a project folder.
+# e.g. just export ~/Documents/Chordinal/Lanterns · just export some/song other/song --mp3 --library fluidr3
+# Export project folders to export/<name>.mid and .wav; --mp3 adds an MP3 (ffmpeg).
 [group('music')]
 [positional-arguments]
-compose *args: build-cli
-    node apps/cli/dist/chordinal.mjs compose "$@"
-
-# e.g. just export · just export first-light creaking-halls --mp3 · just export --library fluidr3
-# Export songs from projects/ to export/<name>.mid and .wav (all without names); --mp3 adds an MP3 (ffmpeg).
-[group('music')]
-[positional-arguments]
-export *args: build-cli
-    #!/usr/bin/env bash
-    set -euo pipefail
-    folders=() options=()
-    while [ $# -gt 0 ]; do
-        case "$1" in
-            --library) options+=("$1" "${2:-}"); shift; [ $# -gt 0 ] && shift ;;
-            --*) options+=("$1"); shift ;;
-            *) [ -f "projects/$1/project.json" ] || { echo "no project $1 in projects/" >&2; exit 1; }
-               folders+=("projects/$1"); shift ;;
-        esac
-    done
-    if [ ${#folders[@]} -eq 0 ]; then
-        for f in projects/*/project.json; do folders+=("$(dirname "$f")"); done
-    fi
-    node apps/cli/dist/chordinal.mjs export "${folders[@]}" --out export ${options[@]+"${options[@]}"}
-
-# e.g. just projects · just projects first-light
-# Write the written songs as project files in projects/ (all, or the ones named); overwrites edits made in the app.
-[group('music')]
-[positional-arguments]
-projects *songs:
-    node tools/make-projects.mjs "$@"
-
-# e.g. just harmony · just harmony first-light lighthouse
-# Report how alike the harmony is: each genre's triads, colours and cadences, then the songs' shared progressions.
-[group('music')]
-[positional-arguments]
-harmony *songs:
-    node tools/harmony-report.mjs "$@"
+export +args: build-cli
+    node apps/cli/dist/chordinal.mjs export "$@" --out export
 
 # e.g. just transcribe scratch/hook.m4a --tempo 60 --meter 3/4 · --key Eb --mode major to skip the key guess
-# Transcribe a recorded melody into a section's `melody:` notation (any file ffmpeg reads, or a folder of them).
+# Transcribe a recorded melody into scale-degree notation (any file ffmpeg reads, or a folder of them).
 [group('music')]
 [positional-arguments]
 transcribe +args:
@@ -232,12 +197,6 @@ audio +files:
 [group('music')]
 catalog:
     node tools/sf2-catalog.mjs
-
-# e.g. just ab · just ab a913205 (then open the URL it prints; port 8010 or the next free one)
-# A/B listening: render each song with an older commit and with this checkout, side by side.
-[group('music')]
-ab rev="main": _deps
-    node tools/ab-server.mjs {{ rev }}
 
 # ── Housekeeping ──────────────────────────────────────────────────────────
 

@@ -7,14 +7,14 @@
 - Projects open as they are: the project format hasn't changed.
 - Your settings and recent projects are kept: the app keeps its data in the same place.
 - If you built and installed the app from a checkout (`just install-desktop`), run `just install-desktop` again: the app now starts from `apps/desktop/dist/chordinal.js`.
-- Music Generator, the older song player, is gone. Its songs are still there: the command line's `compose <song>` composes one as MIDI or as a Chordinal project.
+- Music Generator, the older song player, is gone, and so is composing: Generate Part, New from Melody, `just compose` and the songs moved to Chordinal Melody Composer, a separate project that writes Chordinal projects. Projects it made still open and play the same, Humanize included.
 
 ### What's new
 
 - **Command menu.** `⌘K` lists every command with its shortcut; type to find one and press Return to run it. `⌘/` opens the Keyboard Shortcuts window.
 - **Light theme.** Choose Light, Dark or the system's in Settings.
 - **Runs in a browser.** The same page runs without the desktop app and keeps its projects and settings in the browser.
-- **Command line.** `chordinal compose`, `export` and `render` compose songs, export projects to MIDI and WAV or MP3, and render a game's soundtrack with its timing data.
+- **Command line.** `chordinal export` and `render` export projects to MIDI and WAV or MP3, and render a game's soundtrack from project folders with its timing data.
 
 ### Improvements
 
@@ -22,7 +22,6 @@
 - A new app icon: a chord on one stem with a flag. `just run-desktop` shows it, and the name Chordinal in the menu bar, instead of Electron's.
 - A dropdown under the browser's tabs jumps to an instrument family or a group of projects, so you don't have to scroll.
 - Changing the octave with `Z` or `X` scrolls the piano roll to the keys you're playing.
-- **New from Melody…** opens a panel beside the song it makes: pick the feeling, genre, tempo, key, form, band and feel, and hear each change at once. Lock the choices you like and Roll the rest, and go back to any recent version to compare. Then replace the project with the song, or save the project and open the song as a new one.
 - While you record a melody, its notes appear in the piano roll as you play, and when you stop, the playhead goes back to the start of the clip.
 - Recording isn't only for whistling: **Whistle a Chord** is now **Record a Chord**, and a melody recorded with no track selected goes on a new track called Melody. `just whistle` is now `just transcribe`.
 - Saving is safer: a project changed on disk since you opened it asks before it's replaced, and saves and opens never overlap.

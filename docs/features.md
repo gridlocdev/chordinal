@@ -1,28 +1,20 @@
 # Features
 
-**Chordinal** is a DAW laid out like one (a transport, a browser, an arrangement, a step grid, a piano roll and a mixer), in a dark or a light theme, where you make music by hand, have the composer write parts, and turn melodies you record into notes.
+**Chordinal** is a DAW laid out like one (a transport, a browser, an arrangement, a step grid, a piano roll and a mixer), in a dark or a light theme, where you make music by hand and turn melodies you record into notes.
 
 ## Projects
 
-A project is a folder with a `project.json`: tracks, clips of notes, instruments, the mixer, tempo, meter, markers and a chord track. Chordinal keeps projects anywhere, in `Documents/Chordinal/` unless you pick somewhere else. The 38 songs the composer writes are in the checkout's `projects/` folder as projects too, and open with **File ▸ Open…**.
+A project is a folder with a `project.json`: tracks, clips of notes, instruments, the mixer, tempo, meter, markers and a chord track. Chordinal keeps projects anywhere, in `Documents/Chordinal/` unless you pick somewhere else.
 
 ## The window
 
 On macOS the window has no separate title bar, as in the system's own apps: the browser runs to the top with the window buttons above its tabs, and the transport row beside it is the rest of the title bar; drag either to move the window. A status bar runs along the bottom: the latest notice at the left (errors stay until you dismiss them), and at the right what the letter keys play (`Keys C4–F5 · Grand Piano`, dimmed until the piano roll has the focus), the connected MIDI keyboard and whether the project is saved.
 
-Each track's header in the arrangement has its mute, solo and a volume knob: double-click it to edit the track (a drum track opens the step grid), drag it to reorder, and drag instruments onto it from the browser at the left, where clicking an instrument or kit plays a preview and the dropdown under its tabs jumps to a section (an instrument family, or Recent and Documents/Chordinal). **Track ▸ Generate Part…** has the composer write one part (drums, bass, chords, pad, arpeggio, melody or countermelody) in a style you pick, over the chords already there, and **Generate Again** (`Cmd G`) writes it again from another seed.
-
-## Composing
-
-The composer writes whole songs from a feeling, a genre or one of its songs: melody, countermelody, arpeggio, chords, pad, bass and drums, written by rule. Each choice always comes out the same, and a seed gives another song in that style. In Chordinal it writes one part at a time (**Generate Part…**); whole songs come from the command line (`just compose`, `just projects`) and go to the games.
-
-Twelve genre songs each tell a story, scene by scene: bossa nova, reggae, funk, synthwave, lo-fi hip hop, tango, country, celtic, chiptune, gospel, cinematic and blues, plus solo piano pieces with a left hand, rubato and ornaments. The game music loops; a boss fight switches into 7/4.
-
-How the composer decides what to write is in [How it composes](composing.md).
+Each track's header in the arrangement has its mute, solo and a volume knob: double-click it to edit the track (a drum track opens the step grid), drag it to reorder, and drag instruments onto it from the browser at the left, where clicking an instrument or kit plays a preview and the dropdown under its tabs jumps to a section (an instrument family, or Recent and Documents/Chordinal).
 
 ## Humanize
 
-Each composed track has a **Humanize** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round a loop is a little different. Your own edits are played the same way.
+A track can have a **Humanize** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round a loop is a little different. Your own edits are played the same way.
 
 ## Editing
 
@@ -36,7 +28,7 @@ Make a clip a **pattern** and its copies stay linked: edit one, in the step grid
 
 ## Recording
 
-**Track ▸ Record Melody** (or **●**, or `R`) and sing, hum or play a melody into the microphone over a click onto any track, vibrato included. It reads one clear line at a time in a high register (about 300 to 4,000 Hz). Or play it on the letter keys or a MIDI keyboard during the take, with no microphone needed: the notes go into the clip the take starts in (the selected one first, so every clip of its pattern gets them, growing it to fit), or into a new clip if there's none. The notes appear in the piano roll as you play, and when you stop, the playhead goes back to the start of the clip they went into. Pick a stretch of the chord track and sound the chord's notes one at a time (**Transport ▸ Record a Chord**) to set the chord there. **New from Melody…** composes a song around the selected clip and previews it in the window, with a panel on the right to change the feeling, genre, tempo, key, form, band and feel; each change is heard at once. Lock what you like and **Roll** the rest, and click a numbered version to hear an earlier one again. Then replace the project with it, or save the project and open the song as a new one.
+**Track ▸ Record Melody** (or **●**, or `R`) and sing, hum or play a melody into the microphone over a click onto any track, vibrato included. It reads one clear line at a time in a high register (about 300 to 4,000 Hz). Or play it on the letter keys or a MIDI keyboard during the take, with no microphone needed: the notes go into the clip the take starts in (the selected one first, so every clip of its pattern gets them, growing it to fit), or into a new clip if there's none. The notes appear in the piano roll as you play, and when you stop, the playhead goes back to the start of the clip they went into. Pick a stretch of the chord track and sound the chord's notes one at a time (**Transport ▸ Record a Chord**) to set the chord there.
 
 A saved project keeps its takes in its folder's `takes/`, listed in the browser's **Takes** tab to read onto a track again, and an audio file dropped on a track is read the same way.
 

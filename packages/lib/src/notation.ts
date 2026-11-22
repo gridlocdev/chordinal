@@ -1,4 +1,4 @@
-// Melodies written by hand in scale-degree notation, for sections, motifs and stingers. Pure.
+// Melodies written in scale-degree notation, the text `toNotation` writes: degrees with lengths in beats. Pure.
 
 /** a melody note in scale degrees: degree 1 is the tonic, accidental a semitone up or down; last: the melody's last */
 export interface MelodyNote {
