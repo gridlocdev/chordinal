@@ -49,9 +49,8 @@ export interface Timing {
 /**
  * Checks that a looping track can loop in a game that counts bars at one tempo: the section at the loop's end is the
  * same type as the one at its start, so what follows the end is what the loop jumps back to, and the tempo holds from
- * the start to the loop's end. The composer pushes the tempo a little from the climax on, and a section can set its
- * own; either before the loop's end would put the game's beats out of step with the music. A section may change the
- * meter: the track then lists its bar lines.
+ * the start to the loop's end: a tempo change before the loop's end would put the game's beats out of step with the
+ * music. A section may change the meter: the track then lists its bar lines.
  */
 export function checkLoop(id: string, score: SoundtrackScore, loop: LoopSections): void {
   const [first, end] = loop;
@@ -68,7 +67,7 @@ export function checkLoop(id: string, score: SoundtrackScore, loop: LoopSections
   if (change)
     throw new Error(
       `${id}: the tempo changes at beat ${change.beat}, before the loop's end at beat ${until}, and the game counts bars at one tempo. ` +
-        `Set push: 0 in the spec (the climax's push), or take the tempo off that section`,
+        `Keep the tempo steady up to the loop's end`,
     );
 }
 

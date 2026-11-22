@@ -1,5 +1,5 @@
 // The built CLI (apps/cli/dist/chordinal.mjs, `node tools/build.mjs`) end to end, in temporary folders: `render` on
-// a tiny soundtrack (test/cli/fixtures/songs.js), and `compose --project` then `export` of that project. Each starts
+// a tiny soundtrack (test/cli/fixtures/soundtrack.json, two project folders), and `compose --project` then `export` of that project. Each starts
 // the CLI's hidden render browser, which the CLI ends.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -33,8 +33,8 @@ test('help lists the commands, and a command explains itself', ()=>
     {
         const help = cli(dir, 'help');
         for (const c of ['compose', 'export', 'render']) assert.match(help, new RegExp(`\\b${c}\\b`));
-        assert.match(cli(dir, 'render', '--help'), /usage: chordinal render <songs\.js> <folder>/);
-        const bad = spawnSync(process.execPath, [CLI, 'render', 'x.js', 'out', '--library', 'nope'], { cwd: dir, encoding: 'utf8' });
+        assert.match(cli(dir, 'render', '--help'), /usage: chordinal render <soundtrack\.json> <folder>/);
+        const bad = spawnSync(process.execPath, [CLI, 'render', 'x.json', 'out', '--library', 'nope'], { cwd: dir, encoding: 'utf8' });
         assert.equal(bad.status, 2);
         assert.match(bad.stderr, /no SoundFont library nope; the libraries are generaluser/);
     }
@@ -48,9 +48,9 @@ test('render: a looping and a one-shot track to mp3s and the tracks-data file', 
     {
         const data = path.join('src', 'tracks-data.js');
         fs.mkdirSync(path.join(dir, 'src'));
-        // an entry from an earlier render, for a track no longer in the songs file, drops out
+        // an entry from an earlier render, for a track no longer in the soundtrack file, drops out
         fs.writeFileSync(path.join(dir, data), 'export const TRACKS = {"gone": {"file": "music/gone.mp3"}};\n');
-        const out = cli(dir, 'render', path.join(FIXTURES, 'songs.js'), 'music', '--data', data);
+        const out = cli(dir, 'render', path.join(FIXTURES, 'soundtrack.json'), 'music', '--data', data);
         assert.match(out, /^loop: "Test Loop", [\d.]+ s in \d+ s, gain -?[\d.]+ dB, [\d.]+ MB$/m);
         assert.match(out, /^sting: decodes \d+ frames \([+-]\d+\), first sound [+-]\d+ frames from where it was rendered$/m);
 

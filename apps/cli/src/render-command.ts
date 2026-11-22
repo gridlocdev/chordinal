@@ -1,20 +1,18 @@
-// chordinal render: renders a game's soundtrack. Each track of a songs file is composed here in Node, its project
-// played offline in the hidden render browser as the app's Export as Audio File plays it, then cut to its loop, its
+// chordinal render: renders a game's soundtrack. Each track of a soundtrack file is a project folder, played offline
+// in the hidden render browser as the app's Export as Audio File plays it, then cut to its loop, its
 // seam crossfaded and its loudness set here, and encoded to <folder>/<id>.mp3 by ffmpeg. Then every mp3 is decoded
 // as the browser decodes it, to check it still lines up with the render, so the loop points land where they should.
 // --data writes the game's tracks-data file: where the beats, loop and bar lines fall in each file.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { compose, toProject } from '@chordinal/composer';
-import { writeProject } from '@chordinal/daw';
+import { readProject, writeProject } from '@chordinal/daw';
 import { parseArgs, UsageError } from './args.ts';
 import { openBrowser } from './browser.ts';
 import { encodeMp3, libraryOption, needFfmpeg, secondsSince } from './command.ts';
 import type { Command } from './command.ts';
-import { soundtrackOf } from './songs-file.ts';
-import type { SoundtrackTrack } from './songs-file.ts';
+import { scoreOfProject, soundtrackOf } from './soundtrack-file.ts';
+import type { SoundtrackTrack } from './soundtrack-file.ts';
 import {
   TAIL,
   checkLoop,
@@ -62,16 +60,16 @@ const signed = (n: number): string => `${n >= 0 ? '+' : ''}${n}`;
 
 export const renderCommand: Command = {
   name: 'render',
-  summary: "render a game's soundtrack (a songs file) to mp3s, and its tracks-data file",
-  usage: '<songs.js> <folder> [track id…] [--data <tracks-data.js>] [--bitrate 160k] [--library <id>]',
+  summary: "render a game's soundtrack (project folders) to mp3s, and its tracks-data file",
+  usage: '<soundtrack.json> <folder> [track id…] [--data <tracks-data.js>] [--bitrate 160k] [--library <id>]',
   options: { data: 'value', bitrate: 'value', library: 'value' },
   help: [
-    "Renders a game's soundtrack to <folder>/<id>.mp3, one file per track of the songs file, or only the tracks named.",
-    'The songs file is a module whose TRACKS lists them: { id, spec, loop?, trim?, shape?, ...extra }, with spec a',
-    'song spec for the composer, loop the sections a looping track repeats as [first, end) indexes into its form (the',
-    'section at end must be the same type as the one at first), trim to start the file at the loop, and shape(score)',
-    'to change the composed notes before they are played. Every track is brought to the same loudness, a looping one',
-    "is cut just after its loop's end with its seam crossfaded, and each mp3 is checked to decode in step with its render.",
+    "Renders a game's soundtrack to <folder>/<id>.mp3, one file per track of the soundtrack file, or only the tracks named.",
+    'The soundtrack file is JSON: { "tracks": [{ id, project, loop?, trim?, ...extra }] }, with project a project',
+    'folder (relative to the file), loop the sections a looping track repeats as [first, end) indexes into its markers',
+    '(the marker at end must have the same meta.type as the one at first), and trim to start the file at the loop.',
+    "Every track is brought to the same loudness, a looping one is cut just after its loop's end with its seam",
+    'crossfaded, and each mp3 is checked to decode in step with its render.',
     '',
     '  --data <file>     write the tracks-data file the game reads: export const TRACKS = { <id>: { file, title, tempo,',
     '                    beatsPerBar, offset, end, seconds, frames, rate, loop, bars?, ...extra } }, keeping entries',
@@ -83,14 +81,21 @@ export const renderCommand: Command = {
   ].join('\n'),
   async run(argv) {
     const args = parseArgs(argv, this.options);
-    const [songsFile, folder, ...ids] = args.positional;
-    if (!songsFile || !folder) throw new UsageError('name the songs file and the folder the mp3s go in');
+    const [soundtrackFile, folder, ...ids] = args.positional;
+    if (!soundtrackFile || !folder)
+      throw new UsageError('name the soundtrack file and the folder the mp3s go in');
     const library = libraryOption(args.values.library);
     const bitrate = args.values.bitrate ?? BITRATE;
     const dataFile = args.values.data;
     needFfmpeg('render');
 
-    const all = soundtrackOf(await import(pathToFileURL(path.resolve(songsFile)).href), songsFile);
+    const all = soundtrackOf(JSON.parse(fs.readFileSync(soundtrackFile, 'utf8')), soundtrackFile);
+    const projectOf = (t: SoundtrackTrack) => {
+      const file = path.join(path.dirname(soundtrackFile), t.project, 'project.json');
+      if (!fs.existsSync(file))
+        throw new Error(`${t.id}: ${t.project} isn't a project folder: it has no project.json`);
+      return readProject(fs.readFileSync(file, 'utf8'));
+    };
     const todo = pickTracks(all, ids);
     fs.mkdirSync(folder, { recursive: true });
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'chordinal-render-'));
@@ -99,12 +104,11 @@ export const renderCommand: Command = {
     try {
       for (const track of todo) {
         const started = Date.now();
-        // composed here: the composer is pure. The page only plays the project
-        const score = compose(track.spec);
-        track.shape?.(score);
+        const read = projectOf(track);
+        const score = scoreOfProject(read);
         if (track.loop) checkLoop(track.id, score, track.loop);
         const timing = timingOf(score, track.loop, track.trim);
-        const project = writeProject({ ...toProject(score), loop: null });
+        const project = writeProject({ ...read, loop: null });
         const { channels, rate, leadIn } = await browser.play(project, score.beats, TAIL);
 
         const chans = cutRender(channels, rate, leadIn, timing);

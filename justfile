@@ -41,7 +41,7 @@ run-desktop-watch: build _dev-app
 preview-web: build
     node tools/serve-web.mjs
 
-# Another repo runs it as: just -f <chordinal>/justfile cli render tools/music/songs.js music --data src/audio/tracks-data.js
+# Another repo runs it as: just -f <chordinal>/justfile cli render music/soundtrack.json music --data src/audio/tracks-data.js
 # Run the chordinal CLI (`just cli help` lists its commands; paths resolve from where you run it; quoting is kept).
 [group('run')]
 [no-cd]

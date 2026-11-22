@@ -18,3 +18,4 @@ docs
 *.mjs
 *.cjs
 packages/audio/src/soundfont-catalog-data.ts
+test/cli/fixtures/*/project.json

@@ -79,11 +79,11 @@ just export --library fluidr3                 # on another SoundFont library
 just cli export path/to/project --out out     # any project folder, into out/
 ```
 
-`render` renders a game's soundtrack. It takes a songs file, a JavaScript module whose `TRACKS` lists `{ id, spec, loop?, trim?, shape? }` (a spec as in [composing.md](composing.md#12-the-song-spec-writing-a-song); `loop: [first, end]` names the sections the loop runs between, `trim` starts the file at the loop, `shape(score)` changes the score before it's rendered; any other field is copied to the data file as it is), and a folder for the mp3s. Each track is composed, rendered at 44100 Hz, cut 0.05 s before its first beat (and just after its loop's end, crossfaded at the seam), brought to −20 dB RMS (peaks at most −1 dB) and encoded by ffmpeg (160 kbps, or `--bitrate`). Each mp3 is then decoded again to check it lines up with the render. With `--data <file>` it writes the tracks' timing for the game (file, tempo, offset, loop points or end, bar lines, length, rate), keeping the entries of tracks not rendered this time; name tracks after the folder to render only those. Comet, Little Lantern and Blast Complex use it from their own justfiles:
+`render` renders a game's soundtrack. It takes a soundtrack file, JSON whose `tracks` lists `{ id, project, loop?, trim? }` (`project` is a project folder, relative to the file; `loop: [first, end]` names the markers the loop runs between, and the marker at `end` must have the same `meta.type` as the one at `first`; `trim` starts the file at the loop; any other field is copied to the data file as it is), and a folder for the mp3s. Each project is rendered at 44100 Hz, cut 0.05 s before its first beat (and just after its loop's end, crossfaded at the seam), brought to −20 dB RMS (peaks at most −1 dB) and encoded by ffmpeg (160 kbps, or `--bitrate`). Each mp3 is then decoded again to check it lines up with the render. With `--data <file>` it writes the tracks' timing for the game (file, tempo, offset, loop points or end, bar lines, length, rate), keeping the entries of tracks not rendered this time; name tracks after the folder to render only those:
 
 ```bash
-just -f path/to/chordinal/justfile cli render tools/music/songs.js music --data src/audio/tracks-data.js
-just -f path/to/chordinal/justfile cli render tools/music/songs.js music title --data src/audio/tracks-data.js   # one track
+just -f path/to/chordinal/justfile cli render music/soundtrack.json music --data src/audio/tracks-data.js
+just -f path/to/chordinal/justfile cli render music/soundtrack.json music title --data src/audio/tracks-data.js   # one track
 ```
 
 `just harmony` (`tools/harmony-report.mjs`) checks that songs don't all share the same chords. It

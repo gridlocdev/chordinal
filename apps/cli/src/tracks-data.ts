@@ -24,7 +24,7 @@ export interface TrackEntry extends Omit<TrackInfo, 'bars'> {
   [extra: string]: unknown;
 }
 
-/** a track of the soundtrack, as the writer needs it: its id, and the fields of its entry in the songs file that the game reads */
+/** a track of the soundtrack, as the writer needs it: its id, and the fields of its entry in the soundtrack file that the game reads */
 export interface DataTrack {
   id: string;
   extra: Record<string, unknown>;
@@ -35,7 +35,7 @@ const HEADER = `// The soundtrack: one entry per track, keyed by its id. Written
 // and end is where the last bar ends (a one-shot's reverb rings on after it; null for a looping track). loop is the
 // part a looping track repeats, start and end on bar lines; null plays once. frames at rate is the file's exact
 // length, for checking a decoder trimmed the mp3's encoder delay. bars, when the meter changes, lists every bar line
-// (seconds into the file) up to the loop's end. Any other field is copied from the track's entry in the songs file.
+// (seconds into the file) up to the loop's end. Any other field is copied from the track's entry in the soundtrack file.
 `;
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
@@ -103,8 +103,8 @@ export function readTracksData(text: string): Map<string, TrackInfo> {
 }
 
 /**
- * The file's text: an entry for each track in `tracks` (the songs file's order) that was rendered now (`fresh`) or
- * before (`old`), its `file` from `fileOf`, and its extra fields copied in. Tracks no longer in the songs file drop out.
+ * The file's text: an entry for each track in `tracks` (the soundtrack file's order) that was rendered now (`fresh`) or
+ * before (`old`), its `file` from `fileOf`, and its extra fields copied in. Tracks no longer in the soundtrack file drop out.
  */
 export function writeTracksData(
   tracks: readonly DataTrack[],
