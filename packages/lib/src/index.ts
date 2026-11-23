@@ -34,7 +34,7 @@ export type {
 } from './chord-guess.ts';
 export { reverbImpulse } from './impulse.ts';
 export type { ImpulseOptions } from './impulse.ts';
-export { readMidi, varLen, writeMidi } from './midi-file.ts';
+export { readMidi, shareSpareChannels, varLen, writeMidi } from './midi-file.ts';
 export type { MidiFile, MidiMeter, MidiNote, MidiSong, MidiTempo, MidiTrack } from './midi-file.ts';
 export {
   MODES,

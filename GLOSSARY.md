@@ -19,7 +19,11 @@ A stretch of **notes** on a **track**, with a start and a length. It can be mute
 _Avoid_: region, block, segment
 
 **Note**:
-One pitch in a **clip**: where it starts (from the clip's start), how long it lasts, its key and its velocity.
+One pitch in a **clip**: where it starts (from the clip's start), how long it lasts, its key and its velocity, and optionally its **detune**.
+
+**Detune**:
+How far a **note** is tuned off its key, in cents (100 to a semitone). A MIDI export writes it as pitch bend.
+_Avoid_: microtone, pitch offset
 
 **Pattern**:
 A named set of linked **clips** that share their **notes**, length and **step**: editing one edits them all. **Make Unique** turns a clip back into an ordinary one.

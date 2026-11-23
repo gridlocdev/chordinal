@@ -1,4 +1,5 @@
 // The pitch moves a voice makes on top of its note. Each drives the sample's detune (cents), so they add up:
+//   detune   the whole note off its key, under the rest: a microtone, a just-tuned chord tone
 //   vibrato  a wobble that fades in after the note starts, as a player lets it in
 //   scoop    start off pitch and slide onto it (the +1 trick; an octave riser; a chip zap from above)
 //   arp      a tracker arpeggio: the pitch steps through a chord every few frames, one voice faking a chord
@@ -13,9 +14,16 @@ export function startPitchMoves(
   ctx: BaseAudioContext,
   detune: AudioParam,
   t: number,
-  { vibrato, scoop, arp, fall }: PitchMoves = {},
+  { detune: cents, vibrato, scoop, arp, fall }: PitchMoves = {},
 ): () => void {
-  const running: OscillatorNode[] = [];
+  const running: (OscillatorNode | ConstantSourceNode)[] = [];
+  // a source of its own, so a scoop or a slide that sets the detune itself still lands this far off the key
+  if (typeof cents === 'number' && Number.isFinite(cents) && cents) {
+    const base = new ConstantSourceNode(ctx, { offset: cents });
+    base.connect(detune);
+    base.start(t);
+    running.push(base);
+  }
   if (vibrato) {
     const lfo = new OscillatorNode(ctx, { frequency: vibrato.rate });
     const depth = new GainNode(ctx, { gain: 0 });

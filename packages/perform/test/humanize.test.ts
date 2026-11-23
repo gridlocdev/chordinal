@@ -82,3 +82,25 @@ test('a pocket puts the chords and the snare behind the beat, and the kick holds
   assert.ok(Math.abs(late('drums', (k) => k === DRUM_KEYS.snare) - pocket.snare) < 2, 'the snare lies back');
   assert.ok(Math.abs(late('drums', (k) => k === DRUM_KEYS.kick)) < 1, 'the kick holds the grid');
 });
+
+test("a note's detune plays through Humanize, on the note and nowhere else", () => {
+  const p = project();
+  const keys = p.tracks.find((t) => t.id === 'keys')!;
+  const clip = keys.clips[0]!;
+  const tuned = {
+    ...p,
+    tracks: p.tracks.map((t) =>
+      t === keys
+        ? {
+            ...t,
+            clips: [{ ...clip, notes: clip.notes.map((n, i) => (i === 4 ? { ...n, detune: -13.7 } : n)) }],
+          }
+        : t,
+    ),
+  };
+  const out = (humanizeFx.perform(tuned, 0).notes.get('keys') ?? []).filter((n) => !n.ghost && !n.candy);
+  assert.deepEqual(
+    out.filter((n) => n.detune).map((n) => n.detune),
+    [-13.7],
+  );
+});

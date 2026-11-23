@@ -77,6 +77,43 @@ test('a written file reads back the same', () => {
   assert.deepEqual(back.tracks, song.tracks);
 });
 
+test('tuned notes are pitch bends: a chord tuned three ways takes three channels, and reads back tuned', () => {
+  const chord = [
+    { key: 60, beat: 0, beats: 4, vel: 80 },
+    { key: 64, beat: 0, beats: 4, vel: 80, cents: -13.7 },
+    { key: 67, beat: 0, beats: 4, vel: 80, cents: 2 },
+    { key: 70, beat: 4, beats: 4, vel: 80, cents: -31.2 },
+  ];
+  const back = readMidi(
+    writeMidi({
+      tempo: 120,
+      beatsPerBar: 4,
+      tracks: [{ name: 'Pad', channel: 0, program: 89, notes: chord, channels: [1, 2] }],
+    }),
+  );
+  assert.deepEqual(
+    back.tracks.map((t) => [t.channel, t.program, t.notes.map((n) => [n.key, n.cents ?? 0])]),
+    [
+      [
+        0,
+        89,
+        [
+          [60, 0],
+          [70, -31.2],
+        ],
+      ], // once the chord has ended, the first channel is free to bend again
+      [1, 89, [[64, -13.7]]],
+      [2, 89, [[67, 2]]],
+    ],
+  );
+});
+
+test('a track with no tuned notes writes no bends or extra channels', () => {
+  const plain = { name: 'Lead', channel: 0, program: 0, notes: [{ key: 60, beat: 0, beats: 1, vel: 90 }] };
+  const song = { tempo: 120, beatsPerBar: 4, tracks: [plain] };
+  assert.deepEqual(writeMidi({ ...song, tracks: [{ ...plain, channels: [1, 2] }] }), writeMidi(song));
+});
+
 test('a format 0 file: channels split into tracks, running status, note-on at velocity 0 as note-off', () => {
   const bytes = new Uint8Array([
     ...[0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 0, 96],

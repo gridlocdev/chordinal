@@ -16,6 +16,8 @@ Each track's header in the arrangement has its mute, solo and a volume knob: dou
 
 A track can have a **Humanize** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round a loop is a little different. Your own edits are played the same way.
 
+A note can be tuned off its key by a number of cents, written in the project file. It plays that way and stays under the note's other pitch moves (vibrato, scoops, slides).
+
 ## MIDI effects
 
 A track's MIDI effects change its notes as they play, without changing the notes saved. Each mixer strip lists its track's effects above the pan: pick one from **+ MIDI FX** to add it, click its power button to bypass it, and click **×** to remove it. Right-click an effect in the desktop app to move it up or down the list.
@@ -82,4 +84,4 @@ You can also sing, hum or whistle a melody into the microphone instead, vibrato 
 
 ## Importing and exporting
 
-Import a MIDI file as a new project from the File menu, or drop one on a track to add its tracks from that bar. Export the whole project, the loop or the selection as audio (the mix, or each track as its own WAV, normalized if you like) or as MIDI.
+Import a MIDI file as a new project from the File menu, or drop one on a track to add its tracks from that bar. Export the whole project, the loop or the selection as audio (the mix, or each track as its own WAV, normalized if you like) or as MIDI. A MIDI export writes a note's own tuning as pitch bend, giving tuned notes that overlap on one track channels of their own.

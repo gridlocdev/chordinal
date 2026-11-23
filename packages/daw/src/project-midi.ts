@@ -2,7 +2,7 @@
 // program (drum kits on channel 10), the tempo map's changes and the meters. Ramps become their starting tempo, and
 // what MIDI FX add as the project plays isn't in it. And back: a MIDI file read as a new project, or as tracks added to
 // one. Pure.
-import { writeMidi, readMidi } from '@chordinal/lib';
+import { writeMidi, readMidi, shareSpareChannels } from '@chordinal/lib';
 import type { MidiFile } from '@chordinal/lib';
 import { barAt } from './meter.ts';
 import { trackNotes, isDrums, emptyProject, makeTrack, addTrack, newId, projectEnd } from './project.ts';
@@ -17,9 +17,14 @@ export function projectMidi(p: Project): Uint8Array {
       name: t.name,
       channel: ch < 9 || drums ? ch : ch + 1,
       program: drums ? 0 : t.instrument.program,
-      notes: trackNotes(t),
+      // a note's detune mark is its tuning, written as pitch bend
+      notes: trackNotes(t).map(({ detune, ...n }) => ({
+        ...n,
+        ...(typeof detune === 'number' && detune && { cents: detune }),
+      })),
     };
   });
+  shareSpareChannels(tracks);
   const meters = p.meters.map((m) => {
     const [num = NaN, den = NaN] = m.sig.split('/').map(Number);
     return { beat: m.beat, num, den };

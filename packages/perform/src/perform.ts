@@ -25,6 +25,7 @@ import type { Candy } from './ear-candy.ts';
  *   the quick notes of a trill, turn, mordent or grace note, before the note it decorates
  *   vibrato: marked `~` in a hand-written melody; the performance gives it vibrato
  *   written: an ornamented note's own beat, before the ornament took the start of it
+ *   detune: cents off the key, played under every other pitch move (a microtone, a just-tuned 3rd)
  */
 export interface ScoreNote {
   key: number;
@@ -36,6 +37,7 @@ export interface ScoreNote {
   ornament?: boolean;
   vibrato?: true;
   written?: number;
+  detune?: number;
 }
 
 /** the style knobs a performance reads (0..1, swell a multiplier); vibrato is a whistled take's own */
@@ -422,7 +424,13 @@ export function swungNotes(
   notes: readonly ScoreNote[],
   score: Pick<PerformScore, 'swing' | 'swingSub' | 'sections'>,
 ): ScoreNote[] {
-  const out = notes.map((n) => ({ key: n.key, beat: n.beat, beats: n.beats, vel: n.vel }));
+  const out = notes.map((n) => ({
+    key: n.key,
+    beat: n.beat,
+    beats: n.beats,
+    vel: n.vel,
+    ...(n.detune && { detune: n.detune }),
+  }));
   if (score.swing) swing(out, score, (beat) => sectionOf(score.sections, beat));
   return out;
 }
