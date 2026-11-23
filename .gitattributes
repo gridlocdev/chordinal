@@ -1,0 +1,2 @@
+# keep LF in every checkout: the project fixtures are read and written back byte for byte, and Windows would turn them into CRLF
+* text=auto eol=lf

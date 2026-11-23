@@ -10,7 +10,7 @@ test('plain modules never import a view, so commands and state load without the 
   const wrong = SOURCES.flatMap((dir) =>
     fs
       .readdirSync(path.join(ROOT, dir), { recursive: true, encoding: 'utf8' })
-      .filter((f) => /\.ts$/.test(f) && f !== 'components/index.ts')
+      .filter((f) => /\.ts$/.test(f) && f.split(path.sep).join('/') !== 'components/index.ts')
       .map((f) => path.join(dir, f)),
   ).filter((f) =>
     /from '([^']+\.tsx|@chordinal\/ui\/components)'/.test(fs.readFileSync(path.join(ROOT, f), 'utf8')),

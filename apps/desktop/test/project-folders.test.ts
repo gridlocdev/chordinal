@@ -16,8 +16,10 @@ async function scratch(fn: (root: string, folders: ProjectFolders) => Promise<vo
 }
 
 test('a picked project.json names its folder', () => {
-  assert.equal(folderOf('/a/Song/project.json'), '/a/Song');
-  assert.equal(folderOf('/a/Song'), '/a/Song');
+  // resolved, so on Windows it is the current drive's D:\a\Song
+  const song = path.resolve('/a/Song');
+  assert.equal(folderOf('/a/Song/project.json'), song);
+  assert.equal(folderOf('/a/Song'), song);
 });
 
 test('a folder the user never picked and that is not recent cannot be read or written', () =>
