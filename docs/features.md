@@ -18,7 +18,7 @@ A track can have a **Humanize** effect that adds ghost notes, swing, timing and 
 
 ## MIDI effects
 
-A track's MIDI effects change its notes as they play, without changing the notes saved. Each mixer strip lists its track's effects above the pan: pick one from **+ FX** to add it, click its power button to bypass it, and click **×** to remove it. Right-click an effect in the desktop app to move it up or down the list.
+A track's MIDI effects change its notes as they play, without changing the notes saved. Each mixer strip lists its track's effects above the pan: pick one from **+ MIDI FX** to add it, click its power button to bypass it, and click **×** to remove it. Right-click an effect in the desktop app to move it up or down the list.
 
 - **Scale** moves every note outside the project's key to the nearest note in it, down when two are as near. With no key set, it leaves the notes alone.
 - **Chord** plays a chord over every note. Pick its shape under its name: **In Key** builds the chord from the project's key on that note, so one finger plays the key's chords, and the others (**Major**, **Minor**, **7th**, **Major 7th**, **Minor 7th**, **Sus2**, **Sus4**, **Power**) are the same shape on every note. In the desktop app, its right-click menu moves the added notes an octave up or down.
@@ -42,11 +42,33 @@ Make a clip a **pattern** and its copies stay linked: edit one, in the step grid
 
 Every track has mute, solo, a fader and pan. Put any instrument from the libraries on any track: click it in the browser, or drag it onto the track. The libraries are listed in [Credits](credits.md).
 
+## Track effects
+
+A track's audio effects change how it sounds. Each mixer strip lists them above its MIDI effects: pick one from **+ Effect** to add it at the end of the list, click its power button to bypass it, click **×** to remove it, and drag it up or down to change the order. Sound goes through them top to bottom, after the track's tone and before its fader.
+
+Click an effect's name to open its settings beside the strips: a slider for each setting, or a dropdown for one with named values, with the value in its units next to it. Double-click a slider to put it back to its starting value, or click **Reset** for all of them. Right-clicking an effect shows the same actions. Every change can be undone, and a slider's drag is one step.
+
+- **EQ**: low and high shelves and a mid band, each with its frequency.
+- **Compressor**: threshold, ratio, attack, release and makeup gain.
+- **Filter**: low, high or band pass, with cutoff and resonance.
+- **Distortion**: drive, tone, output level and mix.
+- **Chorus** and **Flanger**: short delays swept by a slow wave, with rate, depth and mix (and feedback on the flanger).
+- **Phaser**: a sweep of notches, with rate, depth, feedback and mix.
+- **Delay**: echoes timed to the tempo (from 1/16 to a half note, some dotted or triplet), with feedback, tone and mix.
+- **Reverb**: its own room, with size, decay, tone and mix, on top of the track's reverb send.
+- **Tremolo**: the volume pulses at a rate timed to the tempo, with depth and a smooth or square shape.
+- **Bitcrusher**: fewer bits and a lower sample rate, for a lo-fi or chip sound.
+- **Limiter**: turns the track up and keeps its peaks under a ceiling.
+- **Stereo Width**: from mono to twice as wide.
+- **Gain**: turns the track up or down by up to 24 dB.
+
+Play and the WAV and MP3 exports go through the effects, and Delay and Tremolo follow tempo changes. Live playing on the keys doesn't go through them yet.
+
 ## Automation
 
-A track's volume, pan, tone and reverb and delay sends can change as the song plays: a fade-out, a filter sweep, a pan from left to right. **Track ▸ Show Automation** (`A`, or **Show Automation** in a track's right-click menu) opens the track's automation lane under its row, and the dropdown at its left picks the value it shows; a value that has points has a dot after its name. Click the lane to add a point and drag it into place, drag a point to move it, and double-click one to delete it. Points snap to the beat; hold `Shift` to place one between beats. Right-click a point for its curve into it (**Step**, **Linear**, or **Exponential** for tone), or right-click the lane to clear it. The value under the cursor shows next to the dropdown. Each edit can be undone, Play and the WAV and MP3 exports play the lane, and inserting or deleting bars moves the points with the clips.
+A track's volume, pan, tone, reverb and delay sends and the settings of its [effects](#track-effects) can change as the song plays: a fade-out, a filter sweep, a pan from left to right. **Track ▸ Show Automation** (`A`, or **Show Automation** in a track's right-click menu) opens the track's automation lane under its row, and the dropdown at its left picks the value it shows; a value that has points has a dot after its name. Click the lane to add a point and drag it into place, drag a point to move it, and double-click one to delete it. Points snap to the beat; hold `Shift` to place one between beats. Right-click a point for its curve into it (**Step**, **Linear**, or **Exponential** for tone), or right-click the lane to clear it. The value under the cursor shows next to the dropdown. Each edit can be undone, Play and the WAV and MP3 exports play the lane, and inserting or deleting bars moves the points with the clips.
 
-A volume lane sets a gain on top of the track's fader, from silence up to +6 dB. A pan lane takes over from the mixer's pan while it has points (auto-pan still sways around it). Tone is a low-pass filter from 80 Hz to 20 kHz. Lanes belong to the track, not to its clips, so moving a clip leaves them where they are.
+A volume lane sets a gain on top of the track's fader, from silence up to +6 dB. A pan lane takes over from the mixer's pan while it has points (auto-pan still sways around it). Tone is a low-pass filter from 80 Hz to 20 kHz. An effect's lane is named after the effect (**Filter Cutoff**, or **Filter 2 Cutoff** when the track has two) and uses the setting's own range and units; it replaces the setting while it has points, and removing the effect removes its lanes. Settings picked from a dropdown, and Reverb's size and decay, can't be automated. Lanes belong to the track, not to its clips, so moving a clip leaves them where they are.
 
 ## Playing it like an instrument
 

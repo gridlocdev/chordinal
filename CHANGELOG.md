@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### What's new
+
+- **Track effects.** Each mixer strip lists its track's audio effects, with **+ Effect** to add **EQ**, **Compressor**, **Filter**, **Distortion**, **Chorus**, **Delay**, **Reverb**, **Phaser**, **Flanger**, **Tremolo**, **Bitcrusher**, **Limiter**, **Stereo Width** or **Gain**. Click an effect's name for its settings panel, with a slider or dropdown for each setting (double-click a slider for its starting value). Bypass, remove or drag an effect to reorder it in the strip, or right-click it for the same. Delay and Tremolo follow the tempo. Play and the WAV and MP3 exports go through them, and every change can be undone.
+- **Automate an effect.** An effect's settings show up in the track's automation lane dropdown, so a filter can sweep or a delay can fade in as the song plays.
+
+### Improvements
+
+- **+ FX** in a mixer strip is now **+ MIDI FX**, so it isn't mixed up with **+ Effect**.
+
 ## 1.1.0
 
 ### What's new

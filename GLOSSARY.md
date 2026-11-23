@@ -67,10 +67,14 @@ _Avoid_: drum grid, sequencer
 One column of the **step grid**, a fixed length such as a sixteenth note.
 
 **Mixer**:
-The editor tab with each **track's** fader, pan, mute, solo and sends.
+The editor tab with each **track's** fader, pan, mute, solo, sends and **effects**.
+
+**Effect**:
+One step in a **track's** list of audio effects in its mixer strip, such as EQ, Reverb or Delay, that changes how the track sounds; its settings are set in its panel and can be **automated**. `Insert` in the code.
+_Avoid_: plugin, insert, FX (that's a **MIDI effect**)
 
 **Automation lane**:
-A row under a **track** in the **arrangement** where one of its values (volume, pan, tone, or a reverb or delay send) is drawn as a line through points, and moves that way as it plays. `Automation` and `Keyframe` in the code.
+A row under a **track** in the **arrangement** where one of its values (volume, pan, tone, a reverb or delay send, or a setting of one of its **effects**) is drawn as a line through points, and moves that way as it plays. `Automation` and `Keyframe` in the code.
 _Avoid_: envelope, automation curve, keyframe track
 
 **Command menu**:
@@ -96,8 +100,8 @@ A **track's** **MIDI effect** that adds ghost notes, swing, timing and ornaments
 _Avoid_: groove, randomize
 
 **MIDI effect**:
-One step in a **track's** list of effects that change its **notes** as they play: **Scale**, **Chord**, **Arpeggiator** or **Humanize**. The notes saved stay as written. `TrackFx` in the code, `MIDI FX` in the developer docs.
-_Avoid_: plugin, insert
+One step in a **track's** list of effects that change its **notes** as they play: **Scale**, **Chord**, **Arpeggiator** or **Humanize**. The notes saved stay as written. `TrackFx` in the code, **+ MIDI FX** in the strip.
+_Avoid_: plugin, insert, effect (that's an audio **effect**)
 
 **Metronome**:
 The click that plays on each beat while playing or recording (**♩**).
