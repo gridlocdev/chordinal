@@ -1,12 +1,12 @@
 # Chordinal
 
-I built Chordinal to make it easier to create music for the games I make. It's a small DAW for making music by hand, with a sketchpad that turns a melody you record into notes.
+I built Chordinal to make it easier to create music for the games I make. It's a small, general-purpose DAW: you write songs by hand in a step grid and a piano roll, and mix them with free instruments.
 
 ![The Warden boss fight open in the app: the transport across the top, the browser on the left, the arrangement with a row per track (melody muted), and the melody's piano roll at the bottom with its chords above](docs/images/daw.webp)
 
 - **Edits and mixes like a DAW.** A step grid, a piano roll, linked patterns and a mixer, with any instrument from three free sound libraries on any track.
 - **Plays like a band.** Each track's **Humanize** effect adds ghost notes, swing, timing and ornaments as it plays, so every pass round a loop is a little different.
-- **Turns recordings into notes.** Record a melody from the microphone onto any track, or a chord onto the chord track, and fix the notes in the piano roll.
+- **Works with what you have.** Play parts in on your computer keys or a MIDI keyboard, import MIDI files, and export the song as WAV or MIDI.
 
 ## Getting started
 

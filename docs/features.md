@@ -1,6 +1,6 @@
 # Features
 
-**Chordinal** is a DAW laid out like one (a transport, a browser, an arrangement, a step grid, a piano roll and a mixer), in a dark or a light theme, where you make music by hand and turn melodies you record into notes.
+**Chordinal** is a DAW laid out like one (a transport, a browser, an arrangement, a step grid, a piano roll and a mixer), in a dark or a light theme, for writing and arranging songs by hand.
 
 ## Projects
 
@@ -26,12 +26,6 @@ The **Step Grid** tab edits a drum clip as rows of drum sounds and columns of st
 
 Make a clip a **pattern** and its copies stay linked: edit one, in the step grid or the piano roll, and every copy changes. A linked clip shows `⧉` and the pattern's name. **Make Unique** turns one copy back into an ordinary clip, and splitting or joining a copy does the same to the pieces.
 
-## Recording
-
-**Track ▸ Record Melody** (or **●**, or `R`) and sing, hum or play a melody into the microphone over a click onto any track, vibrato included. It reads one clear line at a time in a high register (about 300 to 4,000 Hz). Or play it on the letter keys or a MIDI keyboard during the take, with no microphone needed: the notes go into the clip the take starts in (the selected one first, so every clip of its pattern gets them, growing it to fit), or into a new clip if there's none. The notes appear in the piano roll as you play, and when you stop, the playhead goes back to the start of the clip they went into. Pick a stretch of the chord track and sound the chord's notes one at a time (**Transport ▸ Record a Chord**) to set the chord there.
-
-A saved project keeps its takes in its folder's `takes/`, listed in the browser's **Takes** tab to read onto a track again, and an audio file dropped on a track is read the same way.
-
 ## Mixing
 
 Every track has mute, solo, a fader and pan. Put any instrument from the libraries on any track: click it in the browser, or drag it onto the track. The libraries are listed in [Credits](credits.md).
@@ -39,6 +33,12 @@ Every track has mute, solo, a fader and pan. Put any instrument from the librari
 ## Playing it like an instrument
 
 Your computer keys (once you click the piano roll) or a MIDI keyboard, with velocity and a sustain pedal, play the selected track's instrument. Clicking a key on the piano roll's keyboard plays it too, and the row of every key sounding lights up.
+
+## Recording
+
+**Track ▸ Record Melody** (or **●**, or `R`) records a take onto the selected track over a click. Play it on the letter keys or a MIDI keyboard: the notes go into the clip the take starts in (the selected one first, so every clip of its pattern gets them, growing it to fit), or into a new clip if there's none. The notes appear in the piano roll as you play, and when you stop, the playhead goes back to the start of the clip they went into.
+
+You can also sing, hum or whistle a melody into the microphone instead, vibrato included. Chordinal reads one clear line at a time in a high register (about 300 to 4,000 Hz) and turns it into notes to fix in the piano roll. A saved project keeps these takes in its folder's `takes/`, listed in the browser's **Takes** tab to read onto a track again, and an audio file dropped on a track is read the same way. Pick a stretch of the chord track and sound the chord's notes one at a time (**Transport ▸ Record a Chord**) to set the chord there.
 
 ## Importing and exporting
 

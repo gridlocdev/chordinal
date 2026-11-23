@@ -1,0 +1,115 @@
+# Chordinal glossary
+
+Chordinal is a general-purpose DAW for writing and arranging songs by hand. These are the words it uses for its own things.
+
+## Language
+
+### The song
+
+**Project**:
+A song and everything about it: its **tracks**, tempo, meter, **markers**, **chord track** and **loop**, saved as a folder holding a `project.json`.
+_Avoid_: song file, session, document
+
+**Track**:
+One row of the **arrangement**: an **instrument**, a mixer channel, its **Humanize** settings and the **clips** it plays. A track playing a drum **kit** is a drum track.
+_Avoid_: channel, part, lane
+
+**Clip**:
+A stretch of **notes** on a **track**, with a start and a length. It can be muted, split, joined and copied.
+_Avoid_: region, block, segment
+
+**Note**:
+One pitch in a **clip**: where it starts (from the clip's start), how long it lasts, its key and its velocity.
+
+**Pattern**:
+A named set of linked **clips** that share their **notes**, length and **step**: editing one edits them all. **Make Unique** turns a clip back into an ordinary one.
+_Avoid_: linked clip, ghost clip, instance
+
+**Chord track**:
+The row above the **tracks** that names the chord at each stretch of the **project**. It holds names, not sound.
+_Avoid_: chord lane, harmony track
+
+**Marker**:
+A named point in the **project**, such as the start of a verse. The stretch from one marker to the next is a section.
+
+**Loop**:
+The stretch of the **project** that plays over and over, set from the **selection**, a section or the ruler.
+_Avoid_: cycle, repeat
+
+### The window
+
+**Transport**:
+The row across the top: play, stop, record, the **metronome**, tempo and meter.
+
+**Browser**:
+The panel at the left with the **Instruments**, kits, projects and **takes** to pick from, each in its own tab.
+_Avoid_: library panel, sidebar, rack
+
+**Arrangement**:
+The middle of the window, where the **tracks** and their **clips** lie along a ruler of bars.
+_Avoid_: timeline, song view
+
+**Playhead**:
+The line in the **arrangement** where playing starts, and that moves as it plays.
+_Avoid_: cursor, position
+
+**Selection**:
+The **notes**, **clip** or chords picked for the next edit.
+
+**Piano roll**:
+The editor tab that shows a **clip's** notes as bars against a keyboard, for drawing and editing them.
+
+**Step grid**:
+The editor tab that shows a drum **clip** as rows of drum sounds and columns of **steps**.
+_Avoid_: drum grid, sequencer
+
+**Step**:
+One column of the **step grid**, a fixed length such as a sixteenth note.
+
+**Mixer**:
+The editor tab with each **track's** fader, pan, mute, solo and sends.
+
+**Command menu**:
+The search box (`⌘K` or `Ctrl+K`) that finds any command by name and runs it.
+_Avoid_: command palette
+
+### Sound
+
+**Instrument**:
+The sound a **track** plays: one preset from a **sound library**.
+_Avoid_: patch, preset, voice
+
+**Kit**:
+An **instrument** of drum sounds, one per key.
+_Avoid_: drum set, drum bank
+
+**Sound library**:
+One SoundFont file of **instruments**: GeneralUser GS comes with the app, and FluidR3_GM and MuseScore_General download from the **Instruments** tab. `SoundFont library` in the code and the developer docs.
+_Avoid_: bank, soundbank, sample pack
+
+**Humanize**:
+A **track's** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round the **loop** is a little different. It changes how the **notes** play, not the notes saved.
+_Avoid_: groove, randomize
+
+**Metronome**:
+The click that plays on each beat while playing or recording (**♩**).
+_Avoid_: click track
+
+### Recording
+
+**Take**:
+One recording onto a **track**, played on the keys, a MIDI keyboard or sung into the microphone. A saved **project** keeps its microphone takes in `takes/`.
+_Avoid_: recording, sketch
+
+## Relationships
+
+- A **Project** holds many **Tracks**, one **Chord track**, any number of **Markers** and at most one **Loop**.
+- A **Track** plays one **Instrument** and holds many **Clips**.
+- A **Clip** holds many **Notes** and belongs to at most one **Pattern**; a **Pattern** links one or more **Clips**.
+- An **Instrument** comes from one **Sound library**; a **Kit** is an **Instrument**.
+- A **Take** becomes the **Notes** of one **Clip**.
+
+## Flagged ambiguities
+
+- "Library" meant both a **Sound library** and the **Browser** that lists them. The panel is the **Browser**; a library is one SoundFont file of **instruments**.
+- "Sketch" was the name of the feature that reads microphone **takes** (the `sketch` package). In the app and the docs it is **Recording**, and a single recording is a **Take**.

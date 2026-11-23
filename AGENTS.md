@@ -14,3 +14,7 @@ This app follows the layered layout in `docs/architecture.md`. Read it before ad
 - `test/architecture.test.ts` checks the layers, the pure engine, the desktop bridge, the store, the key listeners, the command ids, named exports and type escapes; each failure says how to fix it. `any`, `@ts-ignore`, `@ts-expect-error` and `eslint-disable` are allowed only through `test/architecture-exceptions.json`, which the user approves.
 - Random-operation tests (`packages/daw/test/random-edits.test.ts`, `packages/ui/test/random-saving.test.ts`) print the seed of a failing run; replay it with `SEED=<n> npx vitest run <file>`. A seed that finds a bug becomes its own named test.
 - After changes run `just check` (prettier, eslint with the layer rules, tsc, the bundle and the tests).
+
+## Words
+
+Use the terms in [GLOSSARY.md](GLOSSARY.md) in code, docs and commit messages, and add a term there when a new concept appears.
