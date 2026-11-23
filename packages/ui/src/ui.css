@@ -1353,7 +1353,7 @@ input[type='range']::-moz-range-thumb {
 }
 .strip .fx-row {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) 14px;
+  grid-template-columns: 16px minmax(0, 1fr) 14px 14px;
   align-items: center;
   gap: 2px;
   font-size: 11px;
@@ -1382,7 +1382,10 @@ input[type='range']::-moz-range-thumb {
   text-overflow: ellipsis;
 }
 .strip .fx-row .setting {
-  grid-column: 1 / 4;
+  grid-column: 1 / 5;
+}
+.strip .fx-row .apply:disabled {
+  visibility: hidden;
 }
 .strip .fx select {
   width: 100%;

@@ -157,3 +157,25 @@ export const setTrackFx = (
     if (!fx || Object.entries(patch).every(([k, v]) => fx[k] === v)) return t;
     return { ...t, fx: t.fx.map((f, i) => (i === index ? { ...f, ...patch, type: f.type } : f)) };
   });
+
+/** Apply to Notes: writes the track's note effects that are on, up to and including the one at `index`, into its
+ * clips' notes, and takes them off the list, so the notes play as before and can be edited. Each clip is done on its
+ * own, so the copies of a pattern stay alike; notes past a clip's end, which don't play, are kept as they are. Not for
+ * Humanize or a bypassed effect: the project comes back as it is. */
+export function applyFxToNotes(p: Project, trackId: string, index: number): Project {
+  const on = (f: TrackFx) => isNoteFx(f.type) && f.bypass !== true;
+  const track = p.tracks.find((t) => t.id === trackId);
+  const fx = track?.fx[index];
+  if (!track || !fx || !on(fx)) return p;
+  const baked = { ...track, fx: track.fx.slice(0, index + 1).filter(on) };
+  return updateTrack(p, trackId, (t) => ({
+    ...t,
+    fx: t.fx.filter((f, i) => i > index || !on(f)),
+    clips: t.clips.map((c) => {
+      const plays = (n: Note) => n.beat >= -1e-9 && n.beat < c.beats - 1e-9;
+      const inside = c.notes.filter(plays);
+      const notes = applyNoteFx(inside, baked, p);
+      return notes === inside ? c : { ...c, notes: [...notes, ...c.notes.filter((n) => !plays(n))] };
+    }),
+  }));
+}

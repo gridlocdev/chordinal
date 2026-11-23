@@ -116,7 +116,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Move or resize a note | drag it, or drag its right edge |
 | Select notes | `Shift` click adds or removes one, `Shift` drag on empty space adds a rectangle of them |
 | Humanize, double or half speed, reverse, transpose, velocity, legato | right-click the notes or the clip |
-| Add, bypass or remove a MIDI effect; pick Chord's shape or the arpeggiator's rate, direction, octaves and gate | in the track's mixer strip: **+ FX**, its power button, **×**, the dropdowns under the effect's name; right-click the effect (desktop app) to move it or Chord's notes up or down |
+| Add, bypass or remove a MIDI effect; pick Chord's shape or the arpeggiator's rate, direction, octaves and gate | in the track's mixer strip: **+ FX**, its power button, **×**, the dropdowns under the effect's name; **↧** applies it to the notes; right-click the effect (desktop app) to move it or Chord's notes up or down |
 | Move or copy a clip | drag it; `Alt` drag copies it |
 | Split a clip where you clicked | right-click, **Split Here** |
 | Insert or delete bars, add a marker, change the tempo or meter from a bar on (a flag on the ruler shows each change) | right-click the ruler; right-click or double-click a flag to edit it, ramp to the next tempo, or remove it |

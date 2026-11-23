@@ -8,6 +8,8 @@ import {
   CHORD_SHAPES,
   SCALE_FX,
   addTrackFx,
+  applyFxToNotes,
+  isNoteFx,
   fxName,
   moveTrackFx,
   removeTrackFx,
@@ -65,6 +67,11 @@ export function fxLabel(fx: TrackFx): string {
 }
 
 export const addFx = (trackId: string, fx: TrackFx): void => edit((p) => addTrackFx(p, trackId, fx));
+/** Apply to Notes: the effect (and the note effects on before it) written into the clips, and taken off the list */
+export const applyFx = (trackId: string, index: number): void =>
+  edit((p) => applyFxToNotes(p, trackId, index));
+/** whether Apply to Notes can write the effect into the notes: a note effect that's on */
+export const canApply = (fx: TrackFx): boolean => isNoteFx(fx.type) && fx.bypass !== true;
 export const removeFx = (trackId: string, index: number): void =>
   edit((p) => removeTrackFx(p, trackId, index));
 export const setFx = (trackId: string, index: number, patch: Record<string, unknown>): void =>
@@ -118,6 +125,7 @@ export function fxMenu(trackId: string, index: number): void {
       run: () => edit((p) => moveTrackFx(p, trackId, index, 1)),
     },
     '-',
+    { label: 'Apply to Notes', enabled: canApply(fx), run: () => applyFx(trackId, index) },
     { label: `Remove ${fxName(fx.type)}`, run: () => edit((p) => removeTrackFx(p, trackId, index)) },
   ]);
 }

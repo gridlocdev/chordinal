@@ -11,6 +11,7 @@ export {
 export type { LaneId, LaneParam } from './automation.ts';
 export {
   addTrackFx,
+  applyFxToNotes,
   fxName,
   moveTrackFx,
   performProject,

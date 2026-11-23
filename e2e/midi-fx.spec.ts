@@ -1,5 +1,16 @@
 // A track's MIDI effects in the mixer strip: add, change, bypass and remove, saved with the project and undoable.
-import { expect, openApp, runCommand, saveAs, storedProject, test, watchErrors } from './fixtures.ts';
+import {
+  clickAt,
+  expect,
+  openApp,
+  runCommand,
+  savedNotes,
+  saveAs,
+  storedProject,
+  test,
+  trackHeader,
+  watchErrors,
+} from './fixtures.ts';
 
 /** the saved project's FX on a track */
 function savedFx(text: string, track: string): Record<string, unknown>[] {
@@ -50,6 +61,29 @@ test.describe('MIDI effects', () => {
     expect(savedFx((await storedProject(page, 'Arp')) ?? '', 'Grand Piano')).toEqual([
       { type: 'arp', rate: '1/8t', direction: 'updown', octaves: 2, gate: 0.5 },
     ]);
+    expect(errors).toEqual([]);
+  });
+
+  test('Apply to Notes writes a chord into the clip and takes the effect off', async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Grand Piano').click();
+    await page.getByRole('tab', { name: 'Piano Roll' }).click();
+    await clickAt(page, 'piano-roll', 52 + 20, 26 + 54); // one note (roll-view.ts: keyboard and chord strip)
+    await page.keyboard.press('Escape');
+    await page.getByRole('tab', { name: 'Mixer' }).click();
+    const list = page.getByRole('group', { name: 'Grand Piano MIDI effects' });
+    await list.getByRole('combobox', { name: 'Add a MIDI effect to Grand Piano' }).selectOption('chord');
+    await list.getByRole('combobox', { name: 'Chord shape' }).selectOption('power');
+    await list.getByRole('button', { name: 'Apply Chord to notes' }).click();
+    await expect(list.locator('.fx-row')).toHaveCount(0);
+
+    await saveAs(page, 'Applied');
+    const text = (await storedProject(page, 'Applied')) ?? '';
+    expect(savedFx(text, 'Grand Piano')).toEqual([]);
+    const keys = savedNotes(text, 'Grand Piano').map(([, , key]) => key as number);
+    expect(keys).toHaveLength(3);
+    expect(keys.map((k) => k - keys[0]!)).toEqual([0, 7, 12]);
     expect(errors).toEqual([]);
   });
 });

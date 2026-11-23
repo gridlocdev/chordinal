@@ -2,6 +2,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import {
   addTrack,
+  applyFxToNotes,
   arpCycle,
   arpKey,
   arpSettings,
@@ -176,4 +177,26 @@ test('an arpeggiated chord on Play: steps from its first beat, at the rate, with
     octaves: 4,
     gate: 0.05,
   });
+});
+
+test('Apply to Notes writes the effects up to it into the clips, plays the same, and keeps the rest', () => {
+  registerFx('later', { name: 'Later', perform: () => ({ notes: new Map(), events: [] }) });
+  const fx: TrackFx[] = [
+    { type: 'scale', bypass: true },
+    { type: 'chord', shape: 'key' },
+    { type: 'arp', rate: '1/8', direction: 'updown', octaves: 2 },
+    { type: 'later' },
+    { type: 'chord', shape: 'power' },
+  ];
+  const before = playing([60, 62, 61], fx);
+  const after = applyFxToNotes(before, 'k', 2);
+  assert.deepEqual(
+    after.tracks[0]!.fx.map((f) => f.type),
+    ['scale', 'later', 'chord'],
+    'the bypassed Scale and everything after the Arpeggiator stay',
+  );
+  assert.deepEqual(played(after), played(before), 'it plays the same');
+  assert.ok(after.tracks[0]!.clips[0]!.notes.length > 3, 'the arpeggio is in the clip');
+  assert.equal(applyFxToNotes(before, 'k', 0), before, 'a bypassed effect does nothing');
+  assert.equal(applyFxToNotes(before, 'k', 3), before, 'nor does one that is not a note effect');
 });

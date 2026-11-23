@@ -15,6 +15,8 @@ import {
   SHAPES,
   SHAPE_NAMES,
   addFx,
+  applyFx,
+  canApply,
   fxLabel,
   fxMenu,
   fxShortName,
@@ -55,7 +57,7 @@ interface FxRowProps {
   index: number;
 }
 
-/** one of a track's MIDI effects: bypass, its name, remove, and its settings under them (Chord's shape, the
+/** one of a track's MIDI effects: bypass, its name, Apply to Notes, remove, and its settings under them (Chord's shape, the
  * arpeggiator's rate, direction, octaves and gate); right-click for its order */
 function FxRow({ trackId, fx, index }: FxRowProps) {
   const off = fx.bypass === true;
@@ -79,6 +81,15 @@ function FxRow({ trackId, fx, index }: FxRowProps) {
       <span class="label" title={fxLabel(fx)}>
         {fxShortName(fx.type)}
       </span>
+      <button
+        class="apply"
+        aria-label={`Apply ${fxName(fx.type)} to notes`}
+        title={`Apply to Notes: write ${fxLabel(fx)} into the clips' notes${index > 0 ? ' (with the effects on above it)' : ''}, so you can edit them`}
+        disabled={!canApply(fx)}
+        onClick={() => applyFx(trackId, index)}
+      >
+        ↧
+      </button>
       <button
         class="remove"
         aria-label={`Remove ${fxName(fx.type)}`}

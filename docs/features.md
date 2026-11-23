@@ -24,6 +24,8 @@ A track's MIDI effects change its notes as they play, without changing the notes
 - **Chord** plays a chord over every note. Pick its shape under its name: **In Key** builds the chord from the project's key on that note, so one finger plays the key's chords, and the others (**Major**, **Minor**, **7th**, **Major 7th**, **Minor 7th**, **Sus2**, **Sus4**, **Power**) are the same shape on every note. In the desktop app, its right-click menu moves the added notes an octave up or down.
 - **Arpeggiator** (**Arp** in the strip) plays the notes held together one at a time, in steps that follow the tempo. Under its name, pick the **rate** (a step of 1/4 down to 1/32, `t` for triplets), the **direction** (**Up**, **Down**, **Up & Down**, **As Played**, or **Random**, which is the same every time), how many **octaves** it climbs (1 to 4), and the **gate**, how much of each step a note sounds. Each run of overlapping notes starts its steps on its first note. Put **Chord** before it and one held key plays the key's chord as an arpeggio; put **Chord** after it and every step is a chord.
 
+**Apply to Notes** (**↧** on an effect, or its right-click menu) writes what the effect plays into the track's clips and takes it off the list, so you can edit the notes it made. Any note effects that are on above it are written in too, so the track plays the same as before. Humanize can't be applied: it plays differently every pass.
+
 Effects play in the list's order, before **Humanize**. Play, the exports and the keys you play live all go through them, so you hear the same thing each way. A recording keeps the keys you pressed, not the effects' notes. Every change can be undone.
 
 ## Editing
