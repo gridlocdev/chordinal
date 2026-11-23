@@ -16,6 +16,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Ubuntu 24 blocks the user namespaces Chrome's sandbox needs, so Electron started without Playwright aborts
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       # Electron downloads its binary on first use; fetch it once here, or the tests that start it in parallel race to download it
       - run: node -e "require('electron')"
         working-directory: apps/desktop
