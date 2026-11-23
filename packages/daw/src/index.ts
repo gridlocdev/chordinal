@@ -10,6 +10,17 @@ export {
 } from './automation.ts';
 export type { LaneId, LaneParam } from './automation.ts';
 export { performProject, registerFx } from './fx.ts';
+export {
+  CHORD_FX,
+  CHORD_SHAPES,
+  SCALE_FX,
+  applyNoteFx,
+  chordOver,
+  isNoteFx,
+  noteFxName,
+  snapToScale,
+} from './note-fx.ts';
+export type { ChordShape } from './note-fx.ts';
 export type { Arp, Fall, FxEvent, FxPass, FxType, PitchMoves, PlayedNote, Scoop, Vibrato } from './fx.ts';
 export { CORE_ROWS, GM_DRUMS } from './gm-drums-data.ts';
 export { commit, history, redo, undo } from './history.ts';

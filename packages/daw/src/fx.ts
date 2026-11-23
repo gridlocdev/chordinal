@@ -2,6 +2,7 @@
 // registered once (the app registers them, so this layer needs none of their code); a track lists the types it uses
 // in track.fx. One type runs once per pass for the whole project, so it can share a plan across its tracks.
 import { trackNotes } from './project.ts';
+import { applyNoteFx } from './note-fx.ts';
 import type { Note, Project, Track } from './project.ts';
 
 // The pitch moves a voice makes on top of its note (the player's pitch-moves.js plays them).
@@ -82,12 +83,28 @@ export const registerFx = (type: string, impl: FxType): void => {
 /** a track's notes as written, ready to play */
 const plainNotes = (track: Track): PlayedNote[] => trackNotes(track).map((n) => ({ ...n, grid: n.beat }));
 
+/** the project with each track's note FX (Scale, Chord…) played into its notes, as one clip, so the FX after them
+ * (Humanize) play what they made; a track with none is left as it is */
+function withNoteFx(project: Project): Project {
+  let changed = false;
+  const tracks = project.tracks.map((t) => {
+    const written = trackNotes(t);
+    const notes = applyNoteFx(written, t, project);
+    if (notes === written) return t;
+    changed = true;
+    const beats = Math.max(1, ...notes.map((n) => n.beat + n.beats)) + 1;
+    return { ...t, clips: [{ id: `${t.id}-fx`, start: 0, beats, notes }] };
+  });
+  return changed ? { ...project, tracks } : project;
+}
+
 /** Every track's notes for one pass, through its FX, and the FX's events: tracks in the project's order, each sorted
  * by beat */
 export function performProject(
   project: Project,
   pass: number,
 ): { tracks: PlayedNote[][]; events: FxEvent[] } {
+  project = withNoteFx(project);
   const used = new Set(
     project.tracks.flatMap((t) => t.fx.map((f) => f.type)).filter((type) => types.has(type)),
   );
