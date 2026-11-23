@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### What's new
+
+- **Automation lanes.** Track ▸ Show Automation (`A`) opens a lane under a track for its volume, pan, tone and reverb and delay sends. Click to add points and drag them, double-click to delete one, and right-click for step, linear or exponential curves. Play and the exports follow the lane, and every edit can be undone.
+
 ### Bugs fixed
 
 - Undo right after Save As no longer turns the project's name back to Untitled: it takes back only your last edit.

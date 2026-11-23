@@ -1,4 +1,14 @@
-export { valueAt } from './automation.ts';
+export {
+  LANE_PARAMS,
+  addKeyframe,
+  clearLane,
+  laneParam,
+  moveKeyframe,
+  removeKeyframe,
+  setKeyframeCurve,
+  valueAt,
+} from './automation.ts';
+export type { LaneId, LaneParam } from './automation.ts';
 export { performProject, registerFx } from './fx.ts';
 export type { Arp, Fall, FxEvent, FxPass, FxType, PitchMoves, PlayedNote, Scoop, Vibrato } from './fx.ts';
 export { CORE_ROWS, GM_DRUMS } from './gm-drums-data.ts';

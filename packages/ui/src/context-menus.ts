@@ -3,7 +3,9 @@
 // instruments and takes. The part clicked is selected first, so the menu's commands act on it.
 import { TRACK_COLORS, findClip, isDrums } from '@chordinal/daw';
 import { renameMarker, removeMarker, markerRange } from '@chordinal/daw';
-import { barAt } from '@chordinal/daw';
+import { barAt, laneParam, removeKeyframe, setKeyframeCurve, clearLane } from '@chordinal/daw';
+import type { LaneId } from '@chordinal/daw';
+import { shownLanes, toggleAutomation } from './automation.ts';
 import { appMenu } from './platform/app-menu.ts';
 import type { MenuEntry, MenuItem } from './platform/app-menu.ts';
 import { project, selected, selectedClip, settings, setSettings, picked } from './store.ts';
@@ -106,6 +108,7 @@ function trackItems(trackId: string): MenuEntry[] {
     '-',
     { label: 'Mute', checked: t.mixer.mute, run: () => toggleMute(trackId) },
     { label: 'Solo', checked: t.mixer.solo, run: () => toggleSolo(trackId) },
+    { label: 'Show Automation', checked: !!shownLanes.value[trackId], run: () => toggleAutomation(trackId) },
     '-',
     { label: 'Move Up', enabled: i > 0, run: () => moveTrackBy(trackId, -1) },
     { label: 'Move Down', enabled: i < tracks.length - 1, run: () => moveTrackBy(trackId, 1) },
@@ -192,6 +195,39 @@ export function laneMenu(trackId: string, at: number): void {
     playheadHere(at),
     '-',
     ...trackItems(trackId),
+  ]);
+}
+
+/** a track's automation lane: the point under the cursor (by index, or none), its curve, and the lane */
+export function automationMenu(trackId: string, lane: LaneId, index: number | null): void {
+  selected.value = trackId;
+  focus.value = 'arrange';
+  const param = laneParam(lane);
+  const frame = index === null ? undefined : trackOf(trackId)?.automation[lane]?.[index];
+  const curve = (label: string, c: 'set' | 'linear' | 'exp'): MenuItem => ({
+    label,
+    radio: true,
+    enabled: !!frame && (c !== 'exp' || param.exp),
+    checked: frame?.curve === c,
+    run: () => index !== null && edit((p) => setKeyframeCurve(p, trackId, lane, index, c)),
+  });
+  appMenu.popup([
+    {
+      label: 'Delete Point',
+      enabled: !!frame,
+      run: () => index !== null && edit((p) => removeKeyframe(p, trackId, lane, index)),
+    },
+    '-',
+    curve('Step', 'set'),
+    curve('Linear', 'linear'),
+    curve('Exponential', 'exp'),
+    '-',
+    {
+      label: `Clear ${param.label} Lane`,
+      enabled: !!trackOf(trackId)?.automation[lane]?.length,
+      run: () => edit((p) => clearLane(p, trackId, lane)),
+    },
+    { label: 'Hide Automation', run: () => toggleAutomation(trackId) },
   ]);
 }
 

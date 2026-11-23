@@ -38,7 +38,7 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `packages/ui/src/platform/soundfonts.ts` | which SoundFont libraries are installed, and downloading one, through the desktop app |
 | `packages/playback/src/soundfont.ts` | downloads and caches `.sf2` files; `createInstrument(font, preset, destination)` plays notes as Web Audio voices, with optional delayed vibrato and legato glides |
 | `packages/playback/src/pitch-moves.ts` | a voice's pitch moves on its detune: delayed vibrato, scoops, tracker arpeggios, falls |
-| `packages/playback/src/mixer.ts` | a project's mixer: channel strips (layer gain, the user's gain, low cut, tone filter, fader, pan with optional auto-pan) and shared reverb and tempo-synced, slowly modulated delay buses |
+| `packages/playback/src/mixer.ts` | a project's mixer: channel strips (layer gain, the user's gain, low cut, tone filter, fader, the volume automation's gain, pan with optional auto-pan) and shared reverb and tempo-synced, slowly modulated delay buses |
 | `packages/audio/src/soundfont-libraries-data.ts` | the libraries: id, name, folder and license |
 | `packages/audio/src/soundfont-catalog-data.ts` | generated list of every library's files and presets, so the menu doesn't need the files up front (`just catalog`) |
 | `packages/audio/src/chip-instruments-data.ts` | the chip instruments and kits (waves, layers, envelopes, filters), their banks, and the one each part falls back to; `soundfont.ts` builds them for the url `chip:` and every library lists them |
@@ -51,7 +51,8 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `packages/daw/src/project-midi.ts` | a project as a Standard MIDI File: a track each, drums on channel 10; and a MIDI file as a new project, or as tracks added to one |
 | `packages/daw/src/steps.ts`, `packages/daw/src/gm-drums-data.ts` | the step grid's model: step sizes, which notes are on a step or off the grid, turning steps on and off and accenting them, a drum track's rows; the General MIDI drum names |
 | `packages/daw/src/meter.ts` | bars from meter changes: bar lines, the bar a beat is in, beats per bar |
-| `packages/daw/src/automation.ts` | automation lanes: the value at a beat from keyframes |
+| `packages/daw/src/automation.ts` | automation lanes: each value's range and scale (`LANE_PARAMS`), the value at a beat from keyframes, and the edits (add, move and remove a keyframe, set its curve, clear a lane) |
+| `packages/ui/src/automation.ts` | which track shows which automation lane, and how a lane's value maps to its height and reads as text |
 | `packages/daw/src/fx.ts` | MIDI FX: a registry of types (the app registers them) and `performProject(project, pass)`, which runs each track's notes through its FX for one pass round the loop, returning the notes and any events (a tape stop, a send swell) |
 | `packages/playback/src/instruments.ts` | the SoundFont preset each track plays, from the library in use, loaded once and shared |
 | `packages/playback/src/player.ts` | `playProject(project, instruments, { from, mix, click, ticker })`: a channel strip per track with a level meter, its notes through the MIDI FX and its automation and ducking, scheduled ahead on the audio clock through the tempo map, from any beat, round the loop with a new pass each time, with an optional metronome on each beat unit of the meter (an eighth in 6/8 and 7/8), the bars accented; the handle seeks, takes new faders and pans, reads the meters, and stops. `ticker` is what calls the scheduler: a timer live, the render's pauses offline |
@@ -76,7 +77,7 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `packages/ui/src/tracks.ts`, `packages/ui/src/notes.ts`, `packages/ui/src/clipboard.ts` | the actions on tracks and clips, on the piano roll's picked notes, and cut, copy, paste and duplicate for either |
 | `packages/ui/src/steps.ts` | the step grid's actions (paint, accent, step size, rows, hearing a drum) and switching the editor between the piano roll and the step grid as clips are picked |
 | `packages/ui/src/focus.ts`, `packages/ui/src/ask.ts` | which pane the editing keys act on; an in-app question for a name, a yes, or a choice such as Save, Don't Save or Cancel (Electron has no `prompt`) |
-| `packages/ui/src/components/` | the views: `Transport`, `LibraryPicker`, `Arrange` (`Ruler`, `ChordLane`, a `TrackRow` per track with a `Knob`, sharing `arrange-view.ts`), `Editor` (`PianoRoll`, `Mixer` or `StepGrid`, whose geometry is in `grid-view.ts`), `Ask`; `canvas.ts` is a canvas that redraws when the signals it reads change, the piano roll's parts are `roll-view.ts` (what's shown, its geometry), `roll-draw.ts` (drawing), `roll-input.ts` (the pointer), `RollToolbar` and `RollPlayhead` |
+| `packages/ui/src/components/` | the views: `Transport`, `LibraryPicker`, `Arrange` (`Ruler`, a `TrackRow` per track with a `Knob` and its `AutomationRow`, sharing `arrange-view.ts`), `Editor` (`PianoRoll`, `Mixer` or `StepGrid`, whose geometry is in `grid-view.ts`), `Ask`; `canvas.ts` is a canvas that redraws when the signals it reads change, the piano roll's parts are `roll-view.ts` (what's shown, its geometry), `roll-draw.ts` (drawing), `roll-input.ts` (the pointer), `RollToolbar` and `RollPlayhead` |
 | `packages/ui/src/ui.css` | the look: colour tokens and the panel grid |
 | `tools/build.mjs` | builds the page with Vite (`apps/web/vite.config.ts`) and the desktop main process and preload with esbuild (`just build`, `--watch` for `just run-desktop-watch`, `--check` for `just check`) |
 | `tools/install-app.sh` | installs Chordinal as a desktop app that runs this checkout (`just install-desktop`): a renamed Electron in `~/Applications` on macOS, with the app's icon; a launcher on Linux |
@@ -106,7 +107,7 @@ A project is a folder anywhere on disk (`Documents/Chordinal/<title>/` by defaul
   markers: [{ beat, name, meta? }], loop: { from, to } | null, groove: {…}, chords: [{ beat, beats, name, tones }],
   tracks: [{ id, name, color, instrument: { bank, program },
              mixer: { volumeDb, pan, mute, solo, lowCut, sends, autoPan, duck },
-             fx: [{ type, …params }], automation: { tone?, reverb?, delay? },
+             fx: [{ type, …params }], automation: { volume?, pan?, tone?, reverb?, delay? },
              stepRows?: [key, …],
              clips: [{ id, start, beats, mute?, step?, notes: [[beat, beats, key, vel, marks?], …] }
                      | { id, start, pattern, mute? }] }],

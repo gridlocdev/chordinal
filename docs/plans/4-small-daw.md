@@ -28,6 +28,8 @@ Automation and MIDI effects can be built in either order or side by side. Track 
 
 **Slices.** (a) Edit functions with tests. (b) Volume and pan in the player and the export. (c) The lane, view only. (d) Editing in the lane. (e) Insert and delete bars carry automation.
 
+**Status.** Built: (a) to (e); (e) was already there (`mapLanes` in `packages/daw/src/timeline.ts`). A pan lane wins over the mixer's pan while it has points, and auto-pan still adds on top. Lanes stay on the track. The value under the cursor shows in the lane's header rather than the status bar. Still to do: `Delete` to remove a selected point, and a box to select and move several points.
+
 **Done when.** You can draw a volume fade and a filter sweep on a track, hear them on Play and in an exported WAV, undo them, and see that a Melody Composer project's automation shows in its lanes. An e2e test draws two points and checks the project's keyframes, and an export test checks that a fade lowers the peak.
 
 ## 2. MIDI effects
@@ -106,8 +108,6 @@ Automation and MIDI effects can be built in either order or side by side. Track 
 
 ## Open questions
 
-- Automation: when a pan lane and auto-pan are both set, which wins?
-- Should automation follow a clip when you move it (clip automation), or stay on the track (track automation, as planned)?
 - Effects: does the master need inserts in the first version, or is the mastering chain enough?
 - Synth: one voice engine in Web Audio nodes, or an `AudioWorklet`? Nodes are simpler; a worklet is cheaper with many voices.
 - Audio tracks: is time-stretching needed for songs that change tempo, or is "audio keeps its own speed" enough?

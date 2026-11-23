@@ -69,6 +69,10 @@ One column of the **step grid**, a fixed length such as a sixteenth note.
 **Mixer**:
 The editor tab with each **track's** fader, pan, mute, solo and sends.
 
+**Automation lane**:
+A row under a **track** in the **arrangement** where one of its values (volume, pan, tone, or a reverb or delay send) is drawn as a line through points, and moves that way as it plays. `Automation` and `Keyframe` in the code.
+_Avoid_: envelope, automation curve, keyframe track
+
 **Command menu**:
 The search box (`⌘K` or `Ctrl+K`) that finds any command by name and runs it.
 _Avoid_: command palette
@@ -104,7 +108,7 @@ _Avoid_: recording, sketch
 ## Relationships
 
 - A **Project** holds many **Tracks**, its **Chords**, any number of **Markers** and at most one **Loop**.
-- A **Track** plays one **Instrument** and holds many **Clips**.
+- A **Track** plays one **Instrument**, holds many **Clips** and has at most one **Automation lane** per value.
 - A **Clip** holds many **Notes** and belongs to at most one **Pattern**; a **Pattern** links one or more **Clips**.
 - An **Instrument** comes from one **Sound library**; a **Kit** is an **Instrument**.
 - A **Take** becomes the **Notes** of one **Clip**.

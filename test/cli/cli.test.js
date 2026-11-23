@@ -81,6 +81,44 @@ test('render: a looping and a one-shot track to mp3s and the tracks-data file', 
     finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+/** a 16-bit WAV's samples and its sample rate (one channel's frames interleaved with the other's) */
+function readWav(file)
+{
+    const wav = fs.readFileSync(file);
+    const rate = wav.readUInt32LE(24), channels = wav.readUInt16LE(22);
+    const samples = new Int16Array(wav.buffer.slice(wav.byteOffset + 44, wav.byteOffset + wav.length - (wav.length - 44) % 2));
+    return { samples, rate, channels };
+}
+
+/** the loudest sample between two times, in seconds */
+function peakBetween({ samples, rate, channels }, from, to)
+{
+    let peak = 0;
+    for (let i = Math.floor(from * rate) * channels; i < Math.min(samples.length, Math.floor(to * rate) * channels); i++)
+        peak = Math.max(peak, Math.abs(samples[i]));
+    return peak;
+}
+
+test('export plays volume automation: a lane set to 0 silences the track from that beat', { timeout: 60000 }, ()=>
+{
+    const dir = tmp();
+    try
+    {
+        fs.cpSync(path.join(FIXTURES, 'loop'), path.join(dir, 'tiny'), { recursive: true });
+        const file = path.join(dir, 'tiny', 'project.json');
+        const p = JSON.parse(fs.readFileSync(file, 'utf8'));
+        // 180 bpm: beat 14 is at 4.67 s, and the song runs to beat 28 (9.33 s)
+        for (const t of p.tracks) t.automation = { ...t.automation, volume: [{ beat: 0, value: 1, curve: 'set' }, { beat: 14, value: 0, curve: 'set' }] };
+        fs.writeFileSync(file, JSON.stringify(p));
+        cli(dir, 'export', 'tiny', '--out', 'exported');
+        const wav = readWav(path.join(dir, 'exported', 'tiny.wav'));
+        const before = peakBetween(wav, 1.5, 4.5), after = peakBetween(wav, 7.5, 9.3);
+        assert.ok(before > 1000, `sound before the lane drops (peak ${before})`);
+        assert.ok(after < before / 50, `silence once the reverb has died away (peak ${after} against ${before})`);
+    }
+    finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('export makes a project folder’s MIDI and WAV', { timeout: 60000 }, ()=>
 {
     const dir = tmp();

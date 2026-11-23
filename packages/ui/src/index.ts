@@ -136,6 +136,15 @@ export type {
   ThemeChoice,
 } from './store.ts';
 export { alpha, palette, shownTheme, startTheme } from './theme.ts';
+export {
+  shownLanes,
+  toggleAutomation,
+  showLane,
+  firstLane,
+  laneHeight,
+  laneValueAt,
+  laneText,
+} from './automation.ts';
 export type { Palette, Token } from './theme.ts';
 export {
   askMeter,

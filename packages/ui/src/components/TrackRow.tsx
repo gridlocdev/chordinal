@@ -1,7 +1,7 @@
 // A track's row in the arrangement: its header (colour, name, instrument, mute, solo and a volume knob) and its lane of
 // clips. Click a header to select the track, double-click it to open the track's editor, double-click the name to
 // rename it; drag headers to reorder the tracks; drop an instrument on a track to play it there. Right-click a header
-// for more (Delete Track among them).
+// for more (Delete Track among them). Show Automation (A) opens the track's automation lane under its row.
 //
 // Clips: drag to move (to another track too), Alt-drag to copy, drag the right edge to resize, double-click empty
 // space for a new clip; they snap to bars, or to beats with Shift. Drop audio files on a lane to read them as notes.
@@ -22,6 +22,7 @@ import { clipMenu, laneMenu, trackContextMenu } from '../context-menus.ts';
 import { useCanvas, rgba } from './canvas.ts';
 import { px, snapTo } from './arrange-view.ts';
 import { Knob } from './Knob.tsx';
+import { AutomationRow } from './AutomationRow.tsx';
 import { palette, alpha } from '../theme.ts';
 import { PRESET, TRACK, carries, readPreset } from './drag-data.ts';
 import type { DroppedPreset } from './drag-data.ts';
@@ -289,55 +290,58 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
     }
   };
   return (
-    <div
-      class={`track ${selected.value === track.id ? 'on' : ''} ${drop ? 'drop' : ''} ${dragging ? 'dragging' : ''}`}
-      data-id={track.id}
-      style={{ '--track': rgba(track.color) }}
-      onDragOver={over}
-      onDragLeave={() => setDrop(false)}
-      onDrop={dropped}
-    >
+    <>
       <div
-        class="head"
-        role="group"
-        aria-label={`${track.name} track`}
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer?.setData(TRACK, track.id);
-          setDragging(true);
-        }}
-        onDragEnd={() => setDragging(false)}
-        onClick={() => {
-          selected.value = track.id;
-        }}
-        onDblClick={() => onOpen(track.id)}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          trackContextMenu(track.id);
-        }}
+        class={`track ${selected.value === track.id ? 'on' : ''} ${drop ? 'drop' : ''} ${dragging ? 'dragging' : ''}`}
+        data-id={track.id}
+        style={{ '--track': rgba(track.color) }}
+        onDragOver={over}
+        onDragLeave={() => setDrop(false)}
+        onDrop={dropped}
       >
-        <span
-          class="name"
-          onDblClick={(e) => {
-            e.stopPropagation();
-            void renameTrack(track.id);
+        <div
+          class="head"
+          role="group"
+          aria-label={`${track.name} track`}
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer?.setData(TRACK, track.id);
+            setDragging(true);
           }}
-          title="Double-click to rename"
+          onDragEnd={() => setDragging(false)}
+          onClick={() => {
+            selected.value = track.id;
+          }}
+          onDblClick={() => onOpen(track.id)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            trackContextMenu(track.id);
+          }}
         >
-          {track.name}
-        </span>
-        <span class="inst">{presetFor(track.instrument.bank, track.instrument.program)?.name ?? ''}</span>
-        <div class="ms" onClick={(e) => e.stopPropagation()} onDblClick={(e) => e.stopPropagation()}>
-          <button class={`mute ${m.mute ? 'on' : ''}`} title="Mute" onClick={() => toggleMute(track.id)}>
-            M
-          </button>
-          <button class={`solo ${m.solo ? 'on' : ''}`} title="Solo" onClick={() => toggleSolo(track.id)}>
-            S
-          </button>
+          <span
+            class="name"
+            onDblClick={(e) => {
+              e.stopPropagation();
+              void renameTrack(track.id);
+            }}
+            title="Double-click to rename"
+          >
+            {track.name}
+          </span>
+          <span class="inst">{presetFor(track.instrument.bank, track.instrument.program)?.name ?? ''}</span>
+          <div class="ms" onClick={(e) => e.stopPropagation()} onDblClick={(e) => e.stopPropagation()}>
+            <button class={`mute ${m.mute ? 'on' : ''}`} title="Mute" onClick={() => toggleMute(track.id)}>
+              M
+            </button>
+            <button class={`solo ${m.solo ? 'on' : ''}`} title="Solo" onClick={() => toggleSolo(track.id)}>
+              S
+            </button>
+          </div>
+          <Knob track={track} />
         </div>
-        <Knob track={track} />
+        <Lane track={track} beats={beats} ppb={ppb} />
       </div>
-      <Lane track={track} beats={beats} ppb={ppb} />
-    </div>
+      <AutomationRow track={track} beats={beats} ppb={ppb} />
+    </>
   );
 }

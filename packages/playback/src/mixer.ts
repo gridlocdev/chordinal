@@ -2,11 +2,11 @@
 // so the parts sound like they're in one room. Everything sums on a mix bus with headroom, then goes through the
 // mastering chain in platform/audio-engine.js.
 //
-// strip: input → user → low cut → tone (low-pass, for sweeps) → fader → pan (auto-pan LFO) → mix bus
+// strip: input → user → low cut → tone (low-pass, for sweeps) → fader → volume → pan (auto-pan LFO) → mix bus
 //                                                                         ├→ reverb send → reverb → low cut → mix bus
 //                                                                         └→ delay send → delay ⟲ (darker each repeat) → mix bus
 // The user gain is the mixer's fader, mute and solo, which nothing else touches; the fader after the filters is what
-// ducking moves. The delay time wobbles slowly (a modulated delay), so the echoes shimmer a little.
+// ducking moves, and the volume after it is what a volume automation lane moves. The delay time wobbles slowly (a modulated delay), so the echoes shimmer a little.
 import { audioEngine } from './audio-engine.ts';
 import { reverbImpulse } from '@chordinal/lib';
 import { tempoSteps, type TempoSegment } from '@chordinal/lib';
@@ -76,6 +76,8 @@ export interface Strip {
   lowCut: BiquadFilterNode;
   tone: BiquadFilterNode;
   fader: GainNode;
+  /** the volume automation lane's gain, 1 with none */
+  volume: GainNode;
   panner: Panner;
   pan: number;
   reverbSend: GainNode;
@@ -164,11 +166,18 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
       const tone = node(new BiquadFilterNode(ctx, { type: 'lowpass', frequency: OPEN_TONE, Q: 0 }));
       const level = dbToGain(volumeDb);
       const fader = node(new GainNode(ctx, { gain: level }));
+      const volume = node(new GainNode(ctx));
       const panner = pan2(pan);
       const reverbSend = node(new GainNode(ctx, { gain: reverb }));
       const delaySendGain = node(new GainNode(ctx, { gain: delaySend }));
       const lowCutFilter = node(new BiquadFilterNode(ctx, { type: 'highpass', frequency: lowCut }));
-      input.connect(user).connect(lowCutFilter).connect(tone).connect(fader).connect(panner.input);
+      input
+        .connect(user)
+        .connect(lowCutFilter)
+        .connect(tone)
+        .connect(fader)
+        .connect(volume)
+        .connect(panner.input);
       panner.output.connect(bus);
       panner.output.connect(reverbSend).connect(reverbIn);
       panner.output.connect(delaySendGain).connect(delayIn);
@@ -179,6 +188,7 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
         lowCut: lowCutFilter,
         tone,
         fader,
+        volume,
         panner,
         pan,
         reverbSend,

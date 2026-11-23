@@ -1305,3 +1305,40 @@ input[type='range']::-moz-range-thumb {
 .dialog.shortcuts dd {
   margin: 0;
 }
+.auto-row {
+  display: flex;
+  flex: none;
+  height: 48px;
+}
+.auto-row .head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 14px;
+  border-left: 4px solid var(--track);
+  font-size: 12px;
+}
+.auto-row .head select {
+  font-size: 12px;
+  max-width: 120px;
+}
+.auto-row .head .reading {
+  flex: 1;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.auto-row .head .hide {
+  padding: 0 6px;
+  color: var(--muted);
+}
+.auto-row .lane {
+  background: var(--panel-2);
+  cursor: crosshair;
+}
+.auto-row .lane canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}

@@ -51,6 +51,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Delete Track | `⌘⌫` | `Ctrl+Backspace` | Delete the selected track and its clips. |
 | Move Track Up | `⌥⌘↑` | `Ctrl+Alt+Up` | Move the selected track up the list. |
 | Move Track Down | `⌥⌘↓` | `Ctrl+Alt+Down` | Move the selected track down the list. |
+| Show Automation | `A` | `A` | Show or hide the selected track's automation lane, to draw its volume, pan, tone or sends over time. |
 
 ### Transport
 
@@ -111,6 +112,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Record a melody (into the microphone, or played on the keys or a MIDI keyboard) | **●** |
 | Hear a note | press a key on the piano roll's keyboard (drag up or down to glide), or play the letter keys or a MIDI keyboard; the row of each key sounding lights up |
 | Draw a note | click empty space in the piano roll |
+| Draw automation | in a track's automation lane: click to add a point and drag it, drag a point to move it, double-click it to delete it, right-click for its curve; `Shift` places it off the beat |
 | Move or resize a note | drag it, or drag its right edge |
 | Select notes | `Shift` click adds or removes one, `Shift` drag on empty space adds a rectangle of them |
 | Humanize, double or half speed, reverse, transpose, velocity, legato | right-click the notes or the clip |

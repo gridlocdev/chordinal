@@ -5,6 +5,7 @@
 //
 // What Edit's commands act on follows the part last clicked (focus.ts): the picked notes in the piano roll, or the
 // selected clip in the arrangement.
+import { toggleAutomation, shownLanes } from './automation.ts';
 import { appMenu } from './platform/app-menu.ts';
 import { barAt, barLines } from '@chordinal/daw';
 import { projectEnd, findClip } from '@chordinal/daw';
@@ -626,6 +627,18 @@ export const catalog = new CommandCatalog([
     enabled: () => !!track(),
     description: 'Play only the selected track; soloing another track turns this one off.',
     keywords: 'alone isolate',
+  },
+  {
+    id: 'showAutomation',
+    group: 'Track',
+    title: 'Show Automation',
+    shortcut: 'a',
+    run: () => toggleAutomation(selected.value),
+    checked: () => !!selected.value && !!shownLanes.value[selected.value],
+    enabled: () => !!track(),
+    description:
+      "Show or hide the selected track's automation lane, to draw its volume, pan, tone or sends over time.",
+    keywords: 'automation envelope fade sweep keyframe lane',
   },
   {
     id: 'trackUp',

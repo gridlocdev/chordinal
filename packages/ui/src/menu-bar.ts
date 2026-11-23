@@ -66,6 +66,7 @@ export const trackMenu = (more: MenuEntry[] = []): Menu => ({
     '-',
     item('mute'),
     item('solo'),
+    item('showAutomation'),
     '-',
     item('trackUp'),
     item('trackDown'),

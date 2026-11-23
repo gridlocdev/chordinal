@@ -169,6 +169,8 @@ export function playProject(
     strips.forEach((strip, i) => {
       const lanes = tracks[i]!.automation;
       const params: [AudioParam, Keyframe[] | undefined][] = [
+        [strip.volume.gain, lanes.volume],
+        [strip.panner.pan, lanes.pan],
         [strip.tone.frequency, lanes.tone],
         [strip.reverbSend.gain, lanes.reverb],
         [strip.delaySend.gain, lanes.delay],
@@ -343,7 +345,7 @@ export function playProject(
     },
     /**
      * The mixer's settings, one per track: gain (0 mutes), pan (−1..1), and the sends and low cut where they
-     * changed (a send an automation lane moves is left to the lane). Glides there over a few milliseconds so
+     * changed (a pan or send an automation lane moves is left to the lane). Glides there over a few milliseconds so
      * nothing clicks.
      */
     setMix(channels) {
@@ -358,7 +360,7 @@ export function playProject(
           lanes = tracks[i]?.automation;
         if (!s || !c) return;
         s.user.gain.setTargetAtTime(c.gain, now, 0.01);
-        s.panner.pan.setTargetAtTime(Math.max(-1, Math.min(1, c.pan)), now, 0.01);
+        if (!lanes?.pan?.length) s.panner.pan.setTargetAtTime(Math.max(-1, Math.min(1, c.pan)), now, 0.01);
         if (c.reverb !== undefined && c.reverb !== was.reverb && !lanes?.reverb?.length)
           glide(s.reverbSend.gain, c.reverb);
         if (c.delay !== undefined && c.delay !== was.delay && !lanes?.delay?.length)

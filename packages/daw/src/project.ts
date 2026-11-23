@@ -55,6 +55,11 @@ export interface TrackFx {
 }
 
 export type Automation = {
+  /** a gain on top of the fader (1: as the fader sets it) */
+  volume?: Keyframe[];
+  /** −1..1, in place of the mixer's pan */
+  pan?: Keyframe[];
+  /** the tone filter's cutoff, Hz */
   tone?: Keyframe[];
   reverb?: Keyframe[];
   delay?: Keyframe[];

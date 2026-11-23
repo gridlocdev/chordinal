@@ -30,6 +30,12 @@ Make a clip a **pattern** and its copies stay linked: edit one, in the step grid
 
 Every track has mute, solo, a fader and pan. Put any instrument from the libraries on any track: click it in the browser, or drag it onto the track. The libraries are listed in [Credits](credits.md).
 
+## Automation
+
+A track's volume, pan, tone and reverb and delay sends can change as the song plays: a fade-out, a filter sweep, a pan from left to right. **Track ▸ Show Automation** (`A`, or **Show Automation** in a track's right-click menu) opens the track's automation lane under its row, and the dropdown at its left picks the value it shows; a value that has points has a dot after its name. Click the lane to add a point and drag it into place, drag a point to move it, and double-click one to delete it. Points snap to the beat; hold `Shift` to place one between beats. Right-click a point for its curve into it (**Step**, **Linear**, or **Exponential** for tone), or right-click the lane to clear it. The value under the cursor shows next to the dropdown. Each edit can be undone, Play and the WAV and MP3 exports play the lane, and inserting or deleting bars moves the points with the clips.
+
+A volume lane sets a gain on top of the track's fader, from silence up to +6 dB. A pan lane takes over from the mixer's pan while it has points (auto-pan still sways around it). Tone is a low-pass filter from 80 Hz to 20 kHz. Lanes belong to the track, not to its clips, so moving a clip leaves them where they are.
+
 ## Playing it like an instrument
 
 Your computer keys (once you click the piano roll) or a MIDI keyboard, with velocity and a sustain pedal, play the selected track's instrument. Clicking a key on the piano roll's keyboard plays it too, and the row of every key sounding lights up.
