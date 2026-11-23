@@ -211,6 +211,10 @@ function impulseFor(ctx: BaseAudioContext, seconds: number, decay: number): Audi
   return b;
 }
 
+/** a Reverb's Decay (1..30, higher is longer) as its impulse's fade, a power that falls faster the higher it is:
+ * Decay 30 fades in a straight line, Decay 10 as the cube, Decay 1 at once */
+const fadeOf = (decay: number) => 30 / decay;
+
 const FILTER_TYPES: BiquadFilterType[] = ['lowpass', 'highpass', 'bandpass'];
 /** a resonance in dB as the Q of a filter of that type: dB for low and high pass, a width for band pass */
 const resonanceQ = (mode: number, db: number) => (mode === 2 ? 0.7 * dbGain(db) : db);
@@ -361,14 +365,14 @@ const BUILDERS: Record<string, Build> = {
     const p = parts(ctx);
     let size = v.size!,
       decay = v.decay!;
-    const conv = p.node(new ConvolverNode(ctx, { buffer: impulseFor(ctx, size, decay) }));
+    const conv = p.node(new ConvolverNode(ctx, { buffer: impulseFor(ctx, size, fadeOf(decay)) }));
     const tone = p.node(new BiquadFilterNode(ctx, { type: 'lowpass', frequency: v.tone, Q: 0 }));
     conv.connect(tone);
     const inner = direct(ctx, p, conv, tone, { tone: { param: tone.frequency } }, (param, value) => {
       if (param !== 'size' && param !== 'decay') return false;
       if (param === 'size') size = value;
       else decay = value;
-      conv.buffer = impulseFor(ctx, size, decay);
+      conv.buffer = impulseFor(ctx, size, fadeOf(decay));
       return true;
     });
     return wetDry(ctx, p, v.mix!, conv, tone, inner);
