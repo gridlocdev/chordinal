@@ -2,7 +2,7 @@
 
 Every command is in the menu bar (File, Edit, Track, Transport, View, Help) and in the command menu (`⌘K`, `Ctrl+K`): type part of its name and press Return. **Help ▸ Keyboard Shortcuts** (`⌘/`, `Ctrl+/`) lists the shortcuts below inside the app. Right-clicking a clip, a lane, a track's header, the ruler, a note, a mixer strip or anything in the browser shows what can be done to it.
 
-Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, and the letters wait while the piano roll has it, because they play notes there.
+Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, and the letters wait while the piano roll has it, because they play notes there; click anywhere in the arrangement to give them back.
 
 ## Keyboard shortcuts
 
@@ -91,7 +91,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 
 | What | Keys |
 | --- | --- |
-| Play the selected track's instrument (click the piano roll first; while it has the focus, `B`, `C`, `M`, `Q` and `R` wait until you click elsewhere, or use the menus) | `A S D F G H J K L ; '` white keys, `W E T Y U O P` black keys |
+| Play the selected track's instrument (click the piano roll first; while it has the focus, `B`, `C`, `M`, `Q` and `R` wait until you click the arrangement, or use the menus) | `A S D F G H J K L ; '` white keys, `W E T Y U O P` black keys |
 | An octave down or up, while playing it (the piano roll scrolls to keep those keys in view; the status bar shows the range) | `Z`, `X` |
 | Move through the command menu's list, run the command, close it | `↑` `↓` or `Tab` `Shift Tab`, `Return`, `Esc` |
 | Draw a note without the grid | `Alt` while drawing |

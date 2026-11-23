@@ -7,6 +7,7 @@ import { project, beat, playing, settings } from '../store.ts';
 import { arrangeZoom as zoom, arrangePpb, moveTrackTo } from '../tracks.ts';
 import { HEAD_W, ZOOM, width, px, span, fitted } from './arrange-view.ts';
 import { Ruler } from './Ruler.tsx';
+import { focus } from '../focus.ts';
 import { TrackRow } from './TrackRow.tsx';
 import { PRESET, TRACK, carries, readPreset } from './drag-data.ts';
 import type { DroppedPreset } from './drag-data.ts';
@@ -134,7 +135,9 @@ export function Arrange({ actions }: ArrangeProps) {
     arrangePpb.value = ppb;
   }, [ppb]);
   return (
-    <div class="arrange">
+    // a click anywhere in the arrangement (a header, the ruler, empty space) takes the keys back from the piano roll, so
+    // its letters run their shortcuts again (R records, A shows automation)
+    <div class="arrange" onPointerDownCapture={() => (focus.value = 'arrange')}>
       <div class="scroll" ref={scroller}>
         <div class="rows" style={{ width: px(HEAD_W + beats * ppb) }}>
           <div class="ruler">

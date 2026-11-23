@@ -8,7 +8,7 @@
 
 ### Bugs fixed
 
-- Letters typed into the piano roll to play notes no longer also run that letter's shortcut in the desktop app on macOS: `A` played a note and opened an automation lane, and `M`, `B`, `C`, `Q` and `R` muted the track, showed the browser, turned on the loop, quantized or recorded. Holding a letter down no longer does it either.
+- Letters typed into the piano roll to play notes no longer also run that letter's shortcut in the desktop app on macOS: `A` played a note and opened an automation lane, and `M`, `B`, `C`, `Q` and `R` muted the track, showed the browser, turned on the loop, quantized or recorded. Holding a letter down no longer does it either. Clicking anywhere in the arrangement, such as a track's header, now gives the letters back to their shortcuts; before, only a click on a track's clips did.
 
 ## 1.0.0
 

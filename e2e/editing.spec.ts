@@ -90,7 +90,9 @@ test.describe('Editing', () => {
     await expect(page).toHaveTitle('Untitled — Chordinal');
     expect(errors).toEqual([]);
   });
-  test('letters typed into the piano roll are kept from the shortcuts and the menu bar', async ({ page }) => {
+  test('letters typed into the piano roll are kept from the shortcuts and the menu bar until the arrangement is clicked', async ({
+    page,
+  }) => {
     const errors = watchErrors(page);
     await openApp(page);
     await trackHeader(page, 'Grand Piano').click();
@@ -112,6 +114,11 @@ test.describe('Editing', () => {
     expect(await page.evaluate(() => (window as unknown as { unhandled: string[] }).unhandled)).toEqual([]);
     await expect(page.getByRole('combobox', { name: 'Grand Piano automation' })).toHaveCount(0);
     await expect(trackHeader(page, 'Grand Piano').locator('.mute.on')).toHaveCount(0);
+
+    // a click on a track's header gives the keys back to the shortcuts: A shows its automation
+    await trackHeader(page, 'Grand Piano').click();
+    await page.keyboard.press('KeyA');
+    await expect(page.getByRole('combobox', { name: 'Grand Piano automation' })).toHaveCount(1);
     expect(errors).toEqual([]);
   });
 });
