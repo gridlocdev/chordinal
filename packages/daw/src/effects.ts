@@ -198,10 +198,10 @@ export const EFFECTS: EffectSpec[] = [
   {
     type: 'reverb',
     name: 'Reverb',
-    about: 'A room of its own for this track, from a small booth to a hall.',
+    about: 'A room of its own for this track, from a small booth to a huge cave.',
     params: [
-      { id: 'size', label: 'Size', min: 0.3, max: 6, value: 2, scale: 'log', unit: 's', automatable: false },
-      { id: 'decay', label: 'Decay', min: 1, max: 8, value: 3, scale: 'linear', automatable: false },
+      { id: 'size', label: 'Size', min: 0.3, max: 30, value: 2, scale: 'log', unit: 's', automatable: false },
+      { id: 'decay', label: 'Decay', min: 1, max: 30, value: 3, scale: 'linear', automatable: false },
       hz('tone', 'Tone', 500, 20000, 8000),
       mix(0.3),
     ],

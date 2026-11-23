@@ -204,7 +204,8 @@ function impulseFor(ctx: BaseAudioContext, seconds: number, decay: number): Audi
     const channels = reverbImpulse(ctx.sampleRate, { seconds, decay });
     b = new AudioBuffer({ length: channels[0].length, numberOfChannels: 2, sampleRate: ctx.sampleRate });
     channels.forEach((d, i) => b!.getChannelData(i).set(d));
-    if (impulses.size > 16) impulses.delete(impulses.keys().next().value!);
+    // a 30 s impulse is about 11 MB, and a drag of the Size slider builds one per step, so keep only a few
+    if (impulses.size > 4) impulses.delete(impulses.keys().next().value!);
     impulses.set(key, b);
   }
   return b;
