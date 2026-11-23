@@ -1,6 +1,15 @@
 // A track's audio effects in the mixer: add them, change a setting in the panel, bypass, reorder and remove them,
-// saved with the project and undoable, and played without errors.
-import { expect, openApp, runCommand, saveAs, storedProject, test, watchErrors } from './fixtures.ts';
+// saved with the project and undoable, and played without errors, by Play and by the keys played live.
+import {
+  expect,
+  openApp,
+  runCommand,
+  saveAs,
+  storedProject,
+  test,
+  trackHeader,
+  watchErrors,
+} from './fixtures.ts';
 
 interface SavedInsert {
   id: string;
@@ -59,6 +68,52 @@ test.describe('Track effects', () => {
       { id: 'fx1', type: 'eq', params: { low: 9 } },
       { id: 'fx2', type: 'reverb', bypass: true, params: { mix: 0.5 } },
     ]);
+    expect(errors).toEqual([]);
+  });
+
+  test("the keys played live go through the selected track's effects", async ({ page }) => {
+    // the effects are Web Audio nodes with nothing on screen, so count the reverbs made
+    await page.addInitScript(() => {
+      const w = window as unknown as { reverbs: number; ConvolverNode: typeof ConvolverNode };
+      w.reverbs = 0;
+      const Base = w.ConvolverNode;
+      w.ConvolverNode = class extends Base {
+        constructor(...args: ConstructorParameters<typeof ConvolverNode>) {
+          super(...args);
+          w.reverbs++;
+        }
+      };
+    });
+    const reverbs = () => page.evaluate(() => (window as unknown as { reverbs: number }).reverbs);
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Grand Piano').click();
+    const before = await reverbs();
+    await runCommand(page, 'Mixer');
+    await page.getByRole('combobox', { name: 'Add an effect to Grand Piano' }).selectOption('reverb');
+    await expect.poll(reverbs, { message: 'the live keys get a reverb of their own' }).toBe(before + 1);
+
+    await page.getByRole('tab', { name: 'Piano Roll' }).click();
+    const roll = page.getByTestId('piano-roll');
+    const box = await roll.boundingBox();
+    if (!box) throw new Error('no piano roll');
+    await page.mouse.click(box.x + 10, box.y + box.height / 2);
+    await page.keyboard.down('KeyA');
+    await page.waitForTimeout(200);
+    await page.keyboard.up('KeyA');
+
+    // a setting's change glides, and doesn't build the reverb again
+    await runCommand(page, 'Mixer');
+    await page
+      .getByRole('region', { name: 'Reverb on Grand Piano' })
+      .getByRole('slider', { name: 'Reverb Mix' })
+      .fill('800');
+    await page
+      .getByRole('group', { name: 'Grand Piano effects' })
+      .getByRole('button', { name: 'Remove Reverb' })
+      .click();
+    await page.keyboard.press('ControlOrMeta+KeyZ'); // back again: built once more
+    await expect.poll(reverbs).toBe(before + 2);
     expect(errors).toEqual([]);
   });
 });

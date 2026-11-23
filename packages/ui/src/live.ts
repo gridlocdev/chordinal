@@ -7,13 +7,27 @@ import type { Signal } from '@preact/signals';
 import { midi } from './platform/midi.ts';
 import { NOTE_KEYS, OCTAVE_KEYS, typing } from './platform/keys.ts';
 import { bpmAt, octaveC } from '@chordinal/lib';
-import { loadSoundFont, findPreset, createInstrument } from '@chordinal/playback';
+import {
+  loadSoundFont,
+  findPreset,
+  createInstrument,
+  effectChain,
+  prepareEffects,
+} from '@chordinal/playback';
 import { presetFor } from '@chordinal/playback';
 import { audioEngine } from '@chordinal/playback';
-import type { Instrument } from '@chordinal/playback';
+import type { EffectChain, Instrument } from '@chordinal/playback';
 import type { LibraryPreset } from '@chordinal/audio';
-import { applyNoteFx, arpCycle, arpKey, arpSettings, splitAtArp } from '@chordinal/daw';
-import type { ArpSettings, Track, TrackFx } from '@chordinal/daw';
+import {
+  applyNoteFx,
+  arpCycle,
+  arpKey,
+  arpSettings,
+  insertValues,
+  insertsOf,
+  splitAtArp,
+} from '@chordinal/daw';
+import type { ArpSettings, Insert, Track, TrackFx } from '@chordinal/daw';
 import { settings, setSettings, selectedTrack, project, beat, notify } from './store.ts';
 import { musicalTyping } from './focus.ts';
 import type { KeyPress } from './commands/shortcut.ts';
@@ -56,6 +70,51 @@ const sounds = new Map<number, number[]>(); // a held key → the keys its note 
 const sounding = new Map<number, number>(); // a key the instrument plays → number of held keys playing it
 const typed = new Map<string, number>(); // KeyboardEvent.code → the MIDI key it started (the octave may change meanwhile)
 
+// ── the selected track's effects, which the keys played live go through ─────────────────────────────────────────────
+
+let chain: EffectChain | null = null;
+let chainIn: GainNode | null = null;
+let chainOf: { track: string; inserts: Insert[] } | null = null; // the track and inserts the chain was last set to
+let chainBpm = 0;
+
+const bpmNow = () => bpmAt(project.value.tempoMap, beat.value);
+
+/** where the live instrument plays into: the selected track's effects, then the master. Made on the live context,
+ * so not while an export renders. */
+let made: Promise<AudioNode> | null = null;
+function liveInput(): Promise<AudioNode> {
+  made ??= (async () => {
+    while (audioEngine.rendering) await audioEngine.rendering.catch(() => {});
+    const ctx = audioEngine.context;
+    await prepareEffects(ctx); // the Bitcrusher's worklet
+    chainIn = new GainNode(ctx);
+    chainBpm = bpmNow();
+    chain = effectChain(ctx, chainIn, audioEngine.output, chainBpm);
+    syncEffects();
+    return chainIn;
+  })();
+  return made;
+}
+
+/** sets the live chain to the selected track's effects: rebuilt for another track, and for the same track only the
+ * effects added, removed, moved or bypassed are rewired, while a changed setting glides to its new value */
+function syncEffects(): void {
+  if (!chain) return;
+  const track = selectedTrack.value;
+  const list = track ? insertsOf(track) : [];
+  const was = chainOf && track && chainOf.track === track.id ? chainOf.inserts : null;
+  if (!was) chain.setInserts([]); // another track's fx1 isn't this one's
+  chain.setInserts(list);
+  for (const x of list) {
+    const e = chain.effects.get(`${x.id}:${x.type}`),
+      before = was?.find((w) => w.id === x.id && w.type === x.type);
+    if (!e || !before) continue;
+    const then = insertValues(before);
+    for (const [k, v] of Object.entries(insertValues(x))) if (then[k] !== v) e.set(k, v);
+  }
+  chainOf = track ? { track: track.id, inserts: list } : null;
+}
+
 /** the preset the selected track plays, or a piano with none selected */
 const presetOf = (track: Track | null) =>
   track ? presetFor(track.instrument.bank, track.instrument.program) : presetFor(0, 0);
@@ -66,12 +125,13 @@ async function load(entry: LibraryPreset): Promise<void> {
     const font = await loadSoundFont(entry.url);
     // an instrument made while exporting would belong to the offline render
     while (audioEngine.rendering) await audioEngine.rendering.catch(() => {});
+    const into = await liveInput();
     if (id !== loading) return;
     const preset = findPreset(font, entry.bank, entry.program);
     if (!preset) throw new Error(`no preset ${entry.bank}:${entry.program}`);
     releaseAll();
     instrument?.dispose();
-    instrument = createInstrument(font, preset);
+    instrument = createInstrument(font, preset, into);
     instrument.setSustain(pedal);
     liveName.value = preset.name;
   } catch (e) {
@@ -253,6 +313,17 @@ export function startLive(): void {
       last = id;
       void load(entry);
     }
+  });
+  void liveInput();
+  effect(() => {
+    void selectedTrack.value?.inserts;
+    syncEffects();
+  });
+  effect(() => {
+    const bpm = bpmNow();
+    if (!chain || bpm === chainBpm) return;
+    chainBpm = bpm;
+    chain.tempo(bpm, audioEngine.context.currentTime);
   });
   addEventListener('keydown', (e) => {
     const kind = musicalKey(e);

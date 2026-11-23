@@ -10,7 +10,7 @@
 // part as played; the fader after it is what ducking moves, and the volume after that is what a volume automation lane
 // moves. Each strip has a meter after its pan. The delay time wobbles slowly (a modulated delay), so the echoes shimmer a little.
 import { audioEngine } from './audio-engine.ts';
-import { buildEffect, type Effect, type EffectParamTarget } from './effects.ts';
+import { effectChain, type Effect, type EffectChain, type EffectParamTarget } from './effects.ts';
 import { reverbImpulse } from '@chordinal/lib';
 import { tempoSteps, type TempoSegment } from '@chordinal/lib';
 import type { Insert } from '@chordinal/daw';
@@ -92,6 +92,8 @@ export interface Strip {
   meter: AnalyserNode;
   /** the effects playing, by their insert's id (a bypassed insert has none) */
   effects: Map<string, Effect>;
+  /** the chain the effects are wired in */
+  chain: EffectChain;
   /** the effects to play now, in order: kept where an insert stays, built where it's new, and rewired */
   setInserts(inserts: Insert[]): void;
   /** what an automation lane moves, by its id: the strip's own lanes, and `<insert id>.<setting>` for each effect */
@@ -199,36 +201,9 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
       panner.output.connect(delaySendGain).connect(delayIn);
       if (autoPan) lfo(panner.pan, autoPan.rate, autoPan.depth);
 
-      const effects = new Map<string, Effect>();
-      let order: string[] | null = null; // the effects' ids as wired, null before the first wiring
-      const setInserts = (list: Insert[]) => {
-        const playing = list.filter((x) => !x.bypass);
-        const ids = playing.map((x) => `${x.id}:${x.type}`);
-        if (order && ids.join() === order.join()) return;
-        order = ids;
-        const keep = new Set(ids);
-        for (const [id, e] of effects)
-          if (!keep.has(id)) {
-            e.dispose();
-            effects.delete(id);
-          }
-        tone.disconnect();
-        for (const e of effects.values()) e.output.disconnect();
-        let last: AudioNode = tone;
-        for (const x of playing) {
-          const id = `${x.id}:${x.type}`;
-          let e = effects.get(id);
-          if (!e) {
-            const built = buildEffect(ctx, x, bpm);
-            if (!built) continue;
-            e = built;
-            effects.set(id, e);
-          }
-          last.connect(e.input);
-          last = e.output;
-        }
-        last.connect(user);
-      };
+      const chain = effectChain(ctx, tone, user, bpm);
+      const effects = chain.effects;
+      const setInserts = (list: Insert[]) => chain.setInserts(list);
       setInserts(inserts);
 
       const strip: Strip = {
@@ -245,6 +220,7 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
         level,
         meter,
         effects,
+        chain,
         setInserts,
         params() {
           const map = new Map<string, EffectParamTarget>([
@@ -267,7 +243,7 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
     tempoAt(next: number, at: number): void {
       bpm = next;
       this.delayAt(delaySeconds(next), at);
-      for (const s of strips) for (const e of s.effects.values()) e.tempo(next, at);
+      for (const s of strips) s.chain.tempo(next, at);
     },
     /** the delay's time, `seconds`, from `at` (a quick glide, so the echoes don't jump), dropping later changes */
     delayAt(seconds: number, at: number): void {
@@ -284,7 +260,7 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
         () => {
           for (const o of sources) o.stop();
           for (const n of nodes) n.disconnect();
-          for (const s of strips) for (const e of s.effects.values()) e.dispose();
+          for (const s of strips) s.chain.dispose();
         },
         fade * 1000 + 50,
       );

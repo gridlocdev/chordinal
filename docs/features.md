@@ -62,7 +62,7 @@ Click an effect's name to open its settings beside the strips: a slider for each
 - **Stereo Width**: from mono to twice as wide.
 - **Gain**: turns the track up or down by up to 24 dB.
 
-Play and the WAV and MP3 exports go through the effects, and Delay and Tremolo follow tempo changes. Live playing on the keys doesn't go through them yet.
+Play, the WAV and MP3 exports and the keys you play live all go through the effects, and Delay and Tremolo follow tempo changes.
 
 ## Automation
 
@@ -72,7 +72,7 @@ A volume lane sets a gain on top of the track's fader, from silence up to +6 dB.
 
 ## Playing it like an instrument
 
-Your computer keys (once you click the piano roll) or a MIDI keyboard, with velocity and a sustain pedal, play the selected track's instrument, through its [MIDI effects](#midi-effects). Clicking a key on the piano roll's keyboard plays it too, and the row of every key sounding lights up.
+Your computer keys (once you click the piano roll) or a MIDI keyboard, with velocity and a sustain pedal, play the selected track's instrument, through its [MIDI effects](#midi-effects) and its [track effects](#track-effects). Clicking a key on the piano roll's keyboard plays it too, and the row of every key sounding lights up.
 
 ## Recording
 

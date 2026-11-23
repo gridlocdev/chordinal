@@ -524,3 +524,61 @@ export function buildEffect(ctx: BaseAudioContext, insert: Insert, bpm: number):
   if (!build || !effectSpec(insert.type)) return null;
   return build(ctx, insertValues(insert), bpm);
 }
+
+/** a track's effects wired in order between two nodes, kept as its inserts change */
+export interface EffectChain {
+  /** the effects playing, by `<insert id>:<type>` (a bypassed insert has none) */
+  effects: Map<string, Effect>;
+  /** wires the inserts that aren't bypassed, in order: an effect that stays is kept, a new one is built */
+  setInserts(list: Insert[]): void;
+  /** the tempo from `at`, for the effects timed to it */
+  tempo(bpm: number, at: number): void;
+  dispose(): void;
+}
+
+/** a chain of effects from `from` to `to`; with none, `from` feeds `to` */
+export function effectChain(ctx: BaseAudioContext, from: AudioNode, to: AudioNode, bpm: number): EffectChain {
+  const effects = new Map<string, Effect>();
+  let order: string[] | null = null; // the effects' ids as wired, null before the first wiring
+  return {
+    effects,
+    setInserts(list) {
+      const playing = list.filter((x) => !x.bypass);
+      const ids = playing.map((x) => `${x.id}:${x.type}`);
+      if (order && ids.join() === order.join()) return;
+      order = ids;
+      const keep = new Set(ids);
+      for (const [id, e] of effects)
+        if (!keep.has(id)) {
+          e.dispose();
+          effects.delete(id);
+        }
+      from.disconnect();
+      for (const e of effects.values()) e.output.disconnect();
+      let last: AudioNode = from;
+      for (const x of playing) {
+        const id = `${x.id}:${x.type}`;
+        let e = effects.get(id);
+        if (!e) {
+          const built = buildEffect(ctx, x, bpm);
+          if (!built) continue;
+          e = built;
+          effects.set(id, e);
+        }
+        last.connect(e.input);
+        last = e.output;
+      }
+      last.connect(to);
+    },
+    tempo(next, at) {
+      bpm = next;
+      for (const e of effects.values()) e.tempo(next, at);
+    },
+    dispose() {
+      from.disconnect();
+      for (const e of effects.values()) e.dispose();
+      effects.clear();
+      order = null;
+    },
+  };
+}
