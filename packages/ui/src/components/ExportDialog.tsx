@@ -4,7 +4,7 @@ import { signal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { barAt } from '@chordinal/daw';
 import type { Loop, MeterChange } from '@chordinal/daw';
-import { project, selectedClip, chordRange, picked } from '../store.ts';
+import { project, selectedClip, picked } from '../store.ts';
 import { bounce, exportDialog, TAIL } from '../bounce.ts';
 import { selectionRange } from '../commands.ts';
 
@@ -35,7 +35,7 @@ export function ExportDialog() {
   const set = (patch: Partial<Choices>) => {
     choices.value = { ...c, ...patch };
   };
-  const selection = picked.value.size || chordRange.value || selectedClip.value ? selectionRange() : null;
+  const selection = picked.value.size || selectedClip.value ? selectionRange() : null;
   const ranges: [Range, string, boolean][] = [
     ['all', 'Whole project', true],
     ['loop', p.loop ? `Loop (${bars(p.meters, p.loop)})` : 'Loop', !!p.loop],

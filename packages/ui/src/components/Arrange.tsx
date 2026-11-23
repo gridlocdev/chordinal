@@ -1,13 +1,12 @@
-// The arrangement: a ruler of bars and markers, the chord track, then a row per track, and below them + Track and
+// The arrangement: a ruler of bars and markers, then a row per track, and below them + Track and
 // + Drums and a place to drop an instrument (or a track's header, to move it last). Cmd/Ctrl + wheel zooms. While
 // playing, the view scrolls to keep the playhead in sight (Follow Playhead).
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { RefObject } from 'preact';
-import { project, chordRange, beat, playing, settings } from '../store.ts';
+import { project, beat, playing, settings } from '../store.ts';
 import { arrangeZoom as zoom, arrangePpb, moveTrackTo } from '../tracks.ts';
 import { HEAD_W, ZOOM, width, px, span, fitted } from './arrange-view.ts';
 import { Ruler } from './Ruler.tsx';
-import { ChordLane } from './ChordLane.tsx';
 import { TrackRow } from './TrackRow.tsx';
 import { PRESET, TRACK, carries, readPreset } from './drag-data.ts';
 import type { DroppedPreset } from './drag-data.ts';
@@ -134,7 +133,6 @@ export function Arrange({ actions }: ArrangeProps) {
   useEffect(() => {
     arrangePpb.value = ppb;
   }, [ppb]);
-  const range = chordRange.value;
   return (
     <div class="arrange">
       <div class="scroll" ref={scroller}>
@@ -144,16 +142,6 @@ export function Arrange({ actions }: ArrangeProps) {
               <MarkerName />
             </div>
             <Ruler beats={beats} ppb={ppb} />
-          </div>
-          <div class="track chords">
-            <div
-              class="head"
-              title="Drag across the chord track to pick a stretch, then press ● and sound the chord's notes"
-            >
-              <span class="name">Chords</span>
-              <span class="inst">{range ? 'Press ● and sound the chord' : 'Drag to pick a stretch'}</span>
-            </div>
-            <ChordLane beats={beats} ppb={ppb} />
           </div>
           {p.tracks.map((t, i) => (
             <TrackRow

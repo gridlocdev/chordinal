@@ -52,10 +52,8 @@ function rec(): Recording {
 /** a melody take on track t1 from `start`, with these keys played */
 function take(start: number, played: RecordedKey[]): Take {
   return {
-    kind: 'melody',
     track: 't1',
     start,
-    range: null,
     rec: rec(),
     played,
     unhear: () => {},

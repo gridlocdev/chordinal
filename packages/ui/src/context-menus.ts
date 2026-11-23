@@ -1,16 +1,15 @@
 // The right-click menus, one for each thing that can be clicked: a clip, an empty stretch of a lane, a track's
-// header, the ruler, the chord track, a note, the piano roll's background, a mixer strip, and the browser's
+// header, the ruler, a note, the piano roll's background, a mixer strip, and the browser's
 // instruments and takes. The part clicked is selected first, so the menu's commands act on it.
 import { TRACK_COLORS, findClip, isDrums } from '@chordinal/daw';
 import { renameMarker, removeMarker, markerRange } from '@chordinal/daw';
 import { barAt } from '@chordinal/daw';
 import { appMenu } from './platform/app-menu.ts';
 import type { MenuEntry, MenuItem } from './platform/app-menu.ts';
-import { cut as cutChord } from '@chordinal/sketch';
-import { project, selected, selectedClip, chordRange, settings, setSettings, picked } from './store.ts';
+import { project, selected, selectedClip, settings, setSettings, picked } from './store.ts';
 import { edit } from './document.ts';
 import { seek } from './player.ts';
-import { record, dropTake } from './recording.ts';
+import { dropTake } from './recording.ts';
 import { focus } from './focus.ts';
 import { askText } from './ask.ts';
 import {
@@ -57,7 +56,6 @@ import {
 import { item, snapItems, addMarkerAt, catalog } from './commands.ts';
 import { askTempo, askMeter, askTempoChange, askMeterChange } from './timeline.ts';
 import type { InstrumentRef } from './tracks.ts';
-import type { ChordRange } from './store.ts';
 
 const COLOR_NAMES = ['Amber', 'Sky', 'Green', 'Pink', 'Violet', 'Orange', 'Grey'];
 const sameColor = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - (b[i] ?? NaN)) < 1e-3);
@@ -247,42 +245,6 @@ export function rulerMenu(at: number): void {
     { label: 'Meter Change Here…', run: () => askMeterChange(bar) },
     { label: 'Tempo…', run: askTempo },
     { label: 'Meter…', run: askMeter },
-  ]);
-}
-
-/** the chord track, at a beat */
-export function chordMenu(at: number): void {
-  const p = project.value;
-  focus.value = 'chords';
-  const chord = p.chords.find((c) => at >= c.beat && at < c.beat + c.beats);
-  const bar = barAt(p.meters, at);
-  const range: ChordRange =
-    chordRange.value && at >= chordRange.value.beat && at < chordRange.value.beat + chordRange.value.beats
-      ? chordRange.value
-      : chord
-        ? { beat: chord.beat, beats: chord.beats }
-        : { beat: bar.start, beats: bar.beatsPerBar };
-  chordRange.value = range;
-  appMenu.popup([
-    {
-      label: 'Record a Chord Here',
-      run: () => {
-        chordRange.value = range;
-        void record();
-      },
-    },
-    {
-      label: 'Delete Chords Here',
-      enabled: p.chords.some((c) => c.beat < range.beat + range.beats && c.beat + c.beats > range.beat),
-      run: () =>
-        edit((q) => ({
-          ...q,
-          chords: q.chords.flatMap((c) => cutChord(c, range.beat, range.beat + range.beats)),
-        })),
-    },
-    '-',
-    { label: 'Loop This Stretch', run: () => loopOver({ from: range.beat, to: range.beat + range.beats }) },
-    playheadHere(at),
   ]);
 }
 

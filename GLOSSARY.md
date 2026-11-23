@@ -7,7 +7,7 @@ Chordinal is a general-purpose DAW for writing and arranging songs by hand. Thes
 ### The song
 
 **Project**:
-A song and everything about it: its **tracks**, tempo, meter, **markers**, **chord track** and **loop**, saved as a folder holding a `project.json`.
+A song and everything about it: its **tracks**, tempo, meter, **markers**, **chords** and **loop**, saved as a folder holding a `project.json`.
 _Avoid_: song file, session, document
 
 **Track**:
@@ -25,9 +25,9 @@ One pitch in a **clip**: where it starts (from the clip's start), how long it la
 A named set of linked **clips** that share their **notes**, length and **step**: editing one edits them all. **Make Unique** turns a clip back into an ordinary one.
 _Avoid_: linked clip, ghost clip, instance
 
-**Chord track**:
-The row above the **tracks** that names the chord at each stretch of the **project**. It holds names, not sound.
-_Avoid_: chord lane, harmony track
+**Chords**:
+The names of the chords at each stretch of the **project**, shown above the **piano roll**. They hold names, not sound: the Melody Composer writes them, and **Humanize** follows them.
+_Avoid_: chord track, chord lane, harmony track
 
 **Marker**:
 A named point in the **project**, such as the start of a verse. The stretch from one marker to the next is a section.
@@ -54,7 +54,7 @@ The line in the **arrangement** where playing starts, and that moves as it plays
 _Avoid_: cursor, position
 
 **Selection**:
-The **notes**, **clip** or chords picked for the next edit.
+The **notes** or **clip** picked for the next edit.
 
 **Piano roll**:
 The editor tab that shows a **clip's** notes as bars against a keyboard, for drawing and editing them.
@@ -103,7 +103,7 @@ _Avoid_: recording, sketch
 
 ## Relationships
 
-- A **Project** holds many **Tracks**, one **Chord track**, any number of **Markers** and at most one **Loop**.
+- A **Project** holds many **Tracks**, its **Chords**, any number of **Markers** and at most one **Loop**.
 - A **Track** plays one **Instrument** and holds many **Clips**.
 - A **Clip** holds many **Notes** and belongs to at most one **Pattern**; a **Pattern** links one or more **Clips**.
 - An **Instrument** comes from one **Sound library**; a **Kit** is an **Instrument**.

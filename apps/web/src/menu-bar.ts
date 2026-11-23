@@ -1,15 +1,13 @@
-// Chordinal's menu bar: its File menu (§4: New, Open…, Open Recent, Save, Save As…), Track ▸ Record Melody,
-// Transport ▸ Record a Chord (§9.3), and Help, around the shared menus
+// Chordinal's menu bar: its File menu (§4: New, Open…, Open Recent, Save, Save As…), Track ▸ Record Melody (§9.3),
+// and Help, around the shared menus
 // (packages/ui/src/menu-bar.ts). The app's own commands join the shared catalog here.
-import { projectName, chordRange } from '@chordinal/ui';
+import { projectName } from '@chordinal/ui';
 import { recording } from '@chordinal/ui';
 import { catalog, item, busy } from '@chordinal/ui';
 import { editMenu, trackMenu, transportMenu, viewMenu, startMenus } from '@chordinal/ui';
 import type { Menu, MenuEntry } from '@chordinal/ui';
 import { recent, newSong, openFolder, openRecent, clearRecent, revealProject } from './files.ts';
-import { recordMelody, recordChord } from './whistle.ts';
-
-const kind = () => recording.value?.kind;
+import { recordMelody } from './whistle.ts';
 
 catalog.add([
   {
@@ -53,20 +51,9 @@ catalog.add([
     group: 'Track',
     title: 'Record Melody',
     run: () => recordMelody(),
-    checked: () => kind() === 'melody',
-    enabled: () => kind() !== 'chord',
+    checked: () => !!recording.value,
     description: 'Record a melody from the microphone, or play it, onto the selected track.',
     keywords: 'sing hum whistle voice microphone take',
-  },
-  {
-    id: 'recordChord',
-    group: 'Transport',
-    title: 'Record a Chord',
-    run: recordChord,
-    checked: () => kind() === 'chord',
-    enabled: () => kind() === 'chord' || (!kind() && !!chordRange.value),
-    description: 'Record the notes of a chord onto the stretch picked on the chord track.',
-    keywords: 'sing hum whistle voice microphone arpeggio',
   },
 ]);
 
@@ -111,7 +98,7 @@ function menuBar(): MenuEntry[] {
     fileMenu(),
     editMenu(),
     trackMenu([item('recordMelody')]),
-    transportMenu(['-', item('recordChord')]),
+    transportMenu(),
     viewMenu([item('commandMenu'), item('browser'), '-']),
     { label: 'Help', submenu: [item('shortcuts'), item('readme')] },
   ];

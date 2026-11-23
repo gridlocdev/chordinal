@@ -169,7 +169,7 @@ export function Transport({ onNew, newLabel = 'New' }: TransportProps) {
           <button
             class={`rec ${recording.value ? 'on' : ''}`}
             aria-label="Record"
-            title="Record a melody on the selected track, or a chord over the stretch picked on the chord track (R)"
+            title="Record a melody on the selected track (R)"
             onClick={record}
           >
             {ICON.rec}

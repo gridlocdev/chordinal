@@ -13,7 +13,12 @@ import type { TimelineFlag } from '../timeline.ts';
 import { useCanvas } from './canvas.ts';
 import { palette, alpha } from '../theme.ts';
 import { px, snapTo } from './arrange-view.ts';
-import type { LaneProps } from './ChordLane.tsx';
+
+/** a lane's length in beats and its scale in px per beat */
+export interface LaneProps {
+  beats: number;
+  ppb: number;
+}
 
 const FLAGS = [15, 29] as const; // px: the row of tempo and meter flags
 

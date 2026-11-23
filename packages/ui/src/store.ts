@@ -97,12 +97,6 @@ export interface ClipRef {
   clip: string;
 }
 
-/** a stretch of the chord track, in beats */
-export interface ChordRange {
-  beat: number;
-  beats: number;
-}
-
 /** a library being downloaded, and how far along (0..1) */
 export interface LibraryDownload {
   id: string;
@@ -132,8 +126,6 @@ export const libraryDownload: Signal<LibraryDownload | null> = signal(null);
 export const selected: Signal<string | null> = signal(null);
 /** the clip selected in the arrangement */
 export const selectedClip: Signal<ClipRef | null> = signal(null);
-/** a stretch of the chord track picked to whistle a chord for */
-export const chordRange: Signal<ChordRange | null> = signal(null);
 
 /** selected notes, as 'clipId:index': an edit that moves notes to other indexes clears it */
 export const picked: Signal<Set<string>> = signal(new Set());

@@ -1,5 +1,5 @@
 // A project: tracks of clips of notes, each track with an instrument, a channel strip, MIDI FX and automation, over a
-// tempo map, meter changes, markers and a chord track. Every edit is a pure function returning a new project (the old
+// tempo map, meter changes, markers and the chords' names. Every edit is a pure function returning a new project (the old
 // one is untouched), so undo is a list of earlier projects. Knows nothing of how a project was made.
 import type { TempoSegment } from '@chordinal/lib';
 import type { MeterChange } from './meter.ts';

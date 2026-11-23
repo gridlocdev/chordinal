@@ -14,7 +14,6 @@ import {
   selected,
   selectedClip,
   picked,
-  chordRange,
   beat,
   notify,
   setSettings,
@@ -99,7 +98,6 @@ function show(p: Project, name: string, clean = false): void {
   selectedClip.value = null;
   picked.value = new Set();
   focus.value = 'arrange';
-  chordRange.value = null;
   beat.value = 0;
   notify('');
   if (name) setSettings({ project: name });

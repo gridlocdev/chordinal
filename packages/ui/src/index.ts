@@ -6,7 +6,6 @@ export { canCopy, clipboard, copy, cut, duplicate, paste } from './clipboard.ts'
 export type { ClipboardContent } from './clipboard.ts';
 export { addMarkerAt, busy, catalog, deleteSelection, item, selectionRange, snapItems } from './commands.ts';
 export {
-  chordMenu,
   clipMenu,
   laneMenu,
   noteMenu,
@@ -102,7 +101,6 @@ export {
 export {
   FADER_FLOOR_DB,
   beat,
-  chordRange,
   dirty,
   exporting,
   hist,
@@ -129,7 +127,6 @@ export {
 export { NOTICE_MS, startNotices } from './notices.ts';
 export type {
   BrowserTab,
-  ChordRange,
   ClipRef,
   EditorTab,
   Levels,

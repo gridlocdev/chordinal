@@ -255,11 +255,10 @@ test('the track headers and the browser: a header\'s double-click, + Drums, the 
         await until('the shortcuts closed', async ()=> !await page.$('.dialog.shortcuts'));
         await run.click('browser');
         await until('the panel is back after the shortcuts', async ()=> !!await page.$('.side-panel'));
-        // §9.3: recording is Chordinal's: Record Melody on a track, Record a Chord once a stretch of the chord track is picked
-        // (neither is clicked: a headless run never opens the microphone)
+        // §9.3: recording is Chordinal's: Record Melody on a track (not clicked: a headless run never opens the microphone)
         const menuItem = (id)=> run.app.evaluate(({ Menu }, id)=> { const m = Menu.getApplicationMenu().getMenuItemById(id); return m && { enabled: m.enabled }; }, id);
         assert.deepEqual(await menuItem('recordMelody'), { enabled: true });
-        assert.deepEqual(await menuItem('recordChord'), { enabled: false });
+        assert.equal(await menuItem('recordChord'), null, 'there is no Record a Chord');
         await run.app.evaluate(({ BrowserWindow })=> BrowserWindow.getAllWindows()[0].webContents.send('doc:closing'));
         await page.waitForSelector('.dialog.ask');
         await page.click('.dialog.ask button.other');

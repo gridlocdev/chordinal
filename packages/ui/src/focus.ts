@@ -6,7 +6,7 @@ import type { Signal } from '@preact/signals';
 import { settings } from './store.ts';
 
 /** the parts of the window the editing keys can act on */
-export type FocusPart = 'arrange' | 'chords' | 'roll' | 'grid';
+export type FocusPart = 'arrange' | 'roll' | 'grid';
 
 export const focus: Signal<FocusPart> = signal('arrange');
 

@@ -1,6 +1,6 @@
 # Controls
 
-Every command is in the menu bar (File, Edit, Track, Transport, View, Help) and in the command menu (`⌘K`, `Ctrl+K`): type part of its name and press Return. **Help ▸ Keyboard Shortcuts** (`⌘/`, `Ctrl+/`) lists the shortcuts below inside the app. Right-clicking a clip, a lane, a track's header, the ruler, the chord track, a note, a mixer strip or anything in the browser shows what can be done to it.
+Every command is in the menu bar (File, Edit, Track, Transport, View, Help) and in the command menu (`⌘K`, `Ctrl+K`): type part of its name and press Return. **Help ▸ Keyboard Shortcuts** (`⌘/`, `Ctrl+/`) lists the shortcuts below inside the app. Right-clicking a clip, a lane, a track's header, the ruler, a note, a mixer strip or anything in the browser shows what can be done to it.
 
 Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, and the letters wait while the piano roll has it, because they play notes there.
 
@@ -57,7 +57,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Command | macOS | Windows and Linux | What it does |
 | --- | --- | --- | --- |
 | Play or Stop | `Space` | `Space` | Start or stop playing from the playhead. |
-| Record | `R` | `R` | Record a melody on the selected track, or a chord on the chord track. |
+| Record | `R` | `R` | Record a melody on the selected track. |
 | Go to Start | `↩` | `Enter` | Move the playhead to the start (of the loop, while it plays). |
 | Go to End | `↘` | `End` | Move the playhead to the end of the project. |
 | Back a Bar | `,` | `,` | Move the playhead back a bar. |
@@ -109,7 +109,6 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Paste where you clicked | right-click, **Paste Here** |
 | Loop | drag along the ruler; right-click a clip, a marker or the ruler |
 | Record a melody (into the microphone, or played on the keys or a MIDI keyboard) | **●** |
-| Set a chord | drag over the chord track, then `R` and sound the chord's notes one at a time |
 | Hear a note | press a key on the piano roll's keyboard (drag up or down to glide), or play the letter keys or a MIDI keyboard; the row of each key sounding lights up |
 | Draw a note | click empty space in the piano roll |
 | Move or resize a note | drag it, or drag its right edge |

@@ -3,14 +3,13 @@
 // plain keys, which must still type in a text field, by the page (keys.ts). The menu bar is built in menu-bar.ts; an
 // app adds its own commands with `catalog.add`.
 //
-// What Edit's commands act on follows the part last clicked (focus.ts): the picked notes in the piano roll, the
-// selected clip in the arrangement, or the stretch picked on the chord track.
+// What Edit's commands act on follows the part last clicked (focus.ts): the picked notes in the piano roll, or the
+// selected clip in the arrangement.
 import { appMenu } from './platform/app-menu.ts';
 import { barAt, barLines } from '@chordinal/daw';
 import { projectEnd, findClip } from '@chordinal/daw';
 import { markerRange, addMarker, insertTime, deleteTime } from '@chordinal/daw';
 import { projectMidi } from '@chordinal/daw';
-import { cut as cutChord } from '@chordinal/sketch';
 import {
   project,
   projectName,
@@ -19,7 +18,6 @@ import {
   selected,
   selectedClip,
   selectedTrack,
-  chordRange,
   beat,
   playing,
   settings,
@@ -100,24 +98,16 @@ export const busy = (): boolean => busyWith() !== null;
 const inRoll = () => focus.value === 'roll' && hasPicks();
 const clipSelected = () => focus.value !== 'roll' && !!selectedClip.value;
 
-/** Delete: the picked notes, the selected clip or the chords in the stretch picked, in the part last clicked */
+/** Delete: the picked notes or the selected clip, in the part last clicked */
 export function deleteSelection(): boolean {
   if (focus.value === 'roll') return deletePicked();
-  if (focus.value === 'chords') {
-    const r = chordRange.value;
-    if (!r) return false;
-    edit((p) => ({ ...p, chords: p.chords.flatMap((c) => cutChord(c, r.beat, r.beat + r.beats)) }));
-    chordRange.value = null;
-    return true;
-  }
   const c = selectedClip.value;
   if (!c) return false;
   deleteClip(c.track, c.clip);
   return true;
 }
 
-const canDelete = () =>
-  focus.value === 'roll' ? hasPicks() : focus.value === 'chords' ? !!chordRange.value : !!selectedClip.value;
+const canDelete = () => (focus.value === 'roll' ? hasPicks() : !!selectedClip.value);
 
 /** the stretch a loop is set to: the selection, else the section at the playhead, else four bars from its bar */
 export function selectionRange(): Loop | null {
@@ -128,8 +118,6 @@ export function selectionRange(): Loop | null {
       b = barAt(p.meters, Math.max(...list.map((o) => o.at + o.n.beats)) - 1e-6);
     return { from: a.start, to: b.start + b.beatsPerBar };
   }
-  if (focus.value === 'chords' && chordRange.value)
-    return { from: chordRange.value.beat, to: chordRange.value.beat + chordRange.value.beats };
   const c = selectedClip.value;
   if (c) return clipRange(c.track, c.clip);
   const m = p.markers.findLastIndex((x) => x.beat <= beat.value + 1e-6);
@@ -372,9 +360,8 @@ export const catalog = new CommandCatalog([
     run: () => {
       clearPicked();
       selectedClip.value = null;
-      chordRange.value = null;
     },
-    description: 'Select no notes, clip or chords.',
+    description: 'Select no notes or clip.',
     keywords: 'none clear',
   },
   {
@@ -679,7 +666,7 @@ export const catalog = new CommandCatalog([
     shortcut: 'r',
     run: record,
     checked: () => !!recording.value,
-    description: 'Record a melody on the selected track, or a chord on the chord track.',
+    description: 'Record a melody on the selected track.',
     keywords: 'take capture',
   },
   {

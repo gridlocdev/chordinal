@@ -70,8 +70,6 @@ The pitch tracker follows one clear line in a high register (about 300 to 4,000 
 
 **In the app.** Select a track (or none, and a Melody track is added) and press **●** (or `R`). After a bar of count-in, at the project's tempo and meter where the playhead is, sing the melody. The click is a low tick under the pitch tracker's range, but use headphones anyway. Nothing else plays while you record, so the band can't leak into the take. The playhead follows the take, and notes are written into the arrangement and the piano roll about a beat behind it (keys you play show up as you play them). When you stop, the whole take is read again on the click's grid and put in a new clip from the bar you started in, and the playhead goes back to the start of that clip.
 
-Then the chords: drag over the chord track above the tracks (bars, or beats with Shift held), press `R` (or **Transport ▸ Record a Chord**) and sound the chord's notes one at a time as an arpeggio, in any order and octave, in your own time. Press `R` again and the chord is named in the project's key from the notes you held longest, and replaces the chords there. Fix notes in the piano roll like any others.
-
 In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav` (ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it again. Audio files dropped on a track are read the same way, at the project's tempo.
 
 **From the command line.** Chordinal Melody Composer, a separate repository, has `just transcribe`, which writes a recorded melody in its notation for a song spec.

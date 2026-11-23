@@ -1,26 +1,23 @@
 // Whistle to MIDI: ● (or R) records a whistled melody into a new clip on the selected track, from the bar the playhead
 // is in, with a bar's count-in and a click at the project's tempo. Keys played meanwhile, on the computer keyboard or
 // a MIDI keyboard, are recorded instead of the whistle, into the clip the take starts in (the selected one first;
-// a pattern's other clips share them), and need no microphone. With a stretch of the chord track picked, it
-// records a chord instead: an arpeggio whistled freely, named and put on the chord track. Audio files dropped on a
-// track are read the same way. A saved project keeps its takes' audio in <project folder>/takes/.
+// a pattern's other clips share them), and need no microphone. Audio files dropped on a track are read the same way. A saved project keeps its takes' audio in <project folder>/takes/.
 import { signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
 import { mic } from '@chordinal/playback';
 import { place } from './place.ts';
 import { trackPitch } from '@chordinal/lib';
-import { freeNotes, guessKeys } from '@chordinal/lib';
-import { nameChord } from '@chordinal/lib';
-import { parseChord, chordName, chordPitchClasses, pitchName, MODES } from '@chordinal/lib';
+import { guessKeys } from '@chordinal/lib';
+import { pitchName, MODES } from '@chordinal/lib';
 import { encodeWav } from '@chordinal/lib';
 import { bpmAt } from '@chordinal/lib';
 import type { Mode, NamedKey } from '@chordinal/lib';
 import { barAt, meterAt } from '@chordinal/daw';
 import { makeTrack, addTrack, addClip, newId, findClip } from '@chordinal/daw';
-import type { ChordSpan, MeterChange, Note } from '@chordinal/daw';
+import type { MeterChange, Note } from '@chordinal/daw';
 import { startRecording, takeBlock, updateRecording, stopRecording, keyBeat } from '@chordinal/playback';
-import type { MicTake, Recording, TakeKind } from '@chordinal/playback';
-import { analyse, cut, playedNotes, recordInto } from '@chordinal/sketch';
+import type { MicTake, Recording } from '@chordinal/playback';
+import { analyse, playedNotes, recordInto } from '@chordinal/sketch';
 import type { TakeReading } from '@chordinal/sketch';
 import { audioEngine } from '@chordinal/playback';
 import { onPlayed } from './live.ts';
@@ -31,14 +28,12 @@ import {
   projectName,
   selected,
   selectedClip,
-  chordRange,
   beat,
   status,
   statusTone,
   notify,
   settings,
 } from './store.ts';
-import type { ChordRange } from './store.ts';
 import { edit } from './document.ts';
 import { stop } from './player.ts';
 import { errorText } from './errors.ts';
@@ -52,19 +47,17 @@ export interface RecordedKey extends PlayedKey {
   beat: number;
 }
 
-/** the take being recorded: what it is, its track (a melody's), its start beat, a chord's stretch, and the recording */
+/** the take being recorded: its track, its start beat, and the recording */
 export interface Take {
-  kind: TakeKind;
-  track: string | null;
+  track: string;
   start: number;
-  range: ChordRange | null;
   rec: Recording;
   played: RecordedKey[];
   unhear: () => unknown;
   mic: boolean;
 }
 
-/** the take being recorded: { kind, track, start (beat), range (a chord's stretch), rec }, for the views to show. It
+/** the take being recorded: { track, start (beat), rec }, for the views to show. It
  * changes only as a take starts and stops: `rec` fills in place, and the lane redraws as the playhead moves. */
 export const recording: Signal<Take | null> = signal(null);
 let frame = 0;
@@ -173,7 +166,7 @@ async function keepAudio(take: MicTake): Promise<string> {
 
 // ── recording ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** a chord for the stretch picked on the chord track, else a melody on the selected track; again to stop */
+/** a melody on the selected track; again to stop */
 export async function record(): Promise<void> {
   if (recording.value) {
     void finish();
@@ -181,8 +174,6 @@ export async function record(): Promise<void> {
   }
   // nothing plays while recording: the band leaking into the mic would be heard as notes
   stop();
-  const range = chordRange.value;
-  const kind: TakeKind = range ? 'chord' : 'melody';
   let heard = '';
   try {
     if (!mic.on)
@@ -190,33 +181,30 @@ export async function record(): Promise<void> {
         if (recording.value) takeBlock(recording.value.rec, samples, time);
       });
   } catch (e) {
-    // a melody can still be played on the keys; a chord is only ever whistled
+    // a melody can still be played on the keys
     heard = `No microphone: ${errorText(e)}.`;
-    if (kind === 'chord' || !hasAudio()) {
+    if (!hasAudio()) {
       notify(`${heard} You can still drop audio files on a track.`, 'error');
       return;
     }
   }
   if (recording.value) return;
   const p = project.value;
-  const at = range ? range.beat : barAt(p.meters, beat.value).start;
-  const track = kind === 'melody' ? targetTrack() : null;
+  const at = barAt(p.meters, beat.value).start;
+  const track = targetTrack();
   const rec = startRecording({
-    kind,
+    kind: 'melody',
     tempo: Math.round(bpmAt(p.tempoMap, at)),
     meter: sigAt(p.meters, at),
     click: settings.value.click,
   });
   // keys played during a melody take (the computer keyboard or a MIDI keyboard) are kept, at their beats in it
   const played: RecordedKey[] = [];
-  const unhear =
-    kind === 'melody'
-      ? onPlayed((e) => played.push({ ...e, beat: keyBeat(rec, e.time, takeClock.latency()) }))
-      : () => {};
-  takingKeys.value = kind === 'melody';
-  recording.value = { kind, track, start: at, range, rec, played, unhear, mic: !heard };
+  const unhear = onPlayed((e) => played.push({ ...e, beat: keyBeat(rec, e.time, takeClock.latency()) }));
+  takingKeys.value = true;
+  recording.value = { track, start: at, rec, played, unhear, mic: !heard };
   const doing = heard ? `${heard} Recording the keys you play…` : 'Recording…';
-  notify(kind === 'chord' ? "Sound the chord's notes one at a time, then press ● again" : doing, 'busy');
+  notify(doing, 'busy');
   const step = () => {
     const r = recording.value;
     if (!r) return;
@@ -225,12 +213,10 @@ export async function record(): Promise<void> {
       return;
     }
     // the playhead follows the take as heard, from its bar once the count-in is over
-    if (r.kind === 'melody') {
-      beat.value = r.start + Math.max(0, (r.rec.playhead - r.rec.origin) / r.rec.beatSec);
-      const notes = notesSoFar(r);
-      if (!sameNotes(notes, takeNotes.value)) takeNotes.value = notes;
-    }
-    notify(r.rec.countIn ? `Count-in: ${r.rec.countIn}` : r.kind === 'chord' ? status.value : doing, 'busy');
+    beat.value = r.start + Math.max(0, (r.rec.playhead - r.rec.origin) / r.rec.beatSec);
+    const notes = notesSoFar(r);
+    if (!sameNotes(notes, takeNotes.value)) takeNotes.value = notes;
+    notify(r.rec.countIn ? `Count-in: ${r.rec.countIn}` : doing, 'busy');
     frame = requestAnimationFrame(step);
   };
   step();
@@ -255,12 +241,10 @@ export async function finish(): Promise<void> {
   takingKeys.value = false;
   r.unhear();
   // the playhead goes back to the start of the clip the take went into (or of the take, when nothing was kept)
-  if (r.kind === 'melody') beat.value = r.start;
+  beat.value = r.start;
   // keys played win over the mic, which heard them clicking
-  const notes =
-    r.kind === 'melody' ? playedNotes(r.played, keyBeat(r.rec, takeClock.now(), takeClock.latency())) : [];
-  // a melody take always has its track
-  if (notes.length && r.track !== null) {
+  const notes = playedNotes(r.played, keyBeat(r.rec, takeClock.now(), takeClock.latency()));
+  if (notes.length) {
     beat.value = placePlayed(r.track, r.start, notes);
     return;
   }
@@ -273,49 +257,18 @@ export async function finish(): Promise<void> {
     notify('That take was too short to read.');
     return;
   }
-  if (r.kind === 'chord') chordTake(take, r.range);
-  else if (r.track !== null)
-    // a melody take from the mic always has its downbeat
-    placeTake(
-      r.track,
-      r.start,
-      analyse({ ...take, kind: 'melody', downbeat: take.downbeat ?? null }),
-      'the take',
-    );
+  // a melody take from the mic always has its downbeat
+  placeTake(
+    r.track,
+    r.start,
+    analyse({ ...take, kind: 'melody', downbeat: take.downbeat ?? null }),
+    'the take',
+  );
   const file = await keepAudio(take).catch((e: unknown) => {
     notify(errorText(e), 'error');
     return '';
   });
   if (file) notify(`${status.value} · audio kept in takes/${file}`, statusTone.value);
-}
-
-/** a chord whistled over the stretch picked as it started: named in the project's key and put on the chord track there */
-function chordTake(take: MicTake, range: ChordRange | null): void {
-  const notes = freeNotes(take.frames);
-  const key = keyFor(notes.map((n) => ({ beat: n.time, beats: n.seconds, key: n.key })));
-  const named = nameChord(notes, key);
-  if (!range || !named) {
-    notify('No notes heard in that chord.');
-    return;
-  }
-  const parsed = parseChord(named.symbol, key.tonic, key.mode);
-  const chord: ChordSpan = {
-    beat: range.beat,
-    beats: range.beats,
-    name: chordName(parsed, key.key.includes('b')),
-    tones: chordPitchClasses(parsed),
-    symbol: named.symbol,
-  };
-  edit((p) => ({
-    ...p,
-    chords: [...p.chords.flatMap((c) => cut(c, range.beat, range.beat + range.beats)), chord].sort(
-      (a, b) => a.beat - b.beat,
-    ),
-  }));
-  chordRange.value = null;
-  notify(
-    `${chord.name}${named.others.length ? ` (or ${named.others.map((o) => chordName(parseChord(o.symbol, key.tonic, key.mode))).join(', ')})` : ''}`,
-  );
 }
 
 /** audio files dropped on a track: each read as a whistled melody at the project's tempo, in a clip from the bar at `at` */
