@@ -4,13 +4,7 @@
 
 ### What's new
 
-- **Automation lanes.** Track ▸ Show Automation (`A`) opens a lane under a track for its volume, pan, tone and reverb and delay sends. Click to add points and drag them, double-click to delete one, and right-click for step, linear or exponential curves. Play and the exports follow the lane, and every edit can be undone.
-
 - **MIDI effects.** Each mixer strip lists its track's MIDI effects, with **+ FX** to add **Scale**, which moves notes into the project's key, **Chord**, which plays a chord over every note: a fixed shape, or the key's own chord on that note, and **Arpeggiator**, which plays held notes one at a time at a rate that follows the tempo, up, down, up and down, as played or at random, over up to four octaves. Bypass or remove one, and change its settings, in the strip, and **Apply to Notes** writes what it plays into the clips so you can edit those notes. Play, the exports and live playing all go through them, and recording keeps the keys you pressed.
-
-### Bugs fixed
-
-- Undo right after Save As no longer turns the project's name back to Untitled: it takes back only your last edit.
 
 ## 1.0.0
 
@@ -27,6 +21,7 @@
 - **Light theme.** Choose Light, Dark or the system's in Settings.
 - **Runs in a browser.** The same page runs without the desktop app and keeps its projects and settings in the browser.
 - **Command line.** `chordinal export` and `render` export projects to MIDI and WAV or MP3, and render a game's soundtrack from project folders with its timing data.
+- **Automation lanes.** Track ▸ Show Automation (`A`) opens a lane under a track for its volume, pan, tone and reverb and delay sends. Click to add points and drag them, double-click to delete one, and right-click for step, linear or exponential curves. Play and the exports follow the lane, and every edit can be undone.
 
 ### Improvements
 
@@ -48,3 +43,4 @@
 - Splitting a note at its very start could leave a note starting before the beginning of the song.
 - A save that finished after you opened another project could write into the wrong one.
 - In Firefox, sliders and the mixer's faders showed a knob with no track.
+- Undo right after Save As turned the project's name back to Untitled.
