@@ -3,6 +3,7 @@
 // an edit, so it can be undone. Note effects (Scale, Chord) play first, then Humanize; the list's order is the order
 // note effects run in.
 import {
+  ARP_FX,
   CHORD_FX,
   CHORD_SHAPES,
   SCALE_FX,
@@ -12,7 +13,7 @@ import {
   removeTrackFx,
   setTrackFx,
 } from '@chordinal/daw';
-import type { ChordShape, TrackFx } from '@chordinal/daw';
+import type { ArpDirection, ChordShape, TrackFx } from '@chordinal/daw';
 import { appMenu } from './platform/app-menu.ts';
 import type { MenuEntry } from './platform/app-menu.ts';
 import { project, selected } from './store.ts';
@@ -33,12 +34,31 @@ export const SHAPE_NAMES: Record<ChordShape, string> = {
 export const SHAPES = ['key', ...Object.keys(CHORD_SHAPES)] as ChordShape[];
 
 /** the effects you can add, with their starting settings */
-export const ADDABLE: TrackFx[] = [{ type: SCALE_FX }, { type: CHORD_FX, shape: 'key' }];
+export const ADDABLE: TrackFx[] = [
+  { type: SCALE_FX },
+  { type: CHORD_FX, shape: 'key' },
+  { type: ARP_FX, rate: '1/16', direction: 'up', octaves: 1, gate: 0.8 },
+];
+
+/** the arpeggiator's directions as the strip names them */
+export const ARP_DIRECTION_NAMES: Record<ArpDirection, string> = {
+  up: 'Up',
+  down: 'Down',
+  updown: 'Up & Down',
+  played: 'As Played',
+  random: 'Random',
+};
+/** the gates the strip offers: how much of a step each note sounds */
+export const GATES = [0.25, 0.5, 0.8, 1];
+
+/** an effect's name where the strip has little room */
+export const fxShortName = (type: string): string => (type === ARP_FX ? 'Arp' : fxName(type));
 
 const trackOf = (id: string) => project.value.tracks.find((t) => t.id === id);
 
 /** a track's FX as the strip shows it: its name, with the chord shape for Chord */
 export function fxLabel(fx: TrackFx): string {
+  if (fx.type === ARP_FX && typeof fx.rate === 'string') return `${fxName(fx.type)} ${fx.rate}`;
   if (fx.type === CHORD_FX && typeof fx.shape === 'string' && fx.shape !== 'key')
     return `Chord ${SHAPE_NAMES[fx.shape as ChordShape] ?? fx.shape}`;
   return fxName(fx.type);

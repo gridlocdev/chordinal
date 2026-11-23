@@ -2,6 +2,9 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import {
   addTrack,
+  arpCycle,
+  arpKey,
+  arpSettings,
   addTrackFx,
   fxName,
   moveTrackFx,
@@ -115,4 +118,62 @@ test('a track FX list adds, sets, moves, bypasses and removes effects, keeping e
   p = removeTrackFx(p, 'k', 0);
   assert.deepEqual(fx(), [{ type: 'scale' }]);
   assert.equal(fxName('chord'), 'Chord');
+});
+
+test('the arpeggiator plays a held chord one key at a time, in each direction and over octaves', () => {
+  assert.deepEqual(arpCycle([64, 60, 67], 'up', 1), [60, 64, 67]);
+  assert.deepEqual(arpCycle([64, 60, 67], 'down', 1), [67, 64, 60]);
+  assert.deepEqual(arpCycle([64, 60, 67], 'played', 1), [64, 60, 67]);
+  assert.deepEqual(arpCycle([60, 64, 67], 'updown', 1), [60, 64, 67, 64]);
+  assert.deepEqual(arpCycle([60, 67], 'up', 2), [60, 67, 72, 79]);
+  const random = arpCycle([60, 64, 67, 71], 'random', 1);
+  const picks = Array.from({ length: 16 }, (_, n) => arpKey(random, n, 'random'));
+  assert.deepEqual(
+    Array.from({ length: 16 }, (_, n) => arpKey(random, n, 'random')),
+    picks,
+    'random is the same every time',
+  );
+  assert.ok(new Set(picks).size > 1);
+});
+
+test('an arpeggiated chord on Play: steps from its first beat, at the rate, with the gate, and the same twice', () => {
+  // a C major chord held for one beat, at 1/8: two steps of half a beat, each sounding 0.4 beats
+  const chord = [60, 64, 67].map((key) => ({ beat: 0, beats: 1, key, vel: 90 }));
+  let p: Project = { ...emptyProject(), key: { tonic: 0, mode: 'major' } };
+  p = addTrack(p, {
+    ...makeTrack(p, { name: 'keys' }),
+    id: 'k',
+    fx: [{ type: 'arp', rate: '1/8', direction: 'up', gate: 0.8 }],
+    clips: [{ id: 'c', start: 0, beats: 4, notes: chord }],
+  });
+  const steps = performProject(p, 0).tracks[0]!.map((n) => [n.beat, n.key, n.beats]);
+  assert.deepEqual(steps, [
+    [0, 60, 0.4],
+    [0.5, 64, 0.4],
+  ]);
+  assert.deepEqual(
+    performProject(p, 1).tracks[0]!.map((n) => [n.beat, n.key, n.beats]),
+    steps,
+  );
+
+  // Chord then Arpeggiator: one held key plays its key's chord, one note at a time, 1/16 over two octaves
+  const one = playing(
+    [60],
+    [
+      { type: 'chord', shape: 'key' },
+      { type: 'arp', octaves: 2 },
+    ],
+  );
+  assert.deepEqual(
+    played(one).map(([, key]) => key),
+    [60, 64, 67, 72],
+    'a one-beat note is four 1/16 steps up C E G, then C an octave up',
+  );
+  assert.deepEqual(arpSettings({ type: 'arp', rate: 'nope', octaves: 9, gate: 0 }), {
+    rate: '1/16',
+    step: 0.25,
+    direction: 'up',
+    octaves: 4,
+    gate: 0.05,
+  });
 });

@@ -31,4 +31,25 @@ test.describe('MIDI effects', () => {
     ]);
     expect(errors).toEqual([]);
   });
+
+  test('an arpeggiator set up in the strip is saved with its rate, direction, octaves and gate', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await runCommand(page, 'Mixer');
+    const list = page.getByRole('group', { name: 'Grand Piano MIDI effects' });
+    await list.getByRole('combobox', { name: 'Add a MIDI effect to Grand Piano' }).selectOption('arp');
+    await list.getByRole('combobox', { name: 'Arpeggiator rate' }).selectOption('1/8t');
+    await list.getByRole('combobox', { name: 'Arpeggiator direction' }).selectOption('updown');
+    await list.getByRole('combobox', { name: 'Arpeggiator octaves' }).selectOption('2');
+    await list.getByRole('combobox', { name: 'Arpeggiator gate' }).selectOption('0.5');
+    await page.screenshot({ path: test.info().outputPath('arp.png') });
+
+    await saveAs(page, 'Arp');
+    expect(savedFx((await storedProject(page, 'Arp')) ?? '', 'Grand Piano')).toEqual([
+      { type: 'arp', rate: '1/8t', direction: 'updown', octaves: 2, gate: 0.5 },
+    ]);
+    expect(errors).toEqual([]);
+  });
 });

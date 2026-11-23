@@ -1,19 +1,20 @@
 // Playing the selected track's instrument live: musical typing on the computer keyboard (while the piano roll has the
 // focus, focus.ts) and any MIDI keyboard. A key sounds while any input holds it. Each key goes through the track's note
-// effects (Scale, Chord), so you hear what Play will play; recording (onPlayed) still gets the keys you pressed.
+// effects (Scale, Chord), so you hear what Play will play; recording (onPlayed) still gets the keys you pressed. With
+// an Arpeggiator on, the keys held go into it and a clock on the audio context plays its steps at the project's tempo.
 import { signal, effect } from '@preact/signals';
 import type { Signal } from '@preact/signals';
 import { midi } from './platform/midi.ts';
 import { NOTE_KEYS, OCTAVE_KEYS, typing } from './platform/keys.ts';
-import { octaveC } from '@chordinal/lib';
+import { bpmAt, octaveC } from '@chordinal/lib';
 import { loadSoundFont, findPreset, createInstrument } from '@chordinal/playback';
 import { presetFor } from '@chordinal/playback';
 import { audioEngine } from '@chordinal/playback';
 import type { Instrument } from '@chordinal/playback';
 import type { LibraryPreset } from '@chordinal/audio';
-import { applyNoteFx } from '@chordinal/daw';
-import type { Track } from '@chordinal/daw';
-import { settings, setSettings, selectedTrack, project, notify } from './store.ts';
+import { applyNoteFx, arpCycle, arpKey, arpSettings, splitAtArp } from '@chordinal/daw';
+import type { ArpSettings, Track, TrackFx } from '@chordinal/daw';
+import { settings, setSettings, selectedTrack, project, beat, notify } from './store.ts';
 import { musicalTyping } from './focus.ts';
 import { errorText } from './errors.ts';
 
@@ -77,11 +78,75 @@ async function load(entry: LibraryPreset): Promise<void> {
   }
 }
 
-/** the keys one pressed key plays through the selected track's note effects */
-export function liveKeys(key: number, velocity = KEY_VELOCITY): number[] {
+/** the keys one pressed key plays through the selected track's note effects (or just `fx`, some of them) */
+export function liveKeys(key: number, velocity = KEY_VELOCITY, fx?: TrackFx[]): number[] {
   const track = selectedTrack.value;
   const note = { beat: 0, beats: 1, key, vel: velocity };
-  return track ? applyNoteFx([note], track, project.value).map((n) => n.key) : [key];
+  return track ? applyNoteFx([note], fx ? { ...track, fx } : track, project.value).map((n) => n.key) : [key];
+}
+
+// ── the live arpeggio ──────────────────────────────────────────────────────────────────────────────────────────────
+
+const AHEAD = 0.1; // seconds of steps scheduled ahead on the audio clock
+const TICK_MS = 25;
+
+/** the arpeggio while keys are held: the keys in it in the order pressed, its loudest key's velocity, the next step
+ * and when it plays */
+let arp: {
+  keys: number[];
+  vel: number;
+  n: number;
+  next: number;
+  timer: ReturnType<typeof setInterval>;
+} | null = null;
+const arpIn = new Map<number, number[]>(); // a held key → the keys it put into the arpeggio
+
+function stopArp(): void {
+  if (arp) clearInterval(arp.timer);
+  arp = null;
+}
+
+/** a step of the live arpeggio: the key, when it starts and stops on the audio clock, and its number */
+export interface ArpStep {
+  key: number;
+  on: number;
+  off: number;
+  n: number;
+}
+
+/** the live arpeggio's steps from step `n` at `next` seconds up to `until`, each `stepSec` long. Pure. */
+export function dueSteps(
+  keys: readonly number[],
+  a: ArpSettings,
+  n: number,
+  next: number,
+  until: number,
+  stepSec: number,
+): ArpStep[] {
+  const cycle = arpCycle(keys, a.direction, a.octaves);
+  const steps: ArpStep[] = [];
+  if (!cycle.length || !(stepSec > 0)) return steps;
+  for (let t = next; t < until; t += stepSec, n++)
+    steps.push({ key: arpKey(cycle, n, a.direction), on: t, off: t + stepSec * a.gate, n });
+  return steps;
+}
+
+/** schedules the arpeggio's steps up to AHEAD seconds from now, through the effects after the arpeggiator */
+function arpTick(): void {
+  const split = splitAtArp(selectedTrack.value?.fx ?? []);
+  if (!arp || !split || !arp.keys.length || audioEngine.rendering) return stopArp();
+  const a = arpSettings(split.arp);
+  const now = audioEngine.context.currentTime;
+  if (arp.next < now) arp.next = now; // the tab slept: start again from now, not with a burst of late steps
+  const stepSec = (a.step * 60) / bpmAt(project.value.tempoMap, beat.value);
+  for (const step of dueSteps(arp.keys, a, arp.n, arp.next, now + AHEAD, stepSec)) {
+    for (const k of liveKeys(step.key, arp.vel, split.after)) {
+      instrument?.noteOn(k, arp.vel, step.on);
+      instrument?.noteOff(k, false, step.off);
+    }
+    arp.n = step.n + 1;
+    arp.next = step.on + stepSec;
+  }
 }
 
 export function press(key: number, velocity = KEY_VELOCITY): void {
@@ -89,6 +154,21 @@ export function press(key: number, velocity = KEY_VELOCITY): void {
   const n = down.get(key) ?? 0;
   down.set(key, n + 1);
   if (n) return;
+  held.value = new Set(down.keys());
+  const split = splitAtArp(selectedTrack.value?.fx ?? []);
+  if (split) {
+    const keys = liveKeys(key, velocity, split.before);
+    arpIn.set(key, keys);
+    if (arp) {
+      arp.keys.push(...keys);
+      arp.vel = Math.max(arp.vel, velocity);
+    } else {
+      const next = audioEngine.context.currentTime + 0.005;
+      arp = { keys: [...keys], vel: velocity, n: 0, next, timer: setInterval(arpTick, TICK_MS) };
+      arpTick();
+    }
+    return;
+  }
   const keys = liveKeys(key, velocity);
   sounds.set(key, keys);
   for (const k of keys) {
@@ -96,7 +176,6 @@ export function press(key: number, velocity = KEY_VELOCITY): void {
     if (!m) instrument?.noteOn(k, velocity);
     sounding.set(k, m + 1);
   }
-  held.value = new Set(down.keys());
 }
 
 export function release(key: number): void {
@@ -106,6 +185,15 @@ export function release(key: number): void {
     return;
   }
   down.delete(key);
+  const into = arpIn.get(key);
+  if (into && arp) {
+    for (const k of into) {
+      const i = arp.keys.indexOf(k);
+      if (i >= 0) arp.keys.splice(i, 1);
+    }
+    if (!arp.keys.length) stopArp();
+  }
+  arpIn.delete(key);
   for (const k of sounds.get(key) ?? []) {
     const m = (sounding.get(k) ?? 0) - 1;
     if (m > 0) sounding.set(k, m);

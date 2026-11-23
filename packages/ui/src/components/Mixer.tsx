@@ -2,13 +2,25 @@
 // a drag one undo step. Beside each fader, a meter of what it plays. Right-click a strip for more.
 import { audioEngine } from '@chordinal/playback';
 import { presetFor } from '@chordinal/playback';
-import { CHORD_FX, fxName, setMixer } from '@chordinal/daw';
+import { ARP_DIRECTIONS, ARP_FX, ARP_RATES, CHORD_FX, arpSettings, fxName, setMixer } from '@chordinal/daw';
 import type { TrackFx } from '@chordinal/daw';
 import { project, selected, settings, setSettings, levels, FADER_FLOOR_DB } from '../store.ts';
 import { edit } from '../document.ts';
 import { toggleMute, toggleSolo } from '../tracks.ts';
 import { stripMenu } from '../context-menus.ts';
-import { ADDABLE, SHAPES, SHAPE_NAMES, addFx, fxLabel, fxMenu, removeFx, setFx } from '../midi-fx.ts';
+import {
+  ADDABLE,
+  ARP_DIRECTION_NAMES,
+  GATES,
+  SHAPES,
+  SHAPE_NAMES,
+  addFx,
+  fxLabel,
+  fxMenu,
+  fxShortName,
+  removeFx,
+  setFx,
+} from '../midi-fx.ts';
 import { rgba } from './canvas.ts';
 
 const DB = [FADER_FLOOR_DB, 6] as const;
@@ -43,7 +55,8 @@ interface FxRowProps {
   index: number;
 }
 
-/** one of a track's MIDI effects: bypass, its name (Chord: its shape), remove; right-click for its order */
+/** one of a track's MIDI effects: bypass, its name, remove, and its settings under them (Chord's shape, the
+ * arpeggiator's rate, direction, octaves and gate); right-click for its order */
 function FxRow({ trackId, fx, index }: FxRowProps) {
   const off = fx.bypass === true;
   return (
@@ -64,7 +77,7 @@ function FxRow({ trackId, fx, index }: FxRowProps) {
         ⏻
       </button>
       <span class="label" title={fxLabel(fx)}>
-        {fxName(fx.type)}
+        {fxShortName(fx.type)}
       </span>
       <button
         class="remove"
@@ -87,7 +100,64 @@ function FxRow({ trackId, fx, index }: FxRowProps) {
           ))}
         </select>
       )}
+      {fx.type === ARP_FX && <ArpSettings trackId={trackId} fx={fx} index={index} />}
     </div>
+  );
+}
+
+/** the arpeggiator's rate, direction, octaves and gate, one dropdown each */
+function ArpSettings({ trackId, fx, index }: FxRowProps) {
+  const a = arpSettings(fx);
+  const gate = GATES.reduce((best, g) => (Math.abs(g - a.gate) < Math.abs(best - a.gate) ? g : best));
+  return (
+    <>
+      <select
+        class="setting"
+        aria-label="Arpeggiator rate"
+        title="Arpeggiator rate: the length of a step (t: triplet)"
+        value={a.rate}
+        onChange={(e) => setFx(trackId, index, { rate: e.currentTarget.value })}
+      >
+        {Object.keys(ARP_RATES).map((r) => (
+          <option value={r}>{r}</option>
+        ))}
+      </select>
+      <select
+        class="setting"
+        aria-label="Arpeggiator direction"
+        title="Arpeggiator direction"
+        value={a.direction}
+        onChange={(e) => setFx(trackId, index, { direction: e.currentTarget.value })}
+      >
+        {ARP_DIRECTIONS.map((d) => (
+          <option value={d}>{ARP_DIRECTION_NAMES[d]}</option>
+        ))}
+      </select>
+      <select
+        class="setting"
+        aria-label="Arpeggiator octaves"
+        title="Arpeggiator octaves: how far up it climbs"
+        value={a.octaves}
+        onChange={(e) => setFx(trackId, index, { octaves: Number(e.currentTarget.value) })}
+      >
+        {[1, 2, 3, 4].map((o) => (
+          <option value={o}>
+            {o} {o === 1 ? 'octave' : 'octaves'}
+          </option>
+        ))}
+      </select>
+      <select
+        class="setting"
+        aria-label="Arpeggiator gate"
+        title="Arpeggiator gate: how much of each step a note sounds"
+        value={gate}
+        onChange={(e) => setFx(trackId, index, { gate: Number(e.currentTarget.value) })}
+      >
+        {GATES.map((g) => (
+          <option value={g}>Gate {Math.round(g * 100)}%</option>
+        ))}
+      </select>
+    </>
   );
 }
 

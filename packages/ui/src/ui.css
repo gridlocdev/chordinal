@@ -1382,7 +1382,7 @@ input[type='range']::-moz-range-thumb {
   text-overflow: ellipsis;
 }
 .strip .fx-row .setting {
-  grid-column: 2 / 4;
+  grid-column: 1 / 4;
 }
 .strip .fx select {
   width: 100%;

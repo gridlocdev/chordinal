@@ -96,7 +96,7 @@ A **track's** **MIDI effect** that adds ghost notes, swing, timing and ornaments
 _Avoid_: groove, randomize
 
 **MIDI effect**:
-One step in a **track's** list of effects that change its **notes** as they play: **Scale**, **Chord** or **Humanize**. The notes saved stay as written. `TrackFx` in the code, `MIDI FX` in the developer docs.
+One step in a **track's** list of effects that change its **notes** as they play: **Scale**, **Chord**, **Arpeggiator** or **Humanize**. The notes saved stay as written. `TrackFx` in the code, `MIDI FX` in the developer docs.
 _Avoid_: plugin, insert
 
 **Metronome**:
