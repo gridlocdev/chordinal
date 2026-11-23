@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Bugs fixed
+
+- Undo right after Save As no longer turns the project's name back to Untitled: it takes back only your last edit.
+
 ## 1.0.0
 
 ### Before you update

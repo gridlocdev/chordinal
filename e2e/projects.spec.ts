@@ -71,6 +71,25 @@ test.describe('Projects', () => {
     expect(errors).toEqual([]);
   });
 
+  test('undo after Save As takes back the edit, not the name', async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    const tempo = page.getByRole('spinbutton', { name: /^Tempo/ });
+    await tempo.fill('96');
+    await page.keyboard.press('Enter');
+    await saveAs(page, 'Night Drive');
+    await expect(page).toHaveTitle('Night Drive — Chordinal');
+
+    await page.locator('.arrange').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('ControlOrMeta+KeyZ');
+    await expect(tempo).toHaveValue('120');
+    await expect(page).toHaveTitle('• Night Drive — Chordinal');
+    await page.keyboard.press('ControlOrMeta+Shift+KeyZ');
+    await expect(tempo).toHaveValue('96');
+    await expect(page).toHaveTitle(/Night Drive — Chordinal$/);
+    expect(errors).toEqual([]);
+  });
+
   test('Save As over a name already saved asks before replacing it', async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);

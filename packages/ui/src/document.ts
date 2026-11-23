@@ -63,6 +63,14 @@ export function edit(fn: (p: Project) => Project, merge: string | null = null): 
   mergeKey = merge;
 }
 
+/** gives the project a new title all through its undo history: naming it isn't an edit, so undo doesn't take it back */
+function retitle(title: string): void {
+  const h = hist.value;
+  if (h.present.title === title) return;
+  const named = (p: Project): Project => (p.title === title ? p : { ...p, title });
+  hist.value = { past: h.past.map(named), present: named(h.present), future: h.future.map(named) };
+}
+
 export function undo(): void {
   mergeKey = null;
   hist.value = undoStep(hist.value);
@@ -220,7 +228,7 @@ export async function saveAs(): Promise<boolean> {
   if (at !== shown) return false;
   if (!chosen) return false;
   const { name, title } = chosen;
-  edit((p) => (p.title === title ? p : { ...p, title }));
+  retitle(title);
   let before = '';
   // The move to the new place waits its turn behind the saves already on their way: made at once, those would land
   // under the new name and hand the old place's token to it. A new place, or one the user agreed to replace, starts
