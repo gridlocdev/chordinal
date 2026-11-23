@@ -1,5 +1,6 @@
 // Making a beat: the step grid on the drum track, then play and stop. Nothing here depends on hearing sound: the
-// test server has no SoundFonts and the browser is muted.
+// test server has no SoundFonts and the browser is muted. Play stays on while its SoundFont loads, so the test holds
+// that download open: a 404 would turn Play off again, sooner on some machines than others.
 import {
   clickAt,
   expect,
@@ -34,6 +35,7 @@ test.describe('Drums and patterns', () => {
     for (const col of [0, 4, 8, 12]) await clickAt(page, 'step-grid', GUTTER + (col + 0.5) * step, 6);
     await expect(page).toHaveTitle('• Untitled — Chordinal');
 
+    await page.route(/\/soundfonts\//, () => {}); // never answered: the SoundFont is still loading
     await playButton(page).click();
     await expect(playButton(page)).toHaveAttribute('aria-pressed', 'true');
     await page.getByRole('button', { name: 'Stop', exact: true }).click();
