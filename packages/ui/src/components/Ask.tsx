@@ -1,4 +1,5 @@
-// The question the app is asking, if any: a line of text, yes or no, or a choice, with Enter and Escape.
+// The question the app is asking, if any: a line of text, yes or no, or a choice, with Enter and Escape. Enter presses
+// the button with the focus, which starts on the main answer.
 import { useEffect, useRef } from 'preact/hooks';
 import { asking, answer, OTHER } from '../ask.ts';
 
@@ -21,7 +22,13 @@ export function Ask() {
         onKeyDown={(e) => {
           e.stopPropagation();
           if (e.key === 'Escape') answer(null);
-          if (e.key === 'Enter') done();
+          // Enter on a button presses that button (Tab or Shift+Tab may have moved to Don't Save or Cancel);
+          // elsewhere, in the text field, it's the main answer
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (e.target instanceof HTMLButtonElement) e.target.click();
+            else done();
+          }
         }}
       >
         <p>{a.text}</p>

@@ -62,9 +62,20 @@ test.describe('Projects', () => {
     await ask.getByRole('button', { name: 'Cancel' }).click();
     await expect(ask).toBeHidden();
     await expect(page.getByRole('spinbutton', { name: /^Tempo/ })).toHaveValue('140');
-    // Don't Save starts the new project
+    // Enter presses the button with the focus: Shift+Tab once is Cancel, which keeps the changes
     await newButton.click();
-    await ask.getByRole('button', { name: 'Don’t Save' }).click();
+    await expect(ask.getByRole('button', { name: 'Save', exact: true })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Enter');
+    await expect(ask).toBeHidden();
+    await expect(page).toHaveTitle('• Untitled — Chordinal');
+    // Don't Save (twice back, then Enter) starts the new project
+    await newButton.click();
+    await expect(ask.getByRole('button', { name: 'Save', exact: true })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Shift+Tab');
+    await expect(ask.getByRole('button', { name: 'Don’t Save' })).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(ask).toBeHidden();
     await expect(page).toHaveTitle('Untitled — Chordinal');
     await expect(page.getByRole('spinbutton', { name: /^Tempo/ })).toHaveValue('120');

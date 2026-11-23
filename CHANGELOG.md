@@ -11,6 +11,10 @@
 
 - **+ FX** in a mixer strip is now **+ MIDI FX**, so it isn't mixed up with **+ Effect**.
 
+### Bugs fixed
+
+- In the **Save changes?** question, Enter pressed **Save** even after Tab or Shift+Tab moved to **Don’t Save** or **Cancel**. It now presses the button you moved to.
+
 ## 1.1.0
 
 ### What's new
