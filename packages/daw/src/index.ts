@@ -9,7 +9,15 @@ export {
   valueAt,
 } from './automation.ts';
 export type { LaneId, LaneParam } from './automation.ts';
-export { performProject, registerFx } from './fx.ts';
+export {
+  addTrackFx,
+  fxName,
+  moveTrackFx,
+  performProject,
+  registerFx,
+  removeTrackFx,
+  setTrackFx,
+} from './fx.ts';
 export {
   CHORD_FX,
   CHORD_SHAPES,

@@ -2,6 +2,11 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import {
   addTrack,
+  addTrackFx,
+  fxName,
+  moveTrackFx,
+  removeTrackFx,
+  setTrackFx,
   chordOver,
   emptyProject,
   makeTrack,
@@ -84,4 +89,30 @@ test('note FX run in order, a bypassed one is skipped, and Humanize-style FX pla
     }),
   });
   assert.equal(played(playing([60], [{ type: 'chord', shape: 'major' }, { type: 'test-count' }])).length, 3);
+});
+
+test('a track FX list adds, sets, moves, bypasses and removes effects, keeping each type', () => {
+  let p = playing([60], []);
+  p = addTrackFx(p, 'k', { type: 'scale' });
+  p = addTrackFx(p, 'k', { type: 'chord', shape: 'key' });
+  const fx = () => p.tracks[0]!.fx;
+  assert.deepEqual(
+    fx().map((f) => f.type),
+    ['scale', 'chord'],
+  );
+  p = setTrackFx(p, 'k', 1, { shape: 'minor', type: 'scale' });
+  assert.deepEqual(fx()[1], { type: 'chord', shape: 'minor' }, 'a patch never changes the type');
+  const same = setTrackFx(p, 'k', 1, { shape: 'minor' });
+  assert.equal(same.tracks[0], p.tracks[0], 'a patch that changes nothing keeps the track');
+  p = moveTrackFx(p, 'k', 1, -1);
+  assert.deepEqual(
+    fx().map((f) => f.type),
+    ['chord', 'scale'],
+  );
+  assert.equal(moveTrackFx(p, 'k', 0, -1).tracks[0], p.tracks[0], 'the first stays first');
+  p = setTrackFx(p, 'k', 0, { bypass: true });
+  assert.deepEqual(played(p), [[0, 60]], 'a bypassed Chord adds nothing');
+  p = removeTrackFx(p, 'k', 0);
+  assert.deepEqual(fx(), [{ type: 'scale' }]);
+  assert.equal(fxName('chord'), 'Chord');
 });

@@ -1,12 +1,14 @@
-// The mixer: a strip per track (pan, fader, mute, solo) and the master volume. Every move is an edit of the project,
+// The mixer: a strip per track (its MIDI effects, pan, fader, mute, solo) and the master volume. Every move is an edit of the project,
 // a drag one undo step. Beside each fader, a meter of what it plays. Right-click a strip for more.
 import { audioEngine } from '@chordinal/playback';
 import { presetFor } from '@chordinal/playback';
-import { setMixer } from '@chordinal/daw';
+import { CHORD_FX, fxName, setMixer } from '@chordinal/daw';
+import type { TrackFx } from '@chordinal/daw';
 import { project, selected, settings, setSettings, levels, FADER_FLOOR_DB } from '../store.ts';
 import { edit } from '../document.ts';
 import { toggleMute, toggleSolo } from '../tracks.ts';
 import { stripMenu } from '../context-menus.ts';
+import { ADDABLE, SHAPES, SHAPE_NAMES, addFx, fxLabel, fxMenu, removeFx, setFx } from '../midi-fx.ts';
 import { rgba } from './canvas.ts';
 
 const DB = [FADER_FLOOR_DB, 6] as const;
@@ -34,6 +36,63 @@ function Meter({ track = -1 }: MeterProps) {
 
 const set = (id: string, field: 'pan' | 'volumeDb', value: number) =>
   edit((p) => setMixer(p, id, field === 'pan' ? { pan: value } : { volumeDb: value }), `mix:${id}:${field}`);
+
+interface FxRowProps {
+  trackId: string;
+  fx: TrackFx;
+  index: number;
+}
+
+/** one of a track's MIDI effects: bypass, its name (Chord: its shape), remove; right-click for its order */
+function FxRow({ trackId, fx, index }: FxRowProps) {
+  const off = fx.bypass === true;
+  return (
+    <div
+      class={`fx-row ${off ? 'off' : ''}`}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        fxMenu(trackId, index);
+      }}
+    >
+      <button
+        class="power"
+        aria-pressed={off}
+        aria-label={`Bypass ${fxName(fx.type)}`}
+        title={off ? `Turn ${fxLabel(fx)} back on` : `Bypass ${fxLabel(fx)}`}
+        onClick={() => setFx(trackId, index, { bypass: !off })}
+      >
+        ⏻
+      </button>
+      <span class="label" title={fxLabel(fx)}>
+        {fxName(fx.type)}
+      </span>
+      <button
+        class="remove"
+        aria-label={`Remove ${fxName(fx.type)}`}
+        title={`Remove ${fxLabel(fx)}`}
+        onClick={() => removeFx(trackId, index)}
+      >
+        ×
+      </button>
+      {fx.type === CHORD_FX && (
+        <select
+          class="setting"
+          aria-label="Chord shape"
+          title={`Chord: ${SHAPE_NAMES[isShape(fx.shape) ? fx.shape : 'key']}`}
+          value={isShape(fx.shape) ? fx.shape : 'key'}
+          onChange={(e) => setFx(trackId, index, { shape: e.currentTarget.value })}
+        >
+          {SHAPES.map((sh) => (
+            <option value={sh}>{SHAPE_NAMES[sh]}</option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
+const isShape = (v: unknown): v is keyof typeof SHAPE_NAMES =>
+  typeof v === 'string' && Object.hasOwn(SHAPE_NAMES, v);
 
 export function Mixer() {
   void settings.value.library;
@@ -64,6 +123,26 @@ export function Mixer() {
               {t.name}
             </span>
             <span class="inst">{presetFor(t.instrument.bank, t.instrument.program)?.name ?? ''}</span>
+            <div class="fx" role="group" aria-label={`${t.name} MIDI effects`}>
+              {t.fx.map((fx, n) => (
+                <FxRow trackId={t.id} fx={fx} index={n} />
+              ))}
+              <select
+                class="add"
+                aria-label={`Add a MIDI effect to ${t.name}`}
+                value=""
+                onChange={(e) => {
+                  const fx = ADDABLE.find((a) => a.type === e.currentTarget.value);
+                  e.currentTarget.value = '';
+                  if (fx) addFx(t.id, fx);
+                }}
+              >
+                <option value="">+ FX</option>
+                {ADDABLE.map((a) => (
+                  <option value={a.type}>{fxName(a.type)}</option>
+                ))}
+              </select>
+            </div>
             <input
               class="pan"
               type="range"

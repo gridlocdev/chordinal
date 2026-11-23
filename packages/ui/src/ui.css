@@ -1025,7 +1025,7 @@ input[type='range']::-moz-range-thumb {
   color: var(--muted);
 }
 .strip {
-  flex: 0 0 86px;
+  flex: 0 0 108px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1036,7 +1036,7 @@ input[type='range']::-moz-range-thumb {
   border-radius: 8px;
   min-height: 0;
   position: relative;
-  overflow: hidden;
+  overflow: hidden auto; /* a strip with many effects scrolls in a short mixer rather than hiding its buttons */
 }
 .strip::before {
   content: '';
@@ -1054,6 +1054,9 @@ input[type='range']::-moz-range-thumb {
 .strip.master {
   margin-left: auto;
   flex-basis: 96px;
+}
+.strip > :not(.level) {
+  flex-shrink: 0;
 }
 .strip.master::before {
   background: var(--accent);
@@ -1082,14 +1085,14 @@ input[type='range']::-moz-range-thumb {
   flex: 1;
   display: flex;
   gap: 6px;
-  min-height: 60px;
+  min-height: 40px;
   padding: 4px 0;
 }
 .strip .fader {
   writing-mode: vertical-lr;
   direction: rtl;
   flex: 1;
-  min-height: 60px;
+  min-height: 40px;
   width: 24px;
   height: auto;
 }
@@ -1341,4 +1344,52 @@ input[type='range']::-moz-range-thumb {
   inset: 0;
   width: 100%;
   height: 100%;
+}
+.strip .fx {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+.strip .fx-row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  border-left: 3px solid var(--track);
+  padding-left: 2px;
+}
+.strip .fx-row.off .label,
+.strip .fx-row.off .setting {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.strip .fx-row button {
+  padding: 0;
+  font-size: 11px;
+  line-height: 16px;
+  background: none;
+  border: 0;
+  color: var(--muted);
+}
+.strip .fx-row .power[aria-pressed='false'] {
+  color: var(--accent);
+}
+.strip .fx-row .label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.strip .fx-row .setting {
+  grid-column: 2 / 4;
+}
+.strip .fx select {
+  width: 100%;
+  min-width: 0;
+  font-size: 11px;
+  padding: 0 2px;
+}
+.strip .fx select.add {
+  color: var(--muted);
 }

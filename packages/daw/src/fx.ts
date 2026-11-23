@@ -1,9 +1,9 @@
 // MIDI FX: code that changes a track's notes as they play, a little differently on each pass round a loop. A type is
 // registered once (the app registers them, so this layer needs none of their code); a track lists the types it uses
 // in track.fx. One type runs once per pass for the whole project, so it can share a plan across its tracks.
-import { trackNotes } from './project.ts';
-import { applyNoteFx } from './note-fx.ts';
-import type { Note, Project, Track } from './project.ts';
+import { trackNotes, updateTrack } from './project.ts';
+import { applyNoteFx, isNoteFx, noteFxName } from './note-fx.ts';
+import type { Note, Project, Track, TrackFx } from './project.ts';
 
 // The pitch moves a voice makes on top of its note (the player's pitch-moves.js plays them).
 
@@ -120,3 +120,40 @@ export function performProject(
   });
   return { tracks, events: [...results.values()].flatMap((r) => r.events) };
 }
+
+/** a track FX's name in the app: a note effect's, a registered type's, or its type */
+export const fxName = (type: string): string =>
+  isNoteFx(type) ? noteFxName(type) : (types.get(type)?.name ?? type);
+
+// ── edits to a track's FX list ──────────────────────────────────────────────────────────────────────────────────────
+
+/** adds an FX at the end of the track's list */
+export const addTrackFx = (p: Project, trackId: string, fx: TrackFx): Project =>
+  updateTrack(p, trackId, (t) => ({ ...t, fx: [...t.fx, fx] }));
+
+/** removes the track's FX at `index` */
+export const removeTrackFx = (p: Project, trackId: string, index: number): Project =>
+  updateTrack(p, trackId, (t) => (t.fx[index] ? { ...t, fx: t.fx.filter((_, i) => i !== index) } : t));
+
+/** moves the track's FX at `index` by `by` places (−1: earlier, so it plays first), kept inside the list */
+export const moveTrackFx = (p: Project, trackId: string, index: number, by: number): Project =>
+  updateTrack(p, trackId, (t) => {
+    const to = Math.max(0, Math.min(t.fx.length - 1, index + by));
+    const fx = t.fx[index];
+    if (!fx || to === index) return t;
+    const rest = t.fx.filter((_, i) => i !== index);
+    return { ...t, fx: [...rest.slice(0, to), fx, ...rest.slice(to)] };
+  });
+
+/** changes the settings of the track's FX at `index` (its type stays) */
+export const setTrackFx = (
+  p: Project,
+  trackId: string,
+  index: number,
+  patch: Record<string, unknown>,
+): Project =>
+  updateTrack(p, trackId, (t) => {
+    const fx = t.fx[index];
+    if (!fx || Object.entries(patch).every(([k, v]) => fx[k] === v)) return t;
+    return { ...t, fx: t.fx.map((f, i) => (i === index ? { ...f, ...patch, type: f.type } : f)) };
+  });
