@@ -9,7 +9,14 @@ import { audioEngine, peak } from './audio-engine.ts';
 import { startTicker } from './ticker.ts';
 import { createInstrument, type Instrument, type LoadedFont } from './soundfont.ts';
 import { createMixer, dbToGain } from './mixer.ts';
-import { beatToSeconds, secondsToBeat, tempoSteps, type Sf2Preset } from '@chordinal/lib';
+import {
+  beatToSeconds,
+  bendCurve,
+  readBend,
+  secondsToBeat,
+  tempoSteps,
+  type Sf2Preset,
+} from '@chordinal/lib';
 import { insertValues, insertsOf, projectEnd } from '@chordinal/daw';
 import { passEvents, duckPlan, scheduleLane, playClick, heldAt, ownsKey } from '@chordinal/daw';
 import { clickBeats } from '@chordinal/daw';
@@ -147,6 +154,13 @@ export function playProject(
   };
   const segments: Segment[] = [seg];
   const timeOf = (s: Segment, beat: number) => s.at + secs(beat) - secs(s.from);
+  // a note with a bend mark, its curve timed in seconds from where its voice starts at `beat` (partway through, when a
+  // held note plays on from a seek or a loop's start)
+  const withCurve = (n: PlayedNote, s: Segment, beat: number, at: number): PlayedNote => {
+    const bend = readBend(n.bend);
+    if (!bend) return n;
+    return { ...n, curve: bendCurve(bend, Math.max(0, beat - n.beat), (b) => timeOf(s, n.beat + b) - at) };
+  };
   const segmentAt = (t: number) => segments.findLast((x) => x.at <= t) ?? segments[0] ?? seg;
   const current = () => segmentAt(ctx.currentTime);
   const beatNow = (t = ctx.currentTime) => {
@@ -234,7 +248,7 @@ export function playProject(
   // notes already sounding at a beat play on from it, their note-offs still to come in this segment
   const restartHeld = (beat: number, at: number) => {
     for (const { i, n } of heldAt(passData(seg.pass).played, tracks, beat)) {
-      instruments[i]?.noteOn(n.key, n.vel, at, n);
+      instruments[i]?.noteOn(n.key, n.vel, at, withCurve(n, seg, beat, at));
       sounding.set(`${i}:${n.key}`, { i, key: n.key, n });
       if (!n.held) carried.add(n);
     }
@@ -271,7 +285,7 @@ export function playProject(
           continue;
         }
         if (e.n.glideFrom === undefined || !inst.glide(e.n.glideFrom, e.n.key, at, GLIDE_SECONDS))
-          inst.noteOn(e.n.key, e.n.vel, at, e.n);
+          inst.noteOn(e.n.key, e.n.vel, at, withCurve(e.n, seg, e.beat, at));
         else sounding.delete(`${e.i}:${e.n.glideFrom}`);
         sounding.set(id, { i: e.i, key: e.n.key, n: e.n });
       }

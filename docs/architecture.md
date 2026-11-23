@@ -16,7 +16,8 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `packages/lib/src/music-theory.ts` | keys, modes, scale degrees, Roman-numeral chords (secondary, slash, extended to 11ths and 13ths, and altered), chord names, a stable hash for tie-breaks |
 | `packages/lib/src/chip-synth.ts` | chip instruments made in code: band-limited pulse, PWM, triangle, saw and sine cycles per key zone, drum hits from LFSR noise and falling tones, and the NES sample channel's delta coding for both, as an in-memory font in `parseSf2`'s shape |
 | `packages/lib/src/impulse.ts` | a seeded synthetic reverb impulse response |
-| `packages/lib/src/midi-file.ts` | Standard MIDI Files: writes one from a score, with tempo and meter changes and a note's cents as pitch bend (on spare channels when tuned notes overlap), and reads one (format 0 or 1) back into tracks of notes, pitch bend included |
+| `packages/lib/src/midi-file.ts` | Standard MIDI Files: writes one from a score, with tempo and meter changes and a note's cents as pitch bend (on spare channels when tuned notes overlap) and its bend as pitch bend that moves over the note (on a channel to itself), and reads one (format 0 or 1) back into tracks of notes, pitch bend included |
+| `packages/lib/src/bend.ts` | a note's bend: reading the mark safely, its cents at a beat into the note, and the curve in seconds for a voice that starts partway through |
 | `packages/lib/src/tempo-map.ts` | a song's tempo over time (steady or ramping segments) and conversion between beats and seconds |
 | `packages/lib/src/pitch-track.ts` | a single line's pitch and level (300 to 4,000 Hz), 100 frames a second (YIN), vibrato kept in the frames |
 | `packages/lib/src/transcribe.ts` | pitch frames → notes in 8ths and triplets, chosen beat by beat: tuning offset, note starts (silences, dips, pitch changes, glides left out), the beat grid near a rough tempo (or on a click's, `clickGrid`), vibrato per note, and key guess; `freeNotes` reads notes recorded with no beat; `readLive` reads a take as it is recorded, a little more each time, once the click grid is fixed |
@@ -37,7 +38,7 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `packages/ui/src/store/classify-file.ts` | what an opened file is: a project, one from a newer Chordinal, something else, or a damaged project |
 | `packages/ui/src/platform/soundfonts.ts` | which SoundFont libraries are installed, and downloading one, through the desktop app |
 | `packages/playback/src/soundfont.ts` | downloads and caches `.sf2` files; `createInstrument(font, preset, destination)` plays notes as Web Audio voices, with optional delayed vibrato and legato glides |
-| `packages/playback/src/pitch-moves.ts` | a voice's pitch moves on its detune: the note's own tuning, delayed vibrato, scoops, tracker arpeggios, falls |
+| `packages/playback/src/pitch-moves.ts` | a voice's pitch moves on its detune: the note's own tuning and its bend (timed in seconds by the player), delayed vibrato, scoops, tracker arpeggios, falls |
 | `packages/playback/src/mixer.ts` | a project's mixer: channel strips (layer gain, the user's gain, low cut, tone filter, fader, the volume automation's gain, pan with optional auto-pan) and shared reverb and tempo-synced, slowly modulated delay buses |
 | `packages/audio/src/soundfont-libraries-data.ts` | the libraries: id, name, folder and license |
 | `packages/audio/src/soundfont-catalog-data.ts` | generated list of every library's files and presets, so the menu doesn't need the files up front (`just catalog`) |
@@ -48,7 +49,7 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `packages/daw/src/note-edits.ts` | edits to a list of notes: quantize, humanize, scale, reverse |
 | `packages/daw/src/history.ts` | the undo history: a list of earlier projects (`packages/ui/src/document.ts` merges consecutive edits of the same kind, a fader drag, into one step) |
 | `packages/daw/src/project-format.ts` | `project.json`: writing it with one compact line per note, reading it with a format and version check and a check that every track, clip, note, tempo and meter can be played, in a fixed key order so a save changes only what changed |
-| `packages/daw/src/project-midi.ts` | a project as a Standard MIDI File: a track each, drums on channel 10, a note's detune as pitch bend; and a MIDI file as a new project, or as tracks added to one |
+| `packages/daw/src/project-midi.ts` | a project as a Standard MIDI File: a track each, drums on channel 10, a note's detune and bend as pitch bend; and a MIDI file as a new project, or as tracks added to one, its pitch bend as each note's detune and bend |
 | `packages/daw/src/steps.ts`, `packages/daw/src/gm-drums-data.ts` | the step grid's model: step sizes, which notes are on a step or off the grid, turning steps on and off and accenting them, a drum track's rows; the General MIDI drum names |
 | `packages/daw/src/meter.ts` | bars from meter changes: bar lines, the bar a beat is in, beats per bar |
 | `packages/daw/src/automation.ts` | automation lanes: each value's range and scale (`LANE_PARAMS`), the value at a beat from keyframes, and the edits (add, move and remove a keyframe, set its curve, clear a lane) |

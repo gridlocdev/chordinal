@@ -7,7 +7,11 @@ import { startPitchMoves } from '@chordinal/playback';
 /** a fake ConstantSourceNode that records what it was given and what it was connected to */
 class FakeConstant {
   static made: FakeConstant[] = [];
-  offset: { value: number; setValueAtTime(): void; linearRampToValueAtTime(): void };
+  offset: {
+    value: number;
+    setValueAtTime(v: number, t: number): unknown;
+    linearRampToValueAtTime(v: number, t: number): unknown;
+  };
   to: unknown = null;
   started = -1;
   stopped = false;
@@ -55,4 +59,35 @@ test('no detune, or a mark that is not a number, adds nothing', () => {
   startPitchMoves(ctx, detune, 0, { detune: 0 });
   startPitchMoves(ctx, detune, 0, { detune: '50' as unknown as number });
   assert.equal(FakeConstant.made.length, 0);
+});
+
+test("a note's curve moves the detune's offset: from its first point, in straight lines, on top of the detune", () => {
+  const calls: [string, number, number][] = [];
+  class Recording extends FakeConstant {
+    constructor(c: unknown, opts: { offset: number }) {
+      super(c, opts);
+      this.offset = {
+        value: opts.offset,
+        setValueAtTime: (v: number, t: number) => calls.push(['set', v, t]),
+        linearRampToValueAtTime: (v: number, t: number) => calls.push(['ramp', v, t]),
+      };
+    }
+  }
+  globals.ConstantSourceNode = Recording;
+  startPitchMoves(ctx, detune, 2, {
+    detune: 10,
+    curve: [
+      { at: 0, cents: 0 },
+      { at: 0.5, cents: 40 },
+      { at: 1, cents: 0 },
+    ],
+  });
+  assert.equal(FakeConstant.made.length, 1, 'one source for the detune and the curve');
+  assert.deepEqual(calls, [
+    ['set', 10, 2],
+    ['ramp', 50, 2.5],
+    ['ramp', 10, 3],
+  ]);
+  startPitchMoves(ctx, detune, 0, { curve: [{ at: 0, cents: 25 }] });
+  assert.equal(FakeConstant.made.length, 2, 'a curve with no detune still bends');
 });

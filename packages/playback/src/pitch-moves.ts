@@ -1,5 +1,6 @@
 // The pitch moves a voice makes on top of its note. Each drives the sample's detune (cents), so they add up:
 //   detune   the whole note off its key, under the rest: a microtone, a just-tuned chord tone
+//   curve    the note's bend: the detune moving over the note, as a held note follows a tuning that changes
 //   vibrato  a wobble that fades in after the note starts, as a player lets it in
 //   scoop    start off pitch and slide onto it (the +1 trick; an octave riser; a chip zap from above)
 //   arp      a tracker arpeggio: the pitch steps through a chord every few frames, one voice faking a chord
@@ -14,12 +15,17 @@ export function startPitchMoves(
   ctx: BaseAudioContext,
   detune: AudioParam,
   t: number,
-  { detune: cents, vibrato, scoop, arp, fall }: PitchMoves = {},
+  { detune: cents, curve, vibrato, scoop, arp, fall }: PitchMoves = {},
 ): () => void {
   const running: (OscillatorNode | ConstantSourceNode)[] = [];
   // a source of its own, so a scoop or a slide that sets the detune itself still lands this far off the key
-  if (typeof cents === 'number' && Number.isFinite(cents) && cents) {
-    const base = new ConstantSourceNode(ctx, { offset: cents });
+  const off = typeof cents === 'number' && Number.isFinite(cents) ? cents : 0;
+  if (off || curve?.length) {
+    const base = new ConstantSourceNode(ctx, { offset: off });
+    for (const [i, p] of (curve ?? []).entries()) {
+      if (i === 0) base.offset.setValueAtTime(off + p.cents, t + p.at);
+      else base.offset.linearRampToValueAtTime(off + p.cents, t + p.at);
+    }
     base.connect(detune);
     base.start(t);
     running.push(base);

@@ -32,6 +32,8 @@ export type {
   ScoreOptions,
   ScoredSymbol,
 } from './chord-guess.ts';
+export { bendAt, bendCurve, readBend } from './bend.ts';
+export type { BendPoint } from './bend.ts';
 export { reverbImpulse } from './impulse.ts';
 export type { ImpulseOptions } from './impulse.ts';
 export { readMidi, shareSpareChannels, varLen, writeMidi } from './midi-file.ts';

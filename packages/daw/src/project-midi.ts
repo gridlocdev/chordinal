@@ -2,7 +2,7 @@
 // program (drum kits on channel 10), the tempo map's changes and the meters. Ramps become their starting tempo, and
 // what MIDI FX add as the project plays isn't in it. And back: a MIDI file read as a new project, or as tracks added to
 // one. Pure.
-import { writeMidi, readMidi, shareSpareChannels } from '@chordinal/lib';
+import { writeMidi, readMidi, readBend, shareSpareChannels } from '@chordinal/lib';
 import type { MidiFile } from '@chordinal/lib';
 import { barAt } from './meter.ts';
 import { trackNotes, isDrums, emptyProject, makeTrack, addTrack, newId, projectEnd } from './project.ts';
@@ -17,11 +17,15 @@ export function projectMidi(p: Project): Uint8Array {
       name: t.name,
       channel: ch < 9 || drums ? ch : ch + 1,
       program: drums ? 0 : t.instrument.program,
-      // a note's detune mark is its tuning, written as pitch bend
-      notes: trackNotes(t).map(({ detune, ...n }) => ({
-        ...n,
-        ...(typeof detune === 'number' && detune && { cents: detune }),
-      })),
+      // a note's detune mark is its tuning, written as pitch bend; its bend mark a curve of pitch bend over it
+      notes: trackNotes(t).map(({ detune, bend, ...n }) => {
+        const curve = readBend(bend);
+        return {
+          ...n,
+          ...(typeof detune === 'number' && detune && { cents: detune }),
+          ...(curve && { bend: curve }),
+        };
+      }),
     };
   });
   shareSpareChannels(tracks);
@@ -62,7 +66,8 @@ export function addMidiTracks(p: Project, midi: Uint8Array | MidiFile, at = 0): 
       id: newId(q, 'c'),
       start,
       beats: end.start + end.beatsPerBar - start,
-      notes: t.notes.map((n) => ({ ...n })),
+      // a note's pitch bend comes back as its tuning (detune) and its bend
+      notes: t.notes.map(({ cents, ...n }) => ({ ...n, ...(cents && { detune: cents }) })),
     };
     q = { ...q, tracks: q.tracks.map((x) => (x.id === track.id ? { ...x, clips: [clip] } : x)) };
   }

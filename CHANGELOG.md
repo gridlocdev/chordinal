@@ -7,6 +7,7 @@
 - **Track effects.** Each mixer strip lists its track's audio effects, with **+ Effect** to add **EQ**, **Compressor**, **Filter**, **Distortion**, **Chorus**, **Delay**, **Reverb**, **Phaser**, **Flanger**, **Tremolo**, **Bitcrusher**, **Limiter**, **Stereo Width** or **Gain**. Click an effect's name for its settings panel, with a slider or dropdown for each setting (double-click a slider for its starting value). Bypass, remove or drag an effect to reorder it in the strip, or right-click it for the same. Delay and Tremolo follow the tempo. Play, the WAV and MP3 exports and the keys you play live go through them, and every change can be undone.
 - **Automate an effect.** An effect's settings show up in the track's automation lane dropdown, so a filter can sweep or a delay can fade in as the song plays.
 - **Notes off the key.** A note in a project can carry its own tuning in cents (`detune` in `project.json`), for a quarter tone, a blue note or just intonation. Play and the audio exports play it, and a MIDI export writes it as pitch bend.
+- **Bends over a note.** A note can also carry a bend (`bend` in `project.json`): points of cents at beats into the note, joined by straight lines, so a held note can slide in pitch while it sounds. Play and the audio exports play it, a MIDI export writes it as pitch bend that moves over the note on a channel of its own, and importing a MIDI file reads pitch bend that moves under a held note back as its bend. Scaling notes stretches their bends with them.
 - **Swing and pocket per section.** A section's marker can give it its own swing (0 plays it straight), pocket and tightness, which **Humanize** uses in place of the song's for that section.
 - **More chord symbols.** Roman numerals take 11ths and 13ths (`V11`, `ii11`, `V13`, `Imaj13`) and altered tensions (`V7b9`, `V7#9`, `Imaj7#11`, `V7b13`), and chord names show them.
 
@@ -15,6 +16,8 @@
 - **+ FX** in a mixer strip is now **+ MIDI FX**, so it isn't mixed up with **+ Effect**.
 
 ### Bugs fixed
+
+- A MIDI file's pitch bend came into a project as a `cents` mark that nothing played. It now comes in as the note's detune, so it plays.
 
 - In the **Save changes?** question, Enter pressed **Save** even after Tab or Shift+Tab moved to **Don’t Save** or **Cancel**. It now presses the button you moved to.
 

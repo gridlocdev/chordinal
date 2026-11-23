@@ -115,6 +115,15 @@ test("a section's own swing wins over the song's: 0 plays it straight, and a str
   assert.ok(swung! > 8.6, 'only the chorus swings');
 });
 
+test("swinging a part keeps each note's tuning and bend for the MIDI file", () => {
+  const bend = [{ beat: 1, cents: 50 }];
+  const [n] = swungNotes(
+    [{ key: 60, beat: 0.5, beats: 2, vel: 90, detune: 5, bend }],
+    scoreOf(sectioned({ swing: 1 }, {})),
+  );
+  assert.deepEqual([n?.detune, n?.bend], [5, bend]);
+});
+
 test("a section's own pocket lays its parts back there, over the song's, and leaves the rest of the song alone", () => {
   const spb = 60 / 90;
   const plain = humanizeFx.perform(sectioned({ pocket: { snare: 20 } }, {}), 0).notes.get('keys') ?? [],

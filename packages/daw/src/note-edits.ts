@@ -1,5 +1,6 @@
 // Edits to a list of notes, for a clip or the picked notes in the piano roll: quantize, humanize, scale and reverse.
 // Pure: each returns new notes.
+import { readBend } from '@chordinal/lib';
 import type { Note } from './project.ts';
 
 /** notes moved onto a grid (in beats), all the way or by a strength from 0 to 1, their ends too; none gets shorter than
@@ -35,9 +36,17 @@ export function humanizeNotes<N extends Note>(
   }));
 }
 
-/** notes played faster (k < 1) or slower (k > 1): their starts from `from` and their lengths scaled */
+/** notes played faster (k < 1) or slower (k > 1): their starts from `from` and their lengths scaled, bends with them */
 export const scaleNotes = <N extends Note>(notes: N[], k: number, from = 0): N[] =>
-  notes.map((n) => ({ ...n, beat: from + (n.beat - from) * k, beats: n.beats * k }));
+  notes.map((n) => {
+    const bend = readBend(n.bend);
+    return {
+      ...n,
+      beat: from + (n.beat - from) * k,
+      beats: n.beats * k,
+      ...(bend && { bend: bend.map((p) => ({ beat: p.beat * k, cents: p.cents })) }),
+    };
+  });
 
 /** notes backwards over the stretch [from, to): a note ending at `to` starts at `from` */
 export const reverseNotes = <N extends Note>(notes: N[], from: number, to: number): N[] =>

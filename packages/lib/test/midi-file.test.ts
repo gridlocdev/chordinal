@@ -108,6 +108,42 @@ test('tuned notes are pitch bends: a chord tuned three ways takes three channels
   );
 });
 
+test('a bent note moves its pitch bend over its length, on a channel no other note joins, and reads back bent', () => {
+  const notes = [
+    // held two beats, tuned 10 cents up and bending 40 more by the end of its first beat, then back
+    {
+      key: 60,
+      beat: 0,
+      beats: 2,
+      vel: 80,
+      cents: 10,
+      bend: [
+        { beat: 1, cents: 40 },
+        { beat: 2, cents: 0 },
+      ],
+    },
+    { key: 64, beat: 0, beats: 2, vel: 80, cents: 10 }, // tuned the same at the start, so it would have shared
+  ];
+  const bytes = writeMidi({
+    tempo: 120,
+    beatsPerBar: 4,
+    tracks: [{ name: 'Lead', channel: 0, program: 0, notes, channels: [1] }],
+  });
+  const back = readMidi(bytes);
+  const [bent, plain] = back.tracks;
+  assert.deepEqual([bent?.channel, bent?.notes.map((n) => [n.key, n.cents])], [0, [[60, 10]]]);
+  assert.deepEqual(
+    plain?.notes.map((n) => [n.key, n.cents, n.bend]),
+    [[64, 10, undefined]],
+    'the other stays still',
+  );
+  const curve = bent?.notes[0]?.bend ?? [];
+  const at = (beat: number) => curve.findLast((p) => p.beat <= beat + 1e-9)?.cents ?? 0;
+  assert.ok(curve.length > 10, 'written as many small steps');
+  assert.ok(Math.abs(at(1) - 40) < 0.5 && Math.abs(at(0.5) - 20) < 2, 'it climbs to 40 by beat 1');
+  assert.ok(Math.abs(at(1.97)) < 3, 'and comes back down');
+});
+
 test('a track with no tuned notes writes no bends or extra channels', () => {
   const plain = { name: 'Lead', channel: 0, program: 0, notes: [{ key: 60, beat: 0, beats: 1, vel: 90 }] };
   const song = { tempo: 120, beatsPerBar: 4, tracks: [plain] };

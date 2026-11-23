@@ -1,7 +1,12 @@
 // Standard MIDI Files: writes one (format 1) from tracks of notes timed in beats, so a score opens in any DAW, and reads
 // one (format 0 or 1) back into tracks of notes. A note tuned off its key (cents) is written as pitch bend on its channel,
-// and read back from it, taking the bend range as 2 semitones. Pure.
+// and read back from it, taking the bend range as 2 semitones; a note's bend (a curve over the note) as pitch bend that
+// moves while it sounds, on a channel to itself. Pure.
+import { bendAt } from './bend.ts';
+import type { BendPoint } from './bend.ts';
+
 const PPQ = 480; // ticks per beat
+const BEND_STEP = PPQ / 32; // how often a bend that moves over a note is written, in ticks
 const BEND_CENTER = 8192;
 const BEND_RANGE = 200; // cents either way: the General MIDI default of 2 semitones, set on each channel that bends
 
@@ -9,13 +14,17 @@ const BEND_RANGE = 200; // cents either way: the General MIDI default of 2 semit
 declare const TextEncoder: new () => { encode(text: string): Uint8Array };
 declare const TextDecoder: new () => { decode(bytes: Uint8Array): string };
 
-/** cents: tuned this far off the key (±200 at most), written as pitch bend on its channel */
+/**
+ * cents: tuned this far off the key (±200 at most), written as pitch bend on its channel; bend: a curve over the note
+ * on top of that (BendPoint), written as pitch bend that moves while the note sounds
+ */
 export interface MidiNote {
   key: number;
   beat: number;
   beats: number;
   vel: number;
   cents?: number;
+  bend?: BendPoint[];
 }
 /**
  * channels: more channels the track may use, so notes tuned differently at once (a just-tuned chord) can each bend on
@@ -85,7 +94,7 @@ export function writeMidi(song: MidiSong): Uint8Array {
       { tick: 0, order: 0, bytes: meta(0, 0x03, text(t.name)).bytes },
       { tick: 0, order: 0, bytes: [0xc0 | ch, t.program & 127] },
     ];
-    const tuned = t.notes.some((n) => n.cents);
+    const tuned = t.notes.some(isTuned);
     const channelOf = tuned ? bendChannels(t, events) : () => ch;
     // a tuned track's notes in start order, as its channels are handed out
     for (const n of tuned ? [...t.notes].sort((a, b) => a.beat - b.beat) : t.notes) {
@@ -110,11 +119,13 @@ export function writeMidi(song: MidiSong): Uint8Array {
 export function shareSpareChannels(tracks: Pick<MidiTrack, 'channel' | 'notes' | 'channels'>[]): void {
   const used = new Set(tracks.map((t) => t.channel));
   const spare = [...Array(16).keys()].filter((c) => c !== 9 && !used.has(c));
-  const tuned = tracks.filter((t) => t.channel !== 9 && t.notes.some((n) => n.cents));
+  const tuned = tracks.filter((t) => t.channel !== 9 && t.notes.some(isTuned));
   tuned.forEach((t, i) => {
     t.channels = spare.filter((_c, k) => k % tuned.length === i);
   });
 }
+
+const isTuned = (n: MidiNote): boolean => !!n.cents || !!n.bend?.length;
 
 /** a note's cents as a 14-bit pitch bend */
 const bendValue = (cents = 0): number =>
@@ -123,11 +134,14 @@ const bendValue = (cents = 0): number =>
 /**
  * For a track with tuned notes: sets the bend range and program on each of its channels, and returns a function that
  * picks each note's channel (notes in start order) and writes the bend before it. A note goes to a channel already
- * bent to its tuning, else to one with nothing sounding (bent to it there), else to the channel bent nearest it.
+ * bent to its tuning, else to one with nothing sounding (bent to it there), else to the channel bent nearest it. A
+ * note with a bend curve takes a channel with nothing sounding and keeps it to itself while the bend moves; with none
+ * free it shares the nearest and plays its first bend only.
  */
 function bendChannels(t: MidiTrack, events: MidiEvent[]): (n: MidiNote, on: number, off: number) => number {
   const pool = [...new Set([t.channel, ...(t.channels ?? [])].map((c) => c & 15))];
-  const state = pool.map((c) => ({ c, bend: BEND_CENTER, until: 0 }));
+  // until: the last note-off on the channel; bentUntil: the end of a note bending there, which no other note joins
+  const state = pool.map((c) => ({ c, bend: BEND_CENTER, until: 0, bentUntil: 0 }));
   for (const c of pool) {
     if (c !== (t.channel & 15)) events.push({ tick: 0, order: 0, bytes: [0xc0 | c, t.program & 127] });
     // RPN 0, pitch bend sensitivity: 2 semitones
@@ -141,15 +155,26 @@ function bendChannels(t: MidiTrack, events: MidiEvent[]): (n: MidiNote, on: numb
     ])
       events.push({ tick: 0, order: 0, bytes: [0xb0 | c, cc!, v!] });
   }
+  const bendTo = (s: (typeof state)[number], value: number, tick: number) => {
+    events.push({ tick, order: 1.5, bytes: [0xe0 | s.c, value & 127, value >> 7] });
+    s.bend = value;
+  };
   return (n, on, off) => {
-    const want = bendValue(n.cents);
+    const curve = n.bend?.length ? n.bend : null;
+    const cents = n.cents ?? 0;
+    const want = bendValue(cents + (curve ? bendAt(curve, 0) : 0));
     const s =
-      state.find((x) => x.bend === want) ??
+      (curve ? undefined : state.find((x) => x.bend === want && x.bentUntil <= on)) ??
       state.find((x) => x.until <= on) ??
       state.reduce((a, b) => (Math.abs(b.bend - want) < Math.abs(a.bend - want) ? b : a));
-    if (s.bend !== want && s.until <= on) {
-      events.push({ tick: on, order: 1.5, bytes: [0xe0 | s.c, want & 127, want >> 7] });
-      s.bend = want;
+    const free = s.until <= on;
+    if (s.bend !== want && free) bendTo(s, want, on);
+    if (curve && free) {
+      for (let tick = on + BEND_STEP; tick < off; tick += BEND_STEP) {
+        const value = bendValue(cents + bendAt(curve, (tick - on) / PPQ));
+        if (value !== s.bend) bendTo(s, value, tick);
+      }
+      s.bentUntil = off;
     }
     s.until = Math.max(s.until, off);
     return s.c;
@@ -184,11 +209,18 @@ export function varLen(n: number): number[] {
   return out;
 }
 
-/** one channel of a track chunk being read: notes, the program, and what's held (key → [start tick, vel] stack) */
+/** one channel of a track chunk being read: notes, the program, and the notes held (a stack for each key) */
+/** a note sounding as a file is read: its start tick, velocity, the bend it started on and how the bend moved since */
+interface Held {
+  tick: number;
+  vel: number;
+  cents: number;
+  bend: BendPoint[];
+}
 interface ChannelState {
   notes: MidiNote[];
   program: number | null;
-  held: Map<number, [number, number, number][]>;
+  held: Map<number, Held[]>;
   bend: number;
 }
 
@@ -248,10 +280,11 @@ export function readMidi(bytes: Uint8Array | ArrayBuffer | ArrayLike<number>): M
       if (on)
         chan(c).notes.push({
           key,
-          beat: on[0] / ppq,
-          beats: Math.max(1, t - on[0]) / ppq,
-          vel: on[1],
-          ...(on[2] && { cents: on[2] }),
+          beat: on.tick / ppq,
+          beats: Math.max(1, t - on.tick) / ppq,
+          vel: on.vel,
+          ...(on.cents && { cents: on.cents }),
+          ...(on.bend.length && { bend: on.bend }),
         });
     };
     while (i < end) {
@@ -286,11 +319,16 @@ export function readMidi(bytes: Uint8Array | ArrayBuffer | ArrayLike<number>): M
         const held = chan(c).held;
         let stack = held.get(d1);
         if (!stack) held.set(d1, (stack = []));
-        stack.push([tick, d2, chan(c).bend]);
+        stack.push({ tick, vel: d2, cents: chan(c).bend, bend: [] });
       } else if (kind === 0x80 || kind === 0x90) off(c, d1, tick);
-      else if (kind === 0xe0)
-        chan(c).bend = Math.round((((d2 << 7) | d1) - BEND_CENTER) * (BEND_RANGE / BEND_CENTER) * 10) / 10;
-      else if (kind === 0xc0 && chan(c).program === null) chan(c).program = d1;
+      else if (kind === 0xe0) {
+        const state = chan(c);
+        state.bend = Math.round((((d2 << 7) | d1) - BEND_CENTER) * (BEND_RANGE / BEND_CENTER) * 10) / 10;
+        // a bend while notes sound moves them: a point on each one's curve, over the bend it started on
+        for (const stack of state.held.values())
+          for (const h of stack)
+            h.bend.push({ beat: (tick - h.tick) / ppq, cents: Math.round((state.bend - h.cents) * 10) / 10 });
+      } else if (kind === 0xc0 && chan(c).program === null) chan(c).program = d1;
     }
     for (const [c, ch] of channels)
       for (const [key, stack] of ch.held) while (stack.length) off(c, key, tick);

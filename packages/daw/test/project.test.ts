@@ -284,6 +284,26 @@ test('a project exports as a MIDI file with a track per track', () => {
   assert.ok(bytes.some((b, i) => b === 0xc9 && bytes[i + 1] === 0));
 });
 
+test("a note's detune and bend marks export as pitch bend and come back as the same marks", () => {
+  let p = emptyProject({ bars: 1 });
+  p = addTrack(p, makeTrack(p, { name: 'Lead' }));
+  const bend = [
+    { beat: 0.5, cents: 30 },
+    { beat: 1, cents: 30 },
+  ];
+  p = addClip(p, at(p.tracks, 0).id, {
+    id: 'c1',
+    start: 0,
+    beats: 4,
+    notes: [{ beat: 0, beats: 2, key: 60, vel: 90, detune: -20, bend }],
+  });
+  const [note] = trackNotes(at(midiProject(projectMidi(p), 'x').tracks, 0));
+  assert.equal(note?.detune, -20);
+  assert.ok(!('cents' in (note ?? {})), 'the tuning comes back as the detune mark the player plays');
+  const back = note?.bend as { beat: number; cents: number }[];
+  assert.ok(Math.abs((back.findLast((x) => x.beat <= 1)?.cents ?? 0) - 30) < 0.5, 'the bend reaches 30');
+});
+
 test('inserting time moves everything after it on, cutting a clip across it', () => {
   let p = emptyProject({ bars: 4 });
   p = addTrack(p, makeTrack(p, { name: 'Keys' }));
@@ -437,6 +457,8 @@ test('humanize, speed and reverse', () => {
       [1, 1],
     ],
   );
+  const bent = scaleNotes([{ beat: 0, beats: 2, key: 60, vel: 90, bend: [{ beat: 1, cents: 50 }] }], 2);
+  assert.deepEqual(bent[0]?.bend, [{ beat: 2, cents: 50 }], 'a slower note bends as slowly');
   assert.deepEqual(
     reverseNotes(notes, 0, 4).map((n) => [n.beat, n.key]),
     [

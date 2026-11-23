@@ -14,7 +14,7 @@ import { beatToSeconds, bpmAt } from '@chordinal/lib';
 import { clamp, compound, swingTime, swingAmount, sectionAt as sectionOf } from './time.ts';
 import { planEarCandy } from './ear-candy.ts';
 import { EAR_CANDY } from './ear-candy-data.ts';
-import type { TempoSegment } from '@chordinal/lib';
+import type { BendPoint, TempoSegment } from '@chordinal/lib';
 import type { Note, PitchMoves, PlayedNote, Vibrato } from '@chordinal/daw';
 import type { Candy } from './ear-candy.ts';
 
@@ -26,6 +26,7 @@ import type { Candy } from './ear-candy.ts';
  *   vibrato: marked `~` in a hand-written melody; the performance gives it vibrato
  *   written: an ornamented note's own beat, before the ornament took the start of it
  *   detune: cents off the key, played under every other pitch move (a microtone, a just-tuned 3rd)
+ *   bend: a curve of cents over the detune across the note (BendPoint), as a held note follows a tuning that moves
  */
 export interface ScoreNote {
   key: number;
@@ -38,6 +39,7 @@ export interface ScoreNote {
   vibrato?: true;
   written?: number;
   detune?: number;
+  bend?: BendPoint[];
 }
 
 /** the style knobs a performance reads (0..1, swell a multiplier); vibrato is a whistled take's own */
@@ -454,6 +456,7 @@ export function swungNotes(
     beats: n.beats,
     vel: n.vel,
     ...(n.detune && { detune: n.detune }),
+    ...(n.bend?.length && { bend: n.bend }),
   }));
   if (swings(score)) swing(out, score, (beat) => sectionOf(score.sections, beat));
   return out;

@@ -37,10 +37,13 @@ export interface Fall {
 
 /**
  * detune: the whole note this many cents off its key, under the other moves (a quarter tone is 50, a just major 3rd
- * −13.7); a project's note can carry it as a mark of its own
+ * −13.7); a project's note can carry it as a mark of its own.
+ * curve: cents over the detune `at` seconds after the voice starts, straight lines between, held after the last: a
+ * note's bend mark as the player times it
  */
 export interface PitchMoves {
   detune?: number;
+  curve?: { at: number; cents: number }[];
   vibrato?: Vibrato;
   scoop?: Scoop;
   arp?: Arp;
