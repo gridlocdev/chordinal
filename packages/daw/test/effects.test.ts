@@ -13,6 +13,9 @@ import {
   removeInsert,
   setInsertBypass,
   setInsertParams,
+  trackLanes,
+  laneParam,
+  addKeyframe,
 } from '@chordinal/daw';
 import type { Project } from '@chordinal/daw';
 
@@ -128,5 +131,26 @@ test('settings read in their units', () => {
       0.3,
     ),
     '30%',
+  );
+});
+
+test("an effect's automatable settings are lanes of its track, kept in the setting's range", () => {
+  let p = addInsert(addInsert(addInsert(oneTrack(), 't', 'filter'), 't', 'reverb'), 't', 'filter');
+  const lanes = trackLanes(p.tracks[0]!).map((l) => l.id);
+  assert.ok(lanes.includes('volume'), "the mixer's lanes come first");
+  assert.ok(lanes.includes('fx1.cutoff') && lanes.includes('fx3.cutoff'));
+  assert.ok(lanes.includes('fx2.mix') && !lanes.includes('fx2.size'), "a reverb's size can't be automated");
+  const cutoff = laneParam('fx3.cutoff', p.tracks[0]);
+  assert.equal(cutoff.label, 'Filter 2 Cutoff', 'two of a kind are numbered');
+  assert.equal(cutoff.scale, 'log');
+  assert.equal(cutoff.exp, true);
+  assert.equal(cutoff.text?.(1200), '1.20 kHz');
+  p = addKeyframe(p, 't', 'fx1.cutoff', 0, 99999);
+  assert.equal(p.tracks[0]!.automation['fx1.cutoff']![0]!.value, 20000);
+  p = setInsertParams(p, 't', 'fx2', { mix: 0.4 });
+  assert.equal(
+    laneParam('fx2.mix', p.tracks[0]).rest(p.tracks[0]!),
+    0.4,
+    "a lane rests at the effect's setting",
   );
 });

@@ -148,6 +148,13 @@ test('export plays track effects: a bypassed one changes nothing, a gain is hear
         const quiet = exportWith(dir, 'quiet', (t)=> { t.inserts = [{ id: 'fx1', type: 'gain', params: { gain: -20 } }]; });
         const loud = peakBetween(plain, 0, 9), soft = peakBetween(quiet, 0, 9);
         assert.ok(soft < loud / 4, `a −20 dB gain is heard (peak ${soft} against ${loud})`);
+        // an automated gain: the lane sets it to −30 dB, so the export is as quiet as with the setting itself
+        const automated = exportWith(dir, 'automated', (t)=> {
+            t.inserts = [{ id: 'fx1', type: 'gain', params: {} }];
+            t.automation = { ...t.automation, 'fx1.gain': [{ beat: 0, value: -30, curve: 'set' }] };
+        });
+        const ducked = peakBetween(automated, 0, 9);
+        assert.ok(ducked < soft, `an effect's lane is played (peak ${ducked} against ${soft})`);
         // the Bitcrusher runs in a worklet: at 2 bits it's far from the plain sound, so the worklet loaded
         const crushed = exportWith(dir, 'crushed', (t)=> { t.inserts = [{ id: 'fx1', type: 'bitcrusher', params: { bits: 2, downsample: 8 } }]; });
         let apart = 0;

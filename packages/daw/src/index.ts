@@ -6,6 +6,7 @@ export {
   moveKeyframe,
   removeKeyframe,
   setKeyframeCurve,
+  trackLanes,
   valueAt,
 } from './automation.ts';
 export type { LaneId, LaneParam } from './automation.ts';

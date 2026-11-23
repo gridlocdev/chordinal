@@ -1,5 +1,14 @@
-// Drawing a track's automation lane, with undo.
-import { expect, openApp, saveAs, storedProject, test, trackHeader, watchErrors } from './fixtures.ts';
+// Drawing a track's automation lanes (its mixer's and its effects'), with undo.
+import {
+  expect,
+  openApp,
+  runCommand,
+  saveAs,
+  storedProject,
+  test,
+  trackHeader,
+  watchErrors,
+} from './fixtures.ts';
 
 /** the saved project's volume keyframes on a track */
 function volumeFrames(text: string, track: string): { beat: number; value: number }[] {
@@ -35,6 +44,32 @@ test.describe('Automation', () => {
 
     await page.keyboard.press('a');
     await expect(picker).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+
+  test("an effect's settings are lanes too, and one drawn there is saved under the effect", async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await runCommand(page, 'Mixer');
+    await page.getByRole('combobox', { name: 'Add an effect to Grand Piano' }).selectOption('filter');
+    await runCommand(page, 'Mixer');
+    await trackHeader(page, 'Grand Piano').click();
+    await page.keyboard.press('a');
+    const picker = page.getByRole('combobox', { name: 'Grand Piano automation' });
+    await picker.selectOption({ label: 'Filter Cutoff' });
+    await expect(picker).toHaveValue('fx1.cutoff');
+    const lane = page.locator('.auto-row .lane').first();
+    await lane.click({ position: { x: 20, y: 8 } });
+
+    await saveAs(page, 'Sweep');
+    const file = JSON.parse((await storedProject(page, 'Sweep')) ?? '') as {
+      tracks: { name: string; automation: Record<string, { value: number }[]> }[];
+    };
+    const frames = file.tracks.find((t) => t.name === 'Grand Piano')!.automation['fx1.cutoff'] ?? [];
+    expect(frames).toHaveLength(1);
+    expect(frames[0]!.value).toBeGreaterThan(10000); // near the top of the lane: near 20 kHz
     expect(errors).toEqual([]);
   });
 });

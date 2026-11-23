@@ -2,7 +2,7 @@
 // height and reads as text. Show Automation (A) shows the selected track's lane under its row.
 import { signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
-import { laneParam } from '@chordinal/daw';
+import { laneParam, trackLanes } from '@chordinal/daw';
 import type { LaneId, LaneParam, Track } from '@chordinal/daw';
 import { project, selected } from './store.ts';
 
@@ -19,9 +19,11 @@ export function toggleAutomation(trackId: string | null = selected.value): void 
   shownLanes.value = shown ? rest : { ...rest, [t.id]: firstLane(t) };
 }
 
-/** the lane to show first: one with keyframes, else Volume */
+/** the lane to show first: one with keyframes, else Volume; a lane of an effect no longer on the track is left out */
 export const firstLane = (t: Track): LaneId =>
-  (Object.keys(t.automation) as LaneId[]).find((k) => t.automation[k]?.length) ?? 'volume';
+  (Object.keys(t.automation) as LaneId[]).find(
+    (k) => t.automation[k]?.length && trackLanes(t).some((l) => l.id === k),
+  ) ?? 'volume';
 
 export function showLane(trackId: string, lane: LaneId): void {
   shownLanes.value = { ...shownLanes.value, [trackId]: lane };
@@ -52,9 +54,10 @@ export function laneValueAt(param: LaneParam, height: number): number {
   return param.min + f * (param.max - param.min);
 }
 
-/** a lane's value as a person reads it: −6.0 dB, 30 L, 1.2 kHz, 25% */
-export function laneText(id: LaneId, value: number): string {
-  const param = laneParam(id);
+/** a lane's value as a person reads it: −6.0 dB, 30 L, 1.2 kHz, 25%; an effect's setting in its own units */
+export function laneText(id: LaneId, value: number, track?: Pick<Track, 'inserts'>): string {
+  const param = laneParam(id, track);
+  if (param.text) return param.text(value);
   if (param.scale === 'db') {
     const db = 20 * Math.log10(value);
     return value <= 0 ? '−∞ dB' : `${db > 0.05 ? '+' : ''}${db.toFixed(1).replace('-', '−')} dB`;

@@ -202,7 +202,7 @@ export function laneMenu(trackId: string, at: number): void {
 export function automationMenu(trackId: string, lane: LaneId, index: number | null): void {
   selected.value = trackId;
   focus.value = 'arrange';
-  const param = laneParam(lane);
+  const param = laneParam(lane, trackOf(trackId) ?? undefined);
   const frame = index === null ? undefined : trackOf(trackId)?.automation[lane]?.[index];
   const curve = (label: string, c: 'set' | 'linear' | 'exp'): MenuItem => ({
     label,

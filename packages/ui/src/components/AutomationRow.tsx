@@ -4,7 +4,7 @@
 import { useState } from 'preact/hooks';
 import type { TargetedMouseEvent, TargetedPointerEvent } from 'preact';
 import { signal } from '@preact/signals';
-import { LANE_PARAMS, laneParam, valueAt, addKeyframe, moveKeyframe, removeKeyframe } from '@chordinal/daw';
+import { laneParam, trackLanes, valueAt, addKeyframe, moveKeyframe, removeKeyframe } from '@chordinal/daw';
 import type { Keyframe, LaneId, Track } from '@chordinal/daw';
 import { selected } from '../store.ts';
 import { edit } from '../document.ts';
@@ -50,15 +50,18 @@ function shownFrames(track: Track, lane: LaneId): Keyframe[] {
 
 /** the track's lane when it's shown, else nothing */
 export function AutomationRow(props: AutomationRowProps) {
-  const lane = shownLanes.value[props.track.id];
-  return lane ? <LaneRow {...props} lane={lane} /> : null;
+  const shown = shownLanes.value[props.track.id];
+  if (!shown) return null;
+  // a lane of an effect taken off the track shows Volume instead
+  const lane = trackLanes(props.track).some((l) => l.id === shown) ? shown : 'volume';
+  return <LaneRow {...props} lane={lane} />;
 }
 
 /** the lane itself: its own component, so its canvas exists from the moment it mounts */
 function LaneRow({ track, beats, ppb, lane }: AutomationRowProps & { lane: LaneId }) {
   const [reading, setReading] = useState('');
   const ref = useCanvas((g, w, h) => {
-    const param = laneParam(lane);
+    const param = laneParam(lane, track);
     const frames = shownFrames(track, lane);
     const t = palette.value;
     const y = (v: number) => PAD + (1 - laneHeight(param, v)) * (h - 2 * PAD);
@@ -99,7 +102,7 @@ function LaneRow({ track, beats, ppb, lane }: AutomationRowProps & { lane: LaneI
       g.stroke();
     }
   });
-  const param = laneParam(lane);
+  const param = laneParam(lane, track);
   const frames = track.automation[lane] ?? [];
 
   const place = (e: { clientX: number; clientY: number; currentTarget: Element }) => {
@@ -139,7 +142,7 @@ function LaneRow({ track, beats, ppb, lane }: AutomationRowProps & { lane: LaneI
       if (!d) return;
       const p = place({ clientX: m.clientX, clientY: m.clientY, currentTarget: target });
       pointDrag.value = { ...d, beat: snapped(p.beat, m.shiftKey), value: p.value };
-      setReading(laneText(lane, p.value));
+      setReading(laneText(lane, p.value, track));
     };
     const up = () => {
       removeEventListener('pointermove', move);
@@ -164,6 +167,7 @@ function LaneRow({ track, beats, ppb, lane }: AutomationRowProps & { lane: LaneI
       laneText(
         lane,
         i >= 0 ? frames[i]!.value : frames.length ? valueAt(frames, at.beat) : param.rest(track),
+        track,
       ),
     );
   };
@@ -187,7 +191,7 @@ function LaneRow({ track, beats, ppb, lane }: AutomationRowProps & { lane: LaneI
           value={lane}
           onChange={(e) => showLane(track.id, e.currentTarget.value as LaneId)}
         >
-          {LANE_PARAMS.map((l) => (
+          {trackLanes(track).map((l) => (
             <option key={l.id} value={l.id}>
               {track.automation[l.id]?.length ? `${l.label} •` : l.label}
             </option>
