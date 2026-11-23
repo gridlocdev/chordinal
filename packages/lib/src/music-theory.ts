@@ -86,11 +86,19 @@ export interface Chord {
 
 const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 const CHORD =
-  /^(b|#)?(VII|VI|V|IV|III|II|I|vii|vi|v|iv|iii|ii|i)(°|o|ø|\+)?(maj7|maj9|add9|7sus4|9sus4|sus2|sus4|7|9|6)?$/;
+  /^(b|#)?(VII|VI|V|IV|III|II|I|vii|vi|v|iv|iii|ii|i)(°|o|ø|\+)?(maj7|maj9|maj13|add9|7sus4|9sus4|sus2|sus4|13|11|7|9|6)?((?:b9|#9|#11|b13)*)$/;
+// the tensions above the octave, in semitones over the root: what an altered or extended chord adds
+const ALTERED: Record<string, number> = { b9: 13, '#9': 15, '#11': 18, b13: 20 };
+const NINTH = 14,
+  ELEVENTH = 17,
+  THIRTEENTH = 21;
+const TENSIONS = new Set([...Object.values(ALTERED), ELEVENTH, THIRTEENTH]);
 
 /**
  * A Roman-numeral chord in a key. Case gives the quality (V major, v minor), then ° dim, ø half-dim, + aug,
- * and a suffix 7, maj7, 9, maj9, add9, 6, sus2, sus4, 7sus4, 9sus4. A plain numeral counts in the song's mode (VII
+ * and a suffix 7, maj7, 9, maj9, add9, 6, sus2, sus4, 7sus4, 9sus4, 11, 13, maj13, then any of the altered
+ * tensions b9, #9, #11, b13 (V7b9, V7#9, Imaj7#11, V13b9). An 11 chord with a major 3rd leaves the 3rd out (V11 is
+ * the 9sus4 with its 11 named), as the 11th a half step above it would clash; ii11 keeps it. A plain numeral counts in the song's mode (VII
  * in minor is the flat seven), except a diminished vii, which is built on the leading tone in every mode; with b or #
  * it counts from the major scale, as usual: bVII is a whole step below the tonic in any mode, bVI and bIII are
  * borrowed from the parallel minor, bII is the Neapolitan. `X/Y` is chord X in the major key of chord Y's root, the
@@ -114,7 +122,7 @@ export function parseChord(symbol: string, tonic: number, mode: Mode): Chord {
   }
   const m = CHORD.exec(symbol);
   if (!m) throw new Error(`not a chord: ${symbol}`);
-  const [, acc, numeral = '', quality, ext] = m;
+  const [, acc, numeral = '', quality, ext, alts] = m;
   const degree = NUMERALS.indexOf(numeral.toUpperCase()) + 1;
   const upper = numeral === numeral.toUpperCase();
   const leadingTone = !acc && degree === 7 && (quality === '°' || quality === 'o' || quality === 'ø');
@@ -149,6 +157,10 @@ export function parseChord(symbol: string, tonic: number, mode: Mode): Chord {
   else if (ext === 'sus4') tones = [0, 5, ...tones.slice(2)];
   else if (ext === '7sus4') tones = [0, 5, ...tones.slice(2), 10];
   else if (ext === '9sus4') tones = [0, 5, ...tones.slice(2), 10, 14];
+  else if (ext === '11') tones = [...(upper ? [0, 7] : tones), 10, NINTH, ELEVENTH];
+  else if (ext === '13') tones = [...tones, 10, NINTH, THIRTEENTH];
+  else if (ext === 'maj13') tones = [...tones, 11, NINTH, THIRTEENTH];
+  for (const alt of alts?.match(/b9|#9|#11|b13/g) ?? []) tones = [...tones, ALTERED[alt]!];
   return { symbol, root, tones: [...new Set(tones)], degree, step: degree };
 }
 
@@ -165,28 +177,26 @@ export const chordPitchClasses = (chord: { root: number; tones: number[] }): num
 
 /** a chord's name in letters, e.g. 'Am7' for vi7 in C */
 export function chordName(chord: { root: number; tones: number[]; bass?: number }, flats = false): string {
-  const t = new Set(chord.tones.map((x) => x % 12));
+  // the 11th, 13th and altered tensions are named after the chord; the 9th counts as a 2nd for a sus2, as it always has
+  const t = new Set(chord.tones.filter((x) => !TENSIONS.has(x)).map((x) => x % 12));
+  const eleventh = chord.tones.includes(ELEVENTH),
+    thirteenth = chord.tones.includes(THIRTEENTH);
+  const alt = Object.entries(ALTERED)
+    .filter(([, x]) => chord.tones.includes(x))
+    .map(([text]) => text)
+    .join('');
   const name = pitchName(chord.root, flats);
   const over =
     chord.bass !== undefined && chord.bass !== chord.root ? `/${pitchName(chord.bass, flats)}` : '';
   const third = t.has(4) ? '' : t.has(3) ? 'm' : '';
-  const sus = !t.has(3) && !t.has(4) ? (t.has(5) ? 'sus4' : t.has(2) ? 'sus2' : '5') : '';
-  if (t.has(3) && t.has(6)) return name + (t.has(10) ? 'm7b5' : t.has(9) ? 'dim7' : 'dim') + over;
-  if (t.has(4) && t.has(8)) return name + 'aug' + over;
+  const sus = !t.has(3) && !t.has(4) ? (t.has(5) ? 'sus4' : eleventh ? '' : t.has(2) ? 'sus2' : '5') : '';
+  if (t.has(3) && t.has(6)) return name + (t.has(10) ? 'm7b5' : t.has(9) ? 'dim7' : 'dim') + alt + over;
+  if (t.has(4) && t.has(8)) return name + 'aug' + alt + over;
   const ninth = chord.tones.includes(14);
-  const seventh = t.has(11)
-    ? ninth
-      ? 'maj9'
-      : 'maj7'
-    : t.has(10)
-      ? ninth
-        ? '9'
-        : '7'
-      : t.has(9)
-        ? '6'
-        : '';
-  const add = ninth && !seventh ? 'add9' : '';
-  return name + third + seventh + sus + add + over;
+  const top = thirteenth ? '13' : eleventh ? '11' : ninth ? '9' : '7';
+  const seventh = t.has(11) ? 'maj' + top : t.has(10) ? top : t.has(9) ? '6' : '';
+  const add = ninth && !seventh ? 'add9' : eleventh && !seventh ? 'add11' : '';
+  return name + third + seventh + sus + add + alt + over;
 }
 
 /** a stable 32-bit hash of any strings/numbers (FNV-1a), for choices that must be the same every time */

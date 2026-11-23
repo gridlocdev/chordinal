@@ -77,6 +77,23 @@ test('chord names', () => {
   );
 });
 
+test('11th, 13th and altered chords', () => {
+  const pcs = (s: string) => chordPitchClasses(parseChord(s, 0, 'major'));
+  assert.deepEqual(pcs('ii11'), [2, 5, 9, 0, 4, 7]); // Dm11 keeps its 3rd
+  assert.deepEqual(pcs('V11'), [7, 2, 5, 9, 0]); // G11 leaves out the B a half step under the C
+  assert.deepEqual(pcs('V13'), [7, 11, 2, 5, 9, 4]);
+  assert.deepEqual(pcs('V7b9'), [7, 11, 2, 5, 8]);
+  assert.deepEqual(pcs('V7#9'), [7, 11, 2, 5, 10]);
+  assert.deepEqual(pcs('V7b9b13'), [7, 11, 2, 5, 8, 3]);
+  assert.deepEqual(pcs('Imaj7#11'), [0, 4, 7, 11, 6]);
+  const name = (s: string) => chordName(parseChord(s, 0, 'major'), true);
+  assert.deepEqual(
+    ['ii11', 'V11', 'V13', 'Imaj13', 'V7b9', 'V7#9', 'Imaj7#11', 'V13b9', 'V7b13', 'IVadd9'].map(name),
+    ['Dm11', 'G11', 'G13', 'Cmaj13', 'G7b9', 'G7#9', 'Cmaj7#11', 'G13b9', 'G7b13', 'Fadd9'],
+  );
+  assert.throws(() => parseChord('V7b10', 0, 'major'));
+});
+
 test('hash is stable', () => {
   assert.equal(hash('a', 1), hash('a', 1));
   assert.notEqual(hash('a', 1), hash('a', 2));

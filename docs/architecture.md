@@ -13,7 +13,7 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `packages/lib/src/sf2.ts` | parses a `.sf2` ArrayBuffer into presets → regions (key/velocity range, sample, merged generators) |
 | `packages/lib/src/sf2-voice.ts` | region + key + velocity → pitch, gain, pan, loop points, filter, volume envelope |
 | `packages/lib/src/notes.ts` | MIDI note names and black/white keys |
-| `packages/lib/src/music-theory.ts` | keys, modes, scale degrees, Roman-numeral chords (secondary, slash and extended), chord names, a stable hash for tie-breaks |
+| `packages/lib/src/music-theory.ts` | keys, modes, scale degrees, Roman-numeral chords (secondary, slash, extended to 11ths and 13ths, and altered), chord names, a stable hash for tie-breaks |
 | `packages/lib/src/chip-synth.ts` | chip instruments made in code: band-limited pulse, PWM, triangle, saw and sine cycles per key zone, drum hits from LFSR noise and falling tones, and the NES sample channel's delta coding for both, as an in-memory font in `parseSf2`'s shape |
 | `packages/lib/src/impulse.ts` | a seeded synthetic reverb impulse response |
 | `packages/lib/src/midi-file.ts` | Standard MIDI Files: writes one from a score, with tempo and meter changes, and reads one (format 0 or 1) back into tracks of notes |
