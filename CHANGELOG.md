@@ -23,7 +23,9 @@
 - A dropdown under the browser's tabs jumps to an instrument family or a group of projects, so you don't have to scroll.
 - Changing the octave with `Z` or `X` scrolls the piano roll to the keys you're playing.
 - While you record a melody, its notes appear in the piano roll as you play, and when you stop, the playhead goes back to the start of the clip.
-- Recording isn't only for whistling: **Whistle a Chord** is now **Record a Chord**, and a melody recorded with no track selected goes on a new track called Melody. `just whistle` is now `just transcribe`.
+- Recording isn't only for whistling: a melody recorded with no track selected goes on a new track called Melody. `just whistle` is now `just transcribe`.
+- The chord track row above the tracks is gone, and so are Whistle a Chord and picking a stretch for it. A project still keeps its chords: the piano roll shows them and Humanize follows them.
+- Soloing a track turns off any other solo, so you hear the track you soloed last.
 - Saving is safer: a project changed on disk since you opened it asks before it's replaced, and saves and opens never overlap.
 - Questions wait their turn instead of replacing one another.
 - Pattern names lose stray spaces at either end.
@@ -33,3 +35,4 @@
 - Changing a mixer control to the value it already had added an undo step that did nothing.
 - Splitting a note at its very start could leave a note starting before the beginning of the song.
 - A save that finished after you opened another project could write into the wrong one.
+- In Firefox, sliders and the mixer's faders showed a knob with no track.
