@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Downloads the openly licensed SoundFont libraries into soundfonts/, each with its license file: all of them, or the
-# ones named (generaluser, musescore, fluidr3). A library already on disk is skipped. Run by `just soundfonts`, by the
-# deploy before staging, and by the release build (GeneralUser GS only: it's the one that comes with the app).
+# ones named (generaluser, musescore, fluidr3). A library already on disk is skipped. Run by `just soundfonts`, and by the
+# release workflow once per release (GeneralUser GS only: it's the one that comes with the app).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 want() { [ -z "$WANT" ] || [[ " $WANT " == *" $1 "* ]]; }

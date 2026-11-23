@@ -6,7 +6,24 @@ on:
 permissions:
   contents: write
 jobs:
+  # GeneralUser GS, which comes with the app: downloaded once and kept in the cache, not once per build, so the
+  # releases don't load its host each time
+  soundfonts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: soundfonts/GeneralUser-GS
+          key: soundfonts-generaluser-${{ hashFiles('tools/fetch-soundfonts.sh') }}
+      - run: bash tools/fetch-soundfonts.sh generaluser
+      - uses: actions/upload-artifact@v4
+        with:
+          name: soundfonts
+          path: soundfonts/GeneralUser-GS
+          retention-days: 1
   build:
+    needs: soundfonts
     strategy:
       fail-fast: false
       matrix:
@@ -39,8 +56,10 @@ jobs:
       - if: runner.os != 'Linux'
         run: node --test 'test/**/*.test.js'
       - run: npx vitest run
-      - run: bash tools/fetch-soundfonts.sh generaluser
-        shell: bash
+      - uses: actions/download-artifact@v4
+        with:
+          name: soundfonts
+          path: soundfonts/GeneralUser-GS
       # the Flatpak is built on the freedesktop runtime and Electron base app, installed from Flathub
       - if: runner.os == 'Linux'
         run: |
@@ -66,6 +85,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          pattern: release-*
           path: release
           merge-multiple: true
       - uses: softprops/action-gh-release@v2

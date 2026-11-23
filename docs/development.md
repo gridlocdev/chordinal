@@ -129,15 +129,17 @@ Add it to `COMMANDS` in `packages/ui/src/commands.ts` with a label, an `accelera
 
 `soundfonts/` is ignored by git; `just soundfonts` runs `tools/fetch-soundfonts.sh`, which
 downloads every library (or the ones named, like `just soundfonts generaluser`) that isn't on disk
-yet, with its license file next to its `.sf2`. The deploy runs the same script, and so does
-`just package-desktop`, for GeneralUser GS only. A release build downloads the other two itself
-(`apps/desktop/src/soundfont-download.ts`). The libraries and their folders are listed in
+yet, with its license file next to its `.sf2`. `just package-desktop` runs it for GeneralUser GS only,
+and the release workflow runs it once per release, in its own job, and hands the file to each platform's
+build. A release build downloads the other two itself (`apps/desktop/src/soundfont-download.ts`). The web
+deploy doesn't download any: the server keeps its copies, and the deploy leaves them alone, so a new or
+updated library is copied to the server by hand. Checks and tests never download them. The libraries and their folders are listed in
 `packages/audio/src/soundfont-libraries-data.ts`.
 
 ### Adding or replacing a library
 
 1. Put the `.sf2` and its license file in `soundfonts/<folder>/`, and add the download to
-   `tools/fetch-soundfonts.sh`, so `just soundfonts` and the deploy fetch it too, and to `DOWNLOADS`
+   `tools/fetch-soundfonts.sh`, so `just soundfonts` fetches it too (and copy it to the web server), and to `DOWNLOADS`
    in `apps/desktop/src/soundfont-download.ts`, so a release build can download it.
 2. Add the library to `LIBRARY_SOURCES` in `packages/audio/src/soundfont-libraries-data.ts`.
 3. Run `just catalog` to regenerate `packages/audio/src/soundfont-catalog-data.ts`, the list of every
