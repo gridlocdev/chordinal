@@ -1,4 +1,5 @@
-// The mixer: a strip per track (its MIDI effects, pan, fader, mute, solo) and the master volume. Every move is an edit of the project,
+// The mixer: a strip per track (its effects, MIDI effects, pan, fader, mute, solo), the open effect's settings, and the
+// master volume. Every move is an edit of the project,
 // a drag one undo step. Beside each fader, a meter of what it plays. Right-click a strip for more.
 import { audioEngine } from '@chordinal/playback';
 import { presetFor } from '@chordinal/playback';
@@ -24,6 +25,7 @@ import {
   setFx,
 } from '../midi-fx.ts';
 import { rgba } from './canvas.ts';
+import { EffectList, EffectPanel } from './Effects.tsx';
 
 const DB = [FADER_FLOOR_DB, 6] as const;
 const db = (v: number) => (v <= DB[0] ? '-∞' : `${v > 0 ? '+' : ''}${v.toFixed(1)}`);
@@ -204,6 +206,7 @@ export function Mixer() {
               {t.name}
             </span>
             <span class="inst">{presetFor(t.instrument.bank, t.instrument.program)?.name ?? ''}</span>
+            <EffectList track={t} />
             <div class="fx" role="group" aria-label={`${t.name} MIDI effects`}>
               {t.fx.map((fx, n) => (
                 <FxRow trackId={t.id} fx={fx} index={n} />
@@ -218,7 +221,7 @@ export function Mixer() {
                   if (fx) addFx(t.id, fx);
                 }}
               >
-                <option value="">+ FX</option>
+                <option value="">+ MIDI FX</option>
                 {ADDABLE.map((a) => (
                   <option value={a.type}>{fxName(a.type)}</option>
                 ))}
@@ -262,6 +265,7 @@ export function Mixer() {
           </div>
         );
       })}
+      <EffectPanel />
       <div class="strip master">
         <span class="name">Master</span>
         <span class="inst">&nbsp;</span>
