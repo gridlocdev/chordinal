@@ -124,7 +124,7 @@ const splitChords = (chords: ChordSpan[], at: number): ChordSpan[] =>
 
 /** a track's automation lanes, each changed by `f` */
 const mapLanes = (automation: Automation, f: (frames: Keyframe[]) => Keyframe[]): Automation =>
-  Object.fromEntries(Object.entries(automation).map(([k, frames]) => [k, f(frames)]));
+  Object.fromEntries(Object.entries(automation).map(([k, frames]) => [k, f(frames ?? [])]));
 
 /** everything in the project at a beat or after it, moved on by `beats` (or back, for a negative): clips, notes,
  * markers, chords, tempo and meter changes, automation and the loop. Nothing at beat 0's tempo or meter moves. */

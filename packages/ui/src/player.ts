@@ -135,6 +135,9 @@ effect(() => {
   const p = project.value;
   if (!handle || !heard || p === heard) return;
   if (!heardDifferently(heard, p)) {
+    // track effects change as they play: settings glide, and the chain is rewired where effects come and go
+    if (p.tracks.some((t, i) => t.inserts !== heard?.tracks[i]?.inserts))
+      handle.setInserts(p.tracks.map((t) => t.inserts));
     heard = p;
     return;
   }

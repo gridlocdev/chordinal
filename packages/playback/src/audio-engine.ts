@@ -4,6 +4,8 @@
 // master volume → a little air (high shelf) → glue compressor → peak limiter → output
 // The limiter is a DynamicsCompressor, not a true brickwall, so there's no makeup gain: songs peak around −6 dB,
 // which leaves room for anything played on top.
+import { prepareEffects } from './effects.ts';
+
 let ctx: AudioContext | OfflineAudioContext | null = null;
 let master: GainNode | null = null;
 let meter: AnalyserNode | null = null;
@@ -69,6 +71,7 @@ export const audioEngine = {
     ctx = off;
     chain(off).gain.value = 1;
     try {
+      await prepareEffects(off);
       let failed: unknown = null;
       const tick = start();
       for (const t of renderPauses(seconds, rate, step))

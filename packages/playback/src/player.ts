@@ -8,15 +8,16 @@
 import { audioEngine, peak } from './audio-engine.ts';
 import { startTicker } from './ticker.ts';
 import { createInstrument, type Instrument, type LoadedFont } from './soundfont.ts';
-import { createMixer, dbToGain, delayTimes } from './mixer.ts';
-import { beatToSeconds, secondsToBeat, type Sf2Preset } from '@chordinal/lib';
-import { projectEnd } from '@chordinal/daw';
+import { createMixer, dbToGain } from './mixer.ts';
+import { beatToSeconds, secondsToBeat, tempoSteps, type Sf2Preset } from '@chordinal/lib';
+import { insertValues, insertsOf, projectEnd } from '@chordinal/daw';
 import { passEvents, duckPlan, scheduleLane, playClick, heldAt, ownsKey } from '@chordinal/daw';
 import { clickBeats } from '@chordinal/daw';
 import type {
   Click,
   ClickOscillator,
   FxEvent,
+  Insert,
   Keyframe,
   PassEvents,
   PlayedNote,
@@ -60,6 +61,9 @@ export interface PlaybackHandle {
   readonly pass: number;
   seek(beat: number): void;
   setMix(channels: ChannelMix[]): void;
+  /** each track's effects, as its inserts now are: settings glide to their new values, and the chain is rewired
+   * where effects were added, removed, moved or bypassed */
+  setInserts(inserts: (Insert[] | undefined)[]): void;
   levels(): number[];
   stop(): void;
 }
@@ -94,6 +98,7 @@ export function playProject(
       reverb: t.mixer.sends.reverb,
       delay: t.mixer.sends.delay,
       autoPan: t.mixer.autoPan,
+      inserts: insertsOf(t),
     }),
   );
   strips.forEach((s, i) => {
@@ -105,12 +110,8 @@ export function playProject(
     delay: t.mixer.sends.delay,
     lowCut: t.mixer.lowCut,
   }));
-  // a meter on each strip, after its fader and pan
-  const meters = strips.map((s) => {
-    const a = new AnalyserNode(ctx, { fftSize: 512 });
-    s.panner.output.connect(a);
-    return a;
-  });
+  // each insert's settings as last set, so setInserts only touches what changed
+  const insertsNow = tracks.map((t) => insertsOf(t));
   const makeInstruments = (): (Instrument | undefined)[] =>
     instrumentsOf.map((b, i) => {
       const strip = strips[i];
@@ -164,21 +165,21 @@ export function playProject(
       g.linearRampToValueAtTime(1, at + DUCK.seconds);
     });
 
-  // automation lanes are few keyframes, so a segment's are all scheduled when it begins
-  const automate = (s: Segment) => {
-    strips.forEach((strip, i) => {
-      const lanes = tracks[i]!.automation;
-      const params: [AudioParam, Keyframe[] | undefined][] = [
-        [strip.volume.gain, lanes.volume],
-        [strip.panner.pan, lanes.pan],
-        [strip.tone.frequency, lanes.tone],
-        [strip.reverbSend.gain, lanes.reverb],
-        [strip.delaySend.gain, lanes.delay],
-      ];
-      for (const [param, keyframes] of params)
-        if (keyframes?.length) scheduleLane(param, keyframes, s, (b) => timeOf(s, b), ctx.currentTime);
-    });
+  // automation lanes are few keyframes, so a segment's are all scheduled when it begins; an effect's setting in its
+  // own units (dB, say) is turned into its param's as it's scheduled
+  const automateStrip = (i: number, s: Segment) => {
+    const strip = strips[i],
+      lanes = tracks[i]?.automation;
+    if (!strip || !lanes) return;
+    for (const [id, target] of strip.params()) {
+      const keyframes = lanes[id as keyof typeof lanes];
+      if (!keyframes?.length) continue;
+      const map = target.map;
+      const frames: Keyframe[] = map ? keyframes.map((f) => ({ ...f, value: map(f.value) })) : keyframes;
+      scheduleLane(target.param, frames, s, (b) => timeOf(s, b), ctx.currentTime);
+    }
   };
+  const automate = (s: Segment) => strips.forEach((_, i) => automateStrip(i, s));
 
   // MIDI FX events that aren't notes: tape stops, and a delay send swelling
   const fxEvent = (e: FxEvent, s: Segment) => {
@@ -208,7 +209,7 @@ export function playProject(
 
   const sounding = new Map<string, { i: number; key: number; n: PlayedNote }>(); // `${track}:${key}`, notes on and not yet off
   const carried = new Set<PlayedNote>(); // notes a seek restarted mid-way: their note-off is still this segment's to play
-  const delayList = delayTimes(map); // the shared delay keeps time with each tempo change
+  const delayList = tempoSteps(map); // the shared delay and the timed effects keep time with each tempo change
   let next = 0,
     nextDuck = 0,
     nextFx = 0,
@@ -227,7 +228,7 @@ export function playProject(
     nextClick = indexFrom(clickList, s.from, (c) => c.beat);
     nextDelay = indexFrom(delayList, s.from + 1e-6, (d) => d.beat);
     const delay = delayList[Math.max(0, nextDelay - 1)];
-    if (delay) mixer.delayAt(delay.seconds, s.at);
+    if (delay) mixer.tempoAt(delay.bpm, s.at);
     automate(s);
   };
   // notes already sounding at a beat play on from it, their note-offs still to come in this segment
@@ -286,7 +287,7 @@ export function playProject(
       const lead = (e: FxEvent) => (e.kind === 'tapeStop' ? e.seconds : 0);
       for (let e = data.fx[nextFx]; due(e, (x) => x.beat, lead); e = data.fx[++nextFx]) fxEvent(e, seg);
       for (let d = delayList[nextDelay]; due(d, (x) => x.beat); d = delayList[++nextDelay])
-        mixer.delayAt(d.seconds, timeOf(seg, d.beat));
+        mixer.tempoAt(d.bpm, timeOf(seg, d.beat));
       for (let c = clickList[nextClick]; due(c, (x) => x.beat); c = clickList[++nextClick])
         tick(c, timeOf(seg, c.beat));
 
@@ -369,8 +370,31 @@ export function playProject(
         mixed[i] = c;
       });
     },
+    setInserts(lists) {
+      lists.forEach((list = [], i) => {
+        const strip = strips[i],
+          was = insertsNow[i] ?? [];
+        if (!strip) return;
+        insertsNow[i] = list;
+        const before = [...strip.effects.keys()].join();
+        strip.setInserts(list);
+        const rewired = [...strip.effects.keys()].join() !== before;
+        const lanes = tracks[i]?.automation ?? {};
+        for (const x of list) {
+          const e = strip.effects.get(`${x.id}:${x.type}`),
+            before = was.find((w) => w.id === x.id && w.type === x.type);
+          if (!e) continue;
+          const now = insertValues(x),
+            then = before ? insertValues(before) : null;
+          for (const [k, v] of Object.entries(now))
+            if (then && then[k] !== v && !lanes[`${x.id}.${k}`]?.length) e.set(k, v);
+        }
+        // a new effect picks up its lanes from where playback is
+        if (rewired) automateStrip(i, current());
+      });
+    },
     /** each track's level now, its peak 0..1 */
-    levels: () => meters.map((m) => peak(m)),
+    levels: () => strips.map((s) => peak(s.meter)),
     stop() {
       if (stopped) return;
       stopped = true;

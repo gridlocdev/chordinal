@@ -1,4 +1,6 @@
 export { audioEngine, peak, renderPauses } from './audio-engine.ts';
+export { buildEffect, dbGain, prepareEffects } from './effects.ts';
+export type { Effect, EffectParamTarget } from './effects.ts';
 export { loadInstruments, presetFor } from './instruments.ts';
 export type { LoadedInstrument } from './instruments.ts';
 export { mic } from './mic.ts';

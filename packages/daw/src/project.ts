@@ -54,6 +54,15 @@ export interface TrackFx {
   [param: string]: unknown;
 }
 
+/** an audio effect in a track's strip (an insert): its type (effects.ts), its id on the track, and the settings changed
+ * from the effect's starting values; a bypassed one passes the sound through untouched */
+export interface Insert {
+  id: string;
+  type: string;
+  bypass?: boolean;
+  params: Record<string, number>;
+}
+
 export type Automation = {
   /** a gain on top of the fader (1: as the fader sets it) */
   volume?: Keyframe[];
@@ -63,6 +72,8 @@ export type Automation = {
   tone?: Keyframe[];
   reverb?: Keyframe[];
   delay?: Keyframe[];
+  /** an insert's setting: `<insert id>.<setting>` */
+  [insertParam: `${string}.${string}`]: Keyframe[] | undefined;
 };
 
 /** stepRows: the drum keys the step grid shows for the track (PRD §4.6) */
@@ -73,6 +84,8 @@ export interface Track {
   instrument: { bank: number; program: number };
   mixer: Mixer;
   fx: TrackFx[];
+  /** the audio effects in its strip, in the order the sound goes through them; missing when it has none */
+  inserts?: Insert[];
   automation: Automation;
   clips: Clip[];
   stepRows?: number[];

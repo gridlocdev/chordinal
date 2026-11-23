@@ -38,6 +38,25 @@ export {
 } from './note-fx.ts';
 export type { ArpDirection, ArpRate, ArpSettings, ChordShape } from './note-fx.ts';
 export type { Arp, Fall, FxEvent, FxPass, FxType, PitchMoves, PlayedNote, Scoop, Vibrato } from './fx.ts';
+export {
+  EFFECTS,
+  EFFECT_TYPES,
+  SYNC_BEATS,
+  SYNC_NAMES,
+  addInsert,
+  effectName,
+  effectSpec,
+  insertShape,
+  insertValue,
+  insertValues,
+  insertsOf,
+  moveInsert,
+  paramText,
+  removeInsert,
+  setInsertBypass,
+  setInsertParams,
+} from './effects.ts';
+export type { EffectParam, EffectSpec, EffectType } from './effects.ts';
 export { CORE_ROWS, GM_DRUMS } from './gm-drums-data.ts';
 export { commit, history, redo, undo } from './history.ts';
 export type { History } from './history.ts';
@@ -91,6 +110,7 @@ export type {
   Automation,
   ChordSpan,
   Clip,
+  Insert,
   Keyframe,
   Loop,
   Marker,

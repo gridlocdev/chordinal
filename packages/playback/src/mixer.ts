@@ -2,14 +2,18 @@
 // so the parts sound like they're in one room. Everything sums on a mix bus with headroom, then goes through the
 // mastering chain in platform/audio-engine.js.
 //
-// strip: input → user → low cut → tone (low-pass, for sweeps) → fader → volume → pan (auto-pan LFO) → mix bus
-//                                                                         ├→ reverb send → reverb → low cut → mix bus
-//                                                                         └→ delay send → delay ⟲ (darker each repeat) → mix bus
-// The user gain is the mixer's fader, mute and solo, which nothing else touches; the fader after the filters is what
-// ducking moves, and the volume after it is what a volume automation lane moves. The delay time wobbles slowly (a modulated delay), so the echoes shimmer a little.
+// strip: input → low cut → tone (low-pass, for sweeps) → inserts → user → fader → volume → pan (auto-pan LFO) → mix bus
+//                                                                                         ├→ reverb send → reverb → low cut → mix bus
+//                                                                                         └→ delay send → delay ⟲ (darker each repeat) → mix bus
+// The inserts are the track's effects (effects.ts), in order; with none the tone filter feeds the user gain. The user
+// gain is the mixer's fader, mute and solo, which nothing else touches, after the effects so a compressor hears the
+// part as played; the fader after it is what ducking moves, and the volume after that is what a volume automation lane
+// moves. Each strip has a meter after its pan. The delay time wobbles slowly (a modulated delay), so the echoes shimmer a little.
 import { audioEngine } from './audio-engine.ts';
+import { buildEffect, type Effect, type EffectParamTarget } from './effects.ts';
 import { reverbImpulse } from '@chordinal/lib';
 import { tempoSteps, type TempoSegment } from '@chordinal/lib';
+import type { Insert } from '@chordinal/daw';
 
 export const dbToGain = (db: number): number => 10 ** (db / 20);
 
@@ -60,6 +64,7 @@ export interface StripOptions {
   reverb?: number;
   delay?: number;
   autoPan?: { rate: number; depth: number } | null;
+  inserts?: Insert[];
 }
 
 /** a stereo pan: `pan` is an AudioParam (-1..1) that automation and the auto-pan LFO move */
@@ -83,11 +88,21 @@ export interface Strip {
   reverbSend: GainNode;
   delaySend: GainNode;
   level: number;
+  /** the level after the pan, for the strip's meter */
+  meter: AnalyserNode;
+  /** the effects playing, by their insert's id (a bypassed insert has none) */
+  effects: Map<string, Effect>;
+  /** the effects to play now, in order: kept where an insert stays, built where it's new, and rewired */
+  setInserts(inserts: Insert[]): void;
+  /** what an automation lane moves, by its id: the strip's own lanes, and `<insert id>.<setting>` for each effect */
+  params(): Map<string, EffectParamTarget>;
 }
 
 export interface ProjectMixer {
   channel(strip?: StripOptions): Strip;
   delayAt(seconds: number, at: number): void;
+  /** the tempo from `at`: the shared delay's time and every effect timed to it */
+  tempoAt(bpm: number, at: number): void;
   dispose(fade?: number): void;
 }
 
@@ -130,6 +145,9 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
     return { input, output, pan: control.offset };
   };
 
+  let bpm = tempo;
+  const strips: Strip[] = [];
+
   const bus = node(new GainNode(ctx, { gain: dbToGain(MIX_BUS_DB) }));
   bus.connect(audioEngine.output);
 
@@ -158,6 +176,7 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
       reverb = 0,
       delay: delaySend = 0,
       autoPan = null,
+      inserts = [],
     }: StripOptions = {}): Strip {
       // always stereo: a strip whose voices are all centred (unpanned, mono) would otherwise run mono, and the
       // pan would only find a left channel
@@ -171,18 +190,48 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
       const reverbSend = node(new GainNode(ctx, { gain: reverb }));
       const delaySendGain = node(new GainNode(ctx, { gain: delaySend }));
       const lowCutFilter = node(new BiquadFilterNode(ctx, { type: 'highpass', frequency: lowCut }));
-      input
-        .connect(user)
-        .connect(lowCutFilter)
-        .connect(tone)
-        .connect(fader)
-        .connect(volume)
-        .connect(panner.input);
+      const meter = node(new AnalyserNode(ctx, { fftSize: 512 }));
+      input.connect(lowCutFilter).connect(tone);
+      user.connect(fader).connect(volume).connect(panner.input);
       panner.output.connect(bus);
+      panner.output.connect(meter);
       panner.output.connect(reverbSend).connect(reverbIn);
       panner.output.connect(delaySendGain).connect(delayIn);
       if (autoPan) lfo(panner.pan, autoPan.rate, autoPan.depth);
-      return {
+
+      const effects = new Map<string, Effect>();
+      let order: string[] | null = null; // the effects' ids as wired, null before the first wiring
+      const setInserts = (list: Insert[]) => {
+        const playing = list.filter((x) => !x.bypass);
+        const ids = playing.map((x) => `${x.id}:${x.type}`);
+        if (order && ids.join() === order.join()) return;
+        order = ids;
+        const keep = new Set(ids);
+        for (const [id, e] of effects)
+          if (!keep.has(id)) {
+            e.dispose();
+            effects.delete(id);
+          }
+        tone.disconnect();
+        for (const e of effects.values()) e.output.disconnect();
+        let last: AudioNode = tone;
+        for (const x of playing) {
+          const id = `${x.id}:${x.type}`;
+          let e = effects.get(id);
+          if (!e) {
+            const built = buildEffect(ctx, x, bpm);
+            if (!built) continue;
+            e = built;
+            effects.set(id, e);
+          }
+          last.connect(e.input);
+          last = e.output;
+        }
+        last.connect(user);
+      };
+      setInserts(inserts);
+
+      const strip: Strip = {
         input,
         user,
         lowCut: lowCutFilter,
@@ -194,7 +243,31 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
         reverbSend,
         delaySend: delaySendGain,
         level,
+        meter,
+        effects,
+        setInserts,
+        params() {
+          const map = new Map<string, EffectParamTarget>([
+            ['volume', { param: volume.gain }],
+            ['pan', { param: panner.pan }],
+            ['tone', { param: tone.frequency }],
+            ['reverb', { param: reverbSend.gain }],
+            ['delay', { param: delaySendGain.gain }],
+          ]);
+          for (const [key, e] of effects) {
+            const id = key.slice(0, key.lastIndexOf(':'));
+            for (const [name, target] of Object.entries(e.params)) map.set(`${id}.${name}`, target);
+          }
+          return map;
+        },
       };
+      strips.push(strip);
+      return strip;
+    },
+    tempoAt(next: number, at: number): void {
+      bpm = next;
+      this.delayAt(delaySeconds(next), at);
+      for (const s of strips) for (const e of s.effects.values()) e.tempo(next, at);
     },
     /** the delay's time, `seconds`, from `at` (a quick glide, so the echoes don't jump), dropping later changes */
     delayAt(seconds: number, at: number): void {
@@ -211,6 +284,7 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
         () => {
           for (const o of sources) o.stop();
           for (const n of nodes) n.disconnect();
+          for (const s of strips) for (const e of s.effects.values()) e.dispose();
         },
         fade * 1000 + 50,
       );

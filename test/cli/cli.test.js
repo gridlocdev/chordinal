@@ -119,6 +119,48 @@ test('export plays volume automation: a lane set to 0 silences the track from th
     finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+/** exports the loop fixture with each track changed by `change`; its WAV */
+function exportWith(dir, name, change)
+{
+    fs.cpSync(path.join(FIXTURES, 'loop'), path.join(dir, name), { recursive: true });
+    const file = path.join(dir, name, 'project.json');
+    const p = JSON.parse(fs.readFileSync(file, 'utf8'));
+    for (const t of p.tracks) change(t);
+    fs.writeFileSync(file, JSON.stringify(p));
+    cli(dir, 'export', name, '--out', 'exported');
+    return readWav(path.join(dir, 'exported', `${name}.wav`));
+}
+
+const EFFECT_TYPES = ['eq', 'compressor', 'filter', 'distortion', 'chorus', 'delay', 'reverb', 'phaser', 'flanger', 'tremolo', 'bitcrusher', 'limiter', 'width', 'gain'];
+
+test('export plays track effects: a bypassed one changes nothing, a gain is heard, and every effect renders', { timeout: 120000 }, ()=>
+{
+    const dir = tmp();
+    try
+    {
+        const plain = exportWith(dir, 'plain', ()=> {});
+        const bypassed = exportWith(dir, 'bypassed', (t)=> { t.inserts = [{ id: 'fx1', type: 'gain', bypass: true, params: { gain: -24 } }]; });
+        // two exports of one project differ by a step in a few samples, so "the same" allows that
+        assert.equal(bypassed.samples.length, plain.samples.length);
+        let worst = 0;
+        for (let i = 0; i < plain.samples.length; i++) worst = Math.max(worst, Math.abs(plain.samples[i] - bypassed.samples[i]));
+        assert.ok(worst <= 2, `a bypassed effect leaves the sound as it was (off by up to ${worst})`);
+        const quiet = exportWith(dir, 'quiet', (t)=> { t.inserts = [{ id: 'fx1', type: 'gain', params: { gain: -20 } }]; });
+        const loud = peakBetween(plain, 0, 9), soft = peakBetween(quiet, 0, 9);
+        assert.ok(soft < loud / 4, `a −20 dB gain is heard (peak ${soft} against ${loud})`);
+        // the Bitcrusher runs in a worklet: at 2 bits it's far from the plain sound, so the worklet loaded
+        const crushed = exportWith(dir, 'crushed', (t)=> { t.inserts = [{ id: 'fx1', type: 'bitcrusher', params: { bits: 2, downsample: 8 } }]; });
+        let apart = 0;
+        for (let i = 0; i < plain.samples.length; i++) apart = Math.max(apart, Math.abs(plain.samples[i] - crushed.samples[i]));
+        assert.ok(apart > 1000, `the Bitcrusher is heard (differs by up to ${apart})`);
+        const all = exportWith(dir, 'all', (t)=> { t.inserts = EFFECT_TYPES.map((type, i)=> ({ id: `fx${i + 1}`, type, params: {} })); });
+        const peak = peakBetween(all, 0, 9);
+        assert.ok(peak > 500, `every effect in a row still makes sound (peak ${peak})`);
+        assert.notDeepEqual(all.samples, plain.samples);
+    }
+    finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('export makes a project folder’s MIDI and WAV', { timeout: 60000 }, ()=>
 {
     const dir = tmp();

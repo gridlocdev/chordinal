@@ -3,6 +3,8 @@
 import { soundfontLibrary, type LibraryPreset } from '@chordinal/audio';
 import type { Sf2Preset } from '@chordinal/lib';
 import { loadSoundFont, findPreset, type LoadedFont } from './soundfont.ts';
+import { audioEngine } from './audio-engine.ts';
+import { prepareEffects } from './effects.ts';
 
 /** the library's preset for a bank and program: that one, or the same program on any bank of its kind, or the first */
 export function presetFor(bank: number, program: number): LibraryPreset | undefined {
@@ -53,6 +55,7 @@ export async function loadInstruments(
       ),
     ),
   );
+  await prepareEffects(audioEngine.context); // the effects' worklets, so the track effects can play
   return entries.map((entry) => {
     const font = fonts.get(entry.url);
     const preset = font && findPreset(font, entry.bank, entry.program);
