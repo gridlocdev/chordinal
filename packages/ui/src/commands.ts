@@ -637,7 +637,7 @@ export const catalog = new CommandCatalog([
     run: () => toggleSolo(selected.value),
     checked: () => !!track()?.mixer.solo,
     enabled: () => !!track(),
-    description: 'Play only the soloed tracks.',
+    description: 'Play only the selected track; soloing another track turns this one off.',
     keywords: 'alone isolate',
   },
   {

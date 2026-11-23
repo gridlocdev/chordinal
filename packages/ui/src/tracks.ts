@@ -109,8 +109,21 @@ export const setTrackColor = (trackId: string, color: number[]): void =>
 export const toggleMute = (trackId: string | null): void => {
   if (trackId) edit((p) => setMixer(p, trackId, { mute: !trackOf(trackId)?.mixer.mute }));
 };
+/** solos the track alone (any other solo turns off), or turns its solo off */
 export const toggleSolo = (trackId: string | null): void => {
-  if (trackId) edit((p) => setMixer(p, trackId, { solo: !trackOf(trackId)?.mixer.solo }));
+  if (!trackId) return;
+  const on = !trackOf(trackId)?.mixer.solo;
+  edit((p) =>
+    p.tracks.reduce(
+      (q, t) =>
+        t.id === trackId
+          ? setMixer(q, t.id, { solo: on })
+          : t.mixer.solo && on
+            ? setMixer(q, t.id, { solo: false })
+            : q,
+      p,
+    ),
+  );
 };
 export const setMix = (trackId: string, patch: Partial<Mixer>): void =>
   edit((p) => setMixer(p, trackId, patch));
