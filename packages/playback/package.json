@@ -1,6 +1,6 @@
 {
   "name": "@chordinal/playback",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Playing projects, instruments, the mixer and the microphone through Web Audio",

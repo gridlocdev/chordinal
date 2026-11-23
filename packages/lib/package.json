@@ -1,6 +1,6 @@
 {
   "name": "@chordinal/lib",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Music theory, MIDI, WAV, SF2 and pitch tracking: pure functions",

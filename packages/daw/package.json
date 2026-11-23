@@ -1,6 +1,6 @@
 {
   "name": "@chordinal/daw",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "The project model, its file format, edits and the MIDI FX hook: pure",
