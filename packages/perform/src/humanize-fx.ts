@@ -1,7 +1,8 @@
 // The Humanize MIDI FX: plays a project's tracks the way perform.ts plays a composed score, with ear candy, ghost
 // notes, swing, scoops, glides, vibrato and timing that breathes, a little differently on each pass round a loop.
 // It reads each track's role from its FX settings, the sections from the markers' meta, and swing and style from the
-// project's groove (with the genre's pocket), so a song made by the composer plays as composed, and a track added by hand can join in.
+// project's groove (with the genre's pocket) and a section's own swing and pocket from its marker, so a song made by the
+// composer plays as composed, and a track added by hand can join in.
 import { trackNotes } from '@chordinal/daw';
 import { beatsPerBar, meterAt } from '@chordinal/daw';
 import type { FxEvent, FxType, Project } from '@chordinal/daw';
@@ -64,7 +65,7 @@ export function scoreOf(project: Project): ProjectScore {
   const sectionsFrom = project.markers.length ? project.markers : [{ beat: 0, name: 'Song', meta: {} }];
   const sections = sectionsFrom.map((m, i) => {
     const end = sectionsFrom[i + 1]?.beat ?? project.length;
-    const meta: Record<string, unknown> = m.meta ?? {};
+    const { swing, swingSub, pocket, tight, ...meta }: Record<string, unknown> = m.meta ?? {};
     const tonic = project.key?.tonic ?? 0;
     const defaults = {
       type: 'verse',
@@ -86,6 +87,10 @@ export function scoreOf(project: Project): ProjectScore {
       beat: m.beat,
       beats: end - m.beat,
       beatsPerBar: beatsPerBar(sig(m.beat)),
+      ...(typeof swing === 'number' && { swing }),
+      ...(typeof swingSub === 'number' && { swingSub }),
+      ...(isPocket(pocket) && { pocket }),
+      ...(typeof tight === 'number' && { tight }),
     };
   });
   const tracks = project.tracks.flatMap((t): HumanizedTrack[] => {

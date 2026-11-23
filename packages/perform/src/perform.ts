@@ -85,6 +85,12 @@ export interface PerformSection {
   energy: number;
   meter: string;
   tonic: number;
+  /** the section's own swing (0 plays it straight) and swing unit, in place of the song's */
+  swing?: number;
+  swingSub?: number;
+  /** the section's own pocket, laid over the song's part by part, and its own tightness */
+  pocket?: Partial<Record<string, number>>;
+  tight?: number;
 }
 
 /** a part as a performance reads it */
@@ -152,20 +158,31 @@ export function perform(
     if (followed && more > 0) shapePhrases(notes, sectionAt, swell * more * followed, 0);
     if (melodic && EXPRESSION.scoop.roles.includes(t.role) && bends(t.program))
       addScoops(notes, t.role, ends, score, unit, style.scoops ?? 0);
-    if (score.swing) swing(notes, score, sectionAt);
+    if (swings(score)) swing(notes, score, sectionAt);
     if (EXPRESSION.glide.roles.includes(t.role) && EXPRESSION.glide.programs.includes(t.program) && melodic)
       addGlides(notes, sectionAt, unit, t.role);
     if (score.sound === 'chip' && CHIP.timbre.roles.includes(t.role) && melodic)
       changeTimbre(notes, t.program, sectionAt);
     addVibrato(notes, t, score, sectionAt, spbAt, unit, melodic);
-    const jitter = ((EXPRESSION.jitterMs[t.role] ?? 0) * tight) / 1000; // in seconds
+    const jitterMs = EXPRESSION.jitterMs[t.role] ?? 0;
+    // in seconds, with the tightness of the note's section
+    const jitter = (n: WorkingNote): number => (jitterMs * (sectionAt(n.beat).tight ?? tight)) / 1000;
     // a drum kit's snare can lie back on its own (a lazy backbeat) while the kick holds the grid
-    const late = (n: WorkingNote): number =>
-      ((t.role === 'drums' && n.key === DRUM_KEYS.snare ? pocketOf.snare : null) ?? pocketOf[t.role] ?? 0) /
-      1000;
-    if (jitter || Object.keys(pocketOf).length)
+    const late = (n: WorkingNote): number => {
+      const own = sectionAt(n.beat).pocket;
+      const pocket = own ? { ...pocketOf, ...own } : pocketOf;
+      return (
+        ((t.role === 'drums' && n.key === DRUM_KEYS.snare ? pocket.snare : null) ?? pocket[t.role] ?? 0) /
+        1000
+      );
+    };
+    if (
+      jitterMs * tight ||
+      Object.keys(pocketOf).length ||
+      score.sections.some((s) => s.pocket || s.tight !== undefined)
+    )
       for (const n of notes) {
-        const shift = ((unit(t.role, 'time', n.beat, n.key) * 2 - 1) * jitter + late(n)) / spbAt(n.beat);
+        const shift = ((unit(t.role, 'time', n.beat, n.key) * 2 - 1) * jitter(n) + late(n)) / spbAt(n.beat);
         n.beat = Math.max(0, n.beat + shift);
         if (!n.held) n.beats = Math.max(0.05, n.beats - Math.max(0, shift));
       }
@@ -398,28 +415,35 @@ function addScoops(
   }
 }
 
+/** the song swings, or a section of it does */
+const swings = (score: Pick<PerformScore, 'swing' | 'sections'>): boolean =>
+  !!score.swing || score.sections.some((s) => s.swing);
+
 // swing: one warp of time for every part, starts and ends alike, counted from the start of each note's section so a
-// section of an odd number of eighths (7/8) can't turn the swing around; compound meters already move in threes
+// section of an odd number of eighths (7/8) can't turn the swing around; compound meters already move in threes.
+// A section's own swing (0 straight) wins over the song's.
 function swing(
   notes: { beat: number; beats: number }[],
   score: { swing: number; swingSub: number },
   sectionAt: SectionOf,
 ): void {
-  const amount = swingAmount(score.swing);
   for (const n of notes) {
     const s = sectionAt(n.beat);
+    const amount = s.swing ?? score.swing,
+      sub = s.swingSub ?? score.swingSub;
+    if (!amount) continue;
     // a meter the composer has no pattern for (one set by hand, like 9/8) plays straight
     const meter = METERS[s.meter];
     if (!meter || compound(meter)) continue;
-    const start = s.beat + swingTime(n.beat - s.beat, amount, score.swingSub);
-    const end = s.beat + swingTime(n.beat + n.beats - s.beat, amount, score.swingSub);
+    const start = s.beat + swingTime(n.beat - s.beat, swingAmount(amount), sub);
+    const end = s.beat + swingTime(n.beat + n.beats - s.beat, swingAmount(amount), sub);
     n.beat = start;
     n.beats = Math.max(0.05, end - start);
   }
 }
 
-/** A part's notes with the song's swing applied and nothing else, for a file that should sound like the song (a MIDI
- * export). */
+/** A part's notes with the song's swing (and each section's own) applied and nothing else, for a file that should
+ * sound like the song (a MIDI export). */
 export function swungNotes(
   notes: readonly ScoreNote[],
   score: Pick<PerformScore, 'swing' | 'swingSub' | 'sections'>,
@@ -431,7 +455,7 @@ export function swungNotes(
     vel: n.vel,
     ...(n.detune && { detune: n.detune }),
   }));
-  if (score.swing) swing(out, score, (beat) => sectionOf(score.sections, beat));
+  if (swings(score)) swing(out, score, (beat) => sectionOf(score.sections, beat));
   return out;
 }
 

@@ -14,7 +14,7 @@ Each track's header in the arrangement has its mute, solo and a volume knob: dou
 
 ## Humanize
 
-A track can have a **Humanize** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round a loop is a little different. Your own edits are played the same way.
+A track can have a **Humanize** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round a loop is a little different. Your own edits are played the same way. A section can swing on its own or play straight, and sit further behind or ahead of the beat, when its marker says so.
 
 A note can be tuned off its key by a number of cents, written in the project file. It plays that way and stays under the note's other pitch moves (vibrato, scoops, slides).
 
