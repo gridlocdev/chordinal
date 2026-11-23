@@ -60,7 +60,15 @@ for (const config of APPS)
         try
         {
             const mark = `closed-during-save-${Date.now()}`;
+            // the write and the close travel on different channels, so close only once the main process has the write
+            // (on a slow machine the close could otherwise arrive first, before there is any write to finish)
+            await run.app.evaluate(({ ipcMain })=>
+            {
+                const handlers = ipcMain._invokeHandlers, write = handlers.get('save:write');
+                handlers.set('save:write', (...args)=> { globalThis.writeArrived = true; return write(...args); });
+            });
             await run.page.evaluate((mark)=> { window.chordinalNative.storage.write({ mark }); }, mark);
+            while (!await run.app.evaluate(()=> globalThis.writeArrived)) await new Promise((r)=> setTimeout(r, 10));
             await run.app.evaluate(({ BrowserWindow })=> BrowserWindow.getAllWindows()[0].close());
             assert.equal(await exitOf(run), 0, run.stderr());
             const saved = JSON.parse(await fs.readFile(path.join(PROFILE, 'data', 'save.json'), 'utf8'));
