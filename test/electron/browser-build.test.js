@@ -9,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import electronPath from 'electron';
 import { _electron } from 'playwright-core';
+import { stop } from './stop.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const DIST = path.join(ROOT, 'apps/web/dist');
@@ -61,7 +62,7 @@ test('the browser build starts with no desktop app, and keeps a setting across a
     {
         const proc = app.process();
         await app.close().catch(()=> {});
-        if (proc.exitCode === null) proc.kill('SIGKILL');
+        await stop(proc);
         server.close();
     }
 });

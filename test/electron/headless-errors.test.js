@@ -10,6 +10,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import electronPath from 'electron';
 import { _electron } from 'playwright-core';
+import { stop } from './stop.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const LIMIT_MS = 15000;
@@ -50,7 +51,7 @@ for (const config of APPS)
                 assert.equal(await exitOf(run), 1);
                 assert.match(run.stderr(), /boom from the test/);
             }
-            finally { if (run.proc.exitCode === null) run.proc.kill('SIGKILL'); }
+            finally { await stop(run.proc); }
         });
     }
 
@@ -74,7 +75,7 @@ for (const config of APPS)
             const saved = JSON.parse(await fs.readFile(path.join(PROFILE, 'data', 'save.json'), 'utf8'));
             assert.equal(saved.mark, mark);
         }
-        finally { if (run.proc.exitCode === null) run.proc.kill('SIGKILL'); }
+        finally { await stop(run.proc); }
     });
 }
 
@@ -97,6 +98,6 @@ for (const [kind, throwIt] of [
             assert.equal(await exitOf(run), 1);
             assert.match(stderr, /boom from the test/);
         }
-        finally { if (proc.exitCode === null) proc.kill('SIGKILL'); }
+        finally { await stop(proc); }
     });
 }

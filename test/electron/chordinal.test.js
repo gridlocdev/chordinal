@@ -9,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import electronPath from 'electron';
 import { _electron } from 'playwright-core';
+import { stop as stopProcess } from './stop.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const LIMIT_MS = 15000;
@@ -26,6 +27,22 @@ async function until(what, fn)
         await new Promise(r => setTimeout(r, 100));
     }
 }
+
+// every app started, so the file can stop them all even when a test fails partway
+const running = new Set();
+
+/** stops the app (stop.js) and forgets it */
+async function stop(run)
+{
+    if (!run) return;
+    running.delete(run);
+    await stopProcess(run.proc, LIMIT_MS);
+}
+
+/** removes a folder, retrying while Windows still holds a file in it that a closing app had open */
+const remove = (dir)=> fs.rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+
+test.after(async ()=> { for (const run of [...running]) await stop(run); });
 
 async function launch(marker)
 {
@@ -47,7 +64,9 @@ async function launch(marker)
         await until(`${id} is in the menu`, ()=> app.evaluate(({ Menu }, id)=> !!Menu.getApplicationMenu()?.getMenuItemById(id)?.enabled, id));
         await app.evaluate(({ Menu }, id)=> Menu.getApplicationMenu().getMenuItemById(id).click(), id);
     };
-    return { app, page, proc: app.process(), click };
+    const run = { app, page, proc: app.process(), click };
+    running.add(run);
+    return run;
 }
 
 /** closes the window and waits for the app to quit, so the next start finds it gone */
@@ -60,8 +79,8 @@ async function quit(run)
 
 test('Chordinal starts on a new project, saves it to a chosen folder, asks before closing, and reopens it next time', { skip: !existsSync(path.join(ROOT, 'apps/web/dist/chordinal.js')) && 'run just build first', timeout: 90000 }, async ()=>
 {
-    await fs.rm(DATA, { recursive: true, force: true });
-    await fs.rm(DOCS, { recursive: true, force: true });
+    await remove(DATA);
+    await remove(DOCS);
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'chordinal-'));
     const marker = path.join(tmp, 'dialog-shown'), folder = path.join(tmp, 'Night Drive');
     let run = null;
@@ -154,14 +173,14 @@ test('Chordinal starts on a new project, saves it to a chosen folder, asks befor
     }
     finally
     {
-        if (run && run.proc.exitCode === null) run.proc.kill('SIGKILL');
-        await fs.rm(tmp, { recursive: true, force: true });
+        await stop(run);
+        await remove(tmp);
     }
 });
 
 test('a reload with unsaved changes asks through the headless gate, never a native dialog', { skip: !existsSync(path.join(ROOT, 'apps/web/dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
 {
-    await fs.rm(DATA, { recursive: true, force: true });
+    await remove(DATA);
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'chordinal-'));
     const marker = path.join(tmp, 'dialog-shown');
     let run = null;
@@ -178,15 +197,15 @@ test('a reload with unsaved changes asks through the headless gate, never a nati
     }
     finally
     {
-        if (run && run.proc.exitCode === null) run.proc.kill('SIGKILL');
-        await fs.rm(tmp, { recursive: true, force: true });
+        await stop(run);
+        await remove(tmp);
     }
 });
 
 test('the track headers and the browser: a header\'s double-click, + Drums, the tabs, the edge and B', { skip: !existsSync(path.join(ROOT, 'apps/web/dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
 {
-    await fs.rm(DATA, { recursive: true, force: true });
-    await fs.rm(DOCS, { recursive: true, force: true });
+    await remove(DATA);
+    await remove(DOCS);
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'chordinal-'));
     const marker = path.join(tmp, 'dialog-shown');
     let run = null;
@@ -267,8 +286,8 @@ test('the track headers and the browser: a header\'s double-click, + Drums, the 
     }
     finally
     {
-        if (run && run.proc.exitCode === null) run.proc.kill('SIGKILL');
-        await fs.rm(tmp, { recursive: true, force: true });
+        await stop(run);
+        await remove(tmp);
     }
 });
 
@@ -288,5 +307,5 @@ test('while a text field has focus, the menu bar leaves Cmd+Backspace and the ot
         await until('the bar was built again', async ()=> await registered('deleteTrack') === true);
         assert.ok(!existsSync(marker), 'no dialog was shown');
     }
-    finally { run.proc.kill('SIGKILL'); }
+    finally { await stop(run); }
 });

@@ -35,7 +35,8 @@ jobs:
           - os: ubuntu-latest
             platform: --linux
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    # a full build takes about 5 minutes; a hang should fail long before GitHub's 6-hour default
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -51,9 +52,12 @@ jobs:
       - run: node -e "require('electron')"
         working-directory: apps/desktop
       - run: node tools/build.mjs
+      # these take about 2 minutes; if one hangs (an app left running), stop it here
       - if: runner.os == 'Linux'
+        timeout-minutes: 10
         run: xvfb-run -a node --test 'test/**/*.test.js'
       - if: runner.os != 'Linux'
+        timeout-minutes: 10
         run: node --test 'test/**/*.test.js'
       - run: npx vitest run
       - uses: actions/download-artifact@v4
