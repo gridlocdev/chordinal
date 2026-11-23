@@ -204,6 +204,20 @@ input[type='range']::-webkit-slider-thumb {
   background: var(--text);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
+/* the same in Firefox, which draws its own track and thumb unless these are set */
+input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line);
+}
+input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
 
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -1115,6 +1129,20 @@ input[type='range']::-webkit-slider-thumb {
   width: 24px;
   border-radius: 0;
   background: linear-gradient(90deg, transparent 10px, var(--line) 10px, var(--line) 14px, transparent 14px);
+}
+.strip .fader::-moz-range-track {
+  width: 4px;
+  height: 100%;
+  border-radius: 0;
+}
+.strip .fader::-moz-range-thumb {
+  width: 22px;
+  height: 11px;
+  border-radius: 3px;
+  background: linear-gradient(var(--key-white), var(--key-edge));
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 .strip .fader::-webkit-slider-thumb {
   width: 22px;
