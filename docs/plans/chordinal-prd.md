@@ -50,7 +50,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 1. One window, docked, laid out like this:
    - Across the top: the browser's toggle and the project's title (a dot while there are changes to save) on the left; the transport buttons and a display (bar and beat, tempo, meter, key, section) in the middle; New, Save, Save as and the master volume on the right.
    - Left: the browser (§7).
-   - Centre: the arrangement (ruler, markers, chord track, and a row per track whose header is the track's channel, §6).
+   - Centre: the arrangement (ruler, markers, and a row per track whose header is the track's channel, §6).
    - Bottom: the editor, with tabs Piano Roll, Mixer and Step Grid (`Cmd 1`, `Cmd 2`, `Cmd 3`). The tabs and the open view's toolbar share one bar.
    - Along the bottom edge: the status bar (item 6).
 2. The browser's width and the editor's height are draggable. Both are saved in Chordinal's settings. `B` hides and shows the browser.
@@ -90,7 +90,7 @@ Generate Part was removed with the composer. Composing lives in Chordinal Melody
 
 1. Music Generator, the second app this section once described, was dropped, and so was the composer: `just compose` and the songs moved to Chordinal Melody Composer.
 2. A folder handed over at start-up (from the command line or the Finder) opens instead of the last project; one handed over later asks first.
-3. Recording is a Chordinal feature: **Record Melody** on a track, and **Record a Chord** on the chord track. While a melody take records, its notes appear in the arrangement and the piano roll as they're played or heard, and the piano roll follows the playhead. When it stops, the playhead goes back to the start of the clip the notes went into (or of the take, if nothing was kept).
+3. Recording is a Chordinal feature: **Record Melody** on a track. (**Record a Chord** and the chord track were removed after 1.0.0's first builds.) While a melody take records, its notes appear in the arrangement and the piano roll as they're played or heard, and the piano roll follows the playhead. When it stops, the playhead goes back to the start of the clip the notes went into (or of the take, if nothing was kept).
 4. New from Melody moved to Chordinal Melody Composer, as a page of its own.
 5. `just export`, `just transcribe` and the other tools keep working as they do now.
 
@@ -101,7 +101,7 @@ Generate Part was removed with the composer. Composing lives in Chordinal Melody
 
 ## §11 Later work, in order
 
-Each gets its own interview and PRD section before it's built.
+Each gets its own interview and PRD section before it's built. [4-small-daw.md](4-small-daw.md) plans the first of them, with automation lanes and MIDI effects.
 
 1. **Synths and insert effects**, built together:
    - Each mixer channel gets an insert chain: EQ (3 bands), compressor, distortion, chorus, delay and reverb, reordered by drag and bypassed per effect.
