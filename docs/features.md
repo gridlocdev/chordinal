@@ -16,6 +16,15 @@ Each track's header in the arrangement has its mute, solo and a volume knob: dou
 
 A track can have a **Humanize** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round a loop is a little different. Your own edits are played the same way.
 
+## MIDI effects
+
+A track's MIDI effects change its notes as they play, without changing the notes saved. Each mixer strip lists its track's effects above the pan: pick one from **+ FX** to add it, click its power button to bypass it, and click **×** to remove it. Right-click an effect in the desktop app to move it up or down the list.
+
+- **Scale** moves every note outside the project's key to the nearest note in it, down when two are as near. With no key set, it leaves the notes alone.
+- **Chord** plays a chord over every note. Pick its shape under its name: **In Key** builds the chord from the project's key on that note, so one finger plays the key's chords, and the others (**Major**, **Minor**, **7th**, **Major 7th**, **Minor 7th**, **Sus2**, **Sus4**, **Power**) are the same shape on every note. In the desktop app, its right-click menu moves the added notes an octave up or down.
+
+Effects play in the list's order, before **Humanize**. Play, the exports and the keys you play live all go through them, so you hear the same thing each way. A recording keeps the keys you pressed, not the effects' notes. Every change can be undone.
+
 ## Editing
 
 Draw, move, resize and delete notes and their velocity in the piano roll, on a grid or free, or drum steps in the step grid. Move, copy, split and delete clips, add and delete tracks, and change the tempo and meter. Everything can be undone. The keys and mouse actions for each are in [Controls](controls.md).
@@ -38,7 +47,7 @@ A volume lane sets a gain on top of the track's fader, from silence up to +6 dB.
 
 ## Playing it like an instrument
 
-Your computer keys (once you click the piano roll) or a MIDI keyboard, with velocity and a sustain pedal, play the selected track's instrument. Clicking a key on the piano roll's keyboard plays it too, and the row of every key sounding lights up.
+Your computer keys (once you click the piano roll) or a MIDI keyboard, with velocity and a sustain pedal, play the selected track's instrument, through its [MIDI effects](#midi-effects). Clicking a key on the piano roll's keyboard plays it too, and the row of every key sounding lights up.
 
 ## Recording
 

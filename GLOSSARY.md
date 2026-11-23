@@ -92,8 +92,12 @@ One SoundFont file of **instruments**: GeneralUser GS comes with the app, and Fl
 _Avoid_: bank, soundbank, sample pack
 
 **Humanize**:
-A **track's** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round the **loop** is a little different. It changes how the **notes** play, not the notes saved.
+A **track's** **MIDI effect** that adds ghost notes, swing, timing and ornaments as it plays, so every pass round the **loop** is a little different. It changes how the **notes** play, not the notes saved.
 _Avoid_: groove, randomize
+
+**MIDI effect**:
+One step in a **track's** list of effects that change its **notes** as they play: **Scale**, **Chord** or **Humanize**. The notes saved stay as written. `TrackFx` in the code, `MIDI FX` in the developer docs.
+_Avoid_: plugin, insert
 
 **Metronome**:
 The click that plays on each beat while playing or recording (**♩**).

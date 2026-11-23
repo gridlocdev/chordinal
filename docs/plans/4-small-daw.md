@@ -47,6 +47,8 @@ Automation and MIDI effects can be built in either order or side by side. Track 
 
 **Slices.** (a) Scale and Chord as pure FX with tests. (b) The FX list in the strip. (c) Live playing through the FX. (d) Arpeggiator, which needs tempo-synced timing from the player. (e) Apply to Notes.
 
+**Status.** Built: (a) to (c). Scale and Chord are built in (`packages/daw/src/note-fx.ts`) rather than registered, and run before the registered FX. The strip has add, bypass, remove and Chord's shape; reordering and Chord's octave are in the effect's right-click menu, which only the desktop app has. Still to do: (d) Arpeggiator and (e) Apply to Notes.
+
 **Done when.** A track with Chord and Arpeggiator plays an arpeggiated chord from one held key, live and on Play, the same way twice, and Apply to Notes leaves the same notes in the clip. Humanize still plays as before (its tests and the fixture projects are unchanged).
 
 ## 3. Track effects

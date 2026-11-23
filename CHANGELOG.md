@@ -6,6 +6,8 @@
 
 - **Automation lanes.** Track ▸ Show Automation (`A`) opens a lane under a track for its volume, pan, tone and reverb and delay sends. Click to add points and drag them, double-click to delete one, and right-click for step, linear or exponential curves. Play and the exports follow the lane, and every edit can be undone.
 
+- **MIDI effects.** Each mixer strip lists its track's MIDI effects, with **+ FX** to add **Scale**, which moves notes into the project's key, and **Chord**, which plays a chord over every note: a fixed shape, or the key's own chord on that note. Bypass or remove one in the strip. Play, the exports and live playing all go through them, and recording keeps the keys you pressed.
+
 ### Bugs fixed
 
 - Undo right after Save As no longer turns the project's name back to Untitled: it takes back only your last edit.
