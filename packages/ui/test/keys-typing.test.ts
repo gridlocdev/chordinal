@@ -27,6 +27,7 @@ const cmd = (): Partial<KeyPress> => (isMac ? { metaKey: true } : { ctrlKey: tru
 const { catalog } = await import('../src/index.ts');
 const { hist, selected, settings, setSettings } = await import('../src/index.ts');
 const { focus, musicalTyping, takingKeys } = await import('../src/index.ts');
+const { musicalKey } = await import('../src/live.ts');
 const { emptyProject, addTrack, makeTrack } = await import('@chordinal/daw');
 const { history } = await import('@chordinal/daw');
 
@@ -121,4 +122,29 @@ test('while a take records, the letters play notes wherever the focus is, and R 
   } finally {
     takingKeys.value = false;
   }
+});
+
+test('musical typing keeps every letter it holds from the menu bar, which answers plain letters itself on macOS', () => {
+  page.activeElement = null;
+  setSettings({ editorTab: 'roll' });
+  focus.value = 'roll';
+  assert.equal(musicalKey(key('KeyA')), 'note', 'A is a note, not Show Automation');
+  assert.equal(musicalKey(key('Semicolon')), 'note');
+  assert.equal(
+    musicalKey(key('KeyA', { repeat: true })),
+    'note',
+    'a held key repeats; its repeats are kept too',
+  );
+  assert.equal(musicalKey(key('KeyZ')), 'octave');
+  for (const code of ['KeyB', 'KeyC', 'KeyM', 'KeyQ', 'KeyR'])
+    assert.equal(musicalKey(key(code)), 'letter', code);
+  assert.equal(musicalKey(key('Space')), null, 'Space still plays the song');
+  assert.equal(musicalKey(key('KeyA', cmd())), null, 'Cmd+A still selects all');
+
+  page.activeElement = new HTMLElement('INPUT', 'text');
+  assert.equal(musicalKey(key('KeyA')), null, 'a text field takes its letters');
+  page.activeElement = null;
+
+  focus.value = 'arrange';
+  assert.equal(musicalKey(key('KeyA')), null, 'outside the roll, A is Show Automation');
 });

@@ -16,6 +16,7 @@ import { applyNoteFx, arpCycle, arpKey, arpSettings, splitAtArp } from '@chordin
 import type { ArpSettings, Track, TrackFx } from '@chordinal/daw';
 import { settings, setSettings, selectedTrack, project, beat, notify } from './store.ts';
 import { musicalTyping } from './focus.ts';
+import type { KeyPress } from './commands/shortcut.ts';
 import { errorText } from './errors.ts';
 
 const KEY_VELOCITY = 100; // computer keys have no velocity
@@ -229,6 +230,17 @@ export const typedRange = (octave: number): { lo: number; hi: number } => ({
   hi: octaveC(octave) + Math.max(...TYPED),
 });
 
+/**
+ * what a key press is to musical typing: a note, an octave change, another letter (kept from the shortcuts, which wait
+ * until the roll loses the focus; R still reaches Record during a take, through the page's own handler), or nothing
+ */
+export function musicalKey(e: KeyPress): 'note' | 'octave' | 'letter' | null {
+  if (e.metaKey || e.ctrlKey || e.altKey || typing() || !musicalTyping()) return null;
+  if (OCTAVE_KEYS[e.code] !== undefined) return 'octave';
+  if (NOTE_KEYS[e.code] !== undefined) return 'note';
+  return /^Key[A-Z]$/.test(e.code) ? 'letter' : null;
+}
+
 /** wires the keyboard and MIDI, and reloads the instrument whenever the selected track's preset changes */
 export function startLive(): void {
   let last = '';
@@ -243,15 +255,19 @@ export function startLive(): void {
     }
   });
   addEventListener('keydown', (e) => {
-    if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || typing() || !musicalTyping()) return;
-    const shift = OCTAVE_KEYS[e.code];
-    if (shift !== undefined) {
+    const kind = musicalKey(e);
+    if (!kind) return;
+    // the key is a note now, so nothing else may answer it: unhandled keys go on to the menu bar, which on macOS answers
+    // its plain-letter shortcuts (A, M, R…) itself, and to a focused select, which jumps to the option with that letter
+    e.preventDefault();
+    if (e.repeat || kind === 'letter') return;
+    if (kind === 'octave') {
+      const shift = OCTAVE_KEYS[e.code]!;
       const octave = Math.max(OCTAVES[0], Math.min(OCTAVES[1], settings.value.octave + shift));
       setSettings({ octave });
       return;
     }
-    const semitones = NOTE_KEYS[e.code];
-    if (semitones === undefined) return;
+    const semitones = NOTE_KEYS[e.code]!;
     const key = octaveC(settings.value.octave) + semitones;
     typed.set(e.code, key);
     press(key);

@@ -6,6 +6,10 @@
 
 - **MIDI effects.** Each mixer strip lists its track's MIDI effects, with **+ FX** to add **Scale**, which moves notes into the project's key, **Chord**, which plays a chord over every note: a fixed shape, or the key's own chord on that note, and **Arpeggiator**, which plays held notes one at a time at a rate that follows the tempo, up, down, up and down, as played or at random, over up to four octaves. Bypass or remove one, and change its settings, in the strip, and **Apply to Notes** writes what it plays into the clips so you can edit those notes. Play, the exports and live playing all go through them, and recording keeps the keys you pressed.
 
+### Bugs fixed
+
+- Letters typed into the piano roll to play notes no longer also run that letter's shortcut in the desktop app on macOS: `A` played a note and opened an automation lane, and `M`, `B`, `C`, `Q` and `R` muted the track, showed the browser, turned on the loop, quantized or recorded. Holding a letter down no longer does it either.
+
 ## 1.0.0
 
 ### Before you update

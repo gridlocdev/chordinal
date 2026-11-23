@@ -90,4 +90,28 @@ test.describe('Editing', () => {
     await expect(page).toHaveTitle('Untitled — Chordinal');
     expect(errors).toEqual([]);
   });
+  test('letters typed into the piano roll are kept from the shortcuts and the menu bar', async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Grand Piano').click();
+    await page.getByRole('tab', { name: 'Piano Roll' }).click();
+    await clickAt(page, 'piano-roll', 10, STRIP + 100); // a key on the roll's keyboard: the roll has the focus
+    // a listener added after the app's: a key the page left unhandled would go on to the desktop app's menu bar, which
+    // answers its plain-letter shortcuts itself on macOS (A is Show Automation, M mutes, B shows the browser)
+    await page.evaluate(() => {
+      const w = window as unknown as { unhandled: string[] };
+      w.unhandled = [];
+      addEventListener('keydown', (e) => {
+        if (!e.defaultPrevented) w.unhandled.push(e.code + (e.repeat ? ' (repeat)' : ''));
+      });
+    });
+    await page.keyboard.down('KeyA');
+    await page.keyboard.down('KeyA'); // held: the key repeats
+    await page.keyboard.up('KeyA');
+    for (const code of ['KeyM', 'KeyB', 'KeyZ', 'Quote']) await page.keyboard.press(code);
+    expect(await page.evaluate(() => (window as unknown as { unhandled: string[] }).unhandled)).toEqual([]);
+    await expect(page.getByRole('combobox', { name: 'Grand Piano automation' })).toHaveCount(0);
+    await expect(trackHeader(page, 'Grand Piano').locator('.mute.on')).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
 });
