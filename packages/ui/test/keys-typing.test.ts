@@ -21,7 +21,9 @@ class HTMLElement {
 const page: { activeElement: HTMLElement | null } = { activeElement: null };
 Object.assign(globalThis, { HTMLElement, document: page });
 
-const { handleKey } = await import('../src/index.ts');
+const { handleKey, isMac } = await import('../src/index.ts');
+// the shortcut key: Cmd on a Mac, Ctrl elsewhere (the tests run on Linux and Windows too)
+const cmd = (): Partial<KeyPress> => (isMac ? { metaKey: true } : { ctrlKey: true });
 const { catalog } = await import('../src/index.ts');
 const { hist, selected, settings, setSettings } = await import('../src/index.ts');
 const { focus, musicalTyping, takingKeys } = await import('../src/index.ts');
@@ -47,11 +49,11 @@ test('Cmd+Backspace deletes the track, but not while typing in a text field', ()
   const before = tracks();
 
   page.activeElement = new HTMLElement('INPUT', 'text');
-  assert.equal(handleKey(key('Backspace', { metaKey: true })), false);
+  assert.equal(handleKey(key('Backspace', cmd())), false);
   assert.equal(tracks(), before);
 
   page.activeElement = null;
-  assert.equal(handleKey(key('Backspace', { metaKey: true })), true);
+  assert.equal(handleKey(key('Backspace', cmd())), true);
   assert.equal(tracks(), before - 1);
 });
 
