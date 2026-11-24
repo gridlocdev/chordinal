@@ -64,7 +64,7 @@ just -f path/to/chordinal/justfile cli render music/soundtrack.json music title 
 
 Songs are composed in Chordinal Melody Composer, a separate repository next to this one, which writes them as project folders and calls this `render` for the games.
 
-### Transcribing a recorded melody
+### Recording audio into notes
 
 The pitch tracker follows one clear line, one note at a time, from a low voice to a high flute (about 50 to 4,000 Hz): singing, humming or an instrument. It finds the take's register itself, and a frame read an octave away from the frames on both sides of it is put back in their octave.
 
@@ -72,7 +72,9 @@ The pitch tracker follows one clear line, one note at a time, from a low voice t
 
 In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav` (ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it again. Audio files dropped on a track are read the same way, at the project's tempo.
 
-**From the command line.** Chordinal Melody Composer, a separate repository, has `just transcribe`, which writes a recorded melody in its notation for a song spec.
+**Convert Audio Again.** A clip made from a take or a dropped file keeps its audio in memory (`sources` in `packages/ui/src/recording.ts`) while its project is open. **Track ▸ Convert Audio Again…** reads it again with the choices in its panel (the grid's divisions, snapping to the key, and the sensitivity, which sets the pitch floor and how much of a slot must be voiced) and replaces the clip's notes in one undoable edit. The choices live in `packages/sketch/src/takes.ts` (`GRIDS`, `pitchFloor`, `voicedShare`, `snapToKey`). The step guide for users is [Recording audio into notes](guides/recording-audio-into-notes.md).
+
+**From the command line.** Chordinal Melody Composer, a separate repository, has `just transcribe`, which writes an audio file in its notation for a song spec, and `just seed`, which reads a recorded clip from a saved project folder the same way.
 
 ### The desktop app
 

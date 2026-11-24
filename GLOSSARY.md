@@ -118,7 +118,7 @@ _Avoid_: click track
 ### Recording
 
 **Take**:
-One recording onto a **track**, played on the keys, a MIDI keyboard or sung into the microphone. A saved **project** keeps its microphone takes in `takes/`.
+One recording onto a **track**, played on the keys, a MIDI keyboard or sung into the microphone. A saved **project** keeps its microphone takes in `takes/`. A **clip** read from a microphone take or a dropped audio file keeps that audio while its project is open, so **Convert Audio Again** can read it into **notes** again.
 _Avoid_: recording, sketch
 
 ## Relationships
