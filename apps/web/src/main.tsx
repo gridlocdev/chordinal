@@ -20,7 +20,7 @@ import { textMenu, setTrackItems } from '@chordinal/ui';
 import { Transport, StatusBar } from '@chordinal/ui/components';
 import { Arrange } from '@chordinal/ui/components';
 import { Editor } from '@chordinal/ui/components';
-import { ExportDialog } from '@chordinal/ui/components';
+import { ExportDialog, ConvertDialog } from '@chordinal/ui/components';
 import { Ask } from '@chordinal/ui/components';
 import type { ArrangeActions } from '@chordinal/ui/components';
 import { CommandMenu, ShortcutsDialog } from '@chordinal/ui/components';
@@ -78,6 +78,7 @@ function App() {
       <Editor />
       <StatusBar />
       <ExportDialog />
+      <ConvertDialog />
       <Ask />
       <CommandMenu />
       <ShortcutsDialog />

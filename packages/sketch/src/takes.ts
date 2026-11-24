@@ -1,9 +1,17 @@
 // Recorded takes, read: a melody take's notes off its pitch frames and its key, and the chords over a melody (the
 // ones recorded, and ones guessed for the stretches between). Played takes too: keys played during a take, put into
 // the clip they were played over. Pure apart from mutating the take it is given.
-import { transcribe, tuningOffset, smoothPitch, noteStarts, clickGrid, guessKeys } from '@chordinal/lib';
+import {
+  transcribe,
+  tuningOffset,
+  smoothPitch,
+  noteStarts,
+  clickGrid,
+  fitPer,
+  guessKeys,
+} from '@chordinal/lib';
 import { guessChords, nameChord } from '@chordinal/lib';
-import { pitchClass } from '@chordinal/lib';
+import { pitchClass, PITCH_FLOOR } from '@chordinal/lib';
 import type {
   Frame,
   FreeNote,
@@ -68,13 +76,79 @@ function keyOf(choice: string | null | undefined): NamedKey | null {
   return { key: name, tonic: pitchClass(name), mode: mode as Mode };
 }
 
+// ── converting ──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** the grids a take's beats may split into */
+export type GridChoice = 'quarters' | '8ths' | '8ths-triplets' | '16ths' | '16ths-triplets';
+
+/** each grid's name, and the divisions of a beat transcribe may pick from */
+export const GRIDS: Record<GridChoice, { label: string; divisions: number[] }> = {
+  quarters: { label: 'Quarter notes', divisions: [1] },
+  '8ths': { label: '8th notes', divisions: [2] },
+  '8ths-triplets': { label: '8th notes and triplets', divisions: [2, 3] },
+  '16ths': { label: '16th notes', divisions: [2, 4] },
+  '16ths-triplets': { label: '16th notes and triplets', divisions: [2, 3, 4] },
+};
+
+/** how a recorded take is turned into notes: the grid its beats split into, whether notes off the key move onto it,
+ * and how quiet or short a sound may be and still count as a note (0..1, more notes as it rises) */
+export interface ConvertOptions {
+  grid: GridChoice;
+  snap: boolean;
+  sensitivity: number;
+}
+
+export const CONVERT_DEFAULTS: ConvertOptions = { grid: '8ths-triplets', snap: false, sensitivity: 0.5 };
+
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+
+/** the quietest level kept as a note, as a share of the take's loudest: the pitch tracker's own at 0.5, four times it at
+ * 0, a quarter of it at 1 */
+export const pitchFloor = (sensitivity: number): number => PITCH_FLOOR * 4 ** (1 - 2 * clamp01(sensitivity));
+
+/** how much of a grid slot must have a pitch to hold a note: 0.6 at 0, 0.4 at 0.5, 0.2 at 1 */
+export const voicedShare = (sensitivity: number): number => 0.6 - 0.4 * clamp01(sensitivity);
+
+/** notes off the key moved to the nearest note in it, judged by where each was really sung (its cents); a note
+ * halfway between two goes the way it leaned */
+export function snapToKey<N extends { key: number; cents?: number }>(
+  notes: N[],
+  tonic: number,
+  scale: readonly number[],
+): N[] {
+  const inKey = (k: number) => scale.includes((((k - tonic) % 12) + 12) % 12);
+  return notes.map((n) => {
+    if (inKey(n.key)) return n;
+    const sung = n.key + (n.cents ?? 0) / 100;
+    // in a 7-note scale a note off it always has a neighbour in it; with one on each side, the nearer wins
+    const down = inKey(n.key - 1),
+      up = inKey(n.key + 1);
+    const leansDown = sung < n.key;
+    const key = down && (!up || leansDown) ? n.key - 1 : up ? n.key + 1 : n.key;
+    return key === n.key ? n : { ...n, key };
+  });
+}
+
 /** reads a melody take's notes off its frames, on the click's grid when it had one */
-export function analyse<T extends MelodyTake>(take: T, keyChoice = 'auto'): T & TakeReading {
+export function analyse<T extends MelodyTake>(
+  take: T,
+  keyChoice = 'auto',
+  options: Partial<ConvertOptions> = {},
+): T & TakeReading {
+  const o = { ...CONVERT_DEFAULTS, ...options };
   const offset = tuningOffset(take.frames),
     smooth = smoothPitch(take.frames);
   const starts = noteStarts(take.frames, { offset, smooth });
-  const grid = take.downbeat === null ? null : clickGrid(starts, take.tempo, take.downbeat);
-  const t = transcribe(take.frames, { tempo: take.tempo, starts, grid });
+  const divisions = GRIDS[o.grid].divisions;
+  const grid =
+    take.downbeat === null ? null : clickGrid(starts, take.tempo, take.downbeat, fitPer(divisions));
+  const t = transcribe(take.frames, {
+    tempo: take.tempo,
+    starts,
+    grid,
+    divisions,
+    voiced: voicedShare(o.sensitivity),
+  });
   const read = Object.assign(take, {
     notes: t.notes,
     origin: t.origin,

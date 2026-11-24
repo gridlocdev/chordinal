@@ -25,6 +25,7 @@ import {
   reversePicked,
 } from './notes.ts';
 import { paste, clipboard } from './clipboard.ts';
+import { convertDialog, sourceOf } from './recording.ts';
 import {
   trackOf,
   addNewTrack,
@@ -157,6 +158,14 @@ export function clipMenu(trackId: string, clipId: string, at: number): void {
         ]
       : [item('makePattern', { run: () => makePatternOf(trackId, clipId) })]),
     '-',
+    ...(sourceOf(trackId, clipId)
+      ? [
+          {
+            label: 'Convert Audio Again…',
+            run: () => (convertDialog.value = { track: trackId, clip: clipId }),
+          },
+        ]
+      : []),
     { label: 'Quantize Notes', run: () => quantizeClip(trackId, clipId) },
     { label: 'Humanize', run: () => humanizeClip(trackId, clipId) },
     { label: 'Speed', submenu: speedItems((k) => scaleClip(trackId, clipId, k)) },

@@ -2,7 +2,7 @@
 // and Help, around the shared menus
 // (packages/ui/src/menu-bar.ts). The app's own commands join the shared catalog here.
 import { projectName } from '@chordinal/ui';
-import { recording } from '@chordinal/ui';
+import { recording, convertDialog, selectedClip, sourceOf } from '@chordinal/ui';
 import { catalog, item, busy } from '@chordinal/ui';
 import { editMenu, trackMenu, transportMenu, viewMenu, startMenus } from '@chordinal/ui';
 import type { Menu, MenuEntry } from '@chordinal/ui';
@@ -55,6 +55,21 @@ catalog.add([
     description: 'Record a melody from the microphone, or play it, onto the selected track.',
     keywords: 'record audio sing hum voice instrument microphone take notes',
   },
+  {
+    id: 'convertAudio',
+    group: 'Track',
+    title: 'Convert Audio Again…',
+    run: () => {
+      convertDialog.value = selectedClip.value;
+    },
+    enabled: () => {
+      const c = selectedClip.value;
+      return !!c && !!sourceOf(c.track, c.clip);
+    },
+    description:
+      'Read the selected clip’s recorded or dropped audio into notes again, with another grid or sensitivity.',
+    keywords: 'audio to notes transcribe grid quantize snap key sensitivity reconvert',
+  },
 ]);
 
 function fileMenu(): Menu {
@@ -97,7 +112,7 @@ function menuBar(): MenuEntry[] {
   return [
     fileMenu(),
     editMenu(),
-    trackMenu([item('recordMelody')]),
+    trackMenu([item('recordMelody'), item('convertAudio')]),
     transportMenu(),
     viewMenu([item('commandMenu'), item('browser'), '-']),
     { label: 'Help', submenu: [item('shortcuts'), item('readme')] },

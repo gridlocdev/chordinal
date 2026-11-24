@@ -82,6 +82,8 @@ Your computer keys (once you click the piano roll) or a MIDI keyboard, with velo
 
 You can also record audio from the microphone instead: sing, hum or play one line on an instrument, vibrato included. Chordinal turns it into notes in the piano roll to fix by hand. It reads one note at a time anywhere from a low voice to a high flute (about 50 to 4,000 Hz), finding the take's register itself, and puts back the odd note it reads an octave out. A saved project keeps these takes in its folder's `takes/`, listed in the browser's **Takes** tab to read onto a track again, and an audio file dropped on a track is read the same way.
 
+To read a clip's audio again without recording it again, pick **Track ▸ Convert Audio Again…** (or right-click the clip). Choose the **Grid** (quarter notes up to 16ths and triplets), tick **snap notes to the key** to move notes that fell between the key's notes onto it, and move **Sensitivity** up to hear quieter and shorter notes or down to drop breaths and noise. The clip's notes change as you go, and **Undo** takes back each change. The next take uses the same choices. A clip keeps its audio until you open another project; after that, read the take again from the **Takes** tab.
+
 ## Importing and exporting
 
 Import a MIDI file as a new project from the File menu, or drop one on a track to add its tracks from that bar. Export the whole project, the loop or the selection as audio (the mix, or each track as its own WAV, normalized if you like) or as MIDI. A MIDI export writes a note's own tuning and its bend as pitch bend, giving tuned notes that overlap on one track channels of their own, and an import reads pitch bend back as each note's tuning and bend.

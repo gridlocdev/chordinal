@@ -10,6 +10,7 @@
 - **Bends over a note.** A note can also carry a bend (`bend` in `project.json`): points of cents at beats into the note, joined by straight lines, so a held note can slide in pitch while it sounds. Play and the audio exports play it, a MIDI export writes it as pitch bend that moves over the note on a channel of its own, and importing a MIDI file reads pitch bend that moves under a held note back as its bend. Scaling notes stretches their bends with them.
 - **Swing and pocket per section.** A section's marker can give it its own swing (0 plays it straight), pocket and tightness, which **Humanize** uses in place of the song's for that section.
 - **More chord symbols.** Roman numerals take 11ths and 13ths (`V11`, `ii11`, `V13`, `Imaj13`) and altered tensions (`V7b9`, `V7#9`, `Imaj7#11`, `V7b13`), and chord names show them.
+- **Convert Audio Again.** Read a clip made from a recording or a dropped audio file into notes again without recording it again: pick another grid (quarter notes up to 16ths and triplets), snap the notes to the key, or change the sensitivity. Find it in the **Track** menu or the clip's right-click menu.
 
 ### Improvements
 
@@ -51,6 +52,7 @@
 
 ### Improvements
 
+- **Convert Audio Again.** Read a clip made from a recording or a dropped audio file into notes again without recording it again: pick another grid (quarter notes up to 16ths and triplets), snap the notes to the key, or change the sensitivity. Find it in the **Track** menu or the clip's right-click menu.
 - **Record audio in any register.** Recording from the microphone, or dropping an audio file on a track, now reads a line from a low voice up to a high flute (about 50 to 4,000 Hz) into notes, not just high ones, and puts back a note read an octave out. **Record Melody** turns up in the command menu for "record audio" too.
 - A status bar along the bottom shows notices, what the letter keys play, the MIDI keyboard and whether the project is saved. On macOS the window has no separate title bar: the browser runs to the top, with the window buttons above it, and the transport row is the rest of the title bar.
 - A new app icon: a chord on one stem with a flag. `just run-desktop` shows it, and the name Chordinal in the menu bar, instead of Electron's.

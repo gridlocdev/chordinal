@@ -43,6 +43,8 @@ let mergeKey: string | null = null;
 let turn: Promise<unknown> = Promise.resolve();
 /** counts the projects put in the window: a save asked for one that another has replaced by its turn doesn't run */
 let shown = 0;
+/** counts the projects put in the window, so what belongs to one can tell when another has taken its place */
+export const projectShown = (): number => shown;
 function inTurn<T>(task: () => Promise<T>): Promise<T> {
   const next = turn.then(task, task);
   turn = next.catch(() => undefined);

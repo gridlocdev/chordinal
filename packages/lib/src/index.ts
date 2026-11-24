@@ -76,6 +76,7 @@ export type { TempoSegment } from './tempo-map.ts';
 export {
   beatDivisions,
   clickGrid,
+  fitPer,
   fitGrid,
   freeNotes,
   guessKeys,

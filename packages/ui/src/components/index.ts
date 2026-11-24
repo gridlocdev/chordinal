@@ -2,6 +2,7 @@ export { Arrange } from './Arrange.tsx';
 export type { ArrangeActions, ArrangeProps } from './Arrange.tsx';
 export { Ask } from './Ask.tsx';
 export type { LaneProps } from './Ruler.tsx';
+export { ConvertDialog } from './ConvertDialog.tsx';
 export { Editor } from './Editor.tsx';
 export { ExportDialog } from './ExportDialog.tsx';
 export { Knob } from './Knob.tsx';

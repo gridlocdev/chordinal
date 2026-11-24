@@ -74,6 +74,7 @@ import {
   patternOf,
 } from './tracks.ts';
 import { exportDialog } from './bounce.ts';
+import { convertDialog } from './recording.ts';
 import { importMidi } from './midi-import.ts';
 import { audioEngine } from '@chordinal/playback';
 import { askTempo, askMeter } from './timeline.ts';
@@ -85,7 +86,12 @@ import type { Loop } from '@chordinal/daw';
 
 /** what holds the commands back: a dialog, ⌘K or the Keyboard Shortcuts window ('overlay'), or nothing */
 const busyWith = () =>
-  appDialog.value || exportDialog.value || asking.value || audioEngine.rendering || exporting.value
+  appDialog.value ||
+  exportDialog.value ||
+  convertDialog.value ||
+  asking.value ||
+  audioEngine.rendering ||
+  exporting.value
     ? 'dialog'
     : overlay.value
       ? 'overlay'

@@ -91,6 +91,8 @@ Generate Part was removed with the composer. Composing lives in Chordinal Melody
 1. Music Generator, the second app this section once described, was dropped, and so was the composer: `just compose` and the songs moved to Chordinal Melody Composer.
 2. A folder handed over at start-up (from the command line or the Finder) opens instead of the last project; one handed over later asks first.
 3. Recording is a Chordinal feature: **Record Melody** on a track. (**Record a Chord** and the chord track were removed after 1.0.0's first builds.) While a melody take records, its notes appear in the arrangement and the piano roll as they're played or heard, and the piano roll follows the playhead. When it stops, the playhead goes back to the start of the clip the notes went into (or of the take, if nothing was kept).
+   - A take from the microphone, or audio dropped on a track or read from the Takes tab, is read into one line of notes, about 50 to 4,000 Hz, at the project's tempo. Chords (more than one note at a time) aren't read.
+   - **Convert Audio Again…** (the Track menu, ⌘K, or the clip's right-click menu) reads a clip's audio again without recording it again: the grid (quarter notes, 8ths, 8ths and triplets, 16ths, 16ths and triplets), **snap notes to the key** (the project's key, else the one guessed from the notes) and a sensitivity slider. Each change replaces the clip's notes as one undo step, and the choices are used for the next audio too. A clip keeps its audio only while its project is open; after that, read the take again from the Takes tab.
 4. New from Melody moved to Chordinal Melody Composer, as a page of its own.
 5. `just export`, `just transcribe` and the other tools keep working as they do now.
 

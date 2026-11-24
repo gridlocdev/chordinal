@@ -1210,6 +1210,15 @@ input[type='range']::-moz-range-thumb {
 .dialog.ask {
   width: min(380px, 92vw);
 }
+/* Convert Audio Again: low over the window, the notes behind it left to watch */
+.dialog-back.see-through {
+  background: transparent;
+  place-items: end center;
+  padding-bottom: 56px;
+}
+.dialog.convert {
+  width: min(400px, 92vw);
+}
 .dialog .actions .other {
   margin-right: auto;
 } /* Don't Save, apart from Cancel and Save */

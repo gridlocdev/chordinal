@@ -2,6 +2,8 @@
 // is in, with a bar's count-in and a click at the project's tempo. Keys played meanwhile, on the computer keyboard or
 // a MIDI keyboard, are recorded instead of the microphone, into the clip the take starts in (the selected one first;
 // a pattern's other clips share them), and need no microphone. Audio files dropped on a track are read the same way. A saved project keeps its takes' audio in <project folder>/takes/.
+// A clip read from audio keeps that audio while the project is open, so Convert Audio Again can read it once more with
+// another grid, snapped to the key or more or less sensitive, without recording it again.
 import { signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
 import { mic } from '@chordinal/playback';
@@ -13,12 +15,13 @@ import { encodeWav } from '@chordinal/lib';
 import { bpmAt } from '@chordinal/lib';
 import type { Mode, NamedKey } from '@chordinal/lib';
 import { barAt, meterAt } from '@chordinal/daw';
-import { makeTrack, addTrack, addClip, newId, findClip } from '@chordinal/daw';
+import { makeTrack, addTrack, addClip, updateClip, newId, findClip } from '@chordinal/daw';
 import type { MeterChange, Note } from '@chordinal/daw';
 import { startRecording, takeBlock, updateRecording, stopRecording, keyBeat } from '@chordinal/playback';
 import type { MicTake, Recording } from '@chordinal/playback';
-import { analyse, playedNotes, recordInto } from '@chordinal/sketch';
-import type { TakeReading } from '@chordinal/sketch';
+import { analyse, playedNotes, recordInto, pitchFloor, snapToKey, CONVERT_DEFAULTS } from '@chordinal/sketch';
+import type { ConvertOptions } from '@chordinal/sketch';
+import type { Frame } from '@chordinal/lib';
 import { audioEngine } from '@chordinal/playback';
 import { onPlayed } from './live.ts';
 import type { PlayedKey } from './live.ts';
@@ -34,7 +37,7 @@ import {
   notify,
   settings,
 } from './store.ts';
-import { edit } from './document.ts';
+import { edit, projectShown } from './document.ts';
 import { stop } from './player.ts';
 import { errorText } from './errors.ts';
 
@@ -118,24 +121,107 @@ function targetTrack(): string {
   return id;
 }
 
-/** a melody take's notes as a clip from a bar on a track */
-function placeTake(trackId: string, start: number, take: Pick<TakeReading, 'notes'>, label: string): void {
-  const notes = take.notes
-    .filter((n) => n.beat >= 0)
-    .map((n) => ({ beat: n.beat, beats: n.beats, key: n.key, vel: VELOCITY }));
-  if (!notes.length) {
-    notify(`No notes heard in ${label}.`);
-    return;
-  }
+// ── audio to notes ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** recorded or dropped audio a clip was read from: the sound, the tempo and meter it was read at, the click's downbeat
+ * (null: none), its name for notices, and the project it belongs to (projectShown) */
+export interface AudioSource {
+  samples: Float32Array;
+  rate: number;
+  tempo: number;
+  meter: string;
+  downbeat: number | null;
+  label: string;
+  shown: number;
+}
+
+/** the audio each clip read from audio came from, by clip id, while its project is open */
+const sources = new Map<string, AudioSource>();
+
+/** how the last audio was converted, used for the next take too; kept while the app is open */
+export const convertChoices: Signal<ConvertOptions> = signal({ ...CONVERT_DEFAULTS });
+
+/** the clip Convert Audio Again is open on, or null */
+export const convertDialog: Signal<{ track: string; clip: string } | null> = signal(null);
+
+/** the audio a clip was read from, if it's still there to read again */
+export function sourceOf(trackId: string, clipId: string): AudioSource | null {
+  const src = sources.get(clipId);
+  return src && src.shown === projectShown() && findClip(project.value, trackId, clipId) ? src : null;
+}
+
+/** audio read into notes, in beats from where it starts; `frames` when they're already tracked at the default floor */
+function readAudio(src: AudioSource, o: ConvertOptions, frames?: Frame[]): Note[] {
+  const fresh = !frames || o.sensitivity !== CONVERT_DEFAULTS.sensitivity;
+  const take = analyse(
+    {
+      kind: 'melody',
+      samples: src.samples,
+      rate: src.rate,
+      frames: fresh ? trackPitch(src.samples, src.rate, { floor: pitchFloor(o.sensitivity) }) : frames,
+      tempo: src.tempo,
+      meter: src.meter,
+      downbeat: src.downbeat,
+    },
+    'auto',
+    o,
+  );
+  const read = take.notes.filter((n) => n.beat >= 0);
+  const k = keyFor(read);
+  return (o.snap ? snapToKey(read, k.tonic, MODES[k.mode]) : read).map((n) => ({
+    beat: n.beat,
+    beats: n.beats,
+    key: n.key,
+    vel: VELOCITY,
+  }));
+}
+
+/** whole bars from `start` that hold some notes */
+function barsFor(start: number, notes: Note[]): number {
   const bpb = barAt(project.value.meters, start).beatsPerBar;
-  const beats = Math.max(1, Math.ceil(Math.max(...notes.map((n) => n.beat + n.beats)) / bpb - 1e-6)) * bpb;
+  return Math.max(1, Math.ceil(Math.max(...notes.map((n) => n.beat + n.beats)) / bpb - 1e-6)) * bpb;
+}
+
+/** audio read into notes as a new clip from a bar on a track, with the last choices; returns the clip's id, or '' when
+ * no notes were heard */
+export function placeAudio(
+  trackId: string,
+  start: number,
+  audio: Omit<AudioSource, 'shown'>,
+  frames?: Frame[],
+): string {
+  const src = { ...audio, shown: projectShown() };
+  const notes = readAudio(src, convertChoices.value, frames);
+  if (!notes.length) {
+    notify(`No notes heard in ${src.label}.`);
+    return '';
+  }
   let clip = '';
   edit((p) => {
     clip = newId(p, 'c');
-    return addClip(p, trackId, { id: clip, start, beats, notes });
+    return addClip(p, trackId, { id: clip, start, beats: barsFor(start, notes), notes });
   });
+  sources.set(clip, src);
   selectedClip.value = { track: trackId, clip };
-  notify(`${notes.length} notes from ${label}`);
+  notify(`${notes.length} notes from ${src.label}`);
+  return clip;
+}
+
+/** a clip read from audio read again with other choices, which become the last ones: its notes replaced, and it grows
+ * by whole bars if they need more room; one undo step */
+export function convertAgain(trackId: string, clipId: string, o: ConvertOptions): void {
+  const src = sourceOf(trackId, clipId);
+  if (!src) return;
+  convertChoices.value = o;
+  const notes = readAudio(src, o);
+  edit((p) =>
+    updateClip(p, trackId, clipId, (c) => ({
+      ...c,
+      notes,
+      beats: notes.length ? Math.max(c.beats, barsFor(c.start, notes)) : c.beats,
+    })),
+  );
+  notify(notes.length ? `${notes.length} notes from ${src.label}` : `No notes heard in ${src.label}.`);
 }
 
 /** notes played on the keys during a take: into the clip under its start (the selected one first), else a new clip;
@@ -258,11 +344,18 @@ export async function finish(): Promise<void> {
     return;
   }
   // a melody take from the mic always has its downbeat
-  placeTake(
+  placeAudio(
     r.track,
     r.start,
-    analyse({ ...take, kind: 'melody', downbeat: take.downbeat ?? null }),
-    'the take',
+    {
+      samples: take.samples,
+      rate: take.rate,
+      tempo: take.tempo,
+      meter: take.meter,
+      downbeat: take.downbeat ?? null,
+      label: 'the take',
+    },
+    take.frames,
   );
   const file = await keepAudio(take).catch((e: unknown) => {
     notify(errorText(e), 'error');
@@ -280,18 +373,15 @@ export async function dropAudio(trackId: string, files: Iterable<File>, at: numb
     try {
       const { samples, rate } = await mic.decode(await file.arrayBuffer());
       const p = project.value;
-      const take = analyse({
-        kind: 'melody',
+      const clip = placeAudio(trackId, start, {
         samples,
         rate,
-        frames: trackPitch(samples, rate),
         tempo: Math.round(bpmAt(p.tempoMap, start)),
         meter: sigAt(p.meters, start),
         downbeat: null,
+        label: file.name,
       });
-      placeTake(trackId, start, take, file.name);
-      const sel = selectedClip.value;
-      const c = sel && findClip(project.value, trackId, sel.clip);
+      const c = clip && findClip(project.value, trackId, clip);
       if (c) start = c.start + c.beats;
     } catch (err) {
       notify(`${file.name}: ${errorText(err)}`, 'error');

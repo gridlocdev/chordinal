@@ -85,8 +85,20 @@ export { SETTINGS_KEY, browserStorage, storage } from './platform/storage.ts';
 export { heardDifferently, play, reload, seek, stop, toggle } from './player.ts';
 export { preview, previewNotes } from './preview.ts';
 export type { PreviewNote, PreviewPreset } from './preview.ts';
-export { dropAudio, dropTake, finish, record, recording, takesKept } from './recording.ts';
-export type { RecordedKey, Take } from './recording.ts';
+export {
+  convertAgain,
+  convertChoices,
+  convertDialog,
+  dropAudio,
+  dropTake,
+  finish,
+  placeAudio,
+  record,
+  recording,
+  sourceOf,
+  takesKept,
+} from './recording.ts';
+export type { AudioSource, RecordedKey, Take } from './recording.ts';
 export {
   accentStep,
   addGridRow,

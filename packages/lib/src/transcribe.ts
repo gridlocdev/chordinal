@@ -70,8 +70,11 @@ export function tuningOffset(frames: Frame[]): number {
   return x || y ? Math.atan2(y, x) / (2 * Math.PI) : 0;
 }
 
+/** seconds smoothPitch averages over by default: one vibrato cycle */
+const SMOOTH_SPAN = 1 / 6;
+
 /** pitch averaged over `span` seconds of voiced frames around each frame: one vibrato cycle (≈ 1/6 s) cancels it */
-export function smoothPitch(frames: Frame[], span = 1 / 6): (number | null)[] {
+export function smoothPitch(frames: Frame[], span = SMOOTH_SPAN): (number | null)[] {
   const fps = fpsOf(frames);
   const half = Math.max(1, Math.round((span * fps) / 2));
   const out = new Array<number | null>(frames.length).fill(null);
@@ -205,21 +208,22 @@ export function noteStarts(
 
 /**
  * The grid (an 8th every `slot` seconds from `origin`) that best fits the note starts, searching ±tempoRange around
- * the tempo given and every phase. Each start costs its squared distance to the nearest grid line, in slots.
- * @returns origin is the grid line at or just before the first start
+ * the tempo given and every phase. Each start costs its squared distance to the nearest line, `per` lines a beat (2:
+ * 8ths; 4 for a take in 16ths, whose odd 16ths would otherwise pull the phase a 32nd off).
+ * @returns origin is the line at or just before the first start
  */
 export function fitGrid(
   starts: number[],
   tempo: number,
-  { tempoRange = 0.1, steps = 40 }: { tempoRange?: number; steps?: number } = {},
+  { tempoRange = 0.1, steps = 40, per = 2 }: { tempoRange?: number; steps?: number; per?: number } = {},
 ): Grid {
   const [start0] = starts;
   if (start0 === undefined) return { tempo, slot: 30 / tempo, origin: 0 };
-  let best = { cost: Infinity, tempo, slot: 30 / tempo, phase: 0 };
+  let best = { cost: Infinity, tempo, slot: 60 / (tempo * per), phase: 0 };
   for (let i = tempoRange > 0 ? -20 : 0; i <= (tempoRange > 0 ? 20 : 0); i++) {
     const tr = (tempoRange * i) / 20;
     const t = tempo * (1 + tr),
-      slot = 30 / t;
+      slot = 60 / (t * per);
     for (let p = 0; p < steps; p++) {
       const phase = start0 + (p / steps - 0.5) * slot;
       let cost = tr * tr * 2; // a small pull toward the tempo given, so a sparse take doesn't wander
@@ -232,21 +236,21 @@ export function fitGrid(
     }
   }
   const origin = best.phase + Math.floor((start0 - best.phase) / best.slot + 0.5) * best.slot;
-  return { tempo: best.tempo, slot: best.slot, origin };
+  return { tempo: best.tempo, slot: 30 / best.tempo, origin };
 }
 
 /**
  * The grid of a take recorded against a click: the click's tempo exactly, its bar lines as beat 0, and the phase of
- * the notes themselves within half an 8th of the click, so the take's latency (the click reaching the ear, the sound
+ * the notes themselves within half a line of the click (`per` lines a beat, as fitGrid), so the take's latency (the click reaching the ear, the sound
  * reaching the recording) and a player who sits behind the beat don't push notes into the next 8th.
  * @param starts  note starts, seconds (noteStarts)
  * @param tempo  the click's bpm
  * @param downbeat  seconds into the take of the click's bar line that becomes beat 0
  */
-export function clickGrid(starts: number[], tempo: number, downbeat: number): Grid {
-  const slot = 30 / tempo;
-  const x = (fitGrid(starts, tempo, { tempoRange: 0 }).origin - downbeat) / slot;
-  return { tempo, slot, origin: downbeat + (x - Math.round(x)) * slot };
+export function clickGrid(starts: number[], tempo: number, downbeat: number, per = 2): Grid {
+  const fine = 60 / (tempo * per);
+  const x = (fitGrid(starts, tempo, { tempoRange: 0, per }).origin - downbeat) / fine;
+  return { tempo, slot: 30 / tempo, origin: downbeat + (x - Math.round(x)) * fine };
 }
 
 /**
@@ -357,6 +361,9 @@ export function beatDivisions(pos: number[], beats: number, divisions = [2, 3]):
   });
 }
 
+/** the lines a grid's phase is fitted to: 16ths when a beat may split in four, else 8ths */
+export const fitPer = (divisions: number[]): number => (divisions.includes(4) ? 4 : 2);
+
 export interface TranscribeOptions {
   tempo: number;
   voiced?: number;
@@ -382,7 +389,7 @@ export function transcribe(
   offset ??= tuningOffset(frames);
   const smooth = smoothPitch(frames);
   starts ??= noteStarts(frames, { offset, smooth });
-  grid ??= fitGrid(starts, tempo);
+  grid ??= fitGrid(starts, tempo, { per: fitPer(divisions) });
   const last = frames.findLast((f) => f.midi !== null);
   if (!last || !starts.length) return { notes: [], tempo: grid.tempo, offset, origin: grid.origin };
   const { origin } = grid,
@@ -412,9 +419,11 @@ export function transcribe(
   const keys = slots.map((s, i) => {
     const a = atBeat(s.beat),
       b = atBeat(s.beat + s.beats);
+    // a slot shorter than the smoothing (a 16th) reads its own frames: the smoothing would blend in its neighbours
+    const raw = s.beats * beatSec < SMOOTH_SPAN;
     const ps: number[] = [];
     for (let j = a; j < b; j++) {
-      const p = smooth[j];
+      const p = raw ? frames[j]?.midi : smooth[j];
       if (p != null) ps.push(p);
     }
     const enough = ps.length >= voiced * Math.max(1, b - a) || (breaks.has(i) && ps.length >= minFrames);
