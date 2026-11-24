@@ -1,9 +1,9 @@
 // One take being recorded. A melody take has a count-in and a click on the game's AudioContext; its pitch is tracked
-// as it comes in, the note being whistled is shown at the playhead, and notes are firmed up about a beat behind it.
-// A chord take is whistled freely, with no click: only which notes are heard matters.
+// as it comes in, the note being sung or played is shown at the playhead, and notes are firmed up about a beat behind it.
+// A chord take is recorded freely, with no click: only which notes are heard matters.
 import { mic } from './mic.ts';
 import { audioEngine } from './audio-engine.ts';
-import { trackPitch, gateFrames, type PitchFrame } from '@chordinal/lib';
+import { trackPitch, finishFrames, type PitchFrame } from '@chordinal/lib';
 import { readLive, type LiveReading, type TranscribedNote } from '@chordinal/lib';
 import { RECORD, CLICK, LIVE } from '@chordinal/sketch';
 import { beatsPerBar } from '@chordinal/daw';
@@ -89,7 +89,7 @@ export function startRecording({
     bpb,
     countBeats,
     start: audioEngine.context.currentTime + 0.15,
-    // beat 0 is the first bar line after the count-in, as heard: the click reaches the ear late, the whistle the take
+    // beat 0 is the first bar line after the count-in, as heard: the click reaches the ear late, the sound the take
     origin: countBeats * beatSec + mic.latency,
     buffer: new Float32Array(rate * RECORD.maxSeconds),
     length: 0,
@@ -169,13 +169,13 @@ const HOP = 1 / 100; // seconds between pitch frames: trackPitch's default rate
 /** the pitch frames (ungated) of the take recorded since the last ones, at their times in the take */
 function newFrames(r: Recording): PitchFrame[] {
   const from = Math.round(r.nextFrame * HOP * r.rate);
-  const frames = trackPitch(r.buffer.subarray(from, r.length), r.rate, { floor: 0 });
+  const frames = trackPitch(r.buffer.subarray(from, r.length), r.rate, { raw: true });
   for (const f of frames) f.time += from / r.rate;
   r.nextFrame += frames.length;
   return frames;
 }
 
-/** the semitone being whistled now, and since when: a faint note at the playhead until it's firmed up */
+/** the semitone being heard now, and since when: a faint note at the playhead until it's firmed up */
 function follow(r: Recording, f: PitchFrame): void {
   if (f.midi === null) {
     r.live = null;
@@ -218,8 +218,8 @@ function firm(r: Recording): void {
 export function stopRecording(r: Recording): MicTake | null {
   const samples = r.buffer.slice(0, r.length);
   if (samples.length < r.rate * (r.origin + 0.5)) return null;
-  // the frames tracked while recording, and the last few since, gated as one: no second pass over the whole take
-  const frames = gateFrames([...r.raw, ...newFrames(r)]);
+  // the frames tracked while recording, and the last few since, finished as one: no second pass over the whole take
+  const frames = finishFrames([...r.raw, ...newFrames(r)]);
   const take: MicTake = {
     kind: r.kind,
     source: 'mic',
@@ -232,14 +232,29 @@ export function stopRecording(r: Recording): MicTake | null {
   return r.kind === 'melody' ? { ...take, downbeat: r.origin } : take;
 }
 
-/** a short low tick at a time on the game's AudioContext */
+/** white noise, made once, for the click's ticks */
+let noise: AudioBuffer | null = null;
+
+/** a short tick of noise at a time on the game's AudioContext */
 function tick(when: number, accent: boolean): void {
   const ctx = audioEngine.context;
-  const osc = new OscillatorNode(ctx, { frequency: accent ? CLICK.accentHz : CLICK.hz });
+  if (!noise || noise.sampleRate !== ctx.sampleRate) {
+    noise = new AudioBuffer({
+      length: Math.ceil(ctx.sampleRate * CLICK.seconds),
+      sampleRate: ctx.sampleRate,
+    });
+    const data = noise.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  }
+  const src = new AudioBufferSourceNode(ctx, { buffer: noise });
+  const filter = new BiquadFilterNode(ctx, {
+    type: 'highpass',
+    frequency: accent ? CLICK.accentHighpassHz : CLICK.highpassHz,
+  });
   const gain = new GainNode(ctx, { gain: 0 });
   gain.gain.setValueAtTime(accent ? CLICK.accentGain : CLICK.gain, when);
   gain.gain.exponentialRampToValueAtTime(0.001, when + CLICK.seconds);
-  osc.connect(gain).connect(audioEngine.output);
-  osc.start(when);
-  osc.stop(when + CLICK.seconds + 0.01);
+  src.connect(filter).connect(gain).connect(audioEngine.output);
+  src.start(when);
+  src.stop(when + CLICK.seconds);
 }

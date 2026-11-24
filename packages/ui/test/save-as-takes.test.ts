@@ -1,4 +1,4 @@
-// Save As to a new folder brings the project's whistled takes along, so the copy still has the recordings its
+// Save As to a new folder brings the project's recorded takes along, so the copy still has the recordings its
 // clips were read from.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';

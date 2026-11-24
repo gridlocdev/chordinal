@@ -1,5 +1,5 @@
 // Chordinal's projects (Chordinal PRD §4): folders anywhere on disk, each holding project.json and, beside it, the
-// whistled takes in takes/. The window may read and write only a folder the user picked in this run (Open…, Save As…)
+// recorded takes in takes/. The window may read and write only a folder the user picked in this run (Open…, Save As…)
 // or one in Open Recent, which is kept here, newest first, in a file in the app's data folder. A folder is named by
 // its absolute path; a project.json picked instead of its folder names that folder.
 import { createHash } from 'node:crypto';

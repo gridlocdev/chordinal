@@ -1,5 +1,5 @@
-// Whistled takes, read: a melody take's notes off its pitch frames and its key, and the chords over a melody (the
-// ones whistled, and ones guessed for the stretches between). Played takes too: keys played during a take, put into
+// Recorded takes, read: a melody take's notes off its pitch frames and its key, and the chords over a melody (the
+// ones recorded, and ones guessed for the stretches between). Played takes too: keys played during a take, put into
 // the clip they were played over. Pure apart from mutating the take it is given.
 import { transcribe, tuningOffset, smoothPitch, noteStarts, clickGrid, guessKeys } from '@chordinal/lib';
 import { guessChords, nameChord } from '@chordinal/lib';
@@ -23,7 +23,7 @@ interface Span {
   beats: number;
 }
 
-/** a chord whistled over a melody take: its notes, and once read, its symbol, score and runners-up in the take's key */
+/** a chord recorded over a melody take: its notes, and once read, its symbol, score and runners-up in the take's key */
 export interface TakeChord extends Span {
   notes: FreeNote[];
   symbol?: string;
@@ -46,7 +46,7 @@ export interface MelodyTake {
 }
 
 /** what analyse reads into a take: its notes on the grid from `origin`, the grid's tempo, the tuning offset, its key,
- * the chords whistled over it and the chords guessed from its notes */
+ * the chords recorded over it and the chords guessed from its notes */
 export interface TakeReading {
   notes: TranscribedNote[];
   origin: number;
@@ -87,7 +87,7 @@ export function analyse<T extends MelodyTake>(take: T, keyChoice = 'auto'): T & 
 }
 
 /**
- * A melody take's key (the one chosen, else the likeliest from its notes and its chords' notes), the chords whistled
+ * A melody take's key (the one chosen, else the likeliest from its notes and its chords' notes), the chords recorded
  * over it named in that key, and chords guessed from its notes for the stretches with none. Chords already named
  * keep their pick unless the key changed.
  */

@@ -13,6 +13,7 @@
 
 ### Improvements
 
+- **Record audio in any register.** Recording from the microphone, or dropping an audio file on a track, now reads a line from a low voice up to a high flute (about 50 to 4,000 Hz) into notes, not just high ones, and puts back a note read an octave out. **Record Melody** turns up in the command menu for "record audio" too.
 - **+ FX** in a mixer strip is now **+ MIDI FX**, so it isn't mixed up with **+ Effect**.
 
 ### Bugs fixed
@@ -50,6 +51,7 @@
 
 ### Improvements
 
+- **Record audio in any register.** Recording from the microphone, or dropping an audio file on a track, now reads a line from a low voice up to a high flute (about 50 to 4,000 Hz) into notes, not just high ones, and puts back a note read an octave out. **Record Melody** turns up in the command menu for "record audio" too.
 - A status bar along the bottom shows notices, what the letter keys play, the MIDI keyboard and whether the project is saved. On macOS the window has no separate title bar: the browser runs to the top, with the window buttons above it, and the transport row is the rest of the title bar.
 - A new app icon: a chord on one stem with a flag. `just run-desktop` shows it, and the name Chordinal in the menu bar, instead of Electron's.
 - A dropdown under the browser's tabs jumps to an instrument family or a group of projects, so you don't have to scroll.

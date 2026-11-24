@@ -53,7 +53,7 @@ export {
 } from './music-theory.ts';
 export type { Chord, Mode, Scale } from './music-theory.ts';
 export { isBlackKey, noteName, octaveC } from './notes.ts';
-export { PITCH_FLOOR, gateFrames, trackPitch } from './pitch-track.ts';
+export { PITCH_FLOOR, finishFrames, gateFrames, guardOctaves, trackPitch } from './pitch-track.ts';
 export type { PitchFrame, PitchTrackOptions } from './pitch-track.ts';
 export {
   ENV_TIME_CONSTANTS,

@@ -26,7 +26,7 @@ import type { ArrangeActions } from '@chordinal/ui/components';
 import { CommandMenu, ShortcutsDialog } from '@chordinal/ui/components';
 import { SidePanel } from './components/SidePanel.tsx';
 import { openTrack, addInstrumentTrack, addDrumTrack, dropInstrument } from './rack.ts';
-import { recordMelody } from './whistle.ts';
+import { recordMelody } from './record-audio.ts';
 import { useProjectFolders, startUp, watchWindow, newSong } from './files.ts';
 import { startChordinalMenus } from './menu-bar.ts';
 

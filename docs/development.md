@@ -66,9 +66,9 @@ Songs are composed in Chordinal Melody Composer, a separate repository next to t
 
 ### Transcribing a recorded melody
 
-The pitch tracker follows one clear line in a high register (about 300 to 4,000 Hz): a high voice singing or humming, or any other clear tone. A low voice sits under that range, so try it an octave higher.
+The pitch tracker follows one clear line, one note at a time, from a low voice to a high flute (about 50 to 4,000 Hz): singing, humming or an instrument. It finds the take's register itself, and a frame read an octave away from the frames on both sides of it is put back in their octave.
 
-**In the app.** Select a track (or none, and a Melody track is added) and press **●** (or `R`). After a bar of count-in, at the project's tempo and meter where the playhead is, sing the melody. The click is a low tick under the pitch tracker's range, but use headphones anyway. Nothing else plays while you record, so the band can't leak into the take. The playhead follows the take, and notes are written into the arrangement and the piano roll about a beat behind it (keys you play show up as you play them). When you stop, the whole take is read again on the click's grid and put in a new clip from the bar you started in, and the playhead goes back to the start of that clip.
+**In the app.** Select a track (or none, and a Melody track is added) and press **●** (or `R`). After a bar of count-in, at the project's tempo and meter where the playhead is, sing the melody. The click is a tick of noise with no pitch, so it isn't read as a note, but use headphones anyway. Nothing else plays while you record, so the band can't leak into the take. The playhead follows the take, and notes are written into the arrangement and the piano roll about a beat behind it (keys you play show up as you play them). When you stop, the whole take is read again on the click's grid and put in a new clip from the bar you started in, and the playhead goes back to the start of that clip.
 
 In a saved project each take's audio is kept as `<project folder>/takes/take-n.wav` (ignored by git), listed in the browser's Takes tab: click one, or drag it onto a track, to read it again. Audio files dropped on a track are read the same way, at the project's tempo.
 

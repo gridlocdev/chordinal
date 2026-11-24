@@ -1,4 +1,4 @@
-// 16-bit PCM WAV files: mono for whistled takes, stereo for a bounced project, and their peak level. Pure.
+// 16-bit PCM WAV files: mono for recorded takes, stereo for a bounced project, and their peak level. Pure.
 
 /** samples -1..1 */
 export const encodeWav = (samples: Float32Array, rate: number): Uint8Array =>

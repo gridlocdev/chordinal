@@ -4,7 +4,7 @@ import { guessChords, chordVocabulary, chordKey, nameChord } from '@chordinal/li
 import { trackPitch } from '@chordinal/lib';
 import { transcribe, guessKeys, freeNotes } from '@chordinal/lib';
 import { parseChord, pitchClass } from '@chordinal/lib';
-import { RATE, whistle, notesOf } from './whistle-synth.js';
+import { RATE, record, notesOf } from './audio-synth.js';
 
 /** chords as text: a symbol, and its length in bars after ':' when it isn't one */
 const symbols = (list, beatsPerBar = 4)=> list.map(c => c.symbol + (c.beats === beatsPerBar ? '' : `:${Math.round(c.beats / beatsPerBar * 1000) / 1000}`)).join(' ');
@@ -27,10 +27,10 @@ test('chords: the changes are found, held chords stay whole and quick ones split
     assert.equal(chords('C5 E5 G5 C6 | G5 E5 G5 E5 | F5 A5 G5 B5 | C6 G5 E5 C5', 'C', 'major'), 'I:2 IV:0.5 V:0.5 I');
 });
 
-test('chords: an arpeggio that starts on the third is an inversion; a 7th whistled is a 7th chord', ()=>
+test('chords: an arpeggio that starts on the third is an inversion; a 7th recorded is a 7th chord', ()=>
 {
     assert.equal(chords('G5 B5 D6 G6 | F#5 A5 D6 F#6 | E5 G5 B5 E6 | D5 F#5 A5 C6', 'G', 'major'), 'I V/7 vi V7');
-    // starting on the fifth is just the chord: whistlers start there for range
+    // starting on the fifth is just the chord: singers start there for range
     assert.equal(chords('D5 G5 B5 D6 | C6 E6 G6 E6', 'G', 'major'), 'I IV');
 });
 
@@ -47,11 +47,11 @@ test('chords: each chord comes with its runners-up', ()=>
     assert.ok(out[0].others.every(o => o.score <= out[0].score));
 });
 
-test('chords: a whistled waltz arpeggio take, from audio to progression', ()=>
+test('chords: a recorded waltz arpeggio take, from audio to progression', ()=>
 {
-    // Lanterns on the Lake's chorus chords, one arpeggio a bar in 3/4, whistled sharp and a little loose
+    // Lanterns on the Lake's chorus chords, one arpeggio a bar in 3/4, sung sharp and a little loose
     const text = 'Eb5 G5 Bb5 | D5 F5 Bb5 | C5 Eb5 G5 | G5 Bb5 D6 | Ab5 C6 Eb6 | G5 Bb5 Eb6 | Bb4 D5 Ab5 | Eb5 G5 Bb5';
-    const s = whistle(notesOf(text), { tempo: 100, cents: 20 });
+    const s = record(notesOf(text), { tempo: 100, cents: 20 });
     const t = transcribe(trackPitch(s, RATE), { tempo: 96 });
     const key = guessKeys(t.notes)[0];
     assert.deepEqual([key.key, key.mode], ['Eb', 'major']);
@@ -83,18 +83,18 @@ test('chords: a tune is harmonised a chord a bar or half bar, with no slash bass
     assert.equal(harmonise('E5 D5 C5 D5 | E5 E5 E5:2 | D5 D5 D5:2 | E5 G5 G5:2 | E5 D5 C5 D5 | E5 E5 E5 E5 | D5 D5 E5 D5 | C5:4', 'C', 'major'), 'I:2 V I:3 V I');
 });
 
-test('chords: a chord whistled freely for a stretch is named from how long each note was held', ()=>
+test('chords: a chord recorded freely for a stretch is named from how long each note was held', ()=>
 {
     // no beat to it: a loose arpeggio at an unrelated tempo, notes of uneven length
-    const whistled = (text, tempo = 133)=> freeNotes(trackPitch(whistle(notesOf(text), { tempo, cents: 15 }), RATE));
-    const name = (text, key = 'C', mode = 'major')=> nameChord(whistled(text), { tonic: pitchClass(key), mode }).symbol;
+    const recorded = (text, tempo = 133)=> freeNotes(trackPitch(record(notesOf(text), { tempo, cents: 15 }), RATE));
+    const name = (text, key = 'C', mode = 'major')=> nameChord(recorded(text), { tonic: pitchClass(key), mode }).symbol;
     assert.equal(name('C5 E5:1.5 G5:0.5 C6 G5'), 'I');
     assert.equal(name('A4 C5 E5:2 A5'), 'vi');
     assert.equal(name('E5 G5 C6:2'), 'I/3');               // the lowest note first, on the third: an inversion
     assert.equal(name('G4 C5:2 E5 G5'), 'I');              // on the fifth: just the chord
     assert.equal(name('G4 B4 D5 F5:2'), 'V7');
     assert.equal(name('A5 C6 E6 A6', 'A', 'minor'), 'i');
-    const read = nameChord(whistled('F5 A5 C6 A5'), { tonic: 0, mode: 'major' });
+    const read = nameChord(recorded('F5 A5 C6 A5'), { tonic: 0, mode: 'major' });
     assert.equal(read.symbol, 'IV');
     assert.equal(read.others.length, 3);
     assert.equal(nameChord([], { tonic: 0, mode: 'major' }), null);

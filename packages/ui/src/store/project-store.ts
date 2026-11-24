@@ -1,6 +1,6 @@
 // Where projects are kept (Chordinal PRD §4), behind one interface, so the document code never knows whether a project
 // is in memory (tests), in the browser (the web build) or in a folder on disk (the desktop app). Each project is named
-// by a string (a folder's path on the desktop) and holds its project.json text and its whistled takes.
+// by a string (a folder's path on the desktop) and holds its project.json text and its recorded takes.
 //
 // Every read hands back a version token. A write passes the token it last saw: if the project changed somewhere else
 // since (another app, a sync, a second window), the write is refused with a ConflictError and nothing is overwritten.

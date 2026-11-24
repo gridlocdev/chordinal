@@ -1,14 +1,14 @@
-// A made-up whistle for the transcription tests: notes as sine waves with breath noise, detune, vibrato and timing
+// A made-up recorded melody for the transcription tests: notes as near-sine waves with breath noise, detune, vibrato and timing
 // wobble. Not a test file itself.
 
 export const RATE = 22050;
 const hz = (midi)=> 440 * 2 ** ((midi - 69) / 12);
 
 /**
- * A made-up whistle: each note a sine (with a quiet 2nd harmonic and breath noise), detuned by `cents`, notes
+ * A made-up take: each note a sine (with a quiet 2nd harmonic and breath noise), detuned by `cents`, notes
  * tongued with a short dip, optional vibrato, and a small timing wobble so the grid has to be found.
  */
-export function whistle(notes, { tempo, cents = 0, lead = 0.4, jitter = 0.015, noise = 0.01, seed = 1 })
+export function record(notes, { tempo, cents = 0, lead = 0.4, jitter = 0.015, noise = 0.01, seed = 1 })
 {
     const spb = 60 / tempo;
     const end = lead + Math.max(...notes.map(n => n.beat + n.beats)) * spb + 0.3;

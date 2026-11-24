@@ -1,4 +1,4 @@
-// The microphone, raw: no echo cancelling, noise suppression or gain riding, which smear a whistle's pitch and level.
+// The microphone, raw: no echo cancelling, noise suppression or gain riding, which smear a voice's or instrument's pitch and level.
 // Samples arrive in blocks on the game's AudioContext, stamped with its time, so a take can be lined up with a click
 // scheduled on the same context. Nothing is sent anywhere; the page keeps the samples.
 import { audioEngine } from './audio-engine.ts';

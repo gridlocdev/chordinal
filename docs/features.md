@@ -80,7 +80,7 @@ Your computer keys (once you click the piano roll) or a MIDI keyboard, with velo
 
 **Track ▸ Record Melody** (or **●**, or `R`) records a take onto the selected track over a click. Play it on the letter keys or a MIDI keyboard: the notes go into the clip the take starts in (the selected one first, so every clip of its pattern gets them, growing it to fit), or into a new clip if there's none. The notes appear in the piano roll as you play, and when you stop, the playhead goes back to the start of the clip they went into.
 
-You can also sing, hum or whistle a melody into the microphone instead, vibrato included. Chordinal reads one clear line at a time in a high register (about 300 to 4,000 Hz) and turns it into notes to fix in the piano roll. A saved project keeps these takes in its folder's `takes/`, listed in the browser's **Takes** tab to read onto a track again, and an audio file dropped on a track is read the same way.
+You can also record audio from the microphone instead: sing, hum or play one line on an instrument, vibrato included. Chordinal turns it into notes in the piano roll to fix by hand. It reads one note at a time anywhere from a low voice to a high flute (about 50 to 4,000 Hz), finding the take's register itself, and puts back the odd note it reads an octave out. A saved project keeps these takes in its folder's `takes/`, listed in the browser's **Takes** tab to read onto a track again, and an audio file dropped on a track is read the same way.
 
 ## Importing and exporting
 

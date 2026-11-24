@@ -103,7 +103,7 @@ export interface Loop {
   to: number;
 }
 
-/** symbol: the chord's reading in the key, for one whistled */
+/** symbol: the chord's reading in the key, for one recorded */
 export interface ChordSpan {
   beat: number;
   beats: number;

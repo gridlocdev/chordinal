@@ -1,8 +1,8 @@
-// Turns a pitch track (pitch-track.ts) of a whistled melody into notes in 8ths and triplets, finds its key and marks
+// Turns a pitch track (pitch-track.ts) of a recorded melody into notes in 8ths and triplets, finds its key and marks
 // the notes with vibrato. Pure.
 //
-// The steps: the take's tuning offset (whistlers sit a steady few cents off); note starts from silences, dips in level
-// and changes of pitch; the beat grid that best fits those starts near the tempo given (whistling slower than the song
+// The steps: the take's tuning offset (singers and players often sit a steady few cents off); note starts from silences, dips in level
+// and changes of pitch; the beat grid that best fits those starts near the tempo given (singing slower than the song
 // is fine: the notes count beats, not seconds); each beat split in 8ths or triplets, whichever its note starts fit;
 // a pitch for each slot from the curve with vibrato averaged out; repeated slots merged into one note unless a start
 // falls between them; vibrato measured on each note's own wobble.
@@ -28,7 +28,7 @@ export interface Grid {
 }
 
 /**
- * A transcribed note: key in the whistle's own register; beats from the first grid line; cents how far the note's
+ * A transcribed note: key in the take's own register; beats from the first grid line; cents how far the note's
  * centre sat from the key once the tuning offset is taken out
  */
 export interface TranscribedNote {
@@ -94,8 +94,8 @@ export function smoothPitch(frames: Frame[], span = 1 / 6): (number | null)[] {
 }
 
 /**
- * Notes whistled freely, with no beat: each run of frames on one semitone, split where a note starts again, with its
- * start and length in seconds. Glides between notes, shorter than `shortest`, are dropped. For a chord whistled as
+ * Notes recorded freely, with no beat: each run of frames on one semitone, split where a note starts again, with its
+ * start and length in seconds. Glides between notes, shorter than `shortest`, are dropped. For a chord recorded as
  * an arpeggio, where only which notes were heard matters.
  */
 export function freeNotes(
@@ -237,7 +237,7 @@ export function fitGrid(
 
 /**
  * The grid of a take recorded against a click: the click's tempo exactly, its bar lines as beat 0, and the phase of
- * the notes themselves within half an 8th of the click, so the take's latency (the click reaching the ear, the whistle
+ * the notes themselves within half an 8th of the click, so the take's latency (the click reaching the ear, the sound
  * reaching the recording) and a player who sits behind the beat don't push notes into the next 8th.
  * @param starts  note starts, seconds (noteStarts)
  * @param tempo  the click's bpm
@@ -376,7 +376,7 @@ export function transcribe(
   frames: Frame[],
   { tempo, voiced = 0.4, starts = null, grid = null, offset = null, divisions = [2, 3] }: TranscribeOptions,
 ): Transcription {
-  if (!(tempo > 0)) throw new Error('transcribe needs the tempo you whistled at');
+  if (!(tempo > 0)) throw new Error('transcribe needs the tempo you recorded at');
   const fps = fpsOf(frames),
     t0 = frames[0]?.time ?? 0;
   offset ??= tuningOffset(frames);

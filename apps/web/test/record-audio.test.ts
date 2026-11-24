@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 globalThis.requestAnimationFrame ??= () => 0;
 globalThis.cancelAnimationFrame ??= () => {};
 
-const { recordMelody } = await import('../src/whistle.ts');
+const { recordMelody } = await import('../src/record-audio.ts');
 const { hist, project, selected, status } = await import('@chordinal/ui');
 const { emptyProject, addTrack, makeTrack } = await import('@chordinal/daw');
 const { history } = await import('@chordinal/daw');

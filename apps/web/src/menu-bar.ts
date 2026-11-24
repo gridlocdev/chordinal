@@ -7,7 +7,7 @@ import { catalog, item, busy } from '@chordinal/ui';
 import { editMenu, trackMenu, transportMenu, viewMenu, startMenus } from '@chordinal/ui';
 import type { Menu, MenuEntry } from '@chordinal/ui';
 import { recent, newSong, openFolder, openRecent, clearRecent, revealProject } from './files.ts';
-import { recordMelody } from './whistle.ts';
+import { recordMelody } from './record-audio.ts';
 
 catalog.add([
   {
@@ -53,7 +53,7 @@ catalog.add([
     run: () => recordMelody(),
     checked: () => !!recording.value,
     description: 'Record a melody from the microphone, or play it, onto the selected track.',
-    keywords: 'sing hum whistle voice microphone take',
+    keywords: 'record audio sing hum voice instrument microphone take notes',
   },
 ]);
 

@@ -1,4 +1,4 @@
-// Names the chords of a whistled arpeggio take and finds where they change, as Roman-numeral symbols in the key
+// Names the chords of a recorded arpeggio take and finds where they change, as Roman-numeral symbols in the key
 // ('I', 'V/7', 'vi'). Only each chord's identity is kept, not its voicing. Pure.
 //
 // Each stretch of notes is scored against a vocabulary of chords in the key: weighted notes inside the chord count
@@ -7,7 +7,7 @@
 // costs something, less on a bar line or half bar, and less between bar lines where the arpeggio starts over (a jump
 // back down; an arpeggio going up and down jumps too, so on a bar line it counts for nothing);
 // common moves (down a fifth, to the tonic) cost less. The first note of a stretch, when it's also the lowest and is
-// the chord's third or seventh, puts that degree in the bass: 3-5-8 is I/3. A fifth isn't taken: whistlers often start
+// the chord's third or seventh, puts that degree in the bass: 3-5-8 is I/3. A fifth isn't taken: singers often start
 // an arpeggio on it for range, and I/5 would be a cadential six-four.
 
 import {
@@ -352,7 +352,7 @@ export function chordKey<K extends NamedKey>(
   return best;
 }
 
-/** a note whistled with no beat: its start and length in seconds */
+/** a note recorded with no beat: its start and length in seconds */
 export interface FreeNote {
   time: number;
   seconds: number;
@@ -360,7 +360,7 @@ export interface FreeNote {
 }
 
 /**
- * The chord of an arpeggio whistled freely over a stretch of a tune chosen beforehand: no beat, so the notes count
+ * The chord of an arpeggio recorded freely over a stretch of a tune chosen beforehand: no beat, so the notes count
  * by how long each was held, the stretch is one chord, and its first note sets a slash bass by scoreChord's rule.
  * @param notes  from freeNotes()
  * @returns others: runners-up

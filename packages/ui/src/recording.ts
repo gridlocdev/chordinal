@@ -1,6 +1,6 @@
-// Whistle to MIDI: ● (or R) records a whistled melody into a new clip on the selected track, from the bar the playhead
+// Audio to notes: ● (or R) records a melody from the microphone (sung, hummed, played) into a new clip on the selected track, from the bar the playhead
 // is in, with a bar's count-in and a click at the project's tempo. Keys played meanwhile, on the computer keyboard or
-// a MIDI keyboard, are recorded instead of the whistle, into the clip the take starts in (the selected one first;
+// a MIDI keyboard, are recorded instead of the microphone, into the clip the take starts in (the selected one first;
 // a pattern's other clips share them), and need no microphone. Audio files dropped on a track are read the same way. A saved project keeps its takes' audio in <project folder>/takes/.
 import { signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
@@ -271,7 +271,7 @@ export async function finish(): Promise<void> {
   if (file) notify(`${status.value} · audio kept in takes/${file}`, statusTone.value);
 }
 
-/** audio files dropped on a track: each read as a whistled melody at the project's tempo, in a clip from the bar at `at` */
+/** audio files dropped on a track: each read as a recorded melody at the project's tempo, in a clip from the bar at `at` */
 export async function dropAudio(trackId: string, files: Iterable<File>, at: number): Promise<void> {
   selected.value = trackId;
   let start = barAt(project.value.meters, at).start;

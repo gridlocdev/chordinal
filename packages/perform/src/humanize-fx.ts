@@ -25,7 +25,7 @@ const isKnob = (k: string): k is StyleKnob => (PERFORM_KNOBS as readonly string[
 const isPocket = (v: unknown): v is Record<string, number> =>
   isRecord(v) && Object.values(v).every((x) => typeof x === 'number');
 
-/** the style the project's groove keeps: its number knobs, and a whistled take's vibrato */
+/** the style the project's groove keeps: its number knobs, and a recorded take's vibrato */
 function grooveStyle(v: unknown): Partial<PerformStyle> {
   if (!isRecord(v)) return {};
   const style: Partial<PerformStyle> = {};

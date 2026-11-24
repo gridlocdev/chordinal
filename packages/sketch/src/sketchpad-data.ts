@@ -1,4 +1,4 @@
-// Recording a whistled take: its count-in and length, how it is read as it comes in, the click, and the band a
+// Recording a take: its count-in and length, how it is read as it comes in, the click, and the band a
 // melody is composed for when it's heard alone.
 
 export const RECORD = {
@@ -16,5 +16,6 @@ export const LIVE = {
   behindBeats: 1, // notes are read up to this many beats behind the playhead: the smoothing needs 1/6 s past a note
 };
 
-// a soft, low tick: under the pitch tracker's 300 Hz, so a click the mic hears through speakers isn't read as a note
-export const CLICK = { hz: 190, accentHz: 250, seconds: 0.05, gain: 0.5, accentGain: 0.8 };
+// a short tick of noise, high-passed (lower on a bar's first beat): it has no pitch, so a click the mic hears through
+// speakers isn't read as a note anywhere in the pitch tracker's range
+export const CLICK = { highpassHz: 2000, accentHighpassHz: 900, seconds: 0.04, gain: 0.5, accentGain: 0.8 };

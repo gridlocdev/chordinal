@@ -42,7 +42,7 @@ export interface ScoreNote {
   bend?: BendPoint[];
 }
 
-/** the style knobs a performance reads (0..1, swell a multiplier); vibrato is a whistled take's own */
+/** the style knobs a performance reads (0..1, swell a multiplier); vibrato is a recorded take's own */
 export interface PerformStyle {
   scoops: number;
   ghosts: number;
@@ -199,9 +199,9 @@ export function perform(
   });
 }
 
-// late vibrato on held notes of the voices that sing. A section with notes marked `~` (a hand-written or whistled
+// late vibrato on held notes of the voices that sing. A section with notes marked `~` (a hand-written or recorded
 // melody) is played as marked instead: those notes vibrate, on any melodic instrument and whatever their length, at
-// the style's vibrato (a whistled take's rate and depth, from `just transcribe`), and the rest of that section's notes don't
+// the style's vibrato (a recorded take's rate and depth, from `just transcribe`), and the rest of that section's notes don't
 // Every `~` mark is played or dropped here, so no note leaves with vibrato: true.
 function addVibrato(
   notes: WorkingNote[],
