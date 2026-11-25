@@ -182,13 +182,13 @@ input[type='checkbox'] {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--line);
+  background: var(--faint);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--faint);
+  background-color: var(--muted);
 }
 ::-webkit-scrollbar-corner,
 ::-webkit-scrollbar-track {
@@ -597,10 +597,10 @@ input[type='range']::-moz-range-thumb {
   padding: 0 6px;
   border-bottom: 1px solid var(--line);
   flex: none;
+  overflow: auto hidden; /* tabs that don't fit scroll sideways rather than squeezing their names together */
 }
 .tabs button {
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 1 0 auto;
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -624,7 +624,7 @@ input[type='range']::-moz-range-thumb {
   position: absolute;
   left: 4px;
   right: 4px;
-  bottom: -1px;
+  bottom: 0;
   height: 2px;
   border-radius: 2px;
   background: var(--accent);
@@ -967,6 +967,7 @@ input[type='range']::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0; /* a wide view (the mixer, a long toolbar) scrolls inside the editor rather than widening the window */
   background: var(--panel);
 }
 .editor .bar {
@@ -1008,7 +1009,7 @@ input[type='range']::-moz-range-thumb {
   color: var(--muted);
   font-size: 12px;
   min-width: 0;
-  overflow: hidden;
+  overflow: auto hidden;
   white-space: nowrap;
   flex: 1;
 }

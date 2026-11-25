@@ -1,4 +1,5 @@
-// The window: the command menu, the Keyboard Shortcuts window, the theme and the status bar (Chordinal PRD §5.4–§5.7),
+// The window: the command menu, the Keyboard Shortcuts window, the theme, the status bar and wide parts scrolling
+// sideways (Chordinal PRD §5.4–§5.9),
 // and the browser's section dropdown (§7.3).
 import {
   commandMenu,
@@ -12,6 +13,26 @@ import {
 } from './fixtures.ts';
 
 test.describe('The window', () => {
+  test('a mixer too wide for the editor scrolls inside it, and the window stays its own width', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    for (let i = 0; i < 12; i++) await runCommand(page, 'New Track');
+    await runCommand(page, 'Mixer');
+    const widths = (selector: string) =>
+      page.locator(selector).evaluate((e) => ({ shown: e.clientWidth, all: e.scrollWidth }));
+    const app = await widths('.app');
+    expect(app.all, 'nothing runs past the window').toBe(app.shown);
+    const mixer = await widths('.mixer');
+    expect(mixer.all, 'the strips run past the editor, to be scrolled to').toBeGreaterThan(mixer.shown);
+    await expect(page.locator('.transport').getByRole('button', { name: 'Save as' })).toBeInViewport();
+    // the last strip can be scrolled into view
+    await page.locator('.mixer').evaluate((e) => e.scrollTo({ left: e.scrollWidth }));
+    await expect(page.locator('.strip.master')).toBeInViewport();
+    expect(errors).toEqual([]);
+  });
+
   test('⌘K runs a command and Escape closes it', async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);
