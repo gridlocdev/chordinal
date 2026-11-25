@@ -166,6 +166,20 @@ The insert effects of §11.1. Their slices are in [4-small-daw.md](4-small-daw.m
 5. The browser's **Effects** tab lists the effects by group: Tone, Dynamics, Drive, Modulation and Space. Hovering one says what it does. Double-clicking one adds it to the selected track; dragging one onto a strip in the mixer adds it there, at the row it is dropped on or at the end.
 6. Keys played live go through the selected track's effects and the master's.
 
+## §16 Audio tracks
+
+The first part of §11.3. Its slices are in [4-small-daw.md](4-small-daw.md), feature 5.
+
+1. A track is a MIDI track (every track until now) or an audio track. An audio track plays recordings and audio files instead of notes: it has no instrument, Humanize or MIDI effects, but it has the same mixer strip, track effects, sends and automation. **Track ▸ New Audio Track** adds one below the selected track.
+2. An audio track holds audio clips. A clip starts at a beat and plays part of one file: from `offset` seconds into it, for `seconds` seconds, at its gain, with a fade in and a fade out. The project keeps it as `{ id, start, file, offset, seconds, gain, fadeIn, fadeOut }`, on the track's `audio` list, and the track as `kind: "audio"`.
+3. A clip plays at the file's own speed. A tempo change moves the beat where a clip starts to another time, but not how fast it plays; there is no time-stretching.
+4. The files are copied into the project's `audio/` folder, as samples are into `samples/` (§14.3): the same file again reuses its copy, and another with a name already taken gets " 2", " 3" and so on. In the browser build, each file can be up to 64 MB; a larger one is refused with a notice that the desktop app takes it.
+5. Dropping a WAV, AIFF or MP3 file on an audio track's lane puts a clip there, at the beat it is dropped on (snapped to the beat; `Shift` places it freely), as long as the whole file. Dropping one on a MIDI track's lane still reads it as notes (§9.3), and on a MIDI track's header still puts a sampler on it (§14.2). Dropping one below the tracks makes an audio track for it.
+6. The arrangement draws each clip's waveform. A clip moves, copies, splits and deletes as a MIDI clip does. Dragging its left or right edge trims it (never past the file's ends), dragging the small squares at its top corners sets its fades, and its right-click menu sets its gain.
+7. **Record** with an audio track selected records the microphone onto it as a clip, from where the recording started, with the input's latency taken off. Input monitoring is off; the track's **Monitor** button plays the microphone through the track while it is on.
+8. Audio clips play on Play, starting partway through a clip when Play starts inside it, and in the WAV and MP3 exports and `chordinal render`. `chordinal render` reads WAV files only. A MIDI export leaves audio tracks out.
+9. A project with an audio track is saved as format version 3, which older builds refuse with a notice instead of playing it wrongly. A project without one is saved as before, so older builds still open it (§12.3).
+
 ## Decisions
 
 1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid (§11.2).

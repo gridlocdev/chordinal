@@ -25,6 +25,20 @@ export interface Clip {
   step?: number;
 }
 
+/** a stretch of an audio file played from a beat (PRD §16.2): `offset` seconds into the file, for `seconds` seconds,
+ * at `gain` (1 as recorded), faded in and out over `fadeIn` and `fadeOut` seconds */
+export interface AudioClip {
+  id: string;
+  start: number;
+  file: string;
+  offset: number;
+  seconds: number;
+  gain: number;
+  fadeIn: number;
+  fadeOut: number;
+  mute?: boolean;
+}
+
 export interface Pattern {
   id: string;
   name: string;
@@ -105,6 +119,10 @@ export interface Track {
   automation: Automation;
   clips: Clip[];
   stepRows?: number[];
+  /** 'audio' for a track that plays audio clips rather than notes (PRD §16.1); missing for a MIDI track */
+  kind?: 'audio';
+  /** an audio track's clips, in start order; missing on a MIDI track */
+  audio?: AudioClip[];
 }
 
 /** markers' meta is for MIDI FX */
@@ -190,7 +208,9 @@ export function emptyProject({
 
 /** an id not yet used in the project, like 't3' or 'c12' */
 export function newId(project: Project, prefix: string): string {
-  const used = new Set(project.tracks.flatMap((t) => [t.id, ...t.clips.map((c) => c.id)]));
+  const used = new Set(
+    project.tracks.flatMap((t) => [t.id, ...t.clips.map((c) => c.id), ...(t.audio ?? []).map((c) => c.id)]),
+  );
   let n = 1;
   while (used.has(`${prefix}${n}`)) n++;
   return `${prefix}${n}`;

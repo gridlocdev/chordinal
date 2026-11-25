@@ -81,7 +81,7 @@ test('a project with patterns writes as version 2 and reads back the same (PRD ย
 
     const broken = text.replace('"patterns": [', '"unused": [');
     assert.throws(()=> readProject(broken), new RegExp(`clip c1 plays pattern ${id}, which the project doesn't have`));
-    assert.throws(()=> readProject(JSON.stringify({ format: 'music-generator-project', version: 3 })), /version 3; this app reads versions 1 and 2/);
+    assert.throws(()=> readProject(JSON.stringify({ format: 'music-generator-project', version: 4 })), /version 4; this app reads versions 1 to 3/);
 });
 
 test('projects without patterns stay version 1 (PRD ยง8)', ()=>

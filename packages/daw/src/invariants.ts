@@ -24,7 +24,7 @@ function badTimeline(list: { beat: number }[]): string | null {
 
 /**
  * What is wrong with a project, or [] when nothing is: every track and clip has an id of its own, a clip has a start
- * and a length, its notes can be written, a duck listens to a track that is there, the clips of a pattern agree, and
+ * and a length, an audio track holds only audio clips, whose fades don't overlap, its notes can be written, a duck listens to a track that is there, the clips of a pattern agree, and
  * the project's file reads back to the same file.
  */
 export function checkInvariants(project: Project): string[] {
@@ -54,6 +54,19 @@ export function checkInvariants(project: Project): string[] {
         const bad = badNote(n);
         if (bad) problems.push(`clip ${c.id}, note ${i + 1} ${bad}`);
       }
+    }
+  }
+  for (const t of project.tracks) {
+    if (t.kind !== 'audio') {
+      if (t.audio) problems.push(`track ${t.id} has audio clips but is a MIDI track`);
+      continue;
+    }
+    if (t.clips.length) problems.push(`audio track ${t.id} has MIDI clips`);
+    for (const c of t.audio ?? []) {
+      own(c.id, 'audio clip');
+      for (const key of ['start', 'offset', 'seconds', 'gain', 'fadeIn', 'fadeOut'] as const)
+        if (!isNum(c[key]) || c[key] < 0) problems.push(`audio clip ${c.id} has ${key} ${c[key]}`);
+      if (c.fadeIn + c.fadeOut > c.seconds + 1e-9) problems.push(`audio clip ${c.id}'s fades overlap`);
     }
   }
   problems.push(...patternProblems(project));

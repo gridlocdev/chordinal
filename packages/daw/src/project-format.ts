@@ -4,12 +4,14 @@
 //
 // Version 1 has every clip's notes in the clip. Version 2 adds patterns (PRD §7): their notes, length and step are
 // written once in `patterns`, and a pattern clip is just { id, start, pattern, mute? }. A project with no pattern clips
-// is written as version 1, so older versions of the app still open it.
+// is written as version 1, so older versions of the app still open it. Version 3 adds audio tracks (PRD §16): a
+// project with one is written as version 3, which older versions refuse rather than play without its audio.
 import type { Clip, Note, Project, Track } from './project.ts';
 
 export const FORMAT = 'music-generator-project';
 export const VERSION = 1;
 export const PATTERN_VERSION = 2;
+export const AUDIO_VERSION = 3;
 
 /** a note as written: [beat, beats, key, vel], and its marks when it has any */
 type NoteRow = [number, number, number, number, Record<string, unknown>?];
@@ -64,7 +66,11 @@ export function writeProject(project: Project): string {
   );
   const body = {
     format: FORMAT,
-    version: used.length ? PATTERN_VERSION : VERSION,
+    version: project.tracks.some((t) => t.kind === 'audio')
+      ? AUDIO_VERSION
+      : used.length
+        ? PATTERN_VERSION
+        : VERSION,
     ...ordered,
     ...(used.length && {
       patterns: used.flatMap((x) => {
@@ -114,6 +120,16 @@ function badRow(row: unknown): string | null {
   if (!isNum(vel) || vel < 0 || vel > 127) return 'has no velocity from 0 to 127';
   if (marks !== undefined && (typeof marks !== 'object' || marks === null || isList(marks)))
     return 'has marks that are not an object';
+  return null;
+}
+
+/** what is wrong with an audio clip as written, or null */
+function badAudioClip(c: unknown): string | null {
+  if (typeof field(c, 'file') !== 'string' || !field(c, 'file')) return 'has no file';
+  for (const key of ['start', 'offset', 'seconds', 'gain', 'fadeIn', 'fadeOut']) {
+    const x = field(c, key);
+    if (!isNum(x) || x < 0) return `has no ${key} of 0 or more`;
+  }
   return null;
 }
 
@@ -177,6 +193,18 @@ function problemIn(project: Record<string, unknown>, patterns: unknown): string 
       const first = badRows(notes);
       if (first) return `${name}, clip ${cid}, note ${first.k + 1} ${first.bad}`;
     }
+    const kind = field(t, 'kind'),
+      audio = field(t, 'audio');
+    if (kind !== undefined && kind !== 'audio') return `${name} is of a kind this app doesn't know`;
+    if (audio === undefined) continue;
+    if (kind !== 'audio' || !isList(audio)) return `${name} has audio clips but is not an audio track`;
+    for (const c of audio) {
+      const cid = field(c, 'id');
+      if (typeof cid !== 'string' || ids.has(cid)) return `${name} has an audio clip with no id of its own`;
+      ids.add(cid);
+      const bad = badAudioClip(c);
+      if (bad) return `${name}, audio clip ${cid} ${bad}`;
+    }
   }
   return null;
 }
@@ -184,9 +212,9 @@ function problemIn(project: Record<string, unknown>, patterns: unknown): string 
 export function readProject(text: string): Project {
   const data: unknown = JSON.parse(text);
   if (!isRecord(data) || data.format !== FORMAT) throw new Error('not a Chordinal project');
-  if (data.version !== VERSION && data.version !== PATTERN_VERSION)
+  if (data.version !== VERSION && data.version !== PATTERN_VERSION && data.version !== AUDIO_VERSION)
     throw new Error(
-      `project version ${String(data.version)}; this app reads versions ${VERSION} and ${PATTERN_VERSION}`,
+      `project version ${String(data.version)}; this app reads versions ${VERSION} to ${AUDIO_VERSION}`,
     );
   const { format, version, patterns: written = [], ...project } = data;
   for (const key of ['title', 'length', 'tempoMap', 'meters', 'tracks'])

@@ -110,6 +110,8 @@ Automation and MIDI effects can be built in either order or side by side. Track 
 
 **Slices.** (a) The track kind, audio clips and the format version, with tests that old projects open unchanged. (b) Playing and exporting audio clips. (c) Dropping files and drawing waveforms. (d) Editing clips. (e) Recording onto an audio track. (f) The browser build's storage. (g) `chordinal render`.
 
+**Status.** PRD §16 describes it. Built: (a). A track keeps `kind: 'audio'` and its clips as `audio`, beside an empty `clips`, so code that walks MIDI clips needs no change (`packages/daw/src/audio-clips.ts`). Clip lengths and fades are in seconds; `gain` is linear. A project with an audio track is written as version 3.
+
 **Done when.** You can record a vocal onto an audio track, move, trim and fade it, put an EQ on it, and hear it in place on Play and in an exported WAV. A saved project reopens with its audio, and Melody Composer projects are unchanged.
 
 ## Open questions

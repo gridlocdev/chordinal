@@ -12,6 +12,8 @@ export {
   valueAt,
 } from './automation.ts';
 export type { KeyframeMoves, LaneId, LaneParam } from './automation.ts';
+export { addAudioClip, audioClipsOf, audioFiles, isAudioTrack, makeAudioTrack } from './audio-clips.ts';
+export type { AudioClipOptions } from './audio-clips.ts';
 export {
   addTrackFx,
   applyFxToNotes,
@@ -79,7 +81,14 @@ export type {
   NoteEvent,
   PassEvents,
 } from './play-parts.ts';
-export { FORMAT, PATTERN_VERSION, VERSION, readProject, writeProject } from './project-format.ts';
+export {
+  AUDIO_VERSION,
+  FORMAT,
+  PATTERN_VERSION,
+  VERSION,
+  readProject,
+  writeProject,
+} from './project-format.ts';
 export { addMidiTracks, midiProject, projectMidi } from './project-midi.ts';
 export {
   TRACK_COLORS,
@@ -112,6 +121,7 @@ export {
   updateTrack,
 } from './project.ts';
 export type {
+  AudioClip,
   Automation,
   ChordSpan,
   Clip,

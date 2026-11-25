@@ -1,7 +1,7 @@
 // What a project.json is, before the window shows it (Chordinal PRD §4.4, §12.3): a project this app reads, one saved
 // by a newer Chordinal (left as it is, never overwritten with less), something else entirely, or a project that is
 // damaged. The message for each is what the user sees.
-import { FORMAT, PATTERN_VERSION, VERSION, readProject } from '@chordinal/daw';
+import { AUDIO_VERSION, FORMAT, PATTERN_VERSION, VERSION, readProject } from '@chordinal/daw';
 import type { Project } from '@chordinal/daw';
 
 export type FileKind =
@@ -10,7 +10,7 @@ export type FileKind =
   | { kind: 'other'; message: string }
   | { kind: 'damaged'; message: string };
 
-const READS = [VERSION, PATTERN_VERSION];
+const READS = [VERSION, PATTERN_VERSION, AUDIO_VERSION];
 
 export function classifyFile(text: string): FileKind {
   let data: unknown;
