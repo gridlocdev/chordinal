@@ -159,6 +159,33 @@ export function moveKeyframe(
 export const removeKeyframe = (p: Project, trackId: string, lane: LaneId, index: number): Project =>
   changeLane(p, trackId, lane, (frames) => frames.filter((_, i) => i !== index));
 
+/** removes the keyframes at these indexes, in one edit */
+export const removeKeyframes = (
+  p: Project,
+  trackId: string,
+  lane: LaneId,
+  indexes: readonly number[],
+): Project => changeLane(p, trackId, lane, (frames) => frames.filter((_, i) => !indexes.includes(i)));
+
+/** a keyframe's new place, by its index */
+export type KeyframeMoves = ReadonlyMap<number, { beat: number; value: number }>;
+
+/** moves several keyframes at once, kept in range; the lane is put back in beat order, and a keyframe not moved
+ * at a beat one lands on is replaced by it */
+export function moveKeyframes(p: Project, trackId: string, lane: LaneId, moves: KeyframeMoves): Project {
+  return changeLane(p, trackId, lane, (frames, param) => {
+    const moved = new Map<number, Keyframe>();
+    for (const [i, to] of moves) {
+      const f = frames[i];
+      if (!f) continue;
+      const beat = Math.max(0, to.beat);
+      moved.set(beat, { ...f, beat, value: clampTo(param, to.value) });
+    }
+    const kept = frames.filter((f, i) => !moves.has(i) && !moved.has(f.beat));
+    return [...kept, ...moved.values()].sort((a, b) => a.beat - b.beat);
+  });
+}
+
 /** how the value gets to the keyframe at `index` from the one before it; 'exp' only where the lane allows it */
 export function setKeyframeCurve(
   p: Project,

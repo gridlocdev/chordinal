@@ -27,9 +27,9 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Copy | `⌘C` | `Ctrl+C` | Copy the selected notes or clip. |
 | Paste | `⌘V` | `Ctrl+V` | Paste at the playhead, on the selected track. |
 | Duplicate | `⌘D` | `Ctrl+D` | Put a copy of the selected notes or clip right after them. |
-| Delete | `⌫` (or `⌦`) | `Backspace` (or `Delete`) | Delete the selected notes, clip or chords. |
+| Delete | `⌫` (or `⌦`) | `Backspace` (or `Delete`) | Delete the selected notes, clip, chords or automation points. |
 | Select All | `⌘A` | `Ctrl+A` | Select every note in the piano roll. |
-| Deselect All | `⎋` | `Esc` | Select no notes, clip or chords. |
+| Deselect All | `⎋` | `Esc` | Select no notes, clip or automation points. |
 | Split at Playhead | `⌘T` | `Ctrl+T` | Cut the clips under the playhead in two. |
 | Join with Next Clip | `⌘J` | `Ctrl+J` | Make the selected clip and the one after it one clip. |
 | Quantize | `Q` | `Q` | Move the selected notes, or the clip’s, onto the grid. |
@@ -113,7 +113,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Record a melody (into the microphone, or played on the keys or a MIDI keyboard) | **●** |
 | Hear a note | press a key on the piano roll's keyboard (drag up or down to glide), or play the letter keys or a MIDI keyboard; the row of each key sounding lights up |
 | Draw a note | click empty space in the piano roll |
-| Draw automation | in a track's automation lane: click to add a point and drag it, drag a point to move it, double-click it to delete it, right-click for its curve; `Shift` places it off the beat |
+| Draw automation | in a track's automation lane: click to add a point and drag it, drag a point to move it, double-click it to delete it, right-click for its curve; `Shift` while dragging places it off the beat; `Shift`-drag on empty space picks the points in a box and `Shift`-click picks one more, then drag one to move them all or press `⌫` to delete them |
 | Move or resize a note | drag it, or drag its right edge |
 | Select notes | `Shift` click adds or removes one, `Shift` drag on empty space adds a rectangle of them |
 | Humanize, double or half speed, reverse, transpose, velocity, legato | right-click the notes or the clip |

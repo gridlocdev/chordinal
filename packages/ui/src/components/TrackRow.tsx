@@ -13,6 +13,7 @@ import { barAt } from '@chordinal/daw';
 import { updateClip, moveClip, newId, isDrums, findPattern } from '@chordinal/daw';
 import type { Clip, Track } from '@chordinal/daw';
 import { project, selected, selectedClip, beat, settings, setSettings, notify } from '../store.ts';
+import { pointPicks } from '../automation.ts';
 import { edit } from '../document.ts';
 import { recording, takeNotes, dropAudio, dropTake } from '../recording.ts';
 import { loadSample } from '../sample-edit.ts';
@@ -138,6 +139,7 @@ function Lane({ track, beats, ppb }: LaneProps) {
     if (e.button !== 0) return;
     focus.value = 'arrange';
     selected.value = track.id;
+    pointPicks.value = null;
     const b = beatAt(e),
       c = clipAt(b);
     if (!c) {

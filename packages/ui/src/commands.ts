@@ -5,9 +5,9 @@
 //
 // What Edit's commands act on follows the part last clicked (focus.ts): the picked notes in the piano roll, or the
 // selected clip in the arrangement.
-import { toggleAutomation, shownLanes } from './automation.ts';
+import { toggleAutomation, shownLanes, pointPicks, pickedIndexes } from './automation.ts';
 import { appMenu } from './platform/app-menu.ts';
-import { barAt, barLines } from '@chordinal/daw';
+import { barAt, barLines, removeKeyframes } from '@chordinal/daw';
 import { projectEnd, findClip } from '@chordinal/daw';
 import { markerRange, addMarker, insertTime, deleteTime } from '@chordinal/daw';
 import { projectMidi } from '@chordinal/daw';
@@ -105,16 +105,30 @@ export const busy = (): boolean => busyWith() !== null;
 const inRoll = () => focus.value === 'roll' && hasPicks();
 const clipSelected = () => focus.value !== 'roll' && !!selectedClip.value;
 
-/** Delete: the picked notes or the selected clip, in the part last clicked */
+/** the picked automation points, by track, lane and index; null when none are picked */
+function pickedPoints() {
+  const picks = pointPicks.value;
+  const t = picks && project.value.tracks.find((x) => x.id === picks.track);
+  const indexes = t && picks ? pickedIndexes(t, picks.lane) : [];
+  return t && picks && indexes.length ? { track: t.id, lane: picks.lane, indexes } : null;
+}
+
+/** Delete: the picked notes, or the picked automation points or the selected clip, in the part last clicked */
 export function deleteSelection(): boolean {
   if (focus.value === 'roll') return deletePicked();
+  const points = pickedPoints();
+  if (points) {
+    edit((p) => removeKeyframes(p, points.track, points.lane, points.indexes));
+    pointPicks.value = null;
+    return true;
+  }
   const c = selectedClip.value;
   if (!c) return false;
   deleteClip(c.track, c.clip);
   return true;
 }
 
-const canDelete = () => (focus.value === 'roll' ? hasPicks() : !!selectedClip.value);
+const canDelete = () => (focus.value === 'roll' ? hasPicks() : !!pickedPoints() || !!selectedClip.value);
 
 /** the stretch a loop is set to: the selection, else the section at the playhead, else four bars from its bar */
 export function selectionRange(): Loop | null {
@@ -343,7 +357,7 @@ export const catalog = new CommandCatalog([
     alternates: ['delete'],
     run: deleteSelection,
     enabled: canDelete,
-    description: 'Delete the selected notes, clip or chords.',
+    description: 'Delete the selected notes, clip, chords or automation points.',
     keywords: 'remove erase',
   },
   {
@@ -367,8 +381,9 @@ export const catalog = new CommandCatalog([
     run: () => {
       clearPicked();
       selectedClip.value = null;
+      pointPicks.value = null;
     },
-    description: 'Select no notes or clip.',
+    description: 'Select no notes, clip or automation points.',
     keywords: 'none clear',
   },
   {

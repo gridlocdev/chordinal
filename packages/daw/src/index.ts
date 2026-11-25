@@ -4,12 +4,14 @@ export {
   clearLane,
   laneParam,
   moveKeyframe,
+  moveKeyframes,
   removeKeyframe,
+  removeKeyframes,
   setKeyframeCurve,
   trackLanes,
   valueAt,
 } from './automation.ts';
-export type { LaneId, LaneParam } from './automation.ts';
+export type { KeyframeMoves, LaneId, LaneParam } from './automation.ts';
 export {
   addTrackFx,
   applyFxToNotes,

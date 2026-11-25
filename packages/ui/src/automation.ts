@@ -25,6 +25,24 @@ export const firstLane = (t: Track): LaneId =>
     (k) => t.automation[k]?.length && trackLanes(t).some((l) => l.id === k),
   ) ?? 'volume';
 
+/** the points picked in one lane, by beat (a lane has one point per beat) */
+export interface PointPicks {
+  track: string;
+  lane: LaneId;
+  beats: readonly number[];
+}
+
+/** the automation points picked, which Delete removes and a drag moves together; none when null */
+export const pointPicks: Signal<PointPicks | null> = signal(null);
+
+/** the indexes of the points picked in this track's lane */
+export function pickedIndexes(t: Track, lane: LaneId): number[] {
+  const picks = pointPicks.value;
+  if (picks?.track !== t.id || picks.lane !== lane) return [];
+  const frames = t.automation[lane] ?? [];
+  return frames.flatMap((f, i) => (picks.beats.includes(f.beat) ? [i] : []));
+}
+
 export function showLane(trackId: string, lane: LaneId): void {
   shownLanes.value = { ...shownLanes.value, [trackId]: lane };
 }

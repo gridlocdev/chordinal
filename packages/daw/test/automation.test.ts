@@ -2,7 +2,15 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { emptyProject, makeTrack, addTrack, valueAt } from '@chordinal/daw';
-import { addKeyframe, moveKeyframe, removeKeyframe, setKeyframeCurve, clearLane } from '@chordinal/daw';
+import {
+  addKeyframe,
+  moveKeyframe,
+  moveKeyframes,
+  removeKeyframe,
+  removeKeyframes,
+  setKeyframeCurve,
+  clearLane,
+} from '@chordinal/daw';
 import type { Project } from '@chordinal/daw';
 
 function oneTrack(): Project {
@@ -69,4 +77,33 @@ test('an exponential ramp only where every value is above 0', () => {
 test('an edit that changes nothing gives back the same project (no undo step)', () => {
   const p = addKeyframe(oneTrack(), 't', 'volume', 0, 1);
   assert.equal(setKeyframeCurve(p, 't', 'volume', 0, 'linear'), p);
+});
+
+test('several keyframes are removed or moved together in one edit, and the lane stays in beat order', () => {
+  let p = oneTrack();
+  for (const b of [0, 4, 8, 12]) p = addKeyframe(p, 't', 'volume', b, 1);
+  assert.deepEqual(
+    lane(removeKeyframes(p, 't', 'volume', [1, 3]), 'volume')?.map((f) => f.beat),
+    [0, 8],
+  );
+  // 4 and 8 move on 4 beats: 8 lands on 12 and replaces it, values kept in range
+  const q = moveKeyframes(
+    p,
+    't',
+    'volume',
+    new Map([
+      [1, { beat: 8, value: 0.5 }],
+      [2, { beat: 12, value: 9 }],
+    ]),
+  );
+  assert.deepEqual(
+    lane(q, 'volume')?.map((f) => [f.beat, f.value]),
+    [
+      [0, 1],
+      [8, 0.5],
+      [12, 2],
+    ],
+  );
+  assert.equal(moveKeyframes(p, 't', 'volume', new Map([[0, { beat: 0, value: 1 }]])), p, 'no move, no edit');
+  assert.equal(removeKeyframes(p, 't', 'volume', []), p);
 });

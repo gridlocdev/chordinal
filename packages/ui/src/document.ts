@@ -28,6 +28,7 @@ import { classifyFile } from './store/classify-file.ts';
 import { NEW, step, expectedOf } from './store/save-session.ts';
 import type { SaveState } from './store/save-session.ts';
 import { errorText } from './errors.ts';
+import { pointPicks } from './automation.ts';
 import { forgetUnsavedSamples, writeUnsavedSamples } from './sample-files.ts';
 
 /** what a new project starts from: a title, a tempo, a meter and a length in bars */
@@ -89,6 +90,7 @@ export function redo(): void {
 function keepSelection(): void {
   const p = project.value;
   if (picked.value.size) picked.value = new Set();
+  pointPicks.value = null;
   if (selected.value && !p.tracks.some((t) => t.id === selected.value))
     selected.value = p.tracks[0]?.id ?? null;
   const c = selectedClip.value;
