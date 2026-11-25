@@ -1,6 +1,6 @@
 // The sampler (PRD §14): an audio file played across the keys. Rendered through a real offline audio context in
 // Chromium (its pitch from the root key, a one-shot playing through note-off, a loop held while the key is), and put
-// on a track from the Sound tab, saved with its file and reopened.
+// on a track from the Sound tab, saved with its file and reopened. A drum row plays a sample in place of the kit's sound.
 import path from 'node:path';
 import { build } from 'esbuild';
 import type { Page } from '@playwright/test';
@@ -21,9 +21,9 @@ test.beforeAll(async () => {
   const out = await build({
     stdin: {
       contents: [
-        `import { createSampler, loadInstruments, playProject, audioEngine, LEAD_IN } from '@chordinal/playback';`,
+        `import { createSampler, withDrumRows, loadInstruments, playProject, audioEngine, LEAD_IN } from '@chordinal/playback';`,
         `import { emptyProject, makeTrack, addTrack, addClip } from '@chordinal/daw';`,
-        `window.chordinal = { createSampler, loadInstruments, playProject, audioEngine, LEAD_IN, emptyProject, makeTrack, addTrack, addClip };`,
+        `window.chordinal = { createSampler, withDrumRows, loadInstruments, playProject, audioEngine, LEAD_IN, emptyProject, makeTrack, addTrack, addClip };`,
       ].join('\n'),
       resolveDir: ROOT,
       loader: 'ts',
@@ -312,6 +312,131 @@ test.describe('The sampler', () => {
     await expect(editor.getByRole('region', { name: 'Grand Piano sampler' })).toBeVisible();
     await expect(editor.locator('.sample-file')).toHaveText('tone.wav');
     await expect(editor.getByRole('combobox', { name: 'Sample Mode' })).toHaveValue('loop');
+    expect(errors).toEqual([]);
+  });
+
+  test("a drum row's sample plays as recorded on its key, and the kit plays the other keys", async ({
+    page,
+  }) => {
+    await setUp(page);
+    const { hz, kit } = await page.evaluate(async () => {
+      type Instrument = {
+        noteOn(k: number, v: number, w: number): void;
+        noteOff(k: number, f: boolean, w: number): void;
+        output: GainNode;
+      };
+      const c = (
+        window as unknown as {
+          chordinal: {
+            withDrumRows(
+              kit: object,
+              rows: { key: number; sample: object; buffer: AudioBuffer }[],
+              d: AudioNode,
+            ): Instrument;
+          };
+        }
+      ).chordinal;
+      const rate = 48000;
+      const ctx = new OfflineAudioContext(1, rate, rate);
+      const buffer = ctx.createBuffer(1, rate, rate);
+      const d = buffer.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = 0.8 * Math.sin((2 * Math.PI * 330 * i) / rate);
+      const kit: number[] = [];
+      const fake = {
+        noteOn: (k: number) => kit.push(k),
+        noteOff: () => {},
+        glide: () => false,
+        tapeStop: () => {},
+        output: ctx.createGain(),
+        setSustain: () => {},
+        dispose: () => {},
+      };
+      const drums = c.withDrumRows(
+        fake,
+        [{ key: 36, sample: { name: 'Boom', file: 'boom.wav' }, buffer }],
+        ctx.destination,
+      );
+      drums.noteOn(36, 127, 0);
+      drums.noteOn(38, 127, 0);
+      drums.noteOff(36, false, 0.05); // a one-shot: it plays on
+      const x = (await ctx.startRendering()).getChannelData(0);
+      let ups = 0;
+      for (let i = Math.floor(0.2 * rate) + 1; i < Math.floor(0.7 * rate); i++)
+        if (x[i - 1]! < 0 && x[i]! >= 0) ups++;
+      return { hz: ups / 0.5, kit };
+    });
+    expect(hz).toBeGreaterThan(320);
+    expect(hz).toBeLessThan(340);
+    expect(kit).toEqual([38]);
+  });
+
+  test('a sample dropped on a step grid row plays there, saved with the project', async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Drums').dblclick();
+    const grid = page.getByTestId('step-grid');
+    await expect(grid).toBeVisible();
+    const data = await page.evaluateHandle(
+      (bytes) => {
+        const dt = new DataTransfer();
+        dt.items.add(new File([new Uint8Array(bytes)], 'boom.wav', { type: 'audio/wav' }));
+        return dt;
+      },
+      [...wav(110, 0.5)],
+    );
+    const box = await grid.boundingBox();
+    if (!box) throw new Error('the step grid has no size');
+    // the first row, Kick (36), in the names left of the steps
+    const at = { clientX: box.x + 40, clientY: box.y + 6, dataTransfer: data };
+    // every notice shown: with no SoundFonts here, the live kit reloading for the new row replaces this one
+    await page.evaluate(() => {
+      const seen: string[] = [];
+      (window as unknown as { notices: string[] }).notices = seen;
+      new MutationObserver(() => {
+        const t = document.querySelector('[role=status]')?.textContent ?? '';
+        if (t) seen.push(t);
+      }).observe(document.body, { subtree: true, childList: true, characterData: true });
+    });
+    await grid.dispatchEvent('dragover', at);
+    await grid.dispatchEvent('drop', at);
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { notices: string[] }).notices.join('|')))
+      .toContain('Kick on Drums plays boom.wav');
+    // Save As, read from the notices: saving moves the row's file into the project, and the kit reloads with it
+    const save = async (name: string) => {
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+      const ask = page.getByRole('dialog', { name: 'Save the project as' });
+      await expect(ask.getByRole('textbox')).toBeFocused();
+      await page.keyboard.press('ControlOrMeta+KeyA');
+      await page.keyboard.type(name);
+      await page.keyboard.press('Enter');
+      await expect
+        .poll(() => page.evaluate(() => (window as unknown as { notices: string[] }).notices.join('|')))
+        .toContain(`Saved “${name}”`);
+    };
+
+    await save('Boom');
+    const saved = JSON.parse((await storedProject(page, 'Boom')) ?? '{}') as {
+      tracks: {
+        name: string;
+        instrument: { drumSamples?: Record<string, { name: string; file: string }> };
+      }[];
+    };
+    expect(saved.tracks.find((t) => t.name === 'Drums')?.instrument.drumSamples).toEqual({
+      36: { name: 'boom', file: 'boom.wav' },
+    });
+    // a kit from the Kits tab keeps the row's sample
+    await page.locator('.browser').getByRole('button', { name: 'Kits', exact: true }).click();
+    await page.locator('.browser .item').nth(1).dblclick();
+    await page.evaluate(() => (window as unknown as { notices: string[] }).notices.splice(0));
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { notices: string[] }).notices.join('|')))
+      .toContain('Saved “Boom”');
+    const again = JSON.parse((await storedProject(page, 'Boom')) ?? '{}') as typeof saved;
+    expect(again.tracks.find((t) => t.name === 'Drums')?.instrument.drumSamples).toEqual({
+      36: { name: 'boom', file: 'boom.wav' },
+    });
     expect(errors).toEqual([]);
   });
 });

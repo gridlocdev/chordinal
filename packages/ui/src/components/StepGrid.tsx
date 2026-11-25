@@ -1,7 +1,9 @@
 // The step grid for the selected drum clip (PRD §4): a row per drum sound, a column per step. Click a step to turn it
 // on or off and drag to paint more; Shift-click an on step to accent it. Notes off the grid show greyed and are left
-// alone. Right-click a drum's name to add or hide rows; click it to hear the drum.
-import type { TargetedMouseEvent, TargetedPointerEvent } from 'preact';
+// alone. Right-click a drum's name to add or hide rows, or to load a sample on it; click it to hear the drum. Drop a
+// WAV, AIFF or MP3 on a row to play it there in place of the kit's sound (PRD §14).
+import type { TargetedDragEvent, TargetedMouseEvent, TargetedPointerEvent } from 'preact';
+import { useState } from 'preact/hooks';
 import { barAt } from '@chordinal/daw';
 import { findPattern, isDrums } from '@chordinal/daw';
 import { STEP_SIZES, stepOf, stepCount, gridRows, cell, drumName, ACCENT_VELOCITY } from '@chordinal/daw';
@@ -25,6 +27,8 @@ import { useCanvas, rgba } from './canvas.ts';
 import { palette, alpha } from '../theme.ts';
 import type { Palette } from '../theme.ts';
 import { gridGeometry, lineKind, betweenCells, GRID_GUTTER } from './grid-view.ts';
+import { loadDrumSample, pickDrumSample, removeDrumSample, rowName, rowSample } from '../drum-sample-edit.ts';
+import { notify } from '../store.ts';
 import type { GridCell } from './grid-view.ts';
 
 const FONT = '11px -apple-system, system-ui, sans-serif';
@@ -41,6 +45,7 @@ const colours = (t: Palette) => ({
   offGrid: t.faint,
   playhead: alpha(t.rec, 0.16),
   accent: t.text,
+  sampled: t.accent,
 });
 
 function drawGrid(g: CanvasRenderingContext2D, w: number, h: number, track: Track, clip: Clip, now: number) {
@@ -57,9 +62,10 @@ function drawGrid(g: CanvasRenderingContext2D, w: number, h: number, track: Trac
     g.fillRect(0, y, w, G.rowH - 1);
     g.fillStyle = C.gutter;
     g.fillRect(0, y, GRID_GUTTER - 4, G.rowH - 1);
-    g.fillStyle = C.label;
+    const sample = rowSample(track, key);
+    g.fillStyle = sample ? C.sampled : C.label;
     g.textAlign = 'left';
-    g.fillText(drumName(key), 8, y + G.rowH / 2, GRID_GUTTER - 14);
+    g.fillText(sample ? `♪ ${sample.name}` : drumName(key), 8, y + G.rowH / 2, GRID_GUTTER - 14);
     for (let i = 0; i < steps; i++) {
       const x = G.x(i),
         { on, off } = cell(clip.notes, key, i, step);
@@ -169,7 +175,19 @@ function menu(e: TargetedMouseEvent<HTMLDivElement>, track: Track, clip: Clip) {
   const missing = Object.keys(GM_DRUMS)
     .map(Number)
     .filter((k) => !rows.includes(k));
+  const sample = at && rowSample(track, at.key);
   appMenu.popup([
+    {
+      label: at ? `Load a Sample for ${rowName(track, at.key)}…` : 'Load a Sample…',
+      enabled: !!at,
+      run: () => at && pickDrumSample(track.id, at.key),
+    },
+    {
+      label: sample ? `Remove Sample ${sample.name}` : 'Remove Sample',
+      enabled: !!sample,
+      run: () => at && removeDrumSample(track.id, at.key),
+    },
+    '-',
     {
       label: 'Add Row',
       submenu: missing.length
@@ -177,7 +195,7 @@ function menu(e: TargetedMouseEvent<HTMLDivElement>, track: Track, clip: Clip) {
         : [{ label: 'Every drum is shown', enabled: false }],
     },
     {
-      label: at ? `Hide ${drumName(at.key)}` : 'Hide Row',
+      label: at ? `Hide ${rowName(track, at.key)}` : 'Hide Row',
       enabled: !!at && !clip.notes.some((n) => n.key === at.key) && (track.stepRows ?? rows).includes(at.key),
       run: () => at && hideGridRow(track.id, at.key, clip),
     },
@@ -223,12 +241,31 @@ interface GridProps {
 function Grid({ track, clip }: GridProps) {
   const now = useComputed(() => playingStep(clip));
   const ref = useCanvas((g, w, h) => drawGrid(g, w, h, track, clip, now.value));
+  const [dropping, setDropping] = useState(false);
+  const files = (e: DragEvent) => !!e.dataTransfer?.types.includes('Files');
+  const dropped = (e: TargetedDragEvent<HTMLDivElement>) => {
+    setDropping(false);
+    if (!files(e)) return;
+    e.preventDefault();
+    const at = hit(e, track, clip);
+    const file = e.dataTransfer?.files[0];
+    if (!at || !file) notify('Drop a WAV, AIFF or MP3 file on a drum row to play it there', 'error');
+    else void loadDrumSample(track.id, at.key, file);
+  };
   return (
     <div
-      class="roll"
+      class={`roll ${dropping ? 'drop' : ''}`}
       data-testid="step-grid"
       onPointerDown={(e) => down(e, track, clip)}
       onContextMenu={(e) => menu(e, track, clip)}
+      onDragOver={(e) => {
+        if (files(e)) {
+          e.preventDefault();
+          setDropping(true);
+        }
+      }}
+      onDragLeave={() => setDropping(false)}
+      onDrop={dropped}
     >
       <canvas ref={ref} />
     </div>

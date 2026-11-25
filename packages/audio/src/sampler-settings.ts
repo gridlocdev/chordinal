@@ -69,3 +69,31 @@ export function guessRoot(samples: Float32Array, rate: number): number | null {
   if (keys.length < 10) return null;
   return Math.min(127, Math.max(0, Math.round(keys[keys.length >> 1]!)));
 }
+
+/** a drum row's sample (Chordinal PRD §14): played in place of the kit's sound on that key */
+export interface DrumSample {
+  /** what the step grid's row calls it: the file's name, until it's renamed */
+  name: string;
+  /** the file in the project's samples/ folder */
+  file: string;
+}
+
+/**
+ * A drum track's samples by key, from anything saved: only keys 0 to 127 with a file. Others are left out.
+ */
+export function drumSamples(v: unknown): Map<number, DrumSample> {
+  const out = new Map<number, DrumSample>();
+  for (const [k, s] of Object.entries(obj(v))) {
+    const key = Number(k),
+      p = obj(s);
+    if (!Number.isInteger(key) || key < 0 || key > 127 || typeof p.file !== 'string' || !p.file) continue;
+    const name =
+      typeof p.name === 'string' && p.name.trim() ? p.name.trim() : p.file.replace(SAMPLE_FILE, '');
+    out.set(key, { name, file: p.file });
+  }
+  return out;
+}
+
+/** the sampler a drum row plays its sample with: one-shot, at the pitch it was recorded, on the row's key */
+export const drumSampler = (key: number, s: DrumSample): SamplerSettings =>
+  samplerSettings({ name: s.name, file: s.file, root: key, mode: 'oneshot' });

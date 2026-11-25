@@ -104,7 +104,7 @@ An **instrument** that plays one audio file, a **sample**, across the keys from 
 _Avoid_: sample player
 
 **Sample**:
-An audio file a **sampler** plays, kept in the project's `samples/` folder. Not a **take**, which is a recording kept with the project.
+An audio file a **sampler** or a drum row plays, kept in the project's `samples/` folder. Not a **take**, which is a recording kept with the project.
 _Avoid_: audio clip, one-shot
 
 **Kit**:

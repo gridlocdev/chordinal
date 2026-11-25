@@ -49,7 +49,7 @@ export async function loadSample(trackId: string, file: File): Promise<void> {
   const t = trackOf(trackId);
   if (!t) return;
   if (isDrums(t)) {
-    notify(`${t.name} plays a drum kit: drop samples on another track`, 'error');
+    notify(`${t.name} plays a drum kit: drop a sample on one of its rows in the step grid`, 'error');
     return;
   }
   selected.value = trackId;

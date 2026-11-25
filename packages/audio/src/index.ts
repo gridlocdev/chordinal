@@ -20,8 +20,15 @@ export type {
   SynthSettings,
   SynthWave,
 } from './synth-settings.ts';
-export { DEFAULT_SAMPLER, SAMPLE_FILE, guessRoot, samplerSettings } from './sampler-settings.ts';
-export type { SampleMode, SamplerSettings } from './sampler-settings.ts';
+export {
+  DEFAULT_SAMPLER,
+  SAMPLE_FILE,
+  drumSampler,
+  drumSamples,
+  guessRoot,
+  samplerSettings,
+} from './sampler-settings.ts';
+export type { DrumSample, SampleMode, SamplerSettings } from './sampler-settings.ts';
 export { SAMPLER_SECTIONS, withSamplerValue } from './sampler-controls.ts';
 export { SYNTH_GROUPS, SYNTH_PRESETS } from './synth-presets-data.ts';
 export type { SynthGroup, SynthPreset } from './synth-presets-data.ts';

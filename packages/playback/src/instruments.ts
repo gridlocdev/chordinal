@@ -2,6 +2,7 @@
 // the .sf2 files they live in, downloaded once and shared (soundfont.js lets the least recently used go past a memory budget),
 // or its synth, which needs nothing downloaded, or its sampler's audio, which the caller reads from the project.
 import {
+  drumSamples,
   samplerSettings,
   soundfontLibrary,
   synthSettings,
@@ -13,6 +14,7 @@ import type { Sf2Preset } from '@chordinal/lib';
 import { loadSoundFont, findPreset, type LoadedFont } from './soundfont.ts';
 import { audioEngine } from './audio-engine.ts';
 import { prepareEffects } from './effects.ts';
+import type { LoadedRow } from './drum-rows.ts';
 
 /** the library's preset for a bank and program: that one, or the same program on any bank of its kind, or the first */
 export function presetFor(bank: number, program: number): LibraryPreset | undefined {
@@ -25,11 +27,13 @@ export function presetFor(bank: number, program: number): LibraryPreset | undefi
   );
 }
 
-/** a track's SoundFont preset, loaded: its font, its preset in it, and the library's entry for it */
+/** a track's SoundFont preset, loaded: its font, its preset in it, the library's entry for it, and for a kit, the
+ * samples on its rows (PRD §14) */
 export interface LoadedPreset {
   font: LoadedFont;
   preset: Sf2Preset;
   entry: LibraryPreset;
+  rows?: LoadedRow[];
 }
 
 /** a track's synth (PRD §13): its settings, filled in */
@@ -48,7 +52,7 @@ export type LoadedInstrument = LoadedPreset | LoadedSynth | LoadedSample;
 
 /** what playProject plays a track with: a font and its preset, a synth's settings, or a sampler's and its audio */
 export type PlayableInstrument =
-  | { font: LoadedFont; preset: Sf2Preset }
+  | { font: LoadedFont; preset: Sf2Preset; rows?: readonly LoadedRow[] }
   | { synth: unknown }
   | { sample: unknown; buffer: AudioBuffer | null };
 
@@ -64,7 +68,9 @@ export const decodeSample = (bytes: ArrayBuffer): Promise<AudioBuffer> =>
  * nothing). Resolves to one loaded instrument per track.
  */
 export async function loadInstruments(
-  tracks: { instrument: { bank: number; program: number; synth?: object; sample?: object } }[],
+  tracks: {
+    instrument: { bank: number; program: number; synth?: object; sample?: object; drumSamples?: object };
+  }[],
   onStatus: (text: string) => void = () => {},
   readSample: SampleReader = () => Promise.resolve(null),
 ): Promise<LoadedInstrument[]> {
@@ -102,14 +108,29 @@ export async function loadInstruments(
       return { sample: s, buffer: s.file ? await readSample(s.file).catch(() => null) : null };
     }),
   );
+  const read = (file: string) => readSample(file).catch(() => null);
+  const rows = await Promise.all(
+    tracks.map(({ instrument }) =>
+      instrument.synth || instrument.sample
+        ? []
+        : Promise.all(
+            [...drumSamples(instrument.drumSamples)].map(async ([key, sample]): Promise<LoadedRow> => ({
+              key,
+              sample,
+              buffer: await read(sample.file),
+            })),
+          ),
+    ),
+  );
   await prepareEffects(audioEngine.context); // the effects' worklets, so the track effects can play
   return entries.map((entry, i): LoadedInstrument => {
-    const sampled = samples[i];
-    if (sampled) return sampled;
+    const sampler = samples[i];
+    if (sampler) return sampler;
     if (!entry) return { synth: synthSettings(tracks[i]!.instrument.synth) };
     const font = fonts.get(entry.url);
     const preset = font && findPreset(font, entry.bank, entry.program);
     if (!font || !preset) throw new Error(`no preset ${entry.bank}:${entry.program} in ${entry.url}`);
-    return { font, preset, entry };
+    const sampled = rows[i]!;
+    return sampled.length ? { font, preset, entry, rows: sampled } : { font, preset, entry };
   });
 }

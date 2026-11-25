@@ -166,7 +166,10 @@ export function Sound() {
     return (
       <div class="hint sound-none">
         {isDrums(track) ? (
-          <p>{track.name} plays a drum kit. Synths and samples play the other tracks.</p>
+          <p>
+            {track.name} plays a drum kit. Synths play the other tracks; drop a sample on a row of the step
+            grid to play it in place of the kit's sound.
+          </p>
         ) : (
           <>
             <p>

@@ -128,5 +128,6 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Turn drum steps on or off | click a step in the step grid, drag to paint; `Shift` click accents a step |
 | Step size of a drum clip (1/8, 1/16, 1/32, 1/16 triplet) | the step grid's **Step** menu |
 | Add or hide a drum row | right-click a row in the step grid, **Add Row**, **Hide** |
+| Play a sample on a drum row | drop a WAV, AIFF or MP3 on the row in the step grid; right-click the row (desktop app) to load or remove one |
 | Put an instrument on a track | click it in the browser's Instruments tab, or drag it onto the track |
 | Play notes from a MIDI keyboard | plug it in; its sustain pedal works too |

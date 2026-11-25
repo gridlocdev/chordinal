@@ -23,3 +23,5 @@ export type { Instrument, LoadedFont, NoteOptions, SoundFontInstrument, Voice } 
 export { SAMPLER_VOICES, createSampler } from './sampler.ts';
 export { SYNTH_VOICES, createSynth } from './synth.ts';
 export { startTicker } from './ticker.ts';
+export { withDrumRows } from './drum-rows.ts';
+export type { LoadedRow } from './drum-rows.ts';

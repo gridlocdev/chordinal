@@ -5,6 +5,8 @@ import {
   SAMPLER_SECTIONS,
   SAMPLE_FILE,
   controlText,
+  drumSampler,
+  drumSamples,
   guessRoot,
   samplerSettings,
   synthValue,
@@ -67,4 +69,28 @@ test('every sampler control sets a setting the sampler has, and values set are h
 test('WAV, AIFF and MP3 files are samples', () => {
   for (const f of ['kick.wav', 'Pad.AIFF', 'pad.aif', 'vox.mp3']) assert.ok(SAMPLE_FILE.test(f), f);
   for (const f of ['song.mid', 'notes.txt', 'wav']) assert.ok(!SAMPLE_FILE.test(f), f);
+});
+
+test("a drum track's row samples keep only rows with a file on a real key, named after the file by default", () => {
+  assert.equal(drumSamples(undefined).size, 0);
+  assert.equal(drumSamples('nonsense').size, 0);
+  const rows = drumSamples({
+    36: { name: ' Boom ', file: 'boom.wav' },
+    38: { file: 'snare.aiff' },
+    40: { name: 'No file' },
+    200: { file: 'high.wav' },
+    x: { file: 'x.wav' },
+    41.5: { file: 'half.wav' },
+  });
+  assert.deepEqual([...rows.keys()], [36, 38]);
+  assert.equal(rows.get(36)?.name, 'Boom');
+  assert.equal(rows.get(38)?.name, 'snare');
+});
+
+test('a drum row plays its sample one-shot at the pitch it was recorded', () => {
+  const s = drumSampler(38, { name: 'Snare', file: 'snare.wav' });
+  assert.equal(s.root, 38);
+  assert.equal(s.mode, 'oneshot');
+  assert.equal(s.file, 'snare.wav');
+  assert.equal(s.name, 'Snare');
 });

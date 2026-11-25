@@ -88,6 +88,8 @@ export interface TrackInstrument {
   program: number;
   synth?: object;
   sample?: object;
+  /** a drum track's samples by key, each played in place of the kit's sound on its row: `{ "36": { name, file } }` */
+  drumSamples?: object;
 }
 
 /** stepRows: the drum keys the step grid shows for the track (PRD §4.6) */

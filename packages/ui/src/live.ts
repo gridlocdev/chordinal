@@ -15,13 +15,16 @@ import {
   createSynth,
   effectChain,
   prepareEffects,
+  withDrumRows,
 } from '@chordinal/playback';
 import { presetFor } from '@chordinal/playback';
 import { audioEngine } from '@chordinal/playback';
 import type { EffectChain, Instrument } from '@chordinal/playback';
 import {
+  drumSamples,
   samplerSettings,
   synthSettings,
+  type DrumSample,
   type LibraryPreset,
   type SamplerSettings,
   type SynthSettings,
@@ -128,14 +131,14 @@ function syncEffects(): void {
 const presetOf = (track: Track | null) =>
   track ? presetFor(track.instrument.bank, track.instrument.program) : presetFor(0, 0);
 
-/** what musical typing plays for the selected track: its sampler, its synth, or its preset (by key, to load only when
- * it changes) */
+/** what musical typing plays for the selected track: its sampler, its synth, or its preset and the samples on a kit's
+ * rows (by key, to load only when it changes) */
 function liveSound(
   track: Track | null,
 ):
   | { key: string; sample: SamplerSettings }
   | { key: string; synth: SynthSettings }
-  | { key: string; entry: LibraryPreset }
+  | { key: string; entry: LibraryPreset; rows: [number, DrumSample][] }
   | null {
   if (track?.instrument.sample) {
     const sample = samplerSettings(track.instrument.sample);
@@ -146,7 +149,10 @@ function liveSound(
     return { key: `synth:${JSON.stringify(synth)}`, synth };
   }
   const entry = presetOf(track);
-  return entry ? { key: `${entry.url}#${entry.bank}:${entry.program}`, entry } : null;
+  if (!entry) return null;
+  const rows = [...drumSamples(track?.instrument.drumSamples)];
+  const at = rows.length ? `:${projectName.value}:${JSON.stringify(rows)}` : '';
+  return { key: `${entry.url}#${entry.bank}:${entry.program}${at}`, entry, rows };
 }
 
 /** puts `make`'s instrument in place of the last one, once the live chain is ready. `make` waits out an export: an
@@ -170,13 +176,20 @@ async function load(name: string, make: (into: AudioNode) => Promise<Instrument>
   }
 }
 
-const loadPreset = (entry: LibraryPreset): Promise<void> =>
+const loadPreset = (entry: LibraryPreset, rows: [number, DrumSample][]): Promise<void> =>
   load(entry.name, async (into) => {
     const font = await loadSoundFont(entry.url);
+    const loaded = await Promise.all(
+      rows.map(async ([key, sample]) => ({
+        key,
+        sample,
+        buffer: await readSample(sample.file).catch(() => null),
+      })),
+    );
     while (audioEngine.rendering) await audioEngine.rendering.catch(() => {});
     const preset = findPreset(font, entry.bank, entry.program);
     if (!preset) throw new Error(`no preset ${entry.bank}:${entry.program}`);
-    return createInstrument(font, preset, into);
+    return withDrumRows(createInstrument(font, preset, into), loaded, into);
   });
 
 const loadSampler = (sample: SamplerSettings): Promise<void> =>
@@ -367,7 +380,7 @@ export function startLive(): void {
       ? loadSampler(sound.sample)
       : 'synth' in sound
         ? loadSynth(sound.synth)
-        : loadPreset(sound.entry));
+        : loadPreset(sound.entry, sound.rows));
   });
   void liveInput();
   effect(() => {

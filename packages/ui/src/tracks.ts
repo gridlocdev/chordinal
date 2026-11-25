@@ -87,9 +87,14 @@ export function addNewTrack({
   return id;
 }
 
-/** puts an instrument on a track */
+/** puts an instrument on a track; a kit put on a drum track keeps the samples on its rows (PRD §14) */
 export const assignPreset = (trackId: string, instrument: InstrumentRef): void =>
-  edit((p) => updateTrack(p, trackId, { instrument: instrumentOf(instrument) }));
+  edit((p) => {
+    const rows = p.tracks.find((t) => t.id === trackId)?.instrument.drumSamples;
+    const next = instrumentOf(instrument);
+    const kit = isDrums({ instrument: next }) && !next.synth && !next.sample;
+    return updateTrack(p, trackId, { instrument: kit && rows ? { ...next, drumSamples: rows } : next });
+  });
 
 /** selects a track and opens the instruments, to pick one for it */
 export function chooseInstrument(trackId: string | null): void {
