@@ -23,6 +23,19 @@ const isRecord = (x: unknown): x is Record =>
   'version' in x &&
   typeof x.version === 'string';
 
+/** the largest sample the browser keeps (PRD §14.3): a minute or so of CD-quality stereo */
+export const BROWSER_SAMPLE_LIMIT = 16 * 1024 * 1024;
+
+/** the browser's storage is full: said as what to do, rather than the error's name */
+export class StorageFullError extends Error {
+  override name = 'StorageFullError';
+}
+
+const isQuota = (e: unknown) => e instanceof Error && e.name === 'QuotaExceededError';
+
+/** why a sample past the limit isn't kept */
+export const TOO_BIG = `over ${BROWSER_SAMPLE_LIMIT / 1024 / 1024} MB, more than the browser keeps; the desktop app takes it`;
+
 const projectKey = (name: string) => `project:${name}`;
 const takeKey = (name: string, file: string) => `take:${name}:${file}`;
 const sampleKey = (name: string, file: string) => `sample:${name}:${file}`;
@@ -39,6 +52,14 @@ export function browserStore(kv: KeyValue, newVersion: () => Version): ProjectSt
     if (!SAMPLE_NAME.test(file)) throw new Error(`not a sample: ${file}`);
     return file;
   };
+  const set = (key: string, value: unknown) =>
+    kv.set(key, value).catch((e: unknown) => {
+      throw isQuota(e)
+        ? new StorageFullError("the browser's storage is full: the desktop app keeps projects on disk", {
+            cause: e,
+          })
+        : e;
+    });
   const listed = async (prefix: string) =>
     (await kv.keys())
       .filter((k) => k.startsWith(prefix))
@@ -58,7 +79,7 @@ export function browserStore(kv: KeyValue, newVersion: () => Version): ProjectSt
           throw new ConflictError(`${name} changed since it was opened`);
         if (now?.text === text) return now.version;
         const version = newVersion();
-        await kv.set(projectKey(name), { text, version } satisfies Record);
+        await set(projectKey(name), { text, version } satisfies Record);
         return version;
       });
       writing = done.catch(() => {});
@@ -71,7 +92,7 @@ export function browserStore(kv: KeyValue, newVersion: () => Version): ProjectSt
       return bytes.slice().buffer;
     },
     async writeTake(name, file, bytes) {
-      await kv.set(takeKey(name, takeOf(file)), bytes.slice());
+      await set(takeKey(name, takeOf(file)), bytes.slice());
     },
     samples: (name) => listed(sampleKey(name, '')),
     async readSample(name, file) {
@@ -80,7 +101,9 @@ export function browserStore(kv: KeyValue, newVersion: () => Version): ProjectSt
       return bytes.slice().buffer;
     },
     async writeSample(name, file, bytes) {
-      await kv.set(sampleKey(name, sampleOf(file)), bytes.slice());
+      if (bytes.length > BROWSER_SAMPLE_LIMIT) throw new Error(`${file} is ${TOO_BIG}`);
+      await set(sampleKey(name, sampleOf(file)), bytes.slice());
     },
+    sampleLimit: BROWSER_SAMPLE_LIMIT,
   };
 }

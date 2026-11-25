@@ -28,6 +28,8 @@ export interface ProjectStore {
   samples(name: string): Promise<string[]>;
   readSample(name: string, file: string): Promise<ArrayBuffer>;
   writeSample(name: string, file: string, bytes: Uint8Array): Promise<void>;
+  /** the largest sample it keeps, in bytes, where its room is small (the browser's storage); none on disk */
+  sampleLimit?: number;
 }
 
 /** the project changed somewhere else since it was read or written here; nothing was written */

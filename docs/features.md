@@ -18,7 +18,7 @@ Besides the SoundFont libraries, any track can play a synth: two oscillators and
 
 ## Samplers
 
-A track can also play an audio file of your own across the keys. Drop a WAV, AIFF or MP3 on a track's header, or use **Load a Sample…** in the **Sound** tab. Chordinal copies the file into the project's `samples/` folder and listens for its pitch to set its root key, which you can change. In the **Sound** tab, **One-shot** plays the whole sample on each note and **Sustain loop** holds it while the key is down; **Start** skips into the file, and the amp envelope shapes each note. **Replace Sample…** swaps the file. A sampler plays live, on Play, in an export and in `chordinal render`. On a drum track, drop the file on a row of the step grid instead: that row plays it once through, in place of the kit's sound. In the desktop app, right-click a row for **Load a Sample for…** and **Remove Sample**.
+A track can also play an audio file of your own across the keys. Drop a WAV, AIFF or MP3 on a track's header, or use **Load a Sample…** in the **Sound** tab. Chordinal copies the file into the project's `samples/` folder and listens for its pitch to set its root key, which you can change. In the **Sound** tab, **One-shot** plays the whole sample on each note and **Sustain loop** holds it while the key is down; **Start** skips into the file, and the amp envelope shapes each note. **Replace Sample…** swaps the file. A sampler plays live, on Play, in an export and in `chordinal render`. In the browser, a sample can be up to 16 MB. On a drum track, drop the file on a row of the step grid instead: that row plays it once through, in place of the kit's sound. In the desktop app, right-click a row for **Load a Sample for…** and **Remove Sample**.
 
 ## Humanize
 

@@ -6,6 +6,7 @@ import { decodeSample, type SampleReader } from '@chordinal/playback';
 import { place } from './place.ts';
 import { notify, projectName } from './store.ts';
 import { errorText } from './errors.ts';
+import { TOO_BIG } from './store/browser-store.ts';
 
 const unsaved = new Map<string, Uint8Array>(); // samples of a project not saved yet, by file name
 const decoded = new Map<string, Promise<AudioBuffer | null>>(); // project name and file → its audio
@@ -31,6 +32,8 @@ async function keptBytes(name: string, file: string): Promise<Uint8Array | null>
 /** keeps a sample's bytes with the project and resolves to the file name it's under: the dropped name, or the same
  * name with a number when another file has it */
 export async function keepSample(dropped: string, bytes: Uint8Array): Promise<string> {
+  const limit = place.files.sampleLimit;
+  if (limit !== undefined && bytes.length > limit) throw new Error(TOO_BIG);
   const name = projectName.value;
   const base = sampleName(dropped);
   const ext = SAMPLE_FILE.exec(base)?.[0] ?? '';

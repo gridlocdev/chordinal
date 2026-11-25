@@ -7,6 +7,13 @@ const request = <T>(r: IDBRequest<T>) =>
     r.onerror = () => reject(r.error ?? new Error('IndexedDB failed'));
   });
 
+/** a write done: its transaction committed, or why not (a full disk aborts it after the put itself succeeds) */
+const committed = (t: IDBTransaction) =>
+  new Promise<void>((resolve, reject) => {
+    t.oncomplete = () => resolve();
+    t.onabort = t.onerror = () => reject(t.error ?? new Error('IndexedDB failed'));
+  });
+
 export function idbKeyValue(dbName = 'chordinal', storeName = 'projects'): KeyValue {
   let db: Promise<IDBDatabase> | null = null;
   const open = () => {
@@ -22,7 +29,9 @@ export function idbKeyValue(dbName = 'chordinal', storeName = 'projects'): KeyVa
   return {
     get: async (key) => request<unknown>((await store('readonly')).get(key)),
     set: async (key, value) => {
-      await request((await store('readwrite')).put(value, key));
+      const s = await store('readwrite');
+      s.put(value, key);
+      await committed(s.transaction);
     },
     keys: async () => (await request((await store('readonly')).getAllKeys())).map(String),
   };

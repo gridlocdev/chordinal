@@ -1,6 +1,8 @@
 import { storeContract } from './store-contract.ts';
 import { memoryStore } from '../src/store/memory-store.ts';
-import { browserStore } from '../src/store/browser-store.ts';
+import { test } from 'vitest';
+import assert from 'node:assert/strict';
+import { BROWSER_SAMPLE_LIMIT, StorageFullError, browserStore } from '../src/store/browser-store.ts';
 import type { KeyValue } from '../src/store/browser-store.ts';
 import { nativeStore } from '../src/store/native-store.ts';
 import type { FoldersBridge } from '../src/store/native-store.ts';
@@ -63,4 +65,26 @@ function fakeBridge(): FoldersBridge & { change(dir: string, text: string): void
 storeContract('desktop store (stand-in bridge)', async () => {
   const bridge = fakeBridge();
   return { store: nativeStore(bridge), name: (x) => x, change: async (d, t) => bridge.change(d, t) };
+});
+
+test('the browser store keeps no sample past its limit, and says when its storage is full', async () => {
+  const kv = mapKeyValue();
+  const store = browserStore(kv, () => 'v');
+  assert.equal(store.sampleLimit, BROWSER_SAMPLE_LIMIT);
+  await assert.rejects(
+    store.writeSample('Song', 'big.wav', new Uint8Array(BROWSER_SAMPLE_LIMIT + 1)),
+    /big\.wav is over 16 MB/,
+  );
+  assert.deepEqual(await store.samples('Song'), []);
+  await store.writeSample('Song', 'small.wav', new Uint8Array(BROWSER_SAMPLE_LIMIT));
+
+  const quota = Object.assign(new Error('The quota has been exceeded.'), { name: 'QuotaExceededError' });
+  kv.set = () => Promise.reject(quota);
+  await assert.rejects(
+    store.writeSample('Song', 'kick.wav', new Uint8Array(4)),
+    (e) => e instanceof StorageFullError,
+  );
+  await assert.rejects(store.write('Song', '{}', null), /the browser's storage is full/);
+  kv.set = () => Promise.reject(new Error('something else'));
+  await assert.rejects(store.writeTake('Song', 'take-1.wav', new Uint8Array(4)), /^Error: something else$/);
 });

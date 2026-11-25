@@ -315,6 +315,26 @@ test.describe('The sampler', () => {
     expect(errors).toEqual([]);
   });
 
+  test('the browser keeps no sample over 16 MB, and says the desktop app takes it', async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Grand Piano').click();
+    await page.keyboard.press('ControlOrMeta+4');
+    await page
+      .locator('.editor')
+      .getByLabel('Load a Sample…')
+      .setInputFiles({
+        name: 'long.wav',
+        mimeType: 'audio/wav',
+        buffer: wav(440, 200), // 17.6 MB
+      });
+    await expect(page.getByRole('status')).toHaveText(
+      'long.wav: over 16 MB, more than the browser keeps; the desktop app takes it×',
+    );
+    await expect(trackHeader(page, 'Grand Piano').locator('.inst')).toHaveText('Grand Piano');
+    expect(errors).toEqual([]);
+  });
+
   test("a drum row's sample plays as recorded on its key, and the kit plays the other keys", async ({
     page,
   }) => {
