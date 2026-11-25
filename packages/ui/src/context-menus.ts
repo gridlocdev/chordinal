@@ -1,14 +1,14 @@
 // The right-click menus, one for each thing that can be clicked: a clip, an audio clip, an empty stretch of a lane, a track's
 // header, the ruler, a note, the piano roll's background, a mixer strip, and the browser's
 // instruments and takes. The part clicked is selected first, so the menu's commands act on it.
-import { TRACK_COLORS, audioClipEnd, findAudioClip, findClip, isDrums } from '@chordinal/daw';
+import { TRACK_COLORS, audioClipEnd, findAudioClip, findClip } from '@chordinal/daw';
 import { renameMarker, removeMarker, markerRange } from '@chordinal/daw';
 import { barAt, laneParam, removeKeyframe, setKeyframeCurve, clearLane } from '@chordinal/daw';
 import type { LaneId } from '@chordinal/daw';
 import { shownLanes, toggleAutomation } from './automation.ts';
 import { appMenu } from './platform/app-menu.ts';
 import type { MenuEntry, MenuItem } from './platform/app-menu.ts';
-import { project, selected, selectedClip, selectedAudio, settings, setSettings, picked } from './store.ts';
+import { project, selected, selectedClip, selectedAudio, settings, picked } from './store.ts';
 import { edit } from './document.ts';
 import { seek } from './player.ts';
 import { dropTake } from './recording.ts';
@@ -66,6 +66,7 @@ import {
 import { item, snapItems, addMarkerAt, catalog } from './commands.ts';
 import { askTempo, askMeter, askTempoChange, askMeterChange } from './timeline.ts';
 import type { InstrumentRef } from './tracks.ts';
+import { chooseEditor } from './steps.ts';
 
 const COLOR_NAMES = ['Amber', 'Sky', 'Green', 'Pink', 'Violet', 'Orange', 'Grey'];
 const sameColor = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - (b[i] ?? NaN)) < 1e-3);
@@ -138,10 +139,8 @@ export function clipMenu(trackId: string, clipId: string, at: number): void {
   const bars = c ? c.beats / barAt(project.value.meters, c.start).beatsPerBar : 0;
   const inside = c && at > c.start + 1e-6 && at < c.start + c.beats - 1e-6;
   appMenu.popup([
-    { label: 'Open in Piano Roll', run: () => setSettings({ editorTab: 'roll' }) },
-    ...(isDrumTrack(trackId)
-      ? [{ label: 'Open in Step Grid', run: () => setSettings({ editorTab: 'grid' }) }]
-      : []),
+    { label: 'Open in Piano Roll', run: () => chooseEditor('roll') },
+    { label: 'Open in Step Grid', run: () => chooseEditor('grid') },
     '-',
     item('cut'),
     item('copy'),
@@ -237,11 +236,6 @@ export function audioLaneMenu(trackId: string, at: number): void {
     playheadHere(at),
   ]);
 }
-
-const isDrumTrack = (trackId: string) => {
-  const t = trackOf(trackId);
-  return !!t && isDrums(t);
-};
 
 /** a beat snapped to the grid */
 const barSnap = (b: number) => Math.round(b / settings.value.grid) * settings.value.grid;

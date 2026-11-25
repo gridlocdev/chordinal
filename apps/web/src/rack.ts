@@ -1,7 +1,7 @@
 // What the track headers and the browser do (Chordinal PRD §6, §7), apart from how they look: the instruments grouped
 // by General MIDI family, the kits, opening a track's editor from its header, and adding tracks.
 import { beat, selected, selectedClip, setSettings } from '@chordinal/ui';
-import { addNewTrack, newClipAt, assignPreset, trackOf } from '@chordinal/ui';
+import { addNewTrack, newClipAt, assignPreset, trackOf, editorOf } from '@chordinal/ui';
 import type { InstrumentRef } from '@chordinal/ui';
 import type { DroppedPreset } from '@chordinal/ui';
 import { isDrums } from '@chordinal/daw';
@@ -50,7 +50,7 @@ export function openTrack(trackId: string): void {
   const c = t.clips.findLast((x) => at >= x.start && at < x.start + x.beats);
   if (c) selectedClip.value = { track: trackId, clip: c.id };
   else newClipAt(trackId, at, isDrums(t) ? 1 : undefined);
-  setSettings({ editorTab: isDrums(t) ? 'grid' : 'roll' });
+  setSettings({ editorTab: editorOf(t) });
 }
 
 /** + Add Track (§6.4): an instrument track below the selected one */

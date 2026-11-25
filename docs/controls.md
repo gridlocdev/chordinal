@@ -75,7 +75,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Browser | `B` | `B` | Show or hide the browser of instruments, kits, projects and takes. |
 | Piano Roll | `⌘1` | `Ctrl+1` | Show the piano roll in the editor. |
 | Mixer | `⌘2` | `Ctrl+2` | Show the mixer in the editor. |
-| Step Grid | `⌘3` | `Ctrl+3` | Show the drum step grid in the editor. |
+| Step Grid | `⌘3` | `Ctrl+3` | Show the step grid in the editor. The selected clip's track opens its clips there from then on. |
 | Sound | `⌘4` | `Ctrl+4` | Show the selected track's synth settings in the editor. |
 | Zoom In | `⌘=` (or `⌘+`) | `Ctrl+=` (or `Ctrl++`) | Show less time, larger. |
 | Zoom Out | `⌘-` | `Ctrl+-` | Show more time, smaller. |
@@ -126,7 +126,9 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | New, duplicate, rename, colour or delete a track; move it | right-click its header; drag the header |
 | Draw an empty clip (on a drum track, a new pattern) | double-click a track's lane |
 | Make a clip a pattern, so its copies stay linked; make one copy unique again; rename the pattern | right-click the clip |
-| Turn drum steps on or off | click a step in the step grid, drag to paint; `Shift` click accents a step |
+| Turn steps on or off | click a step in the step grid, drag to paint; `Shift` click accents a step |
+| Show other notes in a melodic track's step grid | the step grid's **Octave −** and **Octave +**, and **Chromatic** for all twelve notes |
+| Choose a track's editor | **Piano Roll** or **Step Grid** tab with one of its clips selected, or right-click the clip, **Open in Piano Roll** or **Open in Step Grid** |
 | Step size of a drum clip (1/8, 1/16, 1/32, 1/16 triplet) | the step grid's **Step** menu |
 | Add or hide a drum row | right-click a row in the step grid, **Add Row**, **Hide** |
 | Put an audio file on an audio track | drop a WAV, AIFF or MP3 below the tracks for a new audio track, or on an audio track's lane; it snaps to the beat, `Shift` places it exactly |

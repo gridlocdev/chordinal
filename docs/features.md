@@ -10,7 +10,7 @@ A project is a folder with a `project.json`: tracks, clips of notes, instruments
 
 On macOS the window has no separate title bar, as in the system's own apps: the browser runs to the top with the window buttons above its tabs, and the transport row beside it is the rest of the title bar; drag either to move the window. A status bar runs along the bottom: the latest notice at the left (errors stay until you dismiss them), and at the right what the letter keys play (`Keys C4–F5 · Grand Piano`, dimmed until the piano roll has the focus), the connected MIDI keyboard and whether the project is saved.
 
-Each track's header in the arrangement has its mute, solo and a volume knob: double-click it to edit the track (a drum track opens the step grid), drag it to reorder, and drag instruments onto it from the browser at the left, where clicking an instrument, synth or kit plays a preview and the dropdown under its tabs jumps to a section (an instrument family, or Recent and Documents/Chordinal).
+Each track's header in the arrangement has its mute, solo and a volume knob: double-click it to edit the track (in the step grid or the piano roll, whichever that track last used), drag it to reorder, and drag instruments onto it from the browser at the left, where clicking an instrument, synth or kit plays a preview and the dropdown under its tabs jumps to a section (an instrument family, or Recent and Documents/Chordinal).
 
 ## Synths
 
@@ -46,11 +46,11 @@ Effects play in the list's order, before **Humanize**. Play, the exports and the
 
 ## Editing
 
-Draw, move, resize and delete notes and their velocity in the piano roll, on a grid or free, or drum steps in the step grid. Move, copy, split and delete clips, add and delete tracks, and change the tempo and meter. Everything can be undone. The keys and mouse actions for each are in [Controls](controls.md).
+Draw, move, resize and delete notes and their velocity in the piano roll, on a grid or free, or steps in the step grid. Move, copy, split and delete clips, add and delete tracks, and change the tempo and meter. Everything can be undone. The keys and mouse actions for each are in [Controls](controls.md).
 
 ## Drums and patterns
 
-The **Step Grid** tab edits a drum clip as rows of drum sounds and columns of steps: click a step on, drag to paint a row, `Shift` click to accent. It opens by itself when you pick a drum clip. Notes placed off the steps (from the piano roll or a MIDI file) are shown greyed and left alone.
+The **Step Grid** tab edits a clip as rows and columns of steps: click a step on, drag to paint a row, `Shift` click to accent. On a drum track the rows are its drum sounds. On any other track they are the notes of the project's key over two octaves, highest at the top, with the key's tonic marked; **Octave −** and **Octave +** move them, the toolbar shows the notes they run from and to, and **Chromatic** shows all twelve notes. A note in the clip outside those rows gets a row of its own. Each track remembers its editor: a drum track starts in the step grid and any other track in the piano roll, and picking the other tab with one of its clips selected (or **Open in Step Grid** and **Open in Piano Roll** on a clip's menu) makes that the track's editor from then on. Notes placed off the steps (from the piano roll or a MIDI file) are shown greyed and left alone.
 
 Make a clip a **pattern** and its copies stay linked: edit one, in the step grid or the piano roll, and every copy changes. A linked clip shows `⧉` and the pattern's name. **Make Unique** turns one copy back into an ordinary clip, and splitting or joining a copy does the same to the pieces.
 

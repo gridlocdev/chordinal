@@ -11,7 +11,7 @@ import { useState } from 'preact/hooks';
 import type { TargetedDragEvent, TargetedMouseEvent, TargetedPointerEvent } from 'preact';
 import { signal } from '@preact/signals';
 import { barAt } from '@chordinal/daw';
-import { updateClip, moveClip, newId, isDrums, findPattern, isAudioTrack } from '@chordinal/daw';
+import { updateClip, moveClip, newId, findPattern, isAudioTrack } from '@chordinal/daw';
 import type { Clip, Track } from '@chordinal/daw';
 import { project, selected, selectedClip, beat, settings, setSettings, notify } from '../store.ts';
 import { pointPicks } from '../automation.ts';
@@ -32,6 +32,7 @@ import { AudioLane } from './AudioLane.tsx';
 import { palette, alpha } from '../theme.ts';
 import { PRESET, TRACK, carries, readPreset } from './drag-data.ts';
 import type { DroppedPreset } from './drag-data.ts';
+import { editorOf } from '../steps.ts';
 
 export { PRESET, TRACK, carries } from './drag-data.ts';
 
@@ -206,7 +207,7 @@ function Lane({ track, beats, ppb }: LaneProps) {
   const dblclick = (e: TargetedMouseEvent<HTMLDivElement>) => {
     const b = beatAt(e),
       c = clipAt(b);
-    if (c) setSettings({ editorTab: isDrums(track) ? 'grid' : 'roll' });
+    if (c) setSettings({ editorTab: editorOf(track) });
     else newClipAt(track.id, b);
   };
 

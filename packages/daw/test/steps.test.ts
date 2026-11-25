@@ -1,6 +1,8 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import {
+  gridOctave,
+  melodicRows,
   gridRows,
   stepCount,
   cell,
@@ -94,4 +96,44 @@ test('adding and hiding rows (PRD §4.6)', () => {
   const used = clip([{ beat: 0, beats: 0.25, key: 39, vel: 100 }]);
   assert.equal(hideRow(added, 39, used), added, 'a row with notes stays');
   assert.equal(hideRow(t, 70, clip()), t);
+});
+
+const C_MAJOR = { tonic: 0, mode: 'major' };
+const n = (key: number) => ({ beat: 0, beats: 0.25, key, vel: 100 });
+
+test('a melodic track shows the key over two octaves from its tonic, highest first (Chordinal PRD §17.1)', () => {
+  const rows = melodicRows({}, C_MAJOR);
+  // C3 (48) to C5 (72): 7 notes an octave, and the top tonic
+  assert.equal(rows.length, 15);
+  assert.equal(rows[0], 72);
+  assert.equal(rows.at(-1), 48);
+  assert.ok(!rows.includes(49), 'C# is not in C major');
+  const a = melodicRows({ gridOctave: 2 }, { tonic: 9, mode: 'minor' });
+  assert.equal(a.at(-1), 45, 'A minor starts on A2');
+  assert.equal(a[0], 69);
+});
+
+test('chromatic, no key, or a mode it does not know shows all twelve notes', () => {
+  assert.equal(melodicRows({ gridChromatic: true }, C_MAJOR).length, 25);
+  assert.equal(melodicRows({}, null).length, 25);
+  assert.equal(melodicRows({}, { tonic: 0, mode: 'nope' }).length, 25);
+});
+
+test('notes outside the rows get rows of their own, in pitch order', () => {
+  const rows = melodicRows({ gridOctave: 3 }, C_MAJOR, { notes: [n(49), n(84)] });
+  assert.equal(rows[0], 84);
+  assert.ok(rows.includes(49));
+  assert.deepEqual(
+    rows,
+    [...rows].sort((x, y) => y - x),
+  );
+});
+
+test('the rows start in the track’s octave, or the one with the clip’s lowest note, kept in range', () => {
+  assert.equal(gridOctave({}, C_MAJOR), 3);
+  assert.equal(gridOctave({}, C_MAJOR, { notes: [n(60), n(72)] }), 3, 'notes that fit keep the default');
+  assert.equal(gridOctave({}, C_MAJOR, { notes: [n(40), n(60)] }), 2, 'E2 is in octave 2');
+  assert.equal(gridOctave({}, { tonic: 9, mode: 'minor' }, { notes: [n(40)] }), 1, 'E2 is below A2, so A1');
+  assert.equal(gridOctave({ gridOctave: 5 }, C_MAJOR, { notes: [n(40)] }), 5);
+  assert.equal(gridOctave({ gridOctave: 99 }, C_MAJOR), 7);
 });

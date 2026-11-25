@@ -1,7 +1,10 @@
-// The step grid's model (PRD §4): a clip's notes seen as rows of drum keys by columns of steps. Pure; edits return new
-// notes or a new track, and the app passes them through updateClip, so a pattern's every clip follows.
+// The step grid's model (PRD §4): a clip's notes seen as rows of drum keys, or of a melodic track's notes (Chordinal
+// PRD §17.1), by columns of steps. Pure; edits return new notes or a new track, and the app passes them through
+// updateClip, so a pattern's every clip follows.
+import { inScale, MODES } from '@chordinal/lib';
+import type { Mode } from '@chordinal/lib';
 import { CORE_ROWS, GM_DRUMS } from './gm-drums-data.ts';
-import type { Clip, Note, Track } from './project.ts';
+import type { Clip, Note, Project, Track } from './project.ts';
 
 /** the step sizes a clip can have, in beats, with their names (PRD §4.4) */
 export const STEP_SIZES: [number, string][] = [
@@ -86,4 +89,45 @@ export function hideRow<T extends Pick<Track, 'stepRows'>>(
   const rows = track.stepRows ?? CORE_ROWS;
   if (!rows.includes(key) || clip?.notes.some((n) => n.key === key)) return track;
   return { ...track, stepRows: rows.filter((k) => k !== key) };
+}
+
+/** the octaves of rows a melodic track's grid shows, and the octaves its rows can start in (Chordinal PRD §17.1) */
+export const GRID_OCTAVES = 2;
+export const GRID_OCTAVE_RANGE: readonly [low: number, high: number] = [0, 7];
+const DEFAULT_GRID_OCTAVE = 3;
+const isMode = (m: string): m is Mode => Object.hasOwn(MODES, m);
+
+/** the octave a melodic track's rows start in: the track's, or 3 while the clip's notes fit there, or else the one
+ * holding the clip's lowest note */
+export function gridOctave(
+  track: Pick<Track, 'gridOctave'>,
+  key: Project['key'],
+  clip?: Pick<Clip, 'notes'> | null,
+): number {
+  const [low, high] = GRID_OCTAVE_RANGE;
+  if (track.gridOctave !== undefined) return Math.max(low, Math.min(high, track.gridOctave));
+  // the default holds while the clip's notes fit in it, so painting in its rows never moves them
+  const tonic = key?.tonic ?? 0,
+    from = (DEFAULT_GRID_OCTAVE + 1) * 12 + tonic;
+  const notes = (clip?.notes ?? []).map((n) => n.key);
+  if (notes.every((k) => k >= from && k <= from + 12 * GRID_OCTAVES)) return DEFAULT_GRID_OCTAVE;
+  return Math.max(low, Math.min(high, Math.floor((Math.min(...notes) - tonic) / 12) - 1));
+}
+
+/**
+ * a melodic track's rows, highest first: the key's notes (all twelve when chromatic, or with no key or one in a mode it doesn't know) from its tonic in
+ * the track's octave up two octaves, and any other note the clip plays, each in its place (Chordinal PRD §17.1)
+ */
+export function melodicRows(
+  track: Pick<Track, 'gridOctave' | 'gridChromatic'>,
+  key: Project['key'],
+  clip?: Pick<Clip, 'notes'> | null,
+): number[] {
+  const low = (gridOctave(track, key, clip) + 1) * 12 + (key?.tonic ?? 0);
+  const mode = key && isMode(key.mode) ? key.mode : null;
+  const rows = new Set<number>();
+  for (let k = low; k <= low + 12 * GRID_OCTAVES; k++)
+    if (track.gridChromatic || !key || !mode || inScale(key.tonic, mode, k)) rows.add(k);
+  for (const n of clip?.notes ?? []) rows.add(n.key);
+  return [...rows].sort((a, b) => b - a);
 }

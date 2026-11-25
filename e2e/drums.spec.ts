@@ -53,4 +53,56 @@ test.describe('Drums and patterns', () => {
     await page.screenshot({ path: test.info().outputPath('beat.png') });
     expect(errors).toEqual([]);
   });
+
+  test('a melodic track gets a grid of notes, and keeps it as its editor', async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    // a melodic track opens the piano roll at first
+    await trackHeader(page, 'Grand Piano').dblclick();
+    await expect(page.getByRole('tab', { name: 'Piano Roll' })).toHaveAttribute('aria-selected', 'true');
+    await page.getByRole('tab', { name: 'Step Grid' }).click();
+    const grid = page.getByTestId('step-grid');
+    await expect(grid).toBeVisible();
+
+    // a new project has no key, so the rows are all twelve notes from C3 to C5, highest first
+    const box = await grid.boundingBox();
+    if (!box) throw new Error('the step grid has no size');
+    // the new clip's length, from a first save, gives the steps' width (1/16 steps)
+    await saveAs(page, 'Tune');
+    const first = JSON.parse((await storedProject(page, 'Tune')) ?? '{}');
+    const beats: number = first.tracks.find((t: { name: string }) => t.name === 'Grand Piano').clips[0].beats;
+    const rowH = Math.max(12, Math.min(24, Math.floor(box.height / 25)));
+    const step = (box.width - GUTTER) / (beats * 4);
+    const at = async (row: number, col: number) =>
+      clickAt(page, 'step-grid', GUTTER + (col + 0.5) * step, (row + 0.5) * rowH);
+    await at(0, 0); // C5
+    await at(12, 4); // C4
+    await at(12, 8);
+    await at(12, 8); // and off again
+    // an octave up, the top row is C6
+    await page.getByRole('button', { name: 'Octave +' }).click();
+    await at(0, 12);
+
+    // picking the step grid by hand made it the track's editor: selecting its clip again keeps the grid
+    await trackHeader(page, 'Drums').dblclick();
+    await expect(page.getByRole('tab', { name: 'Step Grid' })).toHaveAttribute('aria-selected', 'true');
+    await trackHeader(page, 'Grand Piano').dblclick();
+    await expect(page.getByRole('tab', { name: 'Step Grid' })).toHaveAttribute('aria-selected', 'true');
+
+    // saved again under the name it has
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page).toHaveTitle('Tune — Chordinal');
+    const text = (await storedProject(page, 'Tune')) ?? '';
+    const notes = savedNotes(text, 'Grand Piano');
+    expect(notes.map(([beat, , key]) => [beat, key])).toEqual([
+      [0, 72],
+      [1, 60],
+      [3, 84],
+    ]);
+    const piano = JSON.parse(text).tracks.find((t: { name: string }) => t.name === 'Grand Piano');
+    expect(piano.editor).toBe('grid');
+    expect(piano.gridOctave).toBe(4);
+    await page.screenshot({ path: test.info().outputPath('tune.png') });
+    expect(errors).toEqual([]);
+  });
 });

@@ -1,12 +1,14 @@
-// The step grid for the selected drum clip (PRD §4): a row per drum sound, a column per step. Click a step to turn it
-// on or off and drag to paint more; Shift-click an on step to accent it. Notes off the grid show greyed and are left
-// alone. Right-click a drum's name to add or hide rows, or to load a sample on it; click it to hear the drum. Drop a
-// WAV, AIFF or MP3 on a row to play it there in place of the kit's sound (PRD §14).
+// The step grid for the selected clip (PRD §4): a row per drum sound, or per note of the key on a melodic track
+// (Chordinal PRD §17.1), and a column per step. Click a step to turn it on or off and drag to paint more; Shift-click
+// an on step to accent it. Notes off the grid show greyed and are left alone. Click a row's name to hear it. On a drum
+// track, right-click a drum's name to add or hide rows, or to load a sample on it, and drop a WAV, AIFF or MP3 on a
+// row to play it there in place of the kit's sound (PRD §14).
 import type { TargetedDragEvent, TargetedMouseEvent, TargetedPointerEvent } from 'preact';
 import { useState } from 'preact/hooks';
-import { barAt } from '@chordinal/daw';
+import { barAt, GRID_OCTAVES, GRID_OCTAVE_RANGE } from '@chordinal/daw';
 import { findPattern, isDrums } from '@chordinal/daw';
-import { STEP_SIZES, stepOf, stepCount, gridRows, cell, drumName, ACCENT_VELOCITY } from '@chordinal/daw';
+import { STEP_SIZES, stepOf, stepCount, cell, drumName, ACCENT_VELOCITY } from '@chordinal/daw';
+import { noteName } from '@chordinal/lib';
 import { GM_DRUMS } from '@chordinal/daw';
 import type { Clip, Track } from '@chordinal/daw';
 import { appMenu } from '../platform/app-menu.ts';
@@ -22,11 +24,15 @@ import {
   addGridRow,
   hideGridRow,
   previewStep,
+  rowsOf,
+  shownOctave,
+  setGridOctave,
+  toggleChromatic,
 } from '../steps.ts';
 import { useCanvas, rgba } from './canvas.ts';
 import { palette, alpha } from '../theme.ts';
 import type { Palette } from '../theme.ts';
-import { gridGeometry, lineKind, betweenCells, GRID_GUTTER } from './grid-view.ts';
+import { gridGeometry, lineKind, betweenCells, GRID_GUTTER, ROW_H } from './grid-view.ts';
 import { loadDrumSample, pickDrumSample, removeDrumSample, rowName, rowSample } from '../drum-sample-edit.ts';
 import { notify } from '../store.ts';
 import type { GridCell } from './grid-view.ts';
@@ -49,7 +55,9 @@ const colours = (t: Palette) => ({
 });
 
 function drawGrid(g: CanvasRenderingContext2D, w: number, h: number, track: Track, clip: Clip, now: number) {
-  const rows = gridRows(track, clip),
+  const rows = rowsOf(track, clip),
+    drums = isDrums(track),
+    tonic = project.value.key?.tonic ?? 0,
     step = stepOf(clip),
     steps = stepCount(clip);
   const G = gridGeometry(w, h, rows.length, steps);
@@ -62,10 +70,12 @@ function drawGrid(g: CanvasRenderingContext2D, w: number, h: number, track: Trac
     g.fillRect(0, y, w, G.rowH - 1);
     g.fillStyle = C.gutter;
     g.fillRect(0, y, GRID_GUTTER - 4, G.rowH - 1);
-    const sample = rowSample(track, key);
-    g.fillStyle = sample ? C.sampled : C.label;
+    const sample = drums ? rowSample(track, key) : null;
+    // a melodic row's name is its note's; the key's tonic stands out
+    g.fillStyle = sample ? C.sampled : !drums && (key - tonic) % 12 === 0 ? C.accent : C.label;
     g.textAlign = 'left';
-    g.fillText(sample ? `♪ ${sample.name}` : drumName(key), 8, y + G.rowH / 2, GRID_GUTTER - 14);
+    const name = sample ? `♪ ${sample.name}` : drums ? drumName(key) : noteName(key);
+    g.fillText(name, 8, y + G.rowH / 2, GRID_GUTTER - 14);
     for (let i = 0; i < steps; i++) {
       const x = G.x(i),
         { on, off } = cell(clip.notes, key, i, step);
@@ -94,7 +104,7 @@ function drawGrid(g: CanvasRenderingContext2D, w: number, h: number, track: Trac
   }
 }
 
-/** a cell of the grid and the drum its row plays */
+/** a cell of the grid and the drum or note its row plays */
 interface DrumCell extends GridCell {
   key: number;
 }
@@ -113,7 +123,7 @@ function drumCell(rows: number[], { row, col }: GridCell): DrumCell | null {
 }
 
 /** the cell under a pointer event */
-function hit(e: At, track: Track, clip: Clip, rows = gridRows(track, clip)): DrumCell | null {
+function hit(e: At, track: Track, clip: Clip, rows = rowsOf(track, clip)): DrumCell | null {
   const r = e.currentTarget.getBoundingClientRect();
   const G = gridGeometry(r.width, r.height, rows.length, stepCount(clip));
   const at = G.at(e.clientX - r.left, e.clientY - r.top);
@@ -124,7 +134,7 @@ function down(e: TargetedPointerEvent<HTMLDivElement>, track: Track, clip: Clip)
   if (e.button !== 0) return;
   focus.value = 'grid';
   // the rows as they are now, for the whole drag, even if turning a step off drops a row
-  const rows = gridRows(track, clip);
+  const rows = rowsOf(track, clip);
   const first = hit(e, track, clip, rows);
   if (!first) return;
   if (first.col < 0) {
@@ -167,11 +177,12 @@ function down(e: TargetedPointerEvent<HTMLDivElement>, track: Track, clip: Clip)
   el.addEventListener('pointercancel', up);
 }
 
-/** right-click a row: add a drum, or hide this one (PRD §4.6) */
+/** right-click a drum row: add a drum, or hide this one (PRD §4.6); a melodic track's rows have no menu */
 function menu(e: TargetedMouseEvent<HTMLDivElement>, track: Track, clip: Clip) {
   e.preventDefault();
+  if (!isDrums(track)) return;
   const at = hit(e, track, clip);
-  const rows = gridRows(track, clip);
+  const rows = rowsOf(track, clip);
   const missing = Object.keys(GM_DRUMS)
     .map(Number)
     .filter((k) => !rows.includes(k));
@@ -202,6 +213,43 @@ function menu(e: TargetedMouseEvent<HTMLDivElement>, track: Track, clip: Clip) {
   ]);
 }
 
+/** a melodic track's range: its rows an octave down or up, and all twelve notes or the key's (Chordinal PRD §17.1) */
+function RangeControls({ track, clip }: { track: Track; clip: Clip | null }) {
+  const octave = shownOctave(track, clip),
+    [low, high] = GRID_OCTAVE_RANGE,
+    from = (octave + 1) * 12 + (project.value.key?.tonic ?? 0);
+  return (
+    <>
+      <span class="sep" />
+      <button
+        title="Show the notes an octave lower"
+        disabled={octave <= low}
+        onClick={() => setGridOctave(track.id, octave - 1)}
+      >
+        Octave −
+      </button>
+      <span class="range" title="The notes the rows run from and to">
+        {noteName(from)}–{noteName(from + 12 * GRID_OCTAVES)}
+      </span>
+      <button
+        title="Show the notes an octave higher"
+        disabled={octave >= high}
+        onClick={() => setGridOctave(track.id, octave + 1)}
+      >
+        Octave +
+      </button>
+      <button
+        class={track.gridChromatic ? 'on' : ''}
+        aria-pressed={!!track.gridChromatic}
+        title="Show all twelve notes, not only the key's"
+        onClick={() => toggleChromatic(track.id)}
+      >
+        Chromatic
+      </button>
+    </>
+  );
+}
+
 /** the step grid's toolbar, in the editor's bar: the step size and what's shown */
 export function GridToolbar() {
   const { track, clip } = gridTarget();
@@ -220,6 +268,7 @@ export function GridToolbar() {
           ))}
         </select>
       </label>
+      {track && !isDrums(track) && !track.kind && <RangeControls track={track} clip={clip} />}
       <span class="sep" />
       <span>
         {track
@@ -232,7 +281,7 @@ export function GridToolbar() {
   );
 }
 
-/** the drum track and the clip of it to edit */
+/** the track and the clip of it to edit */
 interface GridProps {
   track: Track;
   clip: Clip;
@@ -243,40 +292,44 @@ function Grid({ track, clip }: GridProps) {
   const ref = useCanvas((g, w, h) => drawGrid(g, w, h, track, clip, now.value));
   const [dropping, setDropping] = useState(false);
   const files = (e: DragEvent) => !!e.dataTransfer?.types.includes('Files');
+  const drums = isDrums(track);
   const dropped = (e: TargetedDragEvent<HTMLDivElement>) => {
     setDropping(false);
-    if (!files(e)) return;
+    if (!files(e) || !drums) return;
     e.preventDefault();
     const at = hit(e, track, clip);
     const file = e.dataTransfer?.files[0];
     if (!at || !file) notify('Drop a WAV, AIFF or MP3 file on a drum row to play it there', 'error');
     else void loadDrumSample(track.id, at.key, file);
   };
+  // rows that don't fit at their least height scroll (chromatic rows, Chordinal PRD §17.1)
+  const rows = rowsOf(track, clip).length;
   return (
-    <div
-      class={`roll ${dropping ? 'drop' : ''}`}
-      data-testid="step-grid"
-      onPointerDown={(e) => down(e, track, clip)}
-      onContextMenu={(e) => menu(e, track, clip)}
-      onDragOver={(e) => {
-        if (files(e)) {
-          e.preventDefault();
-          setDropping(true);
-        }
-      }}
-      onDragLeave={() => setDropping(false)}
-      onDrop={dropped}
-    >
-      <canvas ref={ref} />
+    <div class="roll steps">
+      <div
+        class={`grid ${dropping ? 'drop' : ''}`}
+        style={{ height: `${rows * ROW_H[0]}px` }}
+        data-testid="step-grid"
+        onPointerDown={(e) => down(e, track, clip)}
+        onContextMenu={(e) => menu(e, track, clip)}
+        onDragOver={(e) => {
+          if (files(e) && drums) {
+            e.preventDefault();
+            setDropping(true);
+          }
+        }}
+        onDragLeave={() => setDropping(false)}
+        onDrop={dropped}
+      >
+        <canvas ref={ref} />
+      </div>
     </div>
   );
 }
 
 export function StepGrid() {
   const { track, clip } = gridTarget();
-  // PRD §4.3: the messages for no clip and for a melodic track
+  // PRD §4.3: the message for no clip; melodic tracks have a grid of their own now (Chordinal PRD §17.1)
   if (!track || !clip) return <div class="hint">Select a clip to edit its steps.</div>;
-  if (!isDrums(track))
-    return <div class="hint">The step grid edits drum tracks. Use the piano roll for this track.</div>;
   return <Grid track={track} clip={clip} />;
 }

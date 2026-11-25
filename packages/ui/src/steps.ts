@@ -1,11 +1,20 @@
-// What the step grid does (PRD §4): steps painted on and off, accents, the step size, rows added and hidden, the
-// preview sound, and switching the editor between the piano roll and the grid as drum clips are selected.
+// What the step grid does (PRD §4): steps painted on and off, accents, the step size, rows added and hidden, a melodic
+// track's range (Chordinal PRD §17.1), the preview sound, and switching the editor between the piano roll and the grid
+// as clips are selected, by the track's own choice (§17.3).
 import { effect } from '@preact/signals';
-import { findClip, updateClip, updateTrack, isDrums } from '@chordinal/daw';
+import {
+  findClip,
+  updateClip,
+  updateTrack,
+  isDrums,
+  gridRows,
+  melodicRows,
+  gridOctave,
+} from '@chordinal/daw';
 import { stepOf, stepCount, setStep, toggleAccent, addRow, hideRow } from '@chordinal/daw';
 import type { Clip, Note, Track } from '@chordinal/daw';
 import { project, selectedClip, settings, setSettings, playing, picked, beat } from './store.ts';
-import type { ClipRef } from './store.ts';
+import type { ClipRef, EditorTab } from './store.ts';
 import { playheadStep } from './components/grid-view.ts';
 import { focus } from './focus.ts';
 import { edit } from './document.ts';
@@ -35,6 +44,14 @@ export function gridTarget(): { track: Track | null; clip: Clip | null } {
   const clip = sel && track ? findClip(p, sel.track, sel.clip) : null;
   return { track, clip };
 }
+
+/** the rows the grid shows for a track's clip: drum keys, or a melodic track's notes (Chordinal PRD §17.1) */
+export const rowsOf = (track: Track, clip: Clip | null): number[] =>
+  isDrums(track) ? gridRows(track, clip) : melodicRows(track, project.value.key, clip);
+
+/** the octave a melodic track's rows start in */
+export const shownOctave = (track: Track, clip: Clip | null): number =>
+  gridOctave(track, project.value.key, clip);
 
 /** the clip's notes changed by fn(notes, step), as one undo step; nothing is recorded when nothing changes (PRD §6.1) */
 function changeSteps(
@@ -82,14 +99,48 @@ export const addGridRow = (trackId: string, key: number): void => changeRows(tra
 export const hideGridRow = (trackId: string, key: number, clip?: Pick<Clip, 'notes'> | null): void =>
   changeRows(trackId, (t) => hideRow(t, key, clip));
 
-/** the drum heard once, when a step is turned on while stopped (PRD §4.10) */
+/** a melodic track's rows start in another octave (Chordinal PRD §17.1) */
+export const setGridOctave = (trackId: string, octave: number): void =>
+  changeRows(trackId, (t) => (t.gridOctave === octave ? t : { ...t, gridOctave: octave }));
+
+/** a melodic track's rows show all twelve notes, or the key's again */
+export const toggleChromatic = (trackId: string): void =>
+  changeRows(trackId, (t) => {
+    const { gridChromatic, ...rest } = t;
+    return gridChromatic ? rest : { ...t, gridChromatic: true };
+  });
+
+/** the drum or note heard once, when a step is turned on while stopped (PRD §4.10, Chordinal PRD §17.2) */
 export function previewStep(key: number): void {
   if (playing.value) return;
   press(key);
   setTimeout(() => release(key), PREVIEW_MS);
 }
 
-/** the editor follows the selection: the grid for a drum clip, the piano roll for another (PRD §4.2) */
+type ClipEditor = 'grid' | 'roll';
+
+/** the editor a track's clips open in: its own choice, or the grid for drums and the piano roll for the rest */
+export const editorOf = (track: Track): ClipEditor => track.editor ?? (isDrums(track) ? 'grid' : 'roll');
+
+/**
+ * shows an editor tab, chosen by hand. The piano roll or the grid, chosen while one of a MIDI track's clips is
+ * selected, becomes that track's editor (Chordinal PRD §17.3); the default is kept as no choice at all.
+ */
+export function chooseEditor(tab: EditorTab): void {
+  setSettings({ editorTab: tab });
+  if (tab !== 'grid' && tab !== 'roll') return;
+  const sel = selectedClip.peek(),
+    track = sel && project.peek().tracks.find((t) => t.id === sel.track);
+  if (!track || track.kind || editorOf(track) === tab) return;
+  edit((p) =>
+    updateTrack(p, track.id, (t) => {
+      const { editor: _, ...rest } = t;
+      return tab === (isDrums(t) ? 'grid' : 'roll') ? rest : { ...t, editor: tab };
+    }),
+  );
+}
+
+/** the editor follows the selection: the track's own editor for its clip (PRD §4.2, Chordinal PRD §17.3) */
 export function startEditorFollow(): void {
   let last: ClipRef | null = null;
   effect(() => {
@@ -100,8 +151,8 @@ export function startEditorFollow(): void {
     if (focus.peek() === 'roll') return;
     const track = project.peek().tracks.find((t) => t.id === sel.track);
     const tab = settings.peek().editorTab;
-    if (!track) return;
-    if (tab === 'roll' && isDrums(track)) setSettings({ editorTab: 'grid' });
-    else if (tab === 'grid' && !isDrums(track)) setSettings({ editorTab: 'roll' });
+    if (!track || (tab !== 'roll' && tab !== 'grid')) return;
+    const want = editorOf(track);
+    if (want !== tab) setSettings({ editorTab: want });
   });
 }

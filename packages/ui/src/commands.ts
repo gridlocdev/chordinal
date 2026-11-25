@@ -92,6 +92,7 @@ import { CommandCatalog } from './commands/index.ts';
 import type { CommandMenuItem } from './commands/index.ts';
 import type { MenuItem } from './platform/app-menu.ts';
 import type { Loop } from '@chordinal/daw';
+import { chooseEditor } from './steps.ts';
 
 /** what holds the commands back: a dialog, ⌘K or the Keyboard Shortcuts window ('overlay'), or nothing */
 const busyWith = () =>
@@ -876,7 +877,7 @@ export const catalog = new CommandCatalog([
     title: 'Piano Roll',
     shortcut: 'mod+1',
     radio: true,
-    run: () => setSettings({ editorTab: 'roll' }),
+    run: () => chooseEditor('roll'),
     checked: () => settings.value.editorTab === 'roll',
     description: 'Show the piano roll in the editor.',
     keywords: 'notes midi',
@@ -898,9 +899,10 @@ export const catalog = new CommandCatalog([
     title: 'Step Grid',
     shortcut: 'mod+3',
     radio: true,
-    run: () => setSettings({ editorTab: 'grid' }),
+    run: () => chooseEditor('grid'),
     checked: () => settings.value.editorTab === 'grid',
-    description: 'Show the drum step grid in the editor.',
+    description:
+      'Show the step grid in the editor. The selected clip’s track opens its clips there from then on.',
     keywords: 'drums beats sequencer',
   },
   {

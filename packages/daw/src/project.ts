@@ -107,7 +107,8 @@ export interface TrackInstrument {
   drumSamples?: object;
 }
 
-/** stepRows: the drum keys the step grid shows for the track (PRD §4.6) */
+/** stepRows: the drum keys the step grid shows for the track (PRD §4.6); gridOctave and gridChromatic: the rows it
+ * shows for a melodic track (Chordinal PRD §17.1) */
 export interface Track {
   id: string;
   name: string;
@@ -120,6 +121,11 @@ export interface Track {
   automation: Automation;
   clips: Clip[];
   stepRows?: number[];
+  /** a melodic track's step grid: the octave its rows start in, and all twelve notes in place of the key's (§17.1) */
+  gridOctave?: number;
+  gridChromatic?: boolean;
+  /** the editor the track's clips open in, chosen by hand (Chordinal PRD §17.3); missing for the default */
+  editor?: 'grid' | 'roll';
   /** 'audio' for a track that plays audio clips rather than notes (PRD §16.1); missing for a MIDI track */
   kind?: 'audio';
   /** an audio track's clips, in start order; missing on a MIDI track */

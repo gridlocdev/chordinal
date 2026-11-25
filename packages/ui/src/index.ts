@@ -103,6 +103,8 @@ export type { AudioSource, RecordedKey, Take } from './recording.ts';
 export {
   accentStep,
   addGridRow,
+  chooseEditor,
+  editorOf,
   gridTarget,
   hideGridRow,
   paintStep,

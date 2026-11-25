@@ -1,13 +1,14 @@
 // The panel under the arrangement: the piano roll for the selected track, the step grid for its clip, the mixer, or the
 // selected track's sound.
 // Its tabs and the open view's toolbar share the bar across its top.
-import { settings, setSettings } from '../store.ts';
+import { settings } from '../store.ts';
 import type { EditorTab } from '../store.ts';
 import { PianoRoll } from './PianoRoll.tsx';
 import { RollToolbar } from './RollToolbar.tsx';
 import { Mixer } from './Mixer.tsx';
 import { StepGrid, GridToolbar } from './StepGrid.tsx';
 import { Sound } from './Sound.tsx';
+import { chooseEditor } from '../steps.ts';
 
 const TABS: [EditorTab, string][] = [
   ['roll', 'Piano Roll'],
@@ -27,7 +28,7 @@ export function Editor() {
               role="tab"
               aria-selected={tab === id}
               class={tab === id ? 'on' : ''}
-              onClick={() => setSettings({ editorTab: id })}
+              onClick={() => chooseEditor(id)}
             >
               {label}
             </button>
