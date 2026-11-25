@@ -7,6 +7,6 @@ PRD §17 describes it. Each slice leaves `just check` and `just e2e-desktop` gre
 - [x] **(c) Step length** (§17.4). Dragging a step's edge on drum and melodic tracks, drawn as one bar. Waits on (b) for melodic tracks.
 - [x] **(d) The lane** (§17.5). Velocity and Probability bars under the grid, painted by dragging. Waits on (a).
 - [x] **(e) The Swing slider** (§17.7). In the grid's toolbar, one undo step per drag. Waits on (a).
-- [ ] **(f) Inline steps** (§17.8). **Show Steps** on drum tracks' lanes in the arrangement. Last; can be left for later if the rest runs long.
+- [x] **(f) Inline steps** (§17.8). **Show Steps** on drum tracks' lanes in the arrangement. Last; can be left for later if the rest runs long.
 
 Each slice updates `docs/features.md` and `docs/controls.md` for what it adds.

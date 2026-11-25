@@ -164,6 +164,7 @@ export {
   drumName,
   gridOctave,
   gridRows,
+  stripRows,
   hideRow,
   melodicRows,
   setStep,

@@ -134,7 +134,8 @@ export function setStepSize(trackId: string, clipId: string, step: number): void
 function changeRows(trackId: string, fn: (t: Track) => Track): void {
   const t = project.value.tracks.find((x) => x.id === trackId);
   const next = t && fn(t);
-  if (t && next && next !== t) edit((p) => updateTrack(p, trackId, next));
+  // the whole track, not a patch: a patch is merged over the old one, which would bring back a field fn removed
+  if (t && next && next !== t) edit((p) => updateTrack(p, trackId, () => next));
 }
 
 export const addGridRow = (trackId: string, key: number): void => changeRows(trackId, (t) => addRow(t, key));
@@ -151,6 +152,13 @@ export const toggleChromatic = (trackId: string): void =>
   changeRows(trackId, (t) => {
     const { gridChromatic, ...rest } = t;
     return gridChromatic ? rest : { ...t, gridChromatic: true };
+  });
+
+/** a drum track's lane in the arrangement shows its rows as strips of steps, or stops (Chordinal PRD §17.8) */
+export const toggleShowSteps = (trackId: string): void =>
+  changeRows(trackId, (t) => {
+    const { showSteps, ...rest } = t;
+    return showSteps ? rest : { ...t, showSteps: true };
   });
 
 /** the drum or note heard once, when a step is turned on while stopped (PRD §4.10, Chordinal PRD §17.2) */

@@ -36,6 +36,11 @@ export function gridRows(track: Pick<Track, 'stepRows'>, clip?: Pick<Clip, 'note
   return [...rows, ...extra];
 }
 
+/** a drum track's rows in the arrangement's strips of steps: its rows, then any other key in its clips (Chordinal PRD
+ * §17.8) */
+export const stripRows = (track: Pick<Track, 'stepRows' | 'clips'>): number[] =>
+  gridRows(track, { notes: track.clips.flatMap((c) => c.notes) });
+
 const startOf = (i: number, step: number) => i * step;
 const isOn = (n: Note, key: number, i: number, step: number) =>
   n.key === key && Math.abs(n.beat - startOf(i, step)) < ON_GRID;

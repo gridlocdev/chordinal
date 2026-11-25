@@ -6,6 +6,7 @@ import {
   expect,
   openApp,
   playButton,
+  runCommand,
   savedNotes,
   saveAs,
   storedProject,
@@ -92,6 +93,75 @@ test.describe('Drums and patterns', () => {
       [0.5, 0.25],
       [2, 0.375],
     ]);
+    expect(errors).toEqual([]);
+  });
+
+  test('Show Steps puts a drum track’s rows under its clips, where a click turns a step on', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    // a one-bar clip at the start, then the strips under it
+    await trackHeader(page, 'Drums').dblclick();
+    await trackHeader(page, 'Drums').click();
+    await runCommand(page, 'Show Steps');
+    const names = page.getByRole('list', { name: 'Drums rows' });
+    await expect(names).toBeVisible();
+    const first = (await names.getByRole('listitem').first().textContent()) ?? '';
+    expect(first).not.toBe('');
+
+    const lane = page.locator('.track', { has: trackHeader(page, 'Drums') }).locator('.lane');
+    const box = await lane.boundingBox();
+    if (!box) throw new Error('the drum lane has no size');
+    expect(box.height).toBeGreaterThan(58 + 14 * 4);
+    // the clip's ends, from where its first strip is drawn: a bar of sixteen 1/16 steps
+    const [left, right] = await lane.locator('canvas').evaluate((c: HTMLCanvasElement) => {
+      const k = c.width / c.clientWidth,
+        y = Math.round((58 + 7) * k),
+        row = c.getContext('2d')!.getImageData(0, y, c.width, 1).data;
+      let a = -1,
+        b = -1;
+      for (let x = 0; x < c.width; x++)
+        if (row[x * 4 + 3]! > 0) {
+          if (a < 0) a = x;
+          b = x;
+        }
+      return [a / k, (b + 1) / k];
+    });
+    const step = (right - left) / 16,
+      at = (row: number, i: number) => ({ x: box.x + left + (i + 0.5) * step, y: box.y + 58 + row * 14 + 7 });
+    const click = async (row: number, i: number) => {
+      const p = at(row, i);
+      await page.mouse.click(p.x, p.y);
+    };
+    await click(0, 2);
+    await click(1, 0);
+    // a drag along the first row paints four steps, as one undo step
+    await page.mouse.move(at(0, 4).x, at(0, 4).y);
+    await page.mouse.down();
+    await page.mouse.move(at(0, 5).x, at(0, 5).y);
+    await page.mouse.move(at(0, 7).x, at(0, 7).y);
+    await page.mouse.up();
+    await page.keyboard.press('ControlOrMeta+z');
+    await saveAs(page, 'Strips');
+    const beatsOf = async () =>
+      savedNotes((await storedProject(page, 'Strips')) ?? '', 'Drums')
+        .map(([beat, , key]) => [beat, key] as [number, number])
+        .sort((a, b) => a[0] - b[0]);
+    const two = await beatsOf();
+    expect(two.map(([beat]) => beat)).toEqual([0, 0.5]);
+    expect(two[0]![1]).not.toBe(two[1]![1]);
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page).toHaveTitle('Strips — Chordinal');
+    expect((await beatsOf()).map(([beat]) => beat)).toEqual([0, 0.5, 1, 1.25, 1.5, 1.75]);
+    expect((await storedProject(page, 'Strips')) ?? '').toContain('"showSteps": true');
+    // the step grid shows the same steps
+    await expect(page.getByTestId('step-grid')).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath('strips.png') });
+
+    await runCommand(page, 'Show Steps');
+    await expect(names).toBeHidden();
     expect(errors).toEqual([]);
   });
 

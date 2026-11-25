@@ -112,6 +112,8 @@ export {
   previewStep,
   setStepSize,
   startEditorFollow,
+  toggleChromatic,
+  toggleShowSteps,
 } from './steps.ts';
 export {
   FADER_FLOOR_DB,

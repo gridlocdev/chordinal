@@ -7,10 +7,13 @@
 //
 // Clips: drag to move (to another track too), Alt-drag to copy, drag the right edge to resize, double-click empty
 // space for a new clip; they snap to bars, or to beats with Shift. Drop audio files on a lane to read them as notes.
+//
+// Show Steps on a drum track's menu shows its rows under its clips as strips of steps: click a step to turn it on or
+// off in the clip over it, or drag along to paint, as in the step grid (Chordinal PRD §17.8).
 import { useState } from 'preact/hooks';
 import type { TargetedDragEvent, TargetedMouseEvent, TargetedPointerEvent } from 'preact';
 import { signal } from '@preact/signals';
-import { barAt } from '@chordinal/daw';
+import { barAt, cell, isDrums, stepCount, stepOf, stripRows } from '@chordinal/daw';
 import { updateClip, moveClip, newId, findPattern, isAudioTrack } from '@chordinal/daw';
 import type { Clip, Track } from '@chordinal/daw';
 import { project, selected, selectedClip, beat, settings, setSettings, notify } from '../store.ts';
@@ -32,11 +35,17 @@ import { AudioLane } from './AudioLane.tsx';
 import { palette, alpha } from '../theme.ts';
 import { PRESET, TRACK, carries, readPreset } from './drag-data.ts';
 import type { DroppedPreset } from './drag-data.ts';
-import { editorOf } from '../steps.ts';
+import { editorOf, paintStep, previewStep } from '../steps.ts';
+import { rowName } from '../drum-sample-edit.ts';
 
 export { PRESET, TRACK, carries } from './drag-data.ts';
 
 const EDGE = 6; // px at a clip's right edge that resize it
+const TRACK_H = 58; // px: a track's row, its clips' height
+const STRIP_H = 14; // px: a strip of steps under a drum track's clips
+
+/** the rows a track shows as strips of steps under its clips, or none (Chordinal PRD §17.8) */
+const stripsOf = (track: Track): number[] => (track.showSteps && isDrums(track) ? stripRows(track) : []);
 
 /** a clip being dragged: moved (to the track `to`, copied with Alt) or resized */
 interface ClipDrag {
@@ -61,7 +70,10 @@ interface LaneProps {
 
 /** a track's lane: its clips, with their notes drawn small inside, and the take being recorded */
 function Lane({ track, beats, ppb }: LaneProps) {
-  const ref = useCanvas((g, _w, h) => {
+  const rows = stripsOf(track);
+  const ref = useCanvas((g, _w, full) => {
+    // with strips, the clips keep a track's height at the top and the strips run under them
+    const h = rows.length ? TRACK_H - 1 : full;
     const all = track.clips.flatMap((c) => c.notes);
     const rec = recording.value?.track === track.id ? recording.value : null;
     const recNotes = rec ? takeNotes.value : [];
@@ -126,6 +138,7 @@ function Lane({ track, beats, ppb }: LaneProps) {
       draw(c, c.start, moving && d.mode === 'resize' ? d.beats : c.beats, false);
     }
     if (d?.mode === 'move' && d.to === track.id) draw(d.source, d.start, d.source.beats, true);
+    if (rows.length) drawStrips(g, track, rows, ppb, h + 1, sel?.track === track.id ? sel.clip : null);
     if (rec) {
       const now = Math.max(rec.start, beat.value);
       g.fillStyle = alpha(t.rec, 0.18);
@@ -138,12 +151,60 @@ function Lane({ track, beats, ppb }: LaneProps) {
   const beatAt = (e: { clientX: number; currentTarget: Element }) =>
     (e.clientX - e.currentTarget.getBoundingClientRect().left) / ppb;
   const clipAt = (b: number) => track.clips.findLast((c) => b >= c.start && b < c.start + c.beats);
+  /** the strip and step under the pointer: its row's key, its clip and the step's index in it */
+  const stepAt = (e: { clientX: number; clientY: number; currentTarget: Element }) => {
+    const r = e.currentTarget.getBoundingClientRect(),
+      row = Math.floor((e.clientY - r.top - TRACK_H) / STRIP_H),
+      key = rows[row],
+      b = (e.clientX - r.left) / ppb,
+      c = clipAt(b);
+    if (e.clientY - r.top < TRACK_H || key === undefined || !c) return null;
+    const i = Math.floor((b - c.start) / stepOf(c) + 1e-9);
+    return i < stepCount(c) ? { key, clip: c, i } : null;
+  };
+  const inStrips = (e: { clientY: number; currentTarget: Element }) =>
+    rows.length > 0 && e.clientY - e.currentTarget.getBoundingClientRect().top >= TRACK_H;
+
+  /** a step clicked in the strips: turned on or off, then the drag paints the same way along its clip (as PRD §4.8) */
+  const downOnStep = (e: TargetedPointerEvent<HTMLDivElement>) => {
+    const at = stepAt(e);
+    if (!at) return;
+    const el = e.currentTarget,
+      c = at.clip,
+      on = !cell(c.notes, at.key, at.i, stepOf(c)).on,
+      merge = `strip-${e.timeStamp}`;
+    selectedClip.value = { track: track.id, clip: c.id };
+    paintStep(track.id, c.id, at.key, at.i, on, merge);
+    if (on) previewStep(at.key);
+    el.setPointerCapture?.(e.pointerId);
+    let last = at.i;
+    // a pointer move can jump several steps, so every step between the last one and this one is painted
+    const move = (m: PointerEvent) => {
+      const now = stepAt({ clientX: m.clientX, clientY: m.clientY, currentTarget: el });
+      if (!now || now.clip.id !== c.id) return;
+      for (let i = Math.min(last, now.i); i <= Math.max(last, now.i); i++)
+        paintStep(track.id, c.id, now.key, i, on, merge);
+      last = now.i;
+    };
+    const up = () => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  };
 
   const down = (e: TargetedPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     focus.value = 'arrange';
     selected.value = track.id;
     pointPicks.value = null;
+    if (inStrips(e)) {
+      downOnStep(e);
+      return;
+    }
     const b = beatAt(e),
       c = clipAt(b);
     if (!c) {
@@ -205,6 +266,7 @@ function Lane({ track, beats, ppb }: LaneProps) {
   };
 
   const dblclick = (e: TargetedMouseEvent<HTMLDivElement>) => {
+    if (inStrips(e)) return;
     const b = beatAt(e),
       c = clipAt(b);
     if (c) setSettings({ editorTab: editorOf(track) });
@@ -220,6 +282,10 @@ function Lane({ track, beats, ppb }: LaneProps) {
   };
 
   const hover = (e: TargetedPointerEvent<HTMLDivElement>) => {
+    if (inStrips(e)) {
+      e.currentTarget.style.cursor = stepAt(e) ? 'pointer' : '';
+      return;
+    }
     const b = beatAt(e),
       c = clipAt(b);
     e.currentTarget.style.cursor = c && (c.start + c.beats - b) * ppb <= EDGE ? 'ew-resize' : c ? 'grab' : '';
@@ -263,6 +329,45 @@ function Lane({ track, beats, ppb }: LaneProps) {
   );
 }
 
+/** a drum track's strips: a row of steps per key under each clip, the on ones filled (Chordinal PRD §17.8) */
+function drawStrips(
+  g: CanvasRenderingContext2D,
+  track: Track,
+  rows: number[],
+  ppb: number,
+  top: number,
+  selectedId: string | null,
+) {
+  const t = palette.value;
+  rows.forEach((key, r) => {
+    const y = top + r * STRIP_H;
+    for (const c of track.clips) {
+      const step = stepOf(c),
+        w = step * ppb,
+        gap = w > 6 ? 1 : 0;
+      g.globalAlpha = c.mute ? 0.35 : 1;
+      for (let i = 0; i < stepCount(c); i++) {
+        const x = (c.start + i * step) * ppb,
+          { on } = cell(c.notes, key, i, step);
+        g.fillStyle = on
+          ? rgba(track.color, 0.35 + 0.65 * Math.min(1, on.vel / 127))
+          : (i * step) % 1 < 1e-6
+            ? t['grid-key']
+            : t['grid-lane'];
+        g.fillRect(x + gap, y + 1, Math.max(1, w - 2 * gap), STRIP_H - 2);
+      }
+      g.globalAlpha = 1;
+    }
+  });
+  // the selected clip's strips, outlined as one
+  const c = track.clips.find((x) => x.id === selectedId);
+  if (c) {
+    g.strokeStyle = t.text;
+    g.lineWidth = 1;
+    g.strokeRect(c.start * ppb + 0.5, top + 0.5, c.beats * ppb - 1, rows.length * STRIP_H - 1);
+  }
+}
+
 export interface TrackRowProps {
   track: Track;
   /** the track's place in the project */
@@ -276,6 +381,7 @@ export interface TrackRowProps {
 }
 
 export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: TrackRowProps) {
+  const strips = stripsOf(track);
   const [drop, setDrop] = useState(false);
   const [dragging, setDragging] = useState(false);
   void settings.value.library;
@@ -320,9 +426,12 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
   return (
     <>
       <div
-        class={`track ${selected.value === track.id ? 'on' : ''} ${drop ? 'drop' : ''} ${dragging ? 'dragging' : ''}`}
+        class={`track ${selected.value === track.id ? 'on' : ''} ${drop ? 'drop' : ''} ${dragging ? 'dragging' : ''} ${strips.length ? 'strips' : ''}`}
         data-id={track.id}
-        style={{ '--track': rgba(track.color) }}
+        style={{
+          '--track': rgba(track.color),
+          ...(strips.length && { height: px(TRACK_H + strips.length * STRIP_H) }),
+        }}
         onDragOver={over}
         onDragLeave={() => setDrop(false)}
         onDrop={dropped}
@@ -379,6 +488,13 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
             )}
           </div>
           <Knob track={track} />
+          {strips.length > 0 && (
+            <ol class="strip-names" aria-label={`${track.name} rows`}>
+              {strips.map((key) => (
+                <li>{rowName(track, key)}</li>
+              ))}
+            </ol>
+          )}
         </div>
         {isAudioTrack(track) ? (
           <AudioLane track={track} beats={beats} ppb={ppb} />

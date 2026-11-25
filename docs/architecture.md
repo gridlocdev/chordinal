@@ -111,7 +111,7 @@ A project is a folder anywhere on disk (`Documents/Chordinal/<title>/` by defaul
   tracks: [{ id, name, color, instrument: { bank, program },
              mixer: { volumeDb, pan, mute, solo, lowCut, sends, autoPan, duck },
              fx: [{ type, …params }], automation: { volume?, pan?, tone?, reverb?, delay? },
-             stepRows?: [key, …], gridOctave?, gridChromatic?, editor?: 'grid' | 'roll',
+             stepRows?: [key, …], gridOctave?, gridChromatic?, editor?: 'grid' | 'roll', showSteps?,
              clips: [{ id, start, beats, mute?, step?, swing?, notes: [[beat, beats, key, vel, marks?], …] }
                      | { id, start, pattern, mute? }] }],
   patterns?: [{ id, name, beats, step?, swing?, notes }] }

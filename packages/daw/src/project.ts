@@ -130,6 +130,8 @@ export interface Track {
   gridChromatic?: boolean;
   /** the editor the track's clips open in, chosen by hand (Chordinal PRD §17.3); missing for the default */
   editor?: 'grid' | 'roll';
+  /** a drum track's lane in the arrangement shows its rows as strips of steps (Chordinal PRD §17.8) */
+  showSteps?: boolean;
   /** 'audio' for a track that plays audio clips rather than notes (PRD §16.1); missing for a MIDI track */
   kind?: 'audio';
   /** an audio track's clips, in start order; missing on a MIDI track */

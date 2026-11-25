@@ -1,7 +1,7 @@
 // The right-click menus, one for each thing that can be clicked: a clip, an audio clip, an empty stretch of a lane, a track's
 // header, the ruler, a note, the piano roll's background, a mixer strip, and the browser's
 // instruments and takes. The part clicked is selected first, so the menu's commands act on it.
-import { TRACK_COLORS, audioClipEnd, findAudioClip, findClip } from '@chordinal/daw';
+import { TRACK_COLORS, audioClipEnd, findAudioClip, findClip, isDrums } from '@chordinal/daw';
 import { renameMarker, removeMarker, markerRange } from '@chordinal/daw';
 import { barAt, laneParam, removeKeyframe, setKeyframeCurve, clearLane } from '@chordinal/daw';
 import type { LaneId } from '@chordinal/daw';
@@ -66,7 +66,7 @@ import {
 import { item, snapItems, addMarkerAt, catalog } from './commands.ts';
 import { askTempo, askMeter, askTempoChange, askMeterChange } from './timeline.ts';
 import type { InstrumentRef } from './tracks.ts';
-import { chooseEditor } from './steps.ts';
+import { chooseEditor, toggleShowSteps } from './steps.ts';
 
 const COLOR_NAMES = ['Amber', 'Sky', 'Green', 'Pink', 'Violet', 'Orange', 'Grey'];
 const sameColor = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - (b[i] ?? NaN)) < 1e-3);
@@ -118,6 +118,9 @@ function trackItems(trackId: string): MenuEntry[] {
     { label: 'Mute', checked: t.mixer.mute, run: () => toggleMute(trackId) },
     { label: 'Solo', checked: t.mixer.solo, run: () => toggleSolo(trackId) },
     { label: 'Show Automation', checked: !!shownLanes.value[trackId], run: () => toggleAutomation(trackId) },
+    ...(isDrums(t)
+      ? [{ label: 'Show Steps', checked: !!t.showSteps, run: () => toggleShowSteps(trackId) }]
+      : []),
     '-',
     { label: 'Move Up', enabled: i > 0, run: () => moveTrackBy(trackId, -1) },
     { label: 'Move Down', enabled: i < tracks.length - 1, run: () => moveTrackBy(trackId, 1) },

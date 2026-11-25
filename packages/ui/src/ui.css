@@ -823,6 +823,28 @@ input[type='range']::-moz-range-thumb {
 .track.dragging {
   opacity: 0.45;
 }
+/* a drum track showing its steps: the header keeps a track's height at the top, its rows' names under it */
+.track.strips .head {
+  grid-template-rows: 28px 28px;
+  align-content: start;
+}
+.strip-names {
+  position: absolute;
+  top: 58px;
+  left: 14px;
+  right: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 14px;
+}
+.strip-names li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .lane {
   position: relative;
   flex: none;

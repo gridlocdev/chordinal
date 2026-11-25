@@ -8,7 +8,7 @@
 import { toggleAutomation, shownLanes, pointPicks, pickedIndexes } from './automation.ts';
 import { appMenu } from './platform/app-menu.ts';
 import { barAt, barLines, removeKeyframes } from '@chordinal/daw';
-import { projectEnd, findClip } from '@chordinal/daw';
+import { projectEnd, findClip, isDrums } from '@chordinal/daw';
 import { markerRange, addMarker, insertTime, deleteTime } from '@chordinal/daw';
 import { projectMidi } from '@chordinal/daw';
 import {
@@ -92,7 +92,7 @@ import { CommandCatalog } from './commands/index.ts';
 import type { CommandMenuItem } from './commands/index.ts';
 import type { MenuItem } from './platform/app-menu.ts';
 import type { Loop } from '@chordinal/daw';
-import { chooseEditor } from './steps.ts';
+import { chooseEditor, toggleShowSteps } from './steps.ts';
 
 /** what holds the commands back: a dialog, ⌘K or the Keyboard Shortcuts window ('overlay'), or nothing */
 const busyWith = () =>
@@ -699,6 +699,20 @@ export const catalog = new CommandCatalog([
     description:
       "Show or hide the selected track's automation lane, to draw its volume, pan, tone or sends over time.",
     keywords: 'automation envelope fade sweep keyframe lane',
+  },
+  {
+    id: 'showSteps',
+    group: 'Track',
+    title: 'Show Steps',
+    run: () => selected.value && toggleShowSteps(selected.value),
+    checked: () => !!track()?.showSteps,
+    enabled: () => {
+      const t = track();
+      return !!t && isDrums(t);
+    },
+    description:
+      "Show or hide a drum track's rows as strips of steps under its clips, to click steps on there.",
+    keywords: 'drums inline strips beat pattern',
   },
   {
     id: 'trackUp',
