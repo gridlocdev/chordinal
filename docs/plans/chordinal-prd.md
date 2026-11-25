@@ -82,7 +82,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
    - **Takes**: the open project's recorded takes (§9.3), to read onto a track again.
 2. Clicking an instrument plays a short preview on middle C. Clicking a kit plays a kick, a snare and a closed hat.
 3. When a tab's list has more than one section (the instrument families, or Recent and Documents/Chordinal), a dropdown across the full width under the tabs lists them. Picking one scrolls the list to that section's heading, and while the list scrolls the dropdown names the section at the top.
-4. **Synths** lists the synth's presets (§13.10), and **Effects** lists the audio effects (§15.5). Later work adds a Samples tab (§11).
+4. **Synths** lists the synth's presets (§13.10), **Effects** lists the audio effects (§15.5), and **Patterns** lists the project's patterns (§18.2). Later work adds a Samples tab (§11).
 
 ## §8 Generate Part… (removed)
 
@@ -116,7 +116,7 @@ Each gets its own interview and PRD section before it's built. [4-small-daw.md](
    - Record from a microphone, or drop audio files onto audio tracks, kept in the project folder.
    - Drum rows can play a one-shot sample (drop a `.wav` on a row) instead of a kit sound.
    - The browser gains a Samples tab.
-4. **Pattern browser**: a list of the project's patterns, dragged onto lanes.
+4. **Pattern browser**: a list of the project's patterns, dragged onto lanes. Specified in §18.
 5. **Opening projects in a browser**: Open… and Open Recent list the projects kept in the browser, with rename and delete (to a trash first).
 
 ## §12 What must not change
@@ -184,7 +184,7 @@ The first part of §11.3. Its slices are in [4-small-daw.md](4-small-daw.md), fe
 
 ## §17 The melodic step grid and per-step settings
 
-§11.2, built on the drum step grid (`prd.md` §4). Its slices are in [5-melodic-step-grid.md](5-melodic-step-grid.md).
+§11.2, built on the drum step grid (`prd.md` §4).
 
 1. The Step Grid edits melodic tracks too. On a melodic track its rows are the notes of the project's key over two octaves, highest at the top, each labelled with its note name (C4, D4…). With no key, the rows are all twelve notes. Two toolbar buttons move the range an octave down or up, and a **Chromatic** toggle shows all twelve notes in place of the key's. A note in the clip outside the shown rows (another octave, or outside the key) gets a row of its own, as a drum key outside the kit does (`prd.md` §4.6). The range and the toggle are saved with the track.
 2. A melodic step turns on as a drum step does (`prd.md` §4.7 and §4.8): a note at the step's start, one step long, velocity 100, on that row's pitch. A step can hold several rows at once, so chords work. Turning one on while the transport is stopped plays it once through the track's instrument.
@@ -196,6 +196,23 @@ The first part of §11.3. Its slices are in [4-small-daw.md](4-small-daw.md), fe
 8. **Inline steps.** A drum track's lane in the arrangement can show its rows as strips of steps, toggled by **Show Steps** in the track's right-click menu and the **Track** menu (and ⌘K, in the browser, which has no right-click menus). Clicking a step there turns it on or off in the clip under it, as in the grid. Its rows are the track's rows; the track saves the toggle.
 9. Projects with `chance`, `swing`, `editor` or `showSteps` are saved at the same format version as before. An older build opens them, plays every note and plays them straight.
 
+## §18 The pattern browser
+
+§11.4, built on patterns (`prd.md` §3). Its slices are in [6-pattern-browser.md](6-pattern-browser.md).
+
+1. **Kept patterns.** A pattern stays in the project until it's deleted (item 7), even with no clips left in the arrangement. This replaces `prd.md` §3.11. A pattern keeps its notes, length, step and swing, and its **track**: the track it was made on. When that track is deleted, the pattern stays and remembers whether it was a drum track.
+2. **The Patterns tab.** The browser gets a **Patterns** tab after **Effects**. It lists the open project's patterns, grouped under their track's name in the order of the tracks, and then under **Other tracks** for patterns whose track was deleted. Within a group they're in name order. Each row shows the name, the length in bars, and how many clips play it (`3 clips`, or `Not placed`). The section dropdown (§7.3) lists the groups. With no patterns, the list reads: "No patterns yet. Right-click a clip and pick Make Pattern, or click New Pattern."
+3. **Click** picks a pattern and plays it once on its track's instrument (a drum track's kit, an unplaced pattern's too) at the project's tempo, ignoring the track's mute and solo. Clicking it again, or another pattern, stops it. A pattern whose track was deleted previews on the selected track's instrument, or Grand Piano or the Standard kit without one. A preview isn't an edit and isn't undone.
+4. **Drag** a pattern onto the lane of any instrument or drum track to place a clip of it there. The clip starts at the bar nearest the drop (`Shift`: the nearest beat), as a moved clip does, may overlap other clips as moved clips may, and is selected. The lane shows the drop outline while the pattern is over it. Audio tracks' lanes refuse the drop. Dropped below the tracks, a pattern makes a new track after the last one, named and sounding like the pattern's track (a copy of its instrument or kit, without its effects or mixer settings), or a Grand Piano track or a Standard kit drum track if its track was deleted, and places the clip on it. Each drop is one undo step.
+5. **Double-click** opens a pattern for editing. If it's placed, its first clip (the earliest, then the highest track) is selected, the arrangement scrolls to it, and the track's editor shows it (§17.3). If it isn't placed, a clip of it is placed at the bar under the playhead on its track, or on the selected track if its track was deleted, and opened the same way, in one undo step. With neither, nothing happens and the notice says "Select a track to place <name> on."
+6. **New Pattern** (a button at the foot of the Patterns tab, and a command in the Track menu and ⌘K) makes an empty one-bar pattern on the selected instrument or drum track, named as **Make Pattern** names it (`Drums 1`, `Drums 2`), places a clip of it at the bar under the playhead, and opens it as item 5 does, in one undo step. It's disabled without a selected instrument or drum track.
+7. **Rename Pattern…**, **Duplicate Pattern** and **Delete Pattern** work on the pattern picked in the list, or, when the Patterns tab isn't showing, on the selected clip's pattern. They're on the list's right-click menu (desktop app) and in ⌘K, and Rename Pattern stays on a pattern clip's right-click menu.
+   - **Rename Pattern…** works as `prd.md` §3.7 says.
+   - **Duplicate Pattern** adds an unplaced copy on the same track with the same notes, named `<name> copy` (`<name> copy 2` if that's taken), and picks it in the list.
+   - **Delete Pattern** on an unplaced pattern removes it. On a placed one it first asks "Delete the pattern <name> and its <n> clips?", with Delete and Cancel. Delete removes the pattern and every clip of it.
+   - Each is one undo step, and undo brings back the pattern with its clips.
+8. **Saving.** A project with any pattern, placed or not, is written as format version 2 (or 3 with an audio track, §16.9). Each pattern is written with its notes, length, step, swing and track, and an unplaced pattern is written the same way. The reader keeps an unplaced pattern, and a pattern naming a track the file doesn't have is read as one whose track was deleted. Older builds open these projects and ignore the unplaced patterns.
+
 ## Decisions
 
 1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid, as the last slice of §17.
@@ -204,5 +221,6 @@ The first part of §11.3. Its slices are in [4-small-daw.md](4-small-daw.md), fe
 4. The master has its own insert chain in the first version, beside the mastering chain (§15.3).
 5. Audio clips keep their own speed: a tempo change moves where a clip starts, not how fast it plays. No time-stretching.
 6. The browser build keeps audio files up to 64 MB each; the desktop app has no limit of its own.
+7. Patterns are kept until deleted, not dropped when their last clip goes (§18.1). The editor stays clip-based: opening a pattern with no clip places one first (§18.5).
 
 The slices are in [2-chordinal.md](2-chordinal.md).
