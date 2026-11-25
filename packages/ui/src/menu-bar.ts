@@ -59,6 +59,7 @@ export const trackMenu = (more: MenuEntry[] = []): Menu => ({
   label: 'Track',
   submenu: [
     item('newTrack'),
+    item('newAudioTrack'),
     item('duplicateTrack'),
     item('renameTrack'),
     item('instrument'),

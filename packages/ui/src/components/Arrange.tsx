@@ -1,5 +1,6 @@
 // The arrangement: a ruler of bars and markers, then a row per track, and below them + Track and
-// + Drums and a place to drop an instrument (or a track's header, to move it last). Cmd/Ctrl + wheel zooms. While
+// + Drums and a place to drop an instrument (or a track's header, to move it last, or audio files, for an audio track
+// that plays them). Cmd/Ctrl + wheel zooms. While
 // playing, the view scrolls to keep the playhead in sight (Follow Playhead).
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { RefObject } from 'preact';
@@ -10,6 +11,7 @@ import { Ruler } from './Ruler.tsx';
 import { focus } from '../focus.ts';
 import { TrackRow } from './TrackRow.tsx';
 import { PRESET, TRACK, carries, readPreset } from './drag-data.ts';
+import { dropAudioClips } from '../audio-tracks.ts';
 import type { DroppedPreset } from './drag-data.ts';
 
 // The parts that move with the playhead read `beat` in components of their own, so a frame of playback re-renders
@@ -55,7 +57,7 @@ function AddTrack({ actions }: { actions: ArrangeActions }) {
     <div
       class={`add-track ${drop ? 'drop' : ''}`}
       onDragOver={(e) => {
-        if (carries(e, PRESET) || carries(e, TRACK)) {
+        if (carries(e, PRESET) || carries(e, TRACK) || carries(e, 'Files')) {
           e.preventDefault();
           setDrop(true);
         }
@@ -63,7 +65,10 @@ function AddTrack({ actions }: { actions: ArrangeActions }) {
       onDragLeave={() => setDrop(false)}
       onDrop={(e) => {
         setDrop(false);
-        if (carries(e, PRESET)) {
+        if (carries(e, 'Files')) {
+          e.preventDefault();
+          void dropAudioClips(null, [...(e.dataTransfer?.files ?? [])], 0);
+        } else if (carries(e, PRESET)) {
           e.preventDefault();
           const preset = readPreset(e.dataTransfer?.getData(PRESET) ?? '');
           if (preset) actions.instrument(null, preset);
@@ -83,8 +88,8 @@ function AddTrack({ actions }: { actions: ArrangeActions }) {
       </div>
       <div class="hint">
         {tracks.length
-          ? 'Drop an instrument here for a new track'
-          : 'No tracks yet: add one, or drop an instrument here'}
+          ? 'Drop an instrument or an audio file here for a new track'
+          : 'No tracks yet: add one, or drop an instrument or an audio file here'}
       </div>
     </div>
   );

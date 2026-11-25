@@ -1,6 +1,6 @@
 // A project store for the web build: projects kept in the browser, through a small key-value interface (IndexedDB in
 // the page, idb-keyval.ts; a Map in tests). A project's text and version are one record, so they always change
-// together; its takes and samples are records of their own.
+// together; its takes, samples and audio files are records of their own.
 import { ConflictError, SAMPLE_NAME, TAKE_NAME } from './project-store.ts';
 import type { ProjectStore, Version } from './project-store.ts';
 
@@ -26,6 +26,9 @@ const isRecord = (x: unknown): x is Record =>
 /** the largest sample the browser keeps (PRD §14.3): a minute or so of CD-quality stereo */
 export const BROWSER_SAMPLE_LIMIT = 16 * 1024 * 1024;
 
+/** the largest audio file the browser keeps for an audio track (PRD §16.4): several minutes of CD-quality stereo */
+export const BROWSER_AUDIO_LIMIT = 64 * 1024 * 1024;
+
 /** the browser's storage is full: said as what to do, rather than the error's name */
 export class StorageFullError extends Error {
   override name = 'StorageFullError';
@@ -39,6 +42,7 @@ export const TOO_BIG = `over ${BROWSER_SAMPLE_LIMIT / 1024 / 1024} MB, more than
 const projectKey = (name: string) => `project:${name}`;
 const takeKey = (name: string, file: string) => `take:${name}:${file}`;
 const sampleKey = (name: string, file: string) => `sample:${name}:${file}`;
+const audioKey = (name: string, file: string) => `audio:${name}:${file}`;
 
 /** @param newVersion a fresh token each call (crypto.randomUUID in the page) */
 export function browserStore(kv: KeyValue, newVersion: () => Version): ProjectStore {
@@ -105,5 +109,19 @@ export function browserStore(kv: KeyValue, newVersion: () => Version): ProjectSt
       await set(sampleKey(name, sampleOf(file)), bytes.slice());
     },
     sampleLimit: BROWSER_SAMPLE_LIMIT,
+    audio: (name) => listed(audioKey(name, '')),
+    async readAudio(name, file) {
+      const bytes = await kv.get(audioKey(name, sampleOf(file)));
+      if (!(bytes instanceof Uint8Array)) throw new Error(`no audio file ${file}`);
+      return bytes.slice().buffer;
+    },
+    async writeAudio(name, file, bytes) {
+      if (bytes.length > BROWSER_AUDIO_LIMIT)
+        throw new Error(
+          `${file} is over ${BROWSER_AUDIO_LIMIT / 1024 / 1024} MB, more than the browser keeps`,
+        );
+      await set(audioKey(name, sampleOf(file)), bytes.slice());
+    },
+    audioLimit: BROWSER_AUDIO_LIMIT,
   };
 }

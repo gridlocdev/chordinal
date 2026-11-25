@@ -1,4 +1,4 @@
-// Save As to a new folder brings the project's recorded takes and its samples along, so the copy still has the recordings its
+// Save As to a new folder brings the project's recorded takes, its samples and its audio files along, so the copy still has the recordings its
 // clips were read from.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
@@ -16,6 +16,7 @@ interface Folder {
   text: string | null;
   takes: Map<string, Uint8Array<ArrayBuffer>>;
   samples: Map<string, Uint8Array<ArrayBuffer>>;
+  audio: Map<string, Uint8Array<ArrayBuffer>>;
 }
 
 // project folders on a pretend disk: each a project.json and its takes
@@ -23,7 +24,7 @@ const disk = new Map<string, Folder>();
 const folder = (name: string): Folder => {
   const there = disk.get(name);
   if (there) return there;
-  const made: Folder = { text: null, takes: new Map(), samples: new Map() };
+  const made: Folder = { text: null, takes: new Map(), samples: new Map(), audio: new Map() };
   disk.set(name, made);
   return made;
 };
@@ -54,18 +55,24 @@ setPlace({
     writeSample: async (name, file, bytes) => {
       folder(name).samples.set(file, new Uint8Array(bytes));
     },
+    audio: async (name) => [...(disk.get(name)?.audio.keys() ?? [])],
+    readAudio: async (name, file) => folder(name).audio.get(file)!.slice().buffer,
+    writeAudio: async (name, file, bytes) => {
+      folder(name).audio.set(file, new Uint8Array(bytes));
+    },
   },
   where: (name) => `“${name}”`,
   chooseName: async () => (next ? { name: next, title: next } : null),
   saved: () => {},
 });
 
-test('Save As to a new folder copies the takes and samples, and leaves the old folder as it was', async () => {
+test('Save As to a new folder copies the takes, samples and audio files, and leaves the old folder as it was', async () => {
   const old = folder('/a/Night Drive');
   old.text = writeProject(emptyProject({ title: 'Night Drive' }));
   old.takes.set('take-1.wav', new Uint8Array([1, 2, 3]));
   old.takes.set('take-2.wav', new Uint8Array([4, 5]));
   old.samples.set('kick.wav', new Uint8Array([7]));
+  old.audio.set('vocal.wav', new Uint8Array([8, 9]));
   assert.equal(await openProject('/a/Night Drive'), true);
 
   next = '/b/Night Drive 2';
@@ -76,6 +83,7 @@ test('Save As to a new folder copies the takes and samples, and leaves the old f
   assert.deepEqual([...takeOf('/b/Night Drive 2', 'take-1.wav')], [1, 2, 3]);
   assert.deepEqual([...old.takes.keys()].sort(), ['take-1.wav', 'take-2.wav']);
   assert.deepEqual([...copy.samples.get('kick.wav')!], [7]);
+  assert.deepEqual([...copy.audio.get('vocal.wav')!], [8, 9]);
   assert.match(status.value, /Saved/);
 });
 

@@ -1,6 +1,7 @@
 // Where projects are kept (Chordinal PRD §4), behind one interface, so the document code never knows whether a project
 // is in memory (tests), in the browser (the web build) or in a folder on disk (the desktop app). Each project is named
-// by a string (a folder's path on the desktop) and holds its project.json text, its recorded takes and its samples.
+// by a string (a folder's path on the desktop) and holds its project.json text, its recorded takes, its samples and its
+// audio tracks' files.
 //
 // Every read hands back a version token. A write passes the token it last saw: if the project changed somewhere else
 // since (another app, a sync, a second window), the write is refused with a ConflictError and nothing is overwritten.
@@ -30,6 +31,12 @@ export interface ProjectStore {
   writeSample(name: string, file: string, bytes: Uint8Array): Promise<void>;
   /** the largest sample it keeps, in bytes, where its room is small (the browser's storage); none on disk */
   sampleLimit?: number;
+  /** the audio files its audio tracks' clips play (PRD §16), in audio/, or []; named as samples are */
+  audio(name: string): Promise<string[]>;
+  readAudio(name: string, file: string): Promise<ArrayBuffer>;
+  writeAudio(name: string, file: string, bytes: Uint8Array): Promise<void>;
+  /** the largest audio file it keeps, in bytes, where its room is small; none on disk */
+  audioLimit?: number;
 }
 
 /** the project changed somewhere else since it was read or written here; nothing was written */

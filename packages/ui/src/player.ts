@@ -10,6 +10,7 @@ import { audioEngine } from '@chordinal/playback';
 import { project, mix, playing, beat, notify, settings, levels, exporting } from './store.ts';
 import { errorText } from './errors.ts';
 import { readSample } from './sample-files.ts';
+import { audioFiles } from './audio-files.ts';
 
 let handle: PlaybackHandle | null = null;
 let heard: Project | null = null; // the project the handle plays
@@ -33,6 +34,7 @@ export async function play(): Promise<void> {
         if (id === starting) notify(text, 'busy');
       },
       readSample,
+      audioFiles.read,
     );
     if (id !== starting) return;
     // an edit while the instruments loaded: start again with what's there now (and its instruments)

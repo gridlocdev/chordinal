@@ -30,6 +30,7 @@ import type { SaveState } from './store/save-session.ts';
 import { errorText } from './errors.ts';
 import { pointPicks } from './automation.ts';
 import { forgetUnsavedSamples, writeUnsavedSamples } from './sample-files.ts';
+import { audioFiles } from './audio-files.ts';
 
 /** what a new project starts from: a title, a tempo, a meter and a length in bars */
 export interface NewProjectOptions {
@@ -105,6 +106,7 @@ function show(p: Project, name: string, clean = false): void {
   mergeKey = null;
   hist.value = history(p);
   forgetUnsavedSamples();
+  audioFiles.forgetUnsaved();
   saved.value = name || clean ? p : null;
   projectName.value = name;
   session = NEW;
@@ -214,7 +216,7 @@ async function saveNow(): Promise<boolean> {
   }
 }
 
-/** the takes and samples of the project's old folder, copied into its new one after a Save As (files already there
+/** the takes, samples and audio files of the project's old folder, copied into its new one after a Save As (files already there
  * are kept) */
 async function copyFiles(from: string, to: string): Promise<void> {
   const f = place.files;
@@ -230,6 +232,12 @@ async function copyFiles(from: string, to: string): Promise<void> {
       list: (n: string) => f.samples(n),
       read: (n: string, file: string) => f.readSample(n, file),
       write: (n: string, file: string, b: Uint8Array) => f.writeSample(n, file, b),
+    },
+    {
+      what: 'audio files',
+      list: (n: string) => f.audio(n),
+      read: (n: string, file: string) => f.readAudio(n, file),
+      write: (n: string, file: string, b: Uint8Array) => f.writeAudio(n, file, b),
     },
   ];
   for (const { what, list, read, write } of kinds)
@@ -270,6 +278,7 @@ export async function saveAs(): Promise<boolean> {
     setSettings({ project: name });
     if (before && name !== before) await copyFiles(before, name);
     await writeUnsavedSamples(name);
+    await audioFiles.writeUnsaved(name);
   }
   return done;
 }

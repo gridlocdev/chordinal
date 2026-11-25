@@ -16,6 +16,7 @@ import { project, projectName, mix, notify, exporting } from './store.ts';
 import { stop } from './player.ts';
 import { errorText } from './errors.ts';
 import { readSample } from './sample-files.ts';
+import { audioFiles } from './audio-files.ts';
 
 /** whether the Export dialog is open */
 export const exportDialog: Signal<boolean> = signal(false);
@@ -125,7 +126,12 @@ async function exportAudio({ range = null, stems = false, normalized = false, ta
     to = range?.to ?? projectEnd(p);
   const gains = mix.value;
   try {
-    const instruments = await loadInstruments(p.tracks, (text) => notify(text, 'busy'), readSample);
+    const instruments = await loadInstruments(
+      p.tracks,
+      (text) => notify(text, 'busy'),
+      readSample,
+      audioFiles.read,
+    );
     if (!stems) {
       notify('Bouncing…', 'busy');
       const { channels, rate } = await render(p, instruments, from, to, tail, gains);

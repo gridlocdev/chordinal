@@ -99,6 +99,18 @@ test("samples are kept in the folder's samples/, by safe names only", () =>
       await assert.rejects(folders.writeSample(a, bad, new Uint8Array([1])), /not a sample/);
   }));
 
+test("audio tracks' files are kept in the folder's audio/, by safe names only", () =>
+  scratch(async (root, folders) => {
+    await folders.load();
+    const a = folders.grant(path.join(root, 'A'));
+    await folders.writeAudio(a, 'Vocal.wav', new Uint8Array([1, 2]));
+    assert.deepEqual(await folders.audio(a), ['Vocal.wav']);
+    assert.deepEqual(await folders.samples(a), []);
+    assert.deepEqual([...(await folders.readAudio(a, 'Vocal.wav'))], [1, 2]);
+    await fs.access(path.join(root, 'A', 'audio', 'Vocal.wav'));
+    await assert.rejects(folders.writeAudio(a, '../../evil.wav', new Uint8Array([1])), /not a sample/);
+  }));
+
 test('the projects in a folder are listed by name, and each can be opened', () =>
   scratch(async (root, folders) => {
     await folders.load();

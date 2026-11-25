@@ -86,6 +86,10 @@ export interface ChordinalNative {
     samples(dir: string): Promise<string[]>;
     readSample(dir: string, file: string): Promise<Uint8Array>;
     writeSample(dir: string, file: string, bytes: Uint8Array): Promise<void>;
+    /** the audio tracks' files in audio/ */
+    audio(dir: string): Promise<string[]>;
+    readAudio(dir: string, file: string): Promise<Uint8Array>;
+    writeAudio(dir: string, file: string, bytes: Uint8Array): Promise<void>;
     /** the projects in Documents/Chordinal/ */
     library(): Promise<NativeFolder[]>;
     /** a folder handed over at launch, or '' */

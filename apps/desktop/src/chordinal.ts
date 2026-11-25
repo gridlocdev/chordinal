@@ -76,6 +76,11 @@ startShell({
     ipc.handle('folders:writeSample', (_e, dir: unknown, file: unknown, bytes: Uint8Array) =>
       folders.writeSample(dir, file, bytes),
     );
+    ipc.handle('folders:audio', (_e, dir: unknown) => folders.audio(dir));
+    ipc.handle('folders:readAudio', (_e, dir: unknown, file: unknown) => folders.readAudio(dir, file));
+    ipc.handle('folders:writeAudio', (_e, dir: unknown, file: unknown, bytes: Uint8Array) =>
+      folders.writeAudio(dir, file, bytes),
+    );
     ipc.handle('folders:library', () => folders.listIn(DEFAULT_FOLDER()));
     // the MIDI file handed over at launch, read, once; the page asks for it before the folder
     ipc.handle('folders:handedMidi', async () => {

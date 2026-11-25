@@ -20,6 +20,10 @@ Besides the SoundFont libraries, any track can play a synth: two oscillators and
 
 A track can also play an audio file of your own across the keys. Drop a WAV, AIFF or MP3 on a track's header, or use **Load a Sample…** in the **Sound** tab. Chordinal copies the file into the project's `samples/` folder and listens for its pitch to set its root key, which you can change. In the **Sound** tab, **One-shot** plays the whole sample on each note and **Sustain loop** holds it while the key is down; **Start** skips into the file, and the amp envelope shapes each note. **Replace Sample…** swaps the file. A sampler plays live, on Play, in an export and in `chordinal render`. In the browser, a sample can be up to 16 MB. On a drum track, drop the file on a row of the step grid instead: that row plays it once through, in place of the kit's sound. In the desktop app, right-click a row for **Load a Sample for…** and **Remove Sample**.
 
+## Audio tracks
+
+An audio track plays audio files as they are, at their own speed: a vocal, a guitar part, a loop. Drop a WAV, AIFF or MP3 below the tracks to start a new audio track with it, or pick **Track ▸ New Audio Track** and drop files on its lane. A file lands on the nearest beat to where you drop it (hold `Shift` to place it exactly), and several files dropped at once go one after another. Each clip shows its file's name and waveform. Chordinal copies the files into the project's `audio/` folder when you save. A clip starts at a beat, so a tempo change moves where it starts but not how fast it plays. Audio tracks have the same mixer strip, effects, sends and automation as any track, play on Play and in an audio export, and are left out of a MIDI export. In the browser, an audio file can be up to 64 MB.
+
 ## Humanize
 
 A track can have a **Humanize** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round a loop is a little different. Your own edits are played the same way. A section can swing on its own or play straight, and sit further behind or ahead of the beat, when its marker says so.

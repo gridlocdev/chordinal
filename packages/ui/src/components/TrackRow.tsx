@@ -2,7 +2,8 @@
 // clips. Click a header to select the track, double-click it to open the track's editor, double-click the name to
 // rename it; drag headers to reorder the tracks; drop an instrument on a track to play it there, or a WAV, AIFF or MP3
 // on its header to play that file across the keys (a sampler, PRD §14). Right-click a header
-// for more (Delete Track among them). Show Automation (A) opens the track's automation lane under its row.
+// for more (Delete Track among them). Show Automation (A) opens the track's automation lane under its row. An audio
+// track's lane is AudioLane.tsx.
 //
 // Clips: drag to move (to another track too), Alt-drag to copy, drag the right edge to resize, double-click empty
 // space for a new clip; they snap to bars, or to beats with Shift. Drop audio files on a lane to read them as notes.
@@ -10,7 +11,7 @@ import { useState } from 'preact/hooks';
 import type { TargetedDragEvent, TargetedMouseEvent, TargetedPointerEvent } from 'preact';
 import { signal } from '@preact/signals';
 import { barAt } from '@chordinal/daw';
-import { updateClip, moveClip, newId, isDrums, findPattern } from '@chordinal/daw';
+import { updateClip, moveClip, newId, isDrums, findPattern, isAudioTrack } from '@chordinal/daw';
 import type { Clip, Track } from '@chordinal/daw';
 import { project, selected, selectedClip, beat, settings, setSettings, notify } from '../store.ts';
 import { pointPicks } from '../automation.ts';
@@ -26,6 +27,7 @@ import { useCanvas, rgba } from './canvas.ts';
 import { px, snapTo } from './arrange-view.ts';
 import { Knob } from './Knob.tsx';
 import { AutomationRow } from './AutomationRow.tsx';
+import { AudioLane } from './AudioLane.tsx';
 import { palette, alpha } from '../theme.ts';
 import { PRESET, TRACK, carries, readPreset } from './drag-data.ts';
 import type { DroppedPreset } from './drag-data.ts';
@@ -305,6 +307,10 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
     e.preventDefault();
     e.stopPropagation();
     setDrop(false);
+    if (isAudioTrack(track)) {
+      notify(`${track.name} is an audio track: drop the file on its lane to put it there as a clip`, 'error');
+      return;
+    }
     const file = [...(e.dataTransfer?.files ?? [])].find((f) => SAMPLE_FILE.test(f.name));
     if (file) void loadSample(track.id, file);
     else notify('Drop a WAV, AIFF or MP3 file on a track header to play it there', 'error');
@@ -350,7 +356,7 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
           >
             {track.name}
           </span>
-          <span class="inst">{instrumentName(track.instrument)}</span>
+          <span class="inst">{isAudioTrack(track) ? 'Audio' : instrumentName(track.instrument)}</span>
           <div class="ms" onClick={(e) => e.stopPropagation()} onDblClick={(e) => e.stopPropagation()}>
             <button class={`mute ${m.mute ? 'on' : ''}`} title="Mute" onClick={() => toggleMute(track.id)}>
               M
@@ -361,7 +367,11 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
           </div>
           <Knob track={track} />
         </div>
-        <Lane track={track} beats={beats} ppb={ppb} />
+        {isAudioTrack(track) ? (
+          <AudioLane track={track} beats={beats} ppb={ppb} />
+        ) : (
+          <Lane track={track} beats={beats} ppb={ppb} />
+        )}
       </div>
       <AutomationRow track={track} beats={beats} ppb={ppb} />
     </>

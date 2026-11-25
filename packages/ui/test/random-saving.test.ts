@@ -112,6 +112,9 @@ function spy(s: State): ProjectStore {
     samples: (name) => s.store.samples(name),
     readSample: (name, file) => s.store.readSample(name, file),
     writeSample: (name, file, bytes) => s.store.writeSample(name, file, bytes),
+    audio: (name) => s.store.audio(name),
+    readAudio: (name, file) => s.store.readAudio(name, file),
+    writeAudio: (name, file, bytes) => s.store.writeAudio(name, file, bytes),
   };
 }
 

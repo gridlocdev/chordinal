@@ -73,6 +73,7 @@ import {
   makeUniqueOf,
   patternOf,
 } from './tracks.ts';
+import { addAudioTrack } from './audio-tracks.ts';
 import { exportDialog } from './bounce.ts';
 import { convertDialog } from './recording.ts';
 import { importMidi } from './midi-import.ts';
@@ -588,6 +589,14 @@ export const catalog = new CommandCatalog([
     run: () => addNewTrack({ after: selected.value }),
     description: 'Add an instrument track below the selected one.',
     keywords: 'add create instrument',
+  },
+  {
+    id: 'newAudioTrack',
+    group: 'Track',
+    title: 'New Audio Track',
+    run: () => addAudioTrack(),
+    description: 'Add an audio track below the selected one, to drop audio files on or record onto.',
+    keywords: 'add create recording wav',
   },
   {
     id: 'duplicateTrack',
