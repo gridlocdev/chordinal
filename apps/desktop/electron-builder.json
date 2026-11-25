@@ -2,6 +2,7 @@
   "appId": "dev.gridloc.chordinal",
   "productName": "Chordinal",
   "asar": false,
+  "afterPack": "fuses.mjs",
   "directories": {
     "output": "../../release/chordinal",
     "buildResources": "assets/icon"
