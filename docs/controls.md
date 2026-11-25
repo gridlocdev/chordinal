@@ -1,6 +1,6 @@
 # Controls
 
-Every command is in the menu bar (File, Edit, Track, Transport, View, Help) and in the command menu (`⌘K`, `Ctrl+K`): type part of its name and press Return. **Help ▸ Keyboard Shortcuts** (`⌘/`, `Ctrl+/`) lists the shortcuts below inside the app. Right-clicking a clip, a lane, a track's header, the ruler, a note, a mixer strip or anything in the browser shows what can be done to it.
+Every command is in the menu bar (File, Edit, Track, Transport, View, Help) and in the command menu (`⌘K`, `Ctrl+K`): type part of its name and press Return. **Help ▸ Keyboard Shortcuts** (`⌘/`, `Ctrl+/`) lists the shortcuts below inside the app; its **Press a Shortcut** button shows what any key you press runs, without running it, until you press `Esc` or **Stop**. Right-clicking a clip, a lane, a track's header, the ruler, a note, a mixer strip or anything in the browser shows what can be done to it.
 
 Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, and the letters wait while the piano roll has it, because they play notes there; click anywhere in the arrangement to give them back.
 

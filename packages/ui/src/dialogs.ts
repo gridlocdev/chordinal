@@ -2,6 +2,7 @@
 // importing a view.
 import { signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
+import type { FoundKey } from './commands/key-finder.ts';
 
 /** the windows drawn over the app: ⌘K's command menu and the Keyboard Shortcuts window */
 export type Overlay = 'commands' | 'shortcuts';
@@ -16,3 +17,7 @@ export const overlay: Signal<Overlay | null> = signal(null);
 export const toggleOverlay = (which: Overlay): void => {
   overlay.value = overlay.value === which ? null : which;
 };
+
+/** the Keyboard Shortcuts window's "press a shortcut" mode: null when it's off, else the last key pressed in it (null
+ * until one is); while it's on, no command runs */
+export const keyFinder: Signal<{ found: FoundKey | null } | null> = signal(null);

@@ -18,7 +18,7 @@ export {
   textMenu,
   trackContextMenu,
 } from './context-menus.ts';
-export { appDialog, overlay, toggleOverlay } from './dialogs.ts';
+export { appDialog, keyFinder, overlay, toggleOverlay } from './dialogs.ts';
 export type { Overlay } from './dialogs.ts';
 export { discardOk, edit, newProject, openNew, openProject, redo, save, saveAs, undo } from './document.ts';
 export type { NewProjectOptions } from './document.ts';
@@ -274,7 +274,10 @@ export {
   CommandCatalog,
   GROUPS,
   compact,
+  endedMode,
   eventKey,
+  findKey,
+  holdKeys,
   formatShortcut,
   inOrder,
   isMac,
@@ -290,6 +293,7 @@ export type {
   CommandGroup,
   CommandMenuItem,
   CommandSpec,
+  FoundKey,
   KeyContext,
   KeyPress,
   Shortcut,

@@ -1,9 +1,10 @@
 // Help ▸ Keyboard Shortcuts (⌘/): every command with a shortcut, by menu, written from the catalog so it can't drift;
-// and the keys that aren't commands (musical typing, the command menu's list).
-import { useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { overlay } from '../dialogs.ts';
+// and the keys that aren't commands (musical typing, the command menu's list). Press a Shortcut shows what a key
+// runs instead of running it, until Escape or Stop (commands/key-finder.ts).
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { keyFinder, overlay } from '../dialogs.ts';
 import { catalog } from '../commands.ts';
-import { GROUPS, compact } from '../commands/index.ts';
+import { GROUPS, compact, endedMode, findKey, holdKeys } from '../commands/index.ts';
 import type { Command } from '../commands/catalog.ts';
 
 /** keys that aren't commands: what they do, and the keys */
@@ -21,14 +22,46 @@ export function ShortcutsDialog() {
   const [query, setQuery] = useState('');
   const field = useRef<HTMLInputElement>(null);
   const back = useRef<Element | null>(null);
+  const finder = keyFinder.value,
+    finding = open && finder !== null;
   useLayoutEffect(() => {
     if (!open) return;
     back.current = document.activeElement;
     setQuery('');
     field.current?.focus();
   }, [open]);
+  // the mode's listener: put on by the button itself, not by an effect that could run after the mode had ended, and
+  // taken off by Escape, Stop, an error in it, or the window closing
+  const stopFinding = useRef<(() => void) | null>(null);
+  const startFinding = () => {
+    stopFinding.current?.();
+    keyFinder.value = { found: null };
+    stopFinding.current = holdKeys(
+      window,
+      (e) => {
+        const found = findKey(catalog, e);
+        if (found) keyFinder.value = { found };
+      },
+      () => {
+        stopFinding.current = null;
+        keyFinder.value = null;
+      },
+    );
+  };
+  const endFinding = () => stopFinding.current?.();
+  useEffect(() => {
+    if (!open) endFinding();
+  }, [open]);
+  useEffect(() => endFinding, []);
+  // the mode's buttons swap as it starts and ends, taking the focus with them: give it to the filter, so Escape and
+  // Tab still work in the window
+  useLayoutEffect(() => {
+    if (open && !finding && !field.current?.closest('.dialog')?.contains(document.activeElement))
+      field.current?.focus();
+  }, [open, finding]);
   if (!open) return null;
   const close = () => {
+    endFinding();
     overlay.value = null;
     if (back.current instanceof HTMLElement) back.current.focus();
   };
@@ -43,7 +76,7 @@ export function ShortcutsDialog() {
         aria-label="Keyboard shortcuts"
         onKeyDown={(e) => {
           e.stopPropagation();
-          if (e.key === 'Escape') {
+          if (e.key === 'Escape' && !endedMode(e)) {
             e.preventDefault();
             close();
           }
@@ -57,6 +90,25 @@ export function ShortcutsDialog() {
           aria-label="Filter the shortcuts"
           onInput={(e) => setQuery(e.currentTarget.value)}
         />
+        <div class="key-finder">
+          {finder ? (
+            <>
+              <p role="status" aria-live="polite">
+                {finder.found ? (
+                  <>
+                    <kbd>{finder.found.keys}</kbd>{' '}
+                    {finder.found.command ? `runs ${finder.found.command.title}` : 'runs no command'}
+                  </>
+                ) : (
+                  'Press a key or a shortcut to see what it does. Esc stops.'
+                )}
+              </p>
+              <button onClick={endFinding}>Stop</button>
+            </>
+          ) : (
+            <button onClick={startFinding}>Press a Shortcut</button>
+          )}
+        </div>
         <div class="list">
           {GROUPS.map((g) => {
             const rows = catalog.all.filter((c) => c.group === g && c.shortcutKey && shows(c));

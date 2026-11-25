@@ -87,7 +87,7 @@ import { convertDialog } from './recording.ts';
 import { importMidi } from './midi-import.ts';
 import { audioEngine } from '@chordinal/playback';
 import { askTempo, askMeter } from './timeline.ts';
-import { appDialog, overlay, toggleOverlay } from './dialogs.ts';
+import { appDialog, keyFinder, overlay, toggleOverlay } from './dialogs.ts';
 import { CommandCatalog } from './commands/index.ts';
 import type { CommandMenuItem } from './commands/index.ts';
 import type { MenuItem } from './platform/app-menu.ts';
@@ -1041,7 +1041,14 @@ export const catalog = new CommandCatalog([
 ]);
 
 /** while a dialog is open the commands wait; ⌘K and ⌘/ may still swap their own window for the other */
-catalog.gate = (c) => !busy() || (!!c.global && busyWith() === 'overlay');
+catalog.gate = (c) => {
+  // the press-a-shortcut mode: a shortcut the native menu bar answered is shown, not run
+  if (keyFinder.value) {
+    keyFinder.value = { found: { keys: c.shortcutText, command: c } };
+    return false;
+  }
+  return !busy() || (!!c.global && busyWith() === 'overlay');
+};
 
 /** a command as a menu item; `extra` changes its label, or runs it with arguments */
 export const item = (id: string, extra: { label?: string; run?: () => unknown } = {}): CommandMenuItem =>

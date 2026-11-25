@@ -81,6 +81,44 @@ test.describe('The window', () => {
     expect(errors).toEqual([]);
   });
 
+  test('Press a Shortcut shows what a key runs without running it, and Escape or Stop ends it', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await page.keyboard.press('ControlOrMeta+Slash');
+    const shortcuts = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+    await shortcuts.getByRole('button', { name: 'Press a Shortcut' }).click();
+    const found = shortcuts.getByRole('status');
+    await expect(found).toContainText('Press a key or a shortcut');
+    await page.keyboard.press('Space');
+    await expect(found).toContainText('runs Play or Stop');
+    await page.keyboard.press('KeyJ');
+    await expect(found).toContainText('runs no command');
+    await page.keyboard.press('ControlOrMeta+KeyK');
+    await expect(found).toContainText('runs Command Menu');
+    await expect(page.getByRole('dialog', { name: 'Command menu' })).toHaveCount(0);
+    // Escape ends the mode, not the window
+    await page.keyboard.press('Escape');
+    await expect(found).toHaveCount(0);
+    await expect(shortcuts).toBeVisible();
+    await expect(shortcuts.getByLabel('Filter the shortcuts')).toBeFocused();
+    // the Stop button ends it too
+    await shortcuts.getByRole('button', { name: 'Press a Shortcut' }).click();
+    await shortcuts.getByRole('button', { name: 'Stop', exact: true }).click();
+    await expect(found).toHaveCount(0);
+    await expect(
+      shortcuts.getByLabel('Filter the shortcuts'),
+      'the focus goes back to the filter',
+    ).toBeFocused();
+    // and keys reach the app again
+    await page.keyboard.press('Escape');
+    await expect(shortcuts).toBeHidden();
+    await page.keyboard.press('ControlOrMeta+Slash');
+    await expect(shortcuts).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
   test('the theme picked survives a reload', async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);

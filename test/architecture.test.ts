@@ -50,7 +50,13 @@ const BRIDGE_FILES = ['packages/ui/src/platform/native-bridge.ts', 'apps/desktop
 /** where projects are reached: the store and the platform's adapters */
 const STORE_DIRS = ['packages/ui/src/store/', 'packages/ui/src/platform/'];
 /** the only listeners for keys on the window: the shortcuts and the piano roll's musical typing */
-const KEY_LISTENERS = ['apps/web/src/main.tsx', 'packages/ui/src/live.ts'];
+// the places keys reach the app; key-finder.ts holds every key back while the Keyboard Shortcuts window's Press a
+// Shortcut mode is on, so it has to hear them before the rest
+const KEY_LISTENERS = [
+  'apps/web/src/main.tsx',
+  'packages/ui/src/live.ts',
+  'packages/ui/src/commands/key-finder.ts',
+];
 
 interface Source {
   /** the path from the repo's root, with / */
@@ -195,7 +201,7 @@ const FIXES: Record<string, string> = {
   'projects through the store':
     'The UI reaches projects only through the store (packages/ui/src/store/) and the platform adapters (packages/ui/src/platform/): no indexedDB, fetch or nativeBridge().projects elsewhere. Add what you need to the ProjectStore and call that.',
   'key listeners':
-    "Keys reach the app in one place: apps/web/src/main.tsx sends them to handleKey (packages/ui/src/keys.ts), and live.ts plays the piano roll's notes. Add a command with a shortcut to the catalog (packages/ui/src/commands.ts) instead of a listener.",
+    "Keys reach the app in one place: apps/web/src/main.tsx sends them to handleKey (packages/ui/src/keys.ts), and live.ts plays the piano roll's notes (key-finder.ts only holds keys back while Press a Shortcut is on). Add a command with a shortcut to the catalog (packages/ui/src/commands.ts) instead of a listener.",
   'command ids':
     'A command named by id (item(), catalog.get, catalog.run, catalog.menuItem) must be registered in the catalog: new CommandCatalog([…]) in packages/ui/src/commands.ts, or catalog.add([…]). Fix the id, or register the command.',
   'named exports':

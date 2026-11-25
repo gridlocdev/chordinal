@@ -1643,3 +1643,12 @@ input[type='range']::-moz-range-thumb {
   display: flex;
   justify-content: flex-end;
 }
+.dialog.shortcuts .key-finder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dialog.shortcuts .key-finder p {
+  flex: 1;
+  margin: 0;
+}
