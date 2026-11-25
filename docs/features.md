@@ -14,7 +14,7 @@ Each track's header in the arrangement has its mute, solo and a volume knob: dou
 
 ## Synths
 
-Besides the SoundFont libraries, any track can play a synth: two oscillators and noise through a filter, with envelopes, an LFO, velocity, and a mono switch that glides between held notes. The browser's **Synths** tab lists its presets by group (Bass, Lead, Pad, Pluck and Keys). Click one to hear it, double-click it to put it on the selected track, or drag it onto a track. The synth is saved with the project and plays live, on Play and in an export. A MIDI export names the track's nearest General MIDI instrument.
+Besides the SoundFont libraries, any track can play a synth: two oscillators and noise through a filter, with envelopes, an LFO, velocity, and a mono switch that glides between held notes. The browser's **Synths** tab lists its presets by group (Bass, Lead, Pad, Pluck and Keys). Click one to hear it, double-click it to put it on the selected track, or drag it onto a track. The editor's **Sound** tab (`⌘4`) sets the selected track's synth, a card for each stage of the sound, and names it. On a track playing a sound-library instrument, **Use a Synth** starts it from a plain saw. The synth is saved with the project and plays live, on Play and in an export. A MIDI export names the track's nearest General MIDI instrument.
 
 ## Humanize
 

@@ -109,6 +109,7 @@ export const viewMenu = (first: MenuEntry[] = []): Menu => ({
     item('roll'),
     item('mixer'),
     item('stepGrid'),
+    item('sound'),
     '-',
     item('zoomIn'),
     item('zoomOut'),

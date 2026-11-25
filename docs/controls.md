@@ -76,6 +76,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Piano Roll | `⌘1` | `Ctrl+1` | Show the piano roll in the editor. |
 | Mixer | `⌘2` | `Ctrl+2` | Show the mixer in the editor. |
 | Step Grid | `⌘3` | `Ctrl+3` | Show the drum step grid in the editor. |
+| Sound | `⌘4` | `Ctrl+4` | Show the selected track's synth settings in the editor. |
 | Zoom In | `⌘=` (or `⌘+`) | `Ctrl+=` (or `Ctrl++`) | Show less time, larger. |
 | Zoom Out | `⌘-` | `Ctrl+-` | Show more time, smaller. |
 | Zoom to Fit | `⌘0` | `Ctrl+0` | Fit the whole project in the arrangement. |

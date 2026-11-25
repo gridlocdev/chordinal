@@ -15,7 +15,7 @@ import type { History, Project, Track } from '@chordinal/daw';
 /** Chordinal's browser, on the left */
 export type BrowserTab = 'instruments' | 'synths' | 'kits' | 'projects' | 'takes';
 /** what the editor, below the arrangement, shows */
-export type EditorTab = 'roll' | 'mixer' | 'grid';
+export type EditorTab = 'roll' | 'mixer' | 'grid' | 'sound';
 /** the theme setting: System follows the OS */
 export type ThemeChoice = 'system' | 'light' | 'dark';
 

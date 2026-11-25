@@ -78,6 +78,56 @@ test.describe('Projects', () => {
     expect(errors).toEqual([]);
   });
 
+  test("the Sound tab puts a synth on a track and sets it, and undo takes a slider's drag back in one step", async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Grand Piano').click();
+    await page.keyboard.press('ControlOrMeta+4');
+    const editor = page.locator('.editor');
+    await expect(editor.getByRole('tab', { name: 'Sound' })).toHaveAttribute('aria-selected', 'true');
+    await editor.getByRole('button', { name: 'Use a Synth' }).click();
+    await expect(trackHeader(page, 'Grand Piano').locator('.inst')).toHaveText('Synth');
+
+    const cutoff = editor.getByRole('slider', { name: 'Filter Cutoff' });
+    await expect(cutoff).toHaveAttribute('aria-valuetext', '2.40 kHz');
+    await cutoff.fill('200');
+    await cutoff.fill('300');
+    await expect(cutoff).not.toHaveAttribute('aria-valuetext', '2.40 kHz');
+    await editor.getByRole('combobox', { name: 'Filter Type' }).selectOption('highpass');
+    // glide waits for Mono
+    const glide = editor.getByRole('slider', { name: 'Voice Glide' });
+    await expect(glide).toBeDisabled();
+    await editor.getByRole('checkbox', { name: 'Voice Mono' }).check();
+    await expect(glide).toBeEnabled();
+    const name = editor.getByRole('textbox', { name: 'Synth name' });
+    await name.fill('Fat Bass');
+    await name.press('Enter');
+    await expect(trackHeader(page, 'Grand Piano').locator('.inst')).toHaveText('Fat Bass');
+    await page.screenshot({ path: test.info().outputPath('sound.png') });
+
+    await saveAs(page, 'Sound');
+    const saved = JSON.parse((await storedProject(page, 'Sound')) ?? '{}') as {
+      tracks: {
+        name: string;
+        instrument: { synth?: { mono: boolean; filter: { type: string; cutoff: number } } };
+      }[];
+    };
+    const synth = saved.tracks.find((t) => t.name === 'Grand Piano')?.instrument.synth;
+    expect(synth?.mono).toBe(true);
+    expect(synth?.filter.type).toBe('highpass');
+    expect(synth?.filter.cutoff).toBeLessThan(2400);
+
+    // undo: the name, Mono, the filter type, then both moves of the cutoff at once
+    await trackHeader(page, 'Grand Piano').click();
+    for (let i = 0; i < 4; i++) await page.keyboard.press('ControlOrMeta+z');
+    await expect(cutoff).toHaveAttribute('aria-valuetext', '2.40 kHz');
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(editor.getByRole('button', { name: 'Use a Synth' })).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
   test('New asks about unsaved changes first', async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);

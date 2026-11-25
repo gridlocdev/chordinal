@@ -84,6 +84,8 @@ Automation and MIDI effects can be built in either order or side by side. Track 
 - A **Sound** tab in the editor, next to the piano roll, step grid and mixer, for the selected track's synth or sampler settings.
 - In the browser build, samples are kept in the browser's storage with the project.
 
+**Status.** Built: (a) to (c). The synth is `packages/playback/src/synth.ts`, its settings `packages/audio/src/synth-settings.ts`, its presets `synth-presets-data.ts` and the Sound tab's controls `synth-controls.ts`. A track keeps it as `instrument.synth` beside a General MIDI bank and program, rather than a `source` kind, so older builds and MIDI export still have a program. Not built: (d) to (f), the sampler.
+
 **Slices.** (a) The synth voice and the `Instrument` it meets, with tests through an offline context. (b) Saving, the Synths tab and presets. (c) The Sound tab. (d) The sampler on a track. (e) Samples on drum rows. (f) Samples in the browser build.
 
 **Done when.** A synth track and a sampled track play live, on Play, in an export and in `chordinal render`, with their settings saved and reopened. Projects and games that use only SoundFont presets sound the same as before.

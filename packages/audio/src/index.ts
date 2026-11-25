@@ -22,3 +22,20 @@ export type {
 } from './synth-settings.ts';
 export { SYNTH_GROUPS, SYNTH_PRESETS } from './synth-presets-data.ts';
 export type { SynthGroup, SynthPreset } from './synth-presets-data.ts';
+export {
+  SYNTH_SECTIONS,
+  controlPlace,
+  controlText,
+  controlValue,
+  synthValue,
+  withSynthValue,
+} from './synth-controls.ts';
+export type {
+  SynthChoiceControl,
+  SynthControl,
+  SynthNumberControl,
+  SynthScale,
+  SynthSection,
+  SynthSwitchControl,
+  SynthUnit,
+} from './synth-controls.ts';

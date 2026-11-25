@@ -84,6 +84,7 @@ export { soundfonts } from './platform/soundfonts.ts';
 export { SETTINGS_KEY, browserStorage, storage } from './platform/storage.ts';
 export { heardDifferently, play, reload, seek, stop, toggle } from './player.ts';
 export { preview, previewNotes, previewSynth } from './preview.ts';
+export { renameSynth, resetSynth, setSynthValue, synthOf, useSynth } from './synth-edit.ts';
 export type { PreviewNote, PreviewPreset } from './preview.ts';
 export {
   convertAgain,

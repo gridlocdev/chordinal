@@ -1,4 +1,5 @@
-// The panel under the arrangement: the piano roll for the selected track, the step grid for its clip, or the mixer.
+// The panel under the arrangement: the piano roll for the selected track, the step grid for its clip, the mixer, or the
+// selected track's sound.
 // Its tabs and the open view's toolbar share the bar across its top.
 import { settings, setSettings } from '../store.ts';
 import type { EditorTab } from '../store.ts';
@@ -6,11 +7,13 @@ import { PianoRoll } from './PianoRoll.tsx';
 import { RollToolbar } from './RollToolbar.tsx';
 import { Mixer } from './Mixer.tsx';
 import { StepGrid, GridToolbar } from './StepGrid.tsx';
+import { Sound } from './Sound.tsx';
 
 const TABS: [EditorTab, string][] = [
   ['roll', 'Piano Roll'],
   ['mixer', 'Mixer'],
   ['grid', 'Step Grid'],
+  ['sound', 'Sound'],
 ];
 
 export function Editor() {
@@ -32,7 +35,15 @@ export function Editor() {
         </div>
         {tab === 'roll' ? <RollToolbar /> : tab === 'grid' ? <GridToolbar /> : null}
       </div>
-      {tab === 'roll' ? <PianoRoll /> : tab === 'grid' ? <StepGrid /> : <Mixer />}
+      {tab === 'roll' ? (
+        <PianoRoll />
+      ) : tab === 'grid' ? (
+        <StepGrid />
+      ) : tab === 'sound' ? (
+        <Sound />
+      ) : (
+        <Mixer />
+      )}
     </div>
   );
 }

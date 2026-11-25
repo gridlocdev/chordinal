@@ -851,6 +851,17 @@ export const catalog = new CommandCatalog([
     keywords: 'drums beats sequencer',
   },
   {
+    id: 'sound',
+    group: 'View',
+    title: 'Sound',
+    shortcut: 'mod+4',
+    radio: true,
+    run: () => setSettings({ editorTab: 'sound' }),
+    checked: () => settings.value.editorTab === 'sound',
+    description: "Show the selected track's synth settings in the editor.",
+    keywords: 'synth oscillator filter envelope lfo',
+  },
+  {
     id: 'zoomIn',
     group: 'View',
     title: 'Zoom In',
