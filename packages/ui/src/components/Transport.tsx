@@ -13,7 +13,7 @@ import { noteName } from '@chordinal/lib';
 import { project, dirty, beat, playing, settings, setSettings } from '../store.ts';
 import { edit, save, saveAs } from '../document.ts';
 import { play, stop, seek } from '../player.ts';
-import { recording, record } from '../recording.ts';
+import { isRecording, record } from '../recording.ts';
 
 /** 'harmonicMinor' → 'harmonic minor' */
 export const modeName = (mode: string): string => mode.replace(/[A-Z]/g, (c) => ` ${c.toLowerCase()}`);
@@ -167,9 +167,9 @@ export function Transport({ onNew, newLabel = 'New' }: TransportProps) {
             {ICON.play}
           </button>
           <button
-            class={`rec ${recording.value ? 'on' : ''}`}
+            class={`rec ${isRecording() ? 'on' : ''}`}
             aria-label="Record"
-            title="Record a melody on the selected track (R)"
+            title="Record a melody on the selected track, or audio onto an audio track (R)"
             onClick={record}
           >
             {ICON.rec}

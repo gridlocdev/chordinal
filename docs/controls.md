@@ -58,7 +58,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Command | macOS | Windows and Linux | What it does |
 | --- | --- | --- | --- |
 | Play or Stop | `Space` | `Space` | Start or stop playing from the playhead. |
-| Record | `R` | `R` | Record a melody on the selected track. |
+| Record | `R` | `R` | Record a melody on the selected track, or audio onto an audio track. |
 | Go to Start | `↩` | `Enter` | Move the playhead to the start (of the loop, while it plays). |
 | Go to End | `↘` | `End` | Move the playhead to the end of the project. |
 | Back a Bar | `,` | `,` | Move the playhead back a bar. |
@@ -132,6 +132,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Put an audio file on an audio track | drop a WAV, AIFF or MP3 below the tracks for a new audio track, or on an audio track's lane; it snaps to the beat, `Shift` places it exactly |
 | Move, copy, trim or fade an audio clip | drag it (to another audio track too), `Alt`-drag to copy; drag its left or right edge to trim it; drag the small squares at its top corners for its fades; `Shift` places it exactly |
 | Set an audio clip's gain | right-click it ▸ **Gain** (desktop app) |
+| Record onto an audio track; hear the microphone through it | select the audio track and press **●** (or `R`), again to stop; its header's **I** button turns monitoring on and off |
 | Play a sample on a drum row | drop a WAV, AIFF or MP3 on the row in the step grid; right-click the row (desktop app) to load or remove one |
 | Put an instrument on a track | click it in the browser's Instruments tab, or drag it onto the track |
 | Play notes from a MIDI keyboard | plug it in; its sustain pedal works too |

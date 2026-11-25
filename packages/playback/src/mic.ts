@@ -18,13 +18,21 @@ export const mic = {
   get rate(): number {
     return audioEngine.context.sampleRate;
   },
+  /** the mic's sound, while it's on, for monitoring */
+  get node(): AudioNode | null {
+    return open?.source ?? null;
+  },
   /**
    * Opens the mic (the browser asks once) and calls onBlock for every block of samples. time: the context time of
-   * the block's first sample.
+   * the block's first sample. While it's on already, its blocks go to onBlock from now on.
    */
   async start(onBlock: (samples: Float32Array, time: number) => void): Promise<void> {
-    if (open) this.stop();
     const ctx = audioEngine.context;
+    if (open) {
+      open.tap.port.onmessage = ({ data }: MessageEvent<MicBlock>) =>
+        onBlock(data.samples, data.frame / ctx.sampleRate);
+      return;
+    }
     if (ctx.state !== 'running') await ctx.resume();
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 },

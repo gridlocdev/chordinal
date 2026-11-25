@@ -17,8 +17,12 @@ let heard: Project | null = null; // the project the handle plays
 let starting = 0; // id of the newest play request, so a slow load can't start a project that was replaced
 let frame = 0;
 const FALL = 0.92; // what's left of a meter's level a frame later
+const ON_AND_ON = 100_000; // beats a take plays on for, past the project's end
+let endless = false; // playing on past the end and round no loop, for a take on an audio track, until stopped
 
-export async function play(): Promise<void> {
+/** plays from the playhead; `endless`: on past the end, ignoring the loop, until stopped (kept when an edit restarts it) */
+export async function play({ endless: on }: { endless?: boolean } = {}): Promise<void> {
+  if (on !== undefined) endless = on;
   if (audioEngine.rendering || exporting.value) {
     notify('Wait for the export to finish');
     return;
@@ -39,9 +43,14 @@ export async function play(): Promise<void> {
     if (id !== starting) return;
     // an edit while the instruments loaded: start again with what's there now (and its instruments)
     if (project.value !== p) return play();
-    const from = beat.value >= projectEnd(p) ? 0 : beat.value;
+    const from = !endless && beat.value >= projectEnd(p) ? 0 : beat.value;
     heard = p;
-    handle = playProject(p, instruments, { from, mix: mix.value, click: settings.value.metronome });
+    handle = playProject(endless ? { ...p, loop: null } : p, instruments, {
+      from,
+      until: endless ? from + ON_AND_ON : null,
+      mix: mix.value,
+      click: settings.value.metronome,
+    });
     notify('');
     follow(handle);
   } catch (e) {
@@ -84,10 +93,14 @@ function halt(): void {
 /** stops where it is; stopping when already stopped goes back to the start */
 export function stop(): void {
   starting++;
+  endless = false;
   if (!playing.value && !handle) beat.value = 0;
   halt();
   playing.value = false;
 }
+
+/** where playing started: beat `from` at audio time `at`, while it plays */
+export const playingFrom = (): { at: number; from: number } | null => handle?.start ?? null;
 
 export const toggle = (): Promise<void> | void => (playing.value ? stop() : play());
 

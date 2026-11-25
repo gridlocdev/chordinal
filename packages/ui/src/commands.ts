@@ -29,7 +29,7 @@ import {
 } from './store.ts';
 import { edit, undo, redo, save, saveAs, openProject } from './document.ts';
 import { toggle, seek } from './player.ts';
-import { record, recording } from './recording.ts';
+import { record, isRecording } from './recording.ts';
 import { focus } from './focus.ts';
 import { asking, askText } from './ask.ts';
 import {
@@ -737,8 +737,8 @@ export const catalog = new CommandCatalog([
     title: 'Record',
     shortcut: 'r',
     run: record,
-    checked: () => !!recording.value,
-    description: 'Record a melody on the selected track.',
+    checked: isRecording,
+    description: 'Record a melody on the selected track, or audio onto an audio track.',
     keywords: 'take capture',
   },
   {

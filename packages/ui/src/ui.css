@@ -900,6 +900,11 @@ input[type='range']::-moz-range-thumb {
   border-color: var(--select);
   color: #fff;
 }
+.ms button.monitor.on {
+  background: var(--rec);
+  border-color: var(--rec);
+  color: #fff;
+}
 .ms button.solo.on {
   background: var(--accent);
   border-color: var(--accent);

@@ -17,7 +17,8 @@ import {
 } from '@chordinal/daw';
 import type { AudioClip, Project, Track } from '@chordinal/daw';
 import { beatToSeconds, secondsToBeat, waveformPeaks } from '@chordinal/lib';
-import { project, selected, selectedAudio } from '../store.ts';
+import { project, selected, selectedAudio, beat } from '../store.ts';
+import { audioTake } from '../audio-recording.ts';
 import { pointPicks } from '../automation.ts';
 import { focus } from '../focus.ts';
 import { edit } from '../document.ts';
@@ -26,7 +27,7 @@ import { audioFiles, audioRead } from '../audio-files.ts';
 import { audioClipMenu, audioLaneMenu } from '../context-menus.ts';
 import { useCanvas, rgba } from './canvas.ts';
 import { px } from './arrange-view.ts';
-import { palette } from '../theme.ts';
+import { palette, alpha } from '../theme.ts';
 
 const EDGE = 6; // px at a clip's left and right edges that trim it
 const HANDLE = 6; // px either side of a fade's square that grab it
@@ -145,6 +146,16 @@ export function AudioLane({ track, beats, ppb }: AudioLaneProps) {
         g.fillRect(Math.min(b - 6, x2 - 3), 3, 6, 6);
       }
       g.globalAlpha = 1;
+    }
+    // the take being recorded onto this track, from where it started to the playhead
+    const take = audioTake.value;
+    if (take?.track === track.id) {
+      const a = take.from * ppb,
+        b = Math.max(a, beat.value * ppb);
+      g.fillStyle = alpha(t.rec, 0.18);
+      g.fillRect(a, 2, b - a, h - 4);
+      g.fillStyle = alpha(t.rec, 0.9);
+      g.fillRect(a, 2, b - a, 12);
     }
   });
 

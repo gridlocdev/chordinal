@@ -17,6 +17,7 @@ import { project, selected, selectedClip, beat, settings, setSettings, notify } 
 import { pointPicks } from '../automation.ts';
 import { edit } from '../document.ts';
 import { recording, takeNotes, dropAudio, dropTake } from '../recording.ts';
+import { monitored, toggleMonitor } from '../audio-recording.ts';
 import { loadSample } from '../sample-edit.ts';
 import { SAMPLE_FILE } from '@chordinal/audio';
 import { isMidi, dropMidi } from '../midi-import.ts';
@@ -364,6 +365,17 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
             <button class={`solo ${m.solo ? 'on' : ''}`} title="Solo" onClick={() => toggleSolo(track.id)}>
               S
             </button>
+            {isAudioTrack(track) && (
+              <button
+                class={`monitor ${monitored.value === track.id ? 'on' : ''}`}
+                title="Monitor: hear the microphone through this track"
+                aria-label="Monitor"
+                aria-pressed={monitored.value === track.id}
+                onClick={() => void toggleMonitor(track.id)}
+              >
+                I
+              </button>
+            )}
           </div>
           <Knob track={track} />
         </div>

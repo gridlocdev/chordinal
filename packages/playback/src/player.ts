@@ -64,6 +64,8 @@ export interface PlayOptions {
 /** a project playing: the position in beats, seek(beat), setMix(channels), levels() and stop() */
 export interface PlaybackHandle {
   readonly beat: number;
+  /** where playing started: beat `from` at audio time `at` */
+  readonly start: { at: number; from: number };
   readonly done: boolean;
   readonly pass: number;
   seek(beat: number): void;
@@ -361,6 +363,7 @@ export function playProject(
   const stopTicker = ticker(TICK_MS, schedule);
 
   const handle: PlaybackHandle = {
+    start: { at: seg.at, from: seg.from },
     /** position in beats; negative during the lead-in */
     get beat() {
       return beatNow();

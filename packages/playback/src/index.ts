@@ -14,6 +14,8 @@ export type {
   SampleReader,
 } from './instruments.ts';
 export { mic } from './mic.ts';
+export { monitorTrack } from './monitor.ts';
+export type { Monitor } from './monitor.ts';
 export { createMixer, dbToGain, delayTimes, panCurves, panGains } from './mixer.ts';
 export type { DelayTime, Panner, ProjectMixer, Strip, StripOptions } from './mixer.ts';
 export { startPitchMoves } from './pitch-moves.ts';

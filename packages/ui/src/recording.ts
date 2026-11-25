@@ -14,7 +14,7 @@ import { pitchName, MODES } from '@chordinal/lib';
 import { encodeWav } from '@chordinal/lib';
 import { bpmAt } from '@chordinal/lib';
 import type { Mode, NamedKey } from '@chordinal/lib';
-import { barAt, meterAt } from '@chordinal/daw';
+import { barAt, meterAt, isAudioTrack } from '@chordinal/daw';
 import { makeTrack, addTrack, addClip, updateClip, newId, findClip } from '@chordinal/daw';
 import type { MeterChange, Note } from '@chordinal/daw';
 import { startRecording, takeBlock, updateRecording, stopRecording, keyBeat } from '@chordinal/playback';
@@ -40,6 +40,7 @@ import {
 import { edit, projectShown } from './document.ts';
 import { stop } from './player.ts';
 import { errorText } from './errors.ts';
+import { audioTake, recordAudio } from './audio-recording.ts';
 
 const MELODY = { name: 'Melody', instrument: { bank: 0, program: 73 } }; // a flute
 const VELOCITY = 90;
@@ -252,8 +253,14 @@ async function keepAudio(take: MicTake): Promise<string> {
 
 // ── recording ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** a melody on the selected track; again to stop */
+/** whether a take is being recorded: a melody, or audio onto an audio track */
+export const isRecording = (): boolean => !!recording.value || !!audioTake.value;
+
+/** a melody on the selected track, or audio onto it when it's an audio track (PRD §16.7); again to stop */
 export async function record(): Promise<void> {
+  const sel = project.value.tracks.find((t) => t.id === selected.value);
+  if (audioTake.value || (!recording.value && sel && isAudioTrack(sel)))
+    return recordAudio(audioTake.value?.track ?? sel?.id ?? '');
   if (recording.value) {
     void finish();
     return;

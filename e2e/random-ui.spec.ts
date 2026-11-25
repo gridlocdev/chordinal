@@ -5,7 +5,7 @@
 //   just e2e random-ui          the default seeds (RUNS, from SEED_BASE, 3 from 1 unless set)
 //   SEED=<n> just e2e random-ui  replay one seed, printing every step
 //
-// It never records: the Record button, R, and the recording commands are left out, and the scenarios' fixture fails
+// It never records: the Record button, R, the recording commands and the Monitor button are left out, and the scenarios' fixture fails
 // a test that asks for the microphone. File pickers and downloads (Open, Import, Export, the library downloads) are
 // left out too, and so is the clipboard, which in a browser can be the owner's real one.
 import type { Locator, Page } from '@playwright/test';
@@ -34,8 +34,8 @@ const SKIP_COMMANDS = [
   /^command menu/i,
 ];
 
-/** controls left out, by accessible name: the Record button and the libraries' downloads */
-const SKIP_CONTROLS = [/^record/i, /download/i];
+/** controls left out, by accessible name: the Record and Monitor buttons and the libraries' downloads */
+const SKIP_CONTROLS = [/^record/i, /^monitor/i, /download/i];
 
 /** keys worth pressing on their own: the app's shortcuts (docs/controls.md) but R, the exports, Open and the clipboard */
 const KEYS = [

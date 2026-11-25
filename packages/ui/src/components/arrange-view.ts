@@ -4,8 +4,9 @@ import { signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
 import { barAt, projectEnd } from '@chordinal/daw';
 import type { MeterChange } from '@chordinal/daw';
-import { project } from '../store.ts';
+import { project, beat } from '../store.ts';
 import { recording } from '../recording.ts';
+import { audioTake } from '../audio-recording.ts';
 import { arrangeZoom as zoom } from '../tracks.ts';
 
 export const HEAD_W = 232;
@@ -19,8 +20,10 @@ export const px = (n: number): string => `${n}px`;
 
 /** how many beats the arrangement shows: the project, the take being recorded, and room after them */
 export function span(): number {
-  const r = recording.value;
-  return Math.max(projectEnd(project.value), r ? r.start + 4 : 0, 16) + ROOM;
+  const r = recording.value,
+    // a take on an audio track grows as it plays on past the end
+    a = audioTake.value ? beat.value + 4 : 0;
+  return Math.max(projectEnd(project.value), r ? r.start + 4 : 0, a, 16) + ROOM;
 }
 
 /** a beat snapped to the bar it's nearest in these meters, or to the beat with Shift */

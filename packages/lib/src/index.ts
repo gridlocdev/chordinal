@@ -73,6 +73,8 @@ export { GEN, defaultGenerators, parseSf2, regionsFor } from './sf2.ts';
 export type { Sf2Font, Sf2Modulator, Sf2Preset, Sf2Region, Sf2Sample } from './sf2.ts';
 export { beatToSeconds, bpmAt, secondsToBeat, tempoSteps } from './tempo-map.ts';
 export { waveformPeaks } from './waveform.ts';
+export { takeSamples } from './take-audio.ts';
+export type { StampedBlock } from './take-audio.ts';
 export type { TempoSegment } from './tempo-map.ts';
 export {
   beatDivisions,
