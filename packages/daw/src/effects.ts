@@ -325,23 +325,37 @@ export function paramText(param: EffectParam, value: number): string {
   }
 }
 
+/** where a track's id goes, the master: its inserts are the project's `masterInserts` */
+export const MASTER = 'master';
+
+/** the inserts of the track with this id, or the master's */
+export const insertsAt = (p: Pick<Project, 'tracks' | 'masterInserts'>, id: string): Insert[] =>
+  id === MASTER ? (p.masterInserts ?? []) : insertsOf(p.tracks.find((t) => t.id === id) ?? {});
+
 /** the inserts of a track; none for one saved before track effects */
 export const insertsOf = (track: Pick<Track, 'inserts'>): Insert[] => track.inserts ?? [];
 
 /** an id for a new insert, unused on the track */
-function insertId(track: Track): string {
+function insertId(track: Pick<Track, 'inserts'>): string {
   const used = new Set(insertsOf(track).map((x) => x.id));
   let n = 1;
   while (used.has(`fx${n}`)) n++;
   return `fx${n}`;
 }
 
-/** the track with its inserts changed by `f`; an empty list is removed, so a track with none saves as it did */
+/** the track (or the master) with its inserts changed by `f`; an empty list is removed, so one with none saves as it did */
 function changeInserts(
   p: Project,
   trackId: string,
-  f: (inserts: Insert[], track: Track) => Insert[],
+  f: (inserts: Insert[], track: Pick<Track, 'inserts'>) => Insert[],
 ): Project {
+  if (trackId === MASTER) {
+    const was = p.masterInserts ?? [];
+    const now = f(was, { inserts: was });
+    if (now === was) return p;
+    const { masterInserts: _gone, ...rest } = p;
+    return now.length ? { ...rest, masterInserts: now } : rest;
+  }
   return updateTrack(p, trackId, (t) => {
     const was = insertsOf(t);
     const now = f(was, t);

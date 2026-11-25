@@ -24,7 +24,7 @@ import {
   setFx,
 } from '../midi-fx.ts';
 import { rgba } from './canvas.ts';
-import { EffectList, EffectPanel } from './Effects.tsx';
+import { EffectList, EffectPanel, masterHolder } from './Effects.tsx';
 
 const DB = [FADER_FLOOR_DB, 6] as const;
 const db = (v: number) => (v <= DB[0] ? '-∞' : `${v > 0 ? '+' : ''}${v.toFixed(1)}`);
@@ -268,6 +268,7 @@ export function Mixer() {
       <div class="strip master">
         <span class="name">Master</span>
         <span class="inst">&nbsp;</span>
+        <EffectList track={masterHolder(project.value.masterInserts)} />
         <div class="level">
           <input
             class="fader"

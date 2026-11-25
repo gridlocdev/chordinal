@@ -86,6 +86,8 @@ const typed = new Map<string, number>(); // KeyboardEvent.code → the MIDI key 
 
 let chain: EffectChain | null = null;
 let chainIn: GainNode | null = null;
+let master: EffectChain | null = null; // the master's effects, after the track's
+let masterOf: Insert[] = [];
 let chainOf: { track: string; inserts: Insert[] } | null = null; // the track and inserts the chain was last set to
 let chainBpm = 0;
 
@@ -101,7 +103,9 @@ function liveInput(): Promise<AudioNode> {
     await prepareEffects(ctx); // the Bitcrusher's worklet
     chainIn = new GainNode(ctx);
     chainBpm = bpmNow();
-    chain = effectChain(ctx, chainIn, audioEngine.output, chainBpm);
+    const masterIn = new GainNode(ctx);
+    chain = effectChain(ctx, chainIn, masterIn, chainBpm);
+    master = effectChain(ctx, masterIn, audioEngine.output, chainBpm);
     syncEffects();
     return chainIn;
   })();
@@ -125,6 +129,22 @@ function syncEffects(): void {
     for (const [k, v] of Object.entries(insertValues(x))) if (then[k] !== v) e.set(k, v);
   }
   chainOf = track ? { track: track.id, inserts: list } : null;
+  syncMaster();
+}
+
+/** sets the live master chain to the project's master effects, a changed setting gliding to its new value */
+function syncMaster(): void {
+  if (!master) return;
+  const list = project.value.masterInserts ?? [];
+  master.setInserts(list);
+  for (const x of list) {
+    const e = master.effects.get(`${x.id}:${x.type}`),
+      before = masterOf.find((w) => w.id === x.id && w.type === x.type);
+    if (!e || !before) continue;
+    const then = insertValues(before);
+    for (const [k, v] of Object.entries(insertValues(x))) if (then[k] !== v) e.set(k, v);
+  }
+  masterOf = list;
 }
 
 /** the preset the selected track plays, or a piano with none selected */
@@ -388,10 +408,15 @@ export function startLive(): void {
     syncEffects();
   });
   effect(() => {
+    void project.value.masterInserts;
+    syncMaster();
+  });
+  effect(() => {
     const bpm = bpmNow();
     if (!chain || bpm === chainBpm) return;
     chainBpm = bpm;
     chain.tempo(bpm, audioEngine.context.currentTime);
+    master?.tempo(bpm, audioEngine.context.currentTime);
   });
   addEventListener('keydown', (e) => {
     const kind = musicalKey(e);

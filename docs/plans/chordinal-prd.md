@@ -80,7 +80,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
    - **Takes**: the open project's recorded takes (§9.3), to read onto a track again.
 2. Clicking an instrument plays a short preview on middle C. Clicking a kit plays a kick, a snare and a closed hat.
 3. When a tab's list has more than one section (the instrument families, or Recent and Documents/Chordinal), a dropdown across the full width under the tabs lists them. Picking one scrolls the list to that section's heading, and while the list scrolls the dropdown names the section at the top.
-4. Later work adds the Synths, Effects and Samples tabs (§11).
+4. **Synths** lists the synth's presets (§13.10), and **Effects** lists the audio effects (§15.5). Later work adds a Samples tab (§11).
 
 ## §8 Generate Part… (removed)
 
@@ -155,10 +155,24 @@ The second part of §11.1. Its slices are in [4-small-daw.md](4-small-daw.md), f
 10. The **Sound** tab shows a sampler's name (a field, which the track's header and the mixer show), its file, **Replace Sample…**, and a card for the Sample (Root key, Mode, Start) and one for the Amp envelope. A slider dragged is one undo step. Putting a SoundFont preset or a synth on the track takes the sampler off it.
 11. A drum row can play a sample in place of the kit's sound (§11.3). Dropping an audio file on a row of the step grid puts it there; the row's right-click menu (desktop app) has **Load a Sample for <row>…** and **Remove Sample <row>**. The file is kept as in item 3. A row's sample plays once through, at the pitch it was recorded, whatever the note's length: live, on Play, in an export and in `chordinal render`. The row shows the sample's name with ♪ in the accent colour. The track keeps them as `drumSamples: { "<key>": { name, file } }` beside its kit, and putting another kit on the track keeps them. A row whose file is missing plays nothing.
 
+## §15 Track effects
+
+The insert effects of §11.1. Their slices are in [4-small-daw.md](4-small-daw.md), feature 3.
+
+1. Each track's mixer strip has a chain of audio effects, played in order after the track's tone and before its fader: live, on Play, in an exported WAV and in `chordinal render`. There are fourteen: EQ, Filter, Compressor, Limiter, Gain, Distortion, Bitcrusher, Chorus, Phaser, Flanger, Tremolo, Delay, Reverb and Stereo Width.
+2. **+ Effect** in a strip adds one at the end and opens its settings in a panel. A row can be bypassed, dragged to another place or removed. Each change is one undo step, and a setting changed while playing glides to its new value.
+3. The master strip has a chain of its own, after every track is mixed and before the mastering chain. It holds the same effects and works the same way, and the project keeps it as `masterInserts`. A project with none saves as it did.
+4. An effect's settings can be automated on its track (§11.1's automation lanes); the master's can't.
+5. The browser's **Effects** tab lists the effects by group: Tone, Dynamics, Drive, Modulation and Space. Hovering one says what it does. Double-clicking one adds it to the selected track; dragging one onto a strip in the mixer adds it there, at the row it is dropped on or at the end.
+6. Keys played live go through the selected track's effects and the master's.
+
 ## Decisions
 
 1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid (§11.2).
 2. Music Generator is dropped, and the composer with it; composing lives in Chordinal Melody Composer (§9.1).
 3. Recording lives in Chordinal (§9.3).
+4. The master has its own insert chain in the first version, beside the mastering chain (§15.3).
+5. Audio clips keep their own speed: a tempo change moves where a clip starts, not how fast it plays. No time-stretching.
+6. The browser build keeps audio files up to 64 MB each; the desktop app has no limit of its own.
 
 The slices are in [2-chordinal.md](2-chordinal.md).

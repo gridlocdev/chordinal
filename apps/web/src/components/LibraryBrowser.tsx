@@ -1,5 +1,5 @@
 // The browser under the channel rack (Chordinal PRD §7): the instruments by General MIDI family, the synth's presets
-// (§13), the drum kits, the projects (Open Recent and those in Documents/Chordinal/), and the open project's recorded takes (§9.3). Click an
+// (§13), the drum kits, the track effects (§11.1), the projects (Open Recent and those in Documents/Chordinal/), and the open project's recorded takes (§9.3). Click an
 // instrument or a kit to hear it, double-click to put it on the selected track, or drag it onto a track or the channel
 // rack. Click a take to read it onto the selected track at the playhead, or drag it onto a track.
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
@@ -19,6 +19,8 @@ import { preview, previewSynth } from '@chordinal/ui';
 import type { InstrumentRef } from '@chordinal/ui';
 import { presetMenu, takeMenu } from '@chordinal/ui';
 import { PRESET, writePreset } from '@chordinal/ui';
+import { EFFECT_GROUPS, NEW_EFFECT, addEffect } from '@chordinal/ui';
+import { effectSpec } from '@chordinal/daw';
 import { LibraryPicker } from '@chordinal/ui/components';
 import { recent, openRecent } from '../files.ts';
 import { instrumentGroups, kits } from '../rack.ts';
@@ -27,6 +29,7 @@ const TABS: [BrowserTab, string][] = [
   ['instruments', 'Instruments'],
   ['synths', 'Synths'],
   ['kits', 'Kits'],
+  ['effects', 'Effects'],
   ['projects', 'Projects'],
   ['takes', 'Takes'],
 ];
@@ -179,6 +182,47 @@ function Presets({ kit }: PresetsProps) {
   );
 }
 
+/** the track effects by section (PRD §15.5): double-click one to add it to the selected track, or drag it onto a
+ * strip in the mixer, the master's included */
+function Effects() {
+  const track = selectedTrack.value;
+  return (
+    <>
+      <div class="foot">
+        {track
+          ? `Double-click to add an effect to ${track.name}, or drag it onto a strip`
+          : 'Drag an effect onto a strip in the mixer'}
+      </div>
+      <SectionList sections={EFFECT_GROUPS.map(([g]) => g)}>
+        {EFFECT_GROUPS.map(([group, types]) => (
+          <>
+            <div class="group">{group}</div>
+            {types.map((type) => {
+              const spec = effectSpec(type);
+              return (
+                spec && (
+                  <div
+                    class="item"
+                    draggable
+                    title={spec.about}
+                    onDragStart={(e) => {
+                      e.dataTransfer?.setData(NEW_EFFECT, type);
+                      if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
+                    }}
+                    onDblClick={() => track && addEffect(track.id, type)}
+                  >
+                    {spec.name}
+                  </div>
+                )
+              );
+            })}
+          </>
+        ))}
+      </SectionList>
+    </>
+  );
+}
+
 function Projects() {
   const open = projectName.value;
   const [library, setLibrary] = useState<NativeFolder[]>([]);
@@ -290,6 +334,8 @@ export function LibraryBrowser() {
         <Projects />
       ) : tab === 'takes' ? (
         <Takes />
+      ) : tab === 'effects' ? (
+        <Effects />
       ) : tab === 'synths' ? (
         <Synths />
       ) : (

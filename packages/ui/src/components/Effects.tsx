@@ -1,13 +1,15 @@
-// A track's audio effects in its mixer strip, and the settings panel of the one opened. In the strip: each effect with
-// its bypass and remove buttons, dragged to reorder, clicked to open its settings, right-clicked for its menu; and a
-// dropdown to add one. The panel beside the strips has a slider per setting (a dropdown for one with named values);
+// A track's audio effects in its mixer strip (and the master's), and the settings panel of the one opened. In the
+// strip: each effect with its bypass and remove buttons, dragged to reorder, clicked to open its settings, right-clicked
+// for its menu; and a dropdown to add one, or an effect dragged from the browser's Effects tab, dropped where it goes. The panel beside the strips has a slider per setting (a dropdown for one with named values);
 // double-click a slider for its starting value.
-import { effectName, effectSpec, insertValue, insertsOf, paramText } from '@chordinal/daw';
+import { MASTER, effectName, effectSpec, insertValue, insertsOf, paramText } from '@chordinal/daw';
 import type { EffectType, Track } from '@chordinal/daw';
 import { project, selected } from '../store.ts';
 import {
   ADDABLE_EFFECTS,
+  NEW_EFFECT,
   addEffect,
+  droppedEffect,
   bypassEffect,
   effectMenu,
   knobPlace,
@@ -23,12 +25,36 @@ import { rgba } from './canvas.ts';
 const DRAG = 'application/x-chordinal-effect'; // what a dragged effect carries: `<track>:<insert id>`
 const STEPS = 1000; // a slider's steps from one end to the other
 
-/** the track's effects in its strip, and the dropdown that adds one */
-export function EffectList({ track }: { track: Track }) {
+/** what holds effects: a track, or the master (id MASTER) */
+type Holder = Pick<Track, 'id' | 'name' | 'inserts'>;
+
+/** the master as an effects holder */
+export const masterHolder = (inserts: Track['inserts']): Holder => ({ id: MASTER, name: 'Master', inserts });
+
+/** selects the track, but not the master, which isn't one */
+const select = (id: string) => {
+  if (id !== MASTER) selected.value = id;
+};
+
+/** the track's (or the master's) effects in its strip, and the dropdown that adds one */
+export function EffectList({ track }: { track: Holder }) {
   const list = insertsOf(track);
   const open = openEffect.value;
   return (
-    <div class="fx effects" role="group" aria-label={`${track.name} effects`}>
+    <div
+      class="fx effects"
+      role="group"
+      aria-label={`${track.name} effects`}
+      onDragOver={(e) => {
+        if (e.dataTransfer?.types.includes(NEW_EFFECT)) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        const type = droppedEffect(e);
+        if (!type) return;
+        e.preventDefault();
+        addEffect(track.id, type);
+      }}
+    >
       {list.map((x, index) => {
         const off = x.bypass === true,
           name = effectName(x.type);
@@ -42,9 +68,17 @@ export function EffectList({ track }: { track: Track }) {
               if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
             }}
             onDragOver={(e) => {
-              if (e.dataTransfer?.types.includes(DRAG)) e.preventDefault();
+              if (e.dataTransfer?.types.includes(DRAG) || e.dataTransfer?.types.includes(NEW_EFFECT))
+                e.preventDefault();
             }}
             onDrop={(e) => {
+              const type = droppedEffect(e);
+              if (type) {
+                e.preventDefault();
+                e.stopPropagation();
+                addEffect(track.id, type, index);
+                return;
+              }
               const [from, id] = (e.dataTransfer?.getData(DRAG) ?? '').split(':');
               if (from !== track.id || !id) return;
               e.preventDefault();
@@ -68,7 +102,7 @@ export function EffectList({ track }: { track: Track }) {
               class="label open-effect"
               title={`${name}: open its settings (drag to reorder)`}
               onClick={() => {
-                selected.value = track.id;
+                select(track.id);
                 openEffect.value =
                   open?.track === track.id && open.id === x.id ? null : { track: track.id, id: x.id };
               }}
@@ -109,16 +143,20 @@ export function EffectList({ track }: { track: Track }) {
 /** the open effect's settings, beside the strips; nothing when none is open */
 export function EffectPanel() {
   const open = openEffect.value;
-  const track = open && project.value.tracks.find((t) => t.id === open.track);
+  if (!open) return null;
+  const track: (Holder & { color?: number[] }) | undefined =
+    open.track === MASTER
+      ? masterHolder(project.value.masterInserts)
+      : project.value.tracks.find((t) => t.id === open.track);
   const x = track && insertsOf(track).find((i) => i.id === open.id);
   const spec = x && effectSpec(x.type);
-  if (!open || !track || !x || !spec) return null;
+  if (!track || !x || !spec) return null;
   const name = spec.name;
   return (
     <section
       class="effect-panel"
       aria-label={`${name} on ${track.name}`}
-      style={{ '--track': rgba(track.color) }}
+      style={track.color ? { '--track': rgba(track.color) } : undefined}
     >
       <header>
         <button

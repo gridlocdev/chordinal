@@ -74,6 +74,10 @@ Click an effect's name to open its settings beside the strips: a slider for each
 
 Play, the WAV and MP3 exports and the keys you play live all go through the effects, and Delay and Tremolo follow tempo changes.
 
+The master strip has effects of its own, the same fourteen, which the whole mix goes through before the mastering chain: a Limiter or an EQ on everything, for example. They are saved with the project.
+
+The browser's **Effects** tab lists the effects by group (Tone, Dynamics, Drive, Modulation and Space); hover one to read what it does. Double-click one to add it to the selected track, or drag it onto a strip in the mixer, the master's included, to add it at the row you drop it on.
+
 ## Automation
 
 A track's volume, pan, tone, reverb and delay sends and the settings of its [effects](#track-effects) can change as the song plays: a fade-out, a filter sweep, a pan from left to right. **Track ▸ Show Automation** (`A`, or **Show Automation** in a track's right-click menu) opens the track's automation lane under its row, and the dropdown at its left picks the value it shows; a value that has points has a dot after its name. Click the lane to add a point and drag it into place, drag a point to move it, and double-click one to delete it. Points snap to the beat; hold `Shift` to place one between beats. Right-click a point for its curve into it (**Step**, **Linear**, or **Exponential** for tone), or right-click the lane to clear it. The value under the cursor shows next to the dropdown. Each edit can be undone, Play and the WAV and MP3 exports play the lane, and inserting or deleting bars moves the points with the clips.

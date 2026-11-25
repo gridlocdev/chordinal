@@ -141,8 +141,14 @@ effect(() => {
   if (!handle || !heard || p === heard) return;
   if (!heardDifferently(heard, p)) {
     // track effects change as they play: settings glide, and the chain is rewired where effects come and go
-    if (p.tracks.some((t, i) => t.inserts !== heard?.tracks[i]?.inserts))
-      handle.setInserts(p.tracks.map((t) => t.inserts));
+    if (
+      p.masterInserts !== heard.masterInserts ||
+      p.tracks.some((t, i) => t.inserts !== heard?.tracks[i]?.inserts)
+    )
+      handle.setInserts(
+        p.tracks.map((t) => t.inserts),
+        p.masterInserts ?? [],
+      );
     heard = p;
     return;
   }

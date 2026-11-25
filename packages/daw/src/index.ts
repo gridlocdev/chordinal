@@ -51,6 +51,8 @@ export {
   insertValue,
   insertValues,
   insertsOf,
+  insertsAt,
+  MASTER,
   moveInsert,
   paramText,
   removeInsert,

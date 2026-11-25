@@ -17,7 +17,9 @@ import { beatToSeconds, bendCurve, readBend, secondsToBeat, tempoSteps } from '@
 import { insertValues, insertsOf, projectEnd } from '@chordinal/daw';
 import { passEvents, duckPlan, scheduleLane, playClick, heldAt, ownsKey } from '@chordinal/daw';
 import { clickBeats } from '@chordinal/daw';
+import type { Effect } from './effects.ts';
 import type {
+  Automation,
   Click,
   ClickOscillator,
   FxEvent,
@@ -66,8 +68,8 @@ export interface PlaybackHandle {
   seek(beat: number): void;
   setMix(channels: ChannelMix[]): void;
   /** each track's effects, as its inserts now are: settings glide to their new values, and the chain is rewired
-   * where effects were added, removed, moved or bypassed */
-  setInserts(inserts: (Insert[] | undefined)[]): void;
+   * where effects were added, removed, moved or bypassed; and the master's, when given */
+  setInserts(inserts: (Insert[] | undefined)[], master?: Insert[]): void;
   levels(): number[];
   stop(): void;
 }
@@ -93,7 +95,7 @@ export function playProject(
   const tracks = project.tracks;
   const first = map[0];
   if (!first) throw new Error('the project has no tempo');
-  const mixer = createMixer({ tempo: first.bpm });
+  const mixer = createMixer({ tempo: first.bpm, master: project.masterInserts });
   const strips = tracks.map((t) =>
     mixer.channel({
       volumeDb: 0,
@@ -116,6 +118,19 @@ export function playProject(
   }));
   // each insert's settings as last set, so setInserts only touches what changed
   const insertsNow = tracks.map((t) => insertsOf(t));
+  let masterNow = project.masterInserts ?? [];
+  /** each setting of `list` that changed since `was` glides there, unless an automation lane moves it */
+  const glideSettings = (effects: Map<string, Effect>, list: Insert[], was: Insert[], lanes: Automation) => {
+    for (const x of list) {
+      const e = effects.get(`${x.id}:${x.type}`),
+        before = was.find((w) => w.id === x.id && w.type === x.type);
+      if (!e || !before) continue;
+      const now = insertValues(x),
+        then = insertValues(before);
+      for (const [k, v] of Object.entries(now))
+        if (then[k] !== v && !lanes[`${x.id}.${k}`]?.length) e.set(k, v);
+    }
+  };
   const makeInstruments = (): (Instrument | undefined)[] =>
     instrumentsOf.map((b, i) => {
       const strip = strips[i];
@@ -386,7 +401,7 @@ export function playProject(
         mixed[i] = c;
       });
     },
-    setInserts(lists) {
+    setInserts(lists, master) {
       lists.forEach((list = [], i) => {
         const strip = strips[i],
           was = insertsNow[i] ?? [];
@@ -395,19 +410,15 @@ export function playProject(
         const before = [...strip.effects.keys()].join();
         strip.setInserts(list);
         const rewired = [...strip.effects.keys()].join() !== before;
-        const lanes = tracks[i]?.automation ?? {};
-        for (const x of list) {
-          const e = strip.effects.get(`${x.id}:${x.type}`),
-            before = was.find((w) => w.id === x.id && w.type === x.type);
-          if (!e) continue;
-          const now = insertValues(x),
-            then = before ? insertValues(before) : null;
-          for (const [k, v] of Object.entries(now))
-            if (then && then[k] !== v && !lanes[`${x.id}.${k}`]?.length) e.set(k, v);
-        }
+        glideSettings(strip.effects, list, was, tracks[i]?.automation ?? {});
         // a new effect picks up its lanes from where playback is
         if (rewired) automateStrip(i, current());
       });
+      if (master) {
+        mixer.master.setInserts(master);
+        glideSettings(mixer.master.effects, master, masterNow, {});
+        masterNow = master;
+      }
     },
     /** each track's level now, its peak 0..1 */
     levels: () => strips.map((s) => peak(s.meter)),

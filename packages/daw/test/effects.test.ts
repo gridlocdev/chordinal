@@ -16,6 +16,8 @@ import {
   trackLanes,
   laneParam,
   addKeyframe,
+  insertsAt,
+  MASTER,
 } from '@chordinal/daw';
 import type { Project } from '@chordinal/daw';
 
@@ -153,4 +155,30 @@ test("an effect's automatable settings are lanes of its track, kept in the setti
     0.4,
     "a lane rests at the effect's setting",
   );
+});
+
+test("the master's effects are edited as a track's are, saved on the project, and dropped when none are left", () => {
+  let p = oneTrack();
+  assert.deepEqual(insertsAt(p, MASTER), []);
+  p = addInsert(p, MASTER, 'compressor');
+  p = addInsert(p, MASTER, 'eq', 0);
+  assert.deepEqual(
+    p.masterInserts?.map((x) => `${x.id}:${x.type}`),
+    ['fx2:eq', 'fx1:compressor'],
+  );
+  assert.equal(inserts(p), undefined, "the track's own chain is untouched");
+  assert.equal(insertsAt(p, MASTER), p.masterInserts);
+  p = moveInsert(p, MASTER, 'fx2', 1);
+  p = setInsertParams(p, MASTER, 'fx1', { threshold: -30 });
+  p = setInsertBypass(p, MASTER, 'fx2', true);
+  assert.deepEqual(
+    p.masterInserts?.map((x) => x.id),
+    ['fx1', 'fx2'],
+  );
+  assert.equal(insertValue(p.masterInserts![0]!, 'threshold'), -30);
+  assert.equal(p.masterInserts![1]!.bypass, true);
+  assert.deepEqual(readProject(writeProject(p)).masterInserts, p.masterInserts);
+  p = removeInsert(removeInsert(p, MASTER, 'fx1'), MASTER, 'fx2');
+  assert.ok(!('masterInserts' in p));
+  assert.ok(!writeProject(p).includes('masterInserts'));
 });

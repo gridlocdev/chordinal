@@ -142,6 +142,8 @@ export interface Project {
   chords: ChordSpan[];
   tracks: Track[];
   patterns?: Pattern[];
+  /** the master's audio effects, after every track is mixed and before the mastering chain; missing when it has none */
+  masterInserts?: Insert[];
 }
 
 export const TRACK_COLORS: number[][] = [

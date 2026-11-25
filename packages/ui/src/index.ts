@@ -289,3 +289,4 @@ export type {
   Shortcut,
   TextEdit,
 } from './commands/index.ts';
+export { EFFECT_GROUPS, NEW_EFFECT, addEffect } from './track-effects.ts';

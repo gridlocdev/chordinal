@@ -2,6 +2,8 @@
 // so the parts sound like they're in one room. Everything sums on a mix bus with headroom, then goes through the
 // mastering chain in platform/audio-engine.js.
 //
+// The mix bus runs through the master's effects (the project's masterInserts) on its way to the mastering chain.
+//
 // strip: input → low cut → tone (low-pass, for sweeps) → inserts → user → fader → volume → pan (auto-pan LFO) → mix bus
 //                                                                                         ├→ reverb send → reverb → low cut → mix bus
 //                                                                                         └→ delay send → delay ⟲ (darker each repeat) → mix bus
@@ -101,6 +103,8 @@ export interface Strip {
 }
 
 export interface ProjectMixer {
+  /** the master's effects, between the mix bus and the mastering chain */
+  master: EffectChain;
   channel(strip?: StripOptions): Strip;
   delayAt(seconds: number, at: number): void;
   /** the tempo from `at`: the shared delay's time and every effect timed to it */
@@ -108,7 +112,7 @@ export interface ProjectMixer {
   dispose(fade?: number): void;
 }
 
-export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
+export function createMixer({ tempo, master = [] }: { tempo: number; master?: Insert[] }): ProjectMixer {
   const ctx = audioEngine.context;
   if (!impulse || impulse.sampleRate !== ctx.sampleRate) {
     const channels = reverbImpulse(ctx.sampleRate, REVERB);
@@ -151,7 +155,8 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
   const strips: Strip[] = [];
 
   const bus = node(new GainNode(ctx, { gain: dbToGain(MIX_BUS_DB) }));
-  bus.connect(audioEngine.output);
+  const masterChain = effectChain(ctx, bus, audioEngine.output, bpm);
+  masterChain.setInserts(master);
 
   const reverbIn = node(new GainNode(ctx));
   reverbIn
@@ -171,6 +176,7 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
   lfo(delay.delayTime, DELAY.wobble.rate, DELAY.wobble.seconds);
 
   return {
+    master: masterChain,
     channel({
       volumeDb = -6,
       pan = 0,
@@ -244,6 +250,7 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
       bpm = next;
       this.delayAt(delaySeconds(next), at);
       for (const s of strips) s.chain.tempo(next, at);
+      masterChain.tempo(next, at);
     },
     /** the delay's time, `seconds`, from `at` (a quick glide, so the echoes don't jump), dropping later changes */
     delayAt(seconds: number, at: number): void {
@@ -261,6 +268,7 @@ export function createMixer({ tempo }: { tempo: number }): ProjectMixer {
           for (const o of sources) o.stop();
           for (const n of nodes) n.disconnect();
           for (const s of strips) s.chain.dispose();
+          masterChain.dispose();
         },
         fade * 1000 + 50,
       );

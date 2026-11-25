@@ -3,10 +3,11 @@
 // undone; a knob's drag is one undo step.
 import {
   EFFECTS,
+  MASTER,
   addInsert,
+  insertsAt,
   effectName,
   effectSpec,
-  insertsOf,
   moveInsert,
   removeInsert,
   setInsertBypass,
@@ -21,16 +22,35 @@ import { edit } from './document.ts';
 /** the effect whose settings panel is open: its track and its insert's id */
 export const openEffect = signal<{ track: string; id: string } | null>(null);
 
-const trackOf = (id: string) => project.value.tracks.find((t) => t.id === id);
+/** the inserts of the track with this id, or the master's (MASTER) */
+const insertsOn = (id: string) => insertsAt(project.value, id);
 
 /** the effects you can add, in the order the menu lists them */
 export const ADDABLE_EFFECTS = EFFECTS.map((e) => ({ type: e.type, name: e.name }));
 
+/** the Effects tab's sections, each effect in one (PRD §15.5) */
+export const EFFECT_GROUPS: readonly [string, readonly EffectType[]][] = [
+  ['Tone', ['eq', 'filter']],
+  ['Dynamics', ['compressor', 'limiter', 'gain']],
+  ['Drive', ['distortion', 'bitcrusher']],
+  ['Modulation', ['chorus', 'phaser', 'flanger', 'tremolo']],
+  ['Space', ['delay', 'reverb', 'width']],
+];
+
+/** what an effect dragged from the browser carries: its type */
+export const NEW_EFFECT = 'application/x-chordinal-new-effect';
+
+/** the effect type a drag from the Effects tab carries, or null for any other drag */
+export function droppedEffect(e: { dataTransfer?: DataTransfer | null }): EffectType | null {
+  const type = e.dataTransfer?.getData(NEW_EFFECT) ?? '';
+  return effectSpec(type) ? (type as EffectType) : null;
+}
+
 /** adds an effect at the end of the track's chain (or at `at`) and opens its settings */
 export function addEffect(trackId: string, type: EffectType, at?: number): void {
-  const before = new Set(insertsOf(trackOf(trackId) ?? { inserts: [] }).map((x) => x.id));
+  const before = new Set(insertsOn(trackId).map((x) => x.id));
   edit((p) => addInsert(p, trackId, type, at));
-  const added = insertsOf(trackOf(trackId) ?? { inserts: [] }).find((x) => !before.has(x.id));
+  const added = insertsOn(trackId).find((x) => !before.has(x.id));
   if (added) openEffect.value = { track: trackId, id: added.id };
 }
 
@@ -52,7 +72,7 @@ export const setEffectParam = (trackId: string, id: string, param: string, value
 
 /** puts every setting back to its starting value */
 export function resetEffect(trackId: string, id: string): void {
-  const x = insertsOf(trackOf(trackId) ?? { inserts: [] }).find((i) => i.id === id);
+  const x = insertsOn(trackId).find((i) => i.id === id);
   const spec = x && effectSpec(x.type);
   if (!spec) return;
   edit((p) => setInsertParams(p, trackId, id, Object.fromEntries(spec.params.map((q) => [q.id, q.value]))));
@@ -74,8 +94,8 @@ export function knobValue(param: EffectParam, place: number): number {
 
 /** one effect's menu: open its settings, bypass, order, reset and remove */
 export function effectMenu(trackId: string, id: string): void {
-  selected.value = trackId;
-  const list = insertsOf(trackOf(trackId) ?? { inserts: [] });
+  if (trackId !== MASTER) selected.value = trackId;
+  const list = insertsOn(trackId);
   const index = list.findIndex((x) => x.id === id);
   const x = list[index];
   if (!x) return;

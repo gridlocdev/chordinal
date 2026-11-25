@@ -71,6 +71,37 @@ test.describe('Track effects', () => {
     expect(errors).toEqual([]);
   });
 
+  test("the master's effects are added in its strip or dragged from the browser, and saved with the project", async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await runCommand(page, 'Mixer');
+    const master = page.getByRole('group', { name: 'Master effects' });
+    await master.getByRole('combobox', { name: 'Add an effect to Master' }).selectOption('limiter');
+    await expect(page.getByRole('region', { name: 'Limiter on Master' })).toBeVisible();
+
+    // the browser's Effects tab: drag one onto the master, ahead of the Limiter, and double-click one for the selected track (Drums)
+    await page.locator('.browser').getByRole('button', { name: 'Effects', exact: true }).click();
+    const effects = page.locator('.browser .item');
+    await effects.getByText('EQ', { exact: true }).dragTo(master.locator('.fx-row').first());
+    await expect(master.locator('.fx-row')).toHaveCount(2);
+    await effects.getByText('Compressor', { exact: true }).dblclick();
+    const drums = page.getByRole('group', { name: 'Drums effects' });
+    await expect(drums.locator('.fx-row')).toHaveCount(1);
+
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(600);
+    await page.keyboard.press('Space');
+
+    await saveAs(page, 'Mastered');
+    const text = (await storedProject(page, 'Mastered')) ?? '';
+    const file = JSON.parse(text) as { masterInserts?: SavedInsert[] };
+    expect(file.masterInserts?.map((x) => x.type)).toEqual(['eq', 'limiter']);
+    expect(savedInserts(text, 'Drums')?.map((x) => x.type)).toEqual(['compressor']);
+    expect(errors).toEqual([]);
+  });
+
   test("the keys played live go through the selected track's effects", async ({ page }) => {
     // the effects are Web Audio nodes with nothing on screen, so count the reverbs made
     await page.addInitScript(() => {

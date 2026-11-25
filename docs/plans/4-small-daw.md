@@ -67,7 +67,7 @@ Automation and MIDI effects can be built in either order or side by side. Track 
 
 **Slices.** (a) Slice 7. (b) The registry and EQ, saved and played. (c) The mixer's insert list and panel. (d) Compressor, Filter, Distortion and Chorus. (e) Effect parameters in the automation lane's dropdown. (f) The Effects tab.
 
-**Status.** Built: (a) to (e), with fourteen effects rather than five: EQ, Compressor, Filter, Distortion, Chorus, Delay, Reverb, Phaser, Flanger, Tremolo, Bitcrusher, Limiter, Stereo Width and Gain (`packages/daw/src/effects.ts` for their settings, `packages/playback/src/effects.ts` for their nodes). The Bitcrusher is an AudioWorklet loaded from a Blob before play and before an export. Inserts sit after the tone filter, so the strip is `input → low cut → tone → inserts → user → fader → pan`, and the meter reads after the pan. A setting's change while playing glides; adding, removing, moving or bypassing one rewires the chain in place. Saved inserts carry an `id` (`fx1`…), and an effect's lane is `<id>.<setting>`. Live playing goes through the selected track's inserts only: `live.ts` builds its own chain (`effectChain`, the strip's too) into the master, without the rest of the strip. Not built: (f) the browser's Effects tab, the master insert slot, and phase-aligning Tremolo to the beat.
+**Status.** Built: (a) to (e), with fourteen effects rather than five: EQ, Compressor, Filter, Distortion, Chorus, Delay, Reverb, Phaser, Flanger, Tremolo, Bitcrusher, Limiter, Stereo Width and Gain (`packages/daw/src/effects.ts` for their settings, `packages/playback/src/effects.ts` for their nodes). The Bitcrusher is an AudioWorklet loaded from a Blob before play and before an export. Inserts sit after the tone filter, so the strip is `input → low cut → tone → inserts → user → fader → pan`, and the meter reads after the pan. A setting's change while playing glides; adding, removing, moving or bypassing one rewires the chain in place. Saved inserts carry an `id` (`fx1`…), and an effect's lane is `<id>.<setting>`. Live playing goes through the selected track's inserts and the master's only: `live.ts` builds its own chains (`effectChain`, the strips' too), without the rest of the strip. (f) is built too: the browser's Effects tab (double-click or drag onto a strip) and the master's own insert chain, `masterInserts` on the project, between the mixed tracks and the mastering chain (PRD §15). Not built: phase-aligning Tremolo to the beat, and automating the master's effects.
 
 **Done when.** An EQ and a compressor on a track change how it sounds on Play, in an exported WAV and in `chordinal render`. A project with no inserts exports identical audio to today's (same length, peak and loudness). Bypass and undo work.
 
@@ -114,7 +114,9 @@ Automation and MIDI effects can be built in either order or side by side. Track 
 
 ## Open questions
 
-- Effects: does the master need inserts in the first version, or is the mastering chain enough?
-- Synth: one voice engine in Web Audio nodes, or an `AudioWorklet`? Nodes are simpler; a worklet is cheaper with many voices.
-- Audio tracks: is time-stretching needed for songs that change tempo, or is "audio keeps its own speed" enough?
-- Browser build: how much audio and sample storage is reasonable before asking you to use the desktop app?
+Answered:
+
+- Effects: the master gets its own inserts in the first version, beside the mastering chain (PRD §15.3).
+- Synth: Web Audio nodes (built, feature 4).
+- Audio tracks: audio keeps its own speed; a tempo change moves where a clip starts, not how fast it plays. No time-stretching.
+- Browser build: samples up to 16 MB each (built, feature 4f); audio files on audio tracks up to 64 MB each.
