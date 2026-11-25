@@ -8,6 +8,9 @@
 #
 # With --dev <folder> (macOS only), it writes the copy into that folder instead, under its own bundle id: `just
 # run-desktop` opens it, so the menu bar and the Dock say Chordinal rather than Electron.
+#
+# If the installed app is running, it asks in a dialog whether to quit it, quits it as ⌘Q would (a project with
+# unsaved changes asks about them first), installs, and opens it again. Cancel leaves it running and installs nothing.
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 id=chordinal name='Chordinal' entry=apps/desktop/dist/chordinal.js icon=apps/desktop/assets/icon
@@ -21,6 +24,28 @@ fi
 case "$(uname)" in
 Darwin)
     dest="$folder/$name.app"
+    # Anchored, so a shell command that merely mentions the path does not count.
+    running() { pgrep -f "^$dest/Contents/MacOS/" >/dev/null; }
+    restart=""
+    if [ "$bundle" = "$id" ] && running; then
+        # Cancel (or Escape) makes osascript fail, and the install stops.
+        if ! osascript >/dev/null 2>&1 <<APPLESCRIPT
+display dialog "$name is running. Quit it, install the new version and open it again? A project with unsaved changes asks about them first." with title "Install $name" buttons {"Cancel", "Install and Restart"} default button "Install and Restart" cancel button "Cancel" with icon caution
+APPLESCRIPT
+        then
+            echo "Not installed: $name is still running." >&2
+            exit 1
+        fi
+        # A normal quit, the same as ⌘Q, so each window can ask about unsaved changes before it closes.
+        osascript -e "tell application \"$dest\" to quit" >/dev/null
+        for _ in $(seq 60); do running || break; sleep 0.5; done
+        if running; then
+            echo "$name didn't quit (a window may be asking something). Quit it, then run this again." >&2
+            exit 1
+        fi
+        echo "Quit $name."
+        restart=1
+    fi
     mkdir -p "$folder"
     rm -rf "$dest"
     cp -R "$root/node_modules/electron/dist/Electron.app" "$dest"
@@ -54,6 +79,10 @@ Darwin)
     # tell Launch Services now, so Open With lists it without waiting for a rescan
     /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$dest" 2>/dev/null || true
     echo "installed $dest"
+    if [ -n "$restart" ]; then
+        open "$dest"
+        echo "Reopened $name."
+    fi
     ;;
 Linux)
     dest="$HOME/.local/share/applications/$id.desktop"
