@@ -48,6 +48,27 @@ test.describe('The window', () => {
     expect(errors).toEqual([]);
   });
 
+  test('the command picked with ↑ and ↓ stays in view as the list scrolls', async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await page.keyboard.press('ControlOrMeta+KeyK');
+    const list = commandMenu(page).getByRole('listbox');
+    const picked = list.getByRole('option', { selected: true });
+    await expect(picked).toBeVisible();
+    const inList = async () => {
+      const [l, o] = [(await list.boundingBox())!, (await picked.boundingBox())!];
+      return o.y >= l.y - 1 && o.y + o.height <= l.y + l.height + 1;
+    };
+    for (let i = 0; i < 30; i++) await page.keyboard.press('ArrowDown');
+    expect(await list.evaluate((e) => e.scrollTop), 'the list scrolled down').toBeGreaterThan(0);
+    expect(await inList(), 'the 31st command is in view').toBe(true);
+    for (let i = 0; i < 30; i++) await page.keyboard.press('ArrowUp');
+    expect(await inList(), 'back at the first, it is in view again').toBe(true);
+    expect(await list.evaluate((e) => e.scrollTop)).toBe(0);
+    await page.keyboard.press('Escape');
+    expect(errors).toEqual([]);
+  });
+
   test('⌘/ lists the shortcuts and Escape closes it', async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);

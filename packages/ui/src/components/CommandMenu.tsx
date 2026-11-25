@@ -12,6 +12,7 @@ export function CommandMenu() {
   const [index, setIndex] = useState(0);
   const field = useRef<HTMLInputElement>(null);
   const back = useRef<Element | null>(null);
+  const list = useRef<HTMLUListElement>(null);
   useLayoutEffect(() => {
     if (!open) return;
     back.current = document.activeElement;
@@ -19,6 +20,10 @@ export function CommandMenu() {
     setIndex(0);
     field.current?.focus();
   }, [open]);
+  // the highlighted command stays in view as ↑ ↓ move past the list's edge
+  useLayoutEffect(() => {
+    list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+  }, [open, index, query]);
   if (!open) return null;
   const found = catalog.search(query);
   const at = Math.min(index, Math.max(0, found.length - 1));
@@ -69,7 +74,7 @@ export function CommandMenu() {
             setIndex(0);
           }}
         />
-        <ul id="command-list" role="listbox" aria-label="Commands">
+        <ul ref={list} id="command-list" role="listbox" aria-label="Commands">
           {found.length === 0 && <li class="empty">No command matches “{query}”.</li>}
           {found.map((c, i) => (
             <li
