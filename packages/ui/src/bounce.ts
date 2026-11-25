@@ -6,7 +6,7 @@ import type { Signal } from '@preact/signals';
 import { loadInstruments } from '@chordinal/playback';
 import { playProject, LEAD_IN } from '@chordinal/playback';
 import type { ChannelMix, LoadedInstrument } from '@chordinal/playback';
-import { projectEnd } from '@chordinal/daw';
+import { audioClipEnd, audioClipsOf, projectEnd } from '@chordinal/daw';
 import type { Loop, Project } from '@chordinal/daw';
 import { beatToSeconds } from '@chordinal/lib';
 import { encodeWavChannels, normalize, peakOf } from '@chordinal/lib';
@@ -141,8 +141,9 @@ async function exportAudio({ range = null, stems = false, normalized = false, ta
       .map((track, index) => ({ track, index }))
       .filter(
         ({ track, index }) =>
-          (gains[index]?.gain ?? 0) > 0 &&
-          track.clips.some((c) => c.start < to && c.start + c.beats > from && c.notes.length && !c.mute),
+          ((gains[index]?.gain ?? 0) > 0 &&
+            track.clips.some((c) => c.start < to && c.start + c.beats > from && c.notes.length && !c.mute)) ||
+          audioClipsOf(track).some((c) => c.start < to && audioClipEnd(p.tempoMap, c) > from && !c.mute),
       );
     if (!audible.length) {
       notify('No track to export: none is heard in that range');

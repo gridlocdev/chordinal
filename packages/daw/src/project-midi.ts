@@ -10,24 +10,27 @@ import type { Clip, Project } from './project.ts';
 
 export function projectMidi(p: Project): Uint8Array {
   let channel = 0;
-  const tracks = p.tracks.map((t) => {
-    const drums = isDrums(t);
-    const ch = drums ? 9 : channel++ % 15;
-    return {
-      name: t.name,
-      channel: ch < 9 || drums ? ch : ch + 1,
-      program: drums ? 0 : t.instrument.program,
-      // a note's detune mark is its tuning, written as pitch bend; its bend mark a curve of pitch bend over it
-      notes: trackNotes(t).map(({ detune, bend, ...n }) => {
-        const curve = readBend(bend);
-        return {
-          ...n,
-          ...(typeof detune === 'number' && detune && { cents: detune }),
-          ...(curve && { bend: curve }),
-        };
-      }),
-    };
-  });
+  // an audio track has no notes to write (PRD §16.8)
+  const tracks = p.tracks
+    .filter((t) => t.kind !== 'audio')
+    .map((t) => {
+      const drums = isDrums(t);
+      const ch = drums ? 9 : channel++ % 15;
+      return {
+        name: t.name,
+        channel: ch < 9 || drums ? ch : ch + 1,
+        program: drums ? 0 : t.instrument.program,
+        // a note's detune mark is its tuning, written as pitch bend; its bend mark a curve of pitch bend over it
+        notes: trackNotes(t).map(({ detune, bend, ...n }) => {
+          const curve = readBend(bend);
+          return {
+            ...n,
+            ...(typeof detune === 'number' && detune && { cents: detune }),
+            ...(curve && { bend: curve }),
+          };
+        }),
+      };
+    });
   shareSpareChannels(tracks);
   const meters = p.meters.map((m) => {
     const [num = NaN, den = NaN] = m.sig.split('/').map(Number);

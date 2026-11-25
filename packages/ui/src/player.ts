@@ -123,6 +123,7 @@ export function heardDifferently(a: Project, b: Project): boolean {
       !u ||
       t.id !== u.id ||
       t.clips !== u.clips ||
+      t.audio !== u.audio ||
       t.instrument !== u.instrument ||
       t.fx !== u.fx ||
       t.automation !== u.automation

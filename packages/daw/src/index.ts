@@ -110,6 +110,7 @@ export {
   patternProblems,
   patternsOf,
   projectEnd,
+  audioClipEnd,
   removeClip,
   removeTrack,
   renamePattern,

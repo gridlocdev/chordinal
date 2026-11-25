@@ -1,6 +1,7 @@
 // A project: tracks of clips of notes, each track with an instrument, a channel strip, MIDI FX and automation, over a
 // tempo map, meter changes, markers and the chords' names. Every edit is a pure function returning a new project (the old
 // one is untouched), so undo is a list of earlier projects. Knows nothing of how a project was made.
+import { beatToSeconds, secondsToBeat } from '@chordinal/lib';
 import type { TempoSegment } from '@chordinal/lib';
 import type { MeterChange } from './meter.ts';
 
@@ -255,8 +256,18 @@ export function trackNotes(track: Track): Note[] {
 }
 
 /** where the project ends: its length, or past it when a clip runs on */
+/** the beat an audio clip ends on: it plays for its seconds at the file's own speed, whatever the tempo (PRD §16.3) */
+export const audioClipEnd = (map: TempoSegment[], c: Pick<AudioClip, 'start' | 'seconds'>): number =>
+  secondsToBeat(map, beatToSeconds(map, c.start) + c.seconds);
+
 export const projectEnd = (p: Project): number =>
-  Math.max(p.length, ...p.tracks.flatMap((t) => t.clips.map((c) => c.start + c.beats)));
+  Math.max(
+    p.length,
+    ...p.tracks.flatMap((t) => [
+      ...t.clips.map((c) => c.start + c.beats),
+      ...(t.audio ?? []).map((c) => audioClipEnd(p.tempoMap, c)),
+    ]),
+  );
 
 // ── edits ───────────────────────────────────────────────────────────────────────────────────────────────────────────
 

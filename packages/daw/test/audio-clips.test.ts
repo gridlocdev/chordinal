@@ -8,6 +8,7 @@ import {
   VERSION,
   addAudioClip,
   addTrack,
+  audioClipEnd,
   audioClipsOf,
   audioFiles,
   checkInvariants,
@@ -15,10 +16,13 @@ import {
   isAudioTrack,
   makeAudioTrack,
   makeTrack,
+  projectEnd,
+  projectMidi,
   readProject,
   writeProject,
 } from '@chordinal/daw';
 import type { Project } from '@chordinal/daw';
+import { readMidi } from '@chordinal/lib';
 
 function withAudio(): Project {
   let p = emptyProject();
@@ -90,5 +94,25 @@ test('a file with a broken audio clip, or audio on a MIDI track, is refused with
   assert.throws(
     broken((x) => (x.tracks[1]!.kind = 'video')),
     /track 2 is of a kind this app doesn't know/,
+  );
+});
+
+test('an audio clip ends after its seconds at any tempo, and the project ends after its last clip', () => {
+  let p = withAudio();
+  assert.equal(audioClipEnd(p.tempoMap, { start: 8, seconds: 4.5 }), 8 + 4.5 * (p.tempoMap[0]!.bpm / 60));
+  p = { ...p, length: 0, tempoMap: [{ beat: 0, bpm: 60 }] };
+  assert.equal(projectEnd(p), 12.5);
+  p = { ...p, tempoMap: [{ beat: 0, bpm: 120 }] };
+  assert.equal(projectEnd(p), 17);
+});
+
+test('a MIDI export leaves audio tracks out', () => {
+  const p = withAudio();
+  const note = { beat: 0, beats: 1, key: 60, vel: 100 };
+  const keys = { ...p.tracks[0]!, clips: [{ id: 'c1', start: 0, beats: 4, notes: [note] }] };
+  const file = readMidi(projectMidi({ ...p, tracks: [keys, ...p.tracks.slice(1)] }));
+  assert.deepEqual(
+    file.tracks.map((t) => t.name),
+    ['Keys'],
   );
 });

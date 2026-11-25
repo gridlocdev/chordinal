@@ -1,6 +1,7 @@
 // Finds and loads the instruments a project's tracks play: each track's SoundFont preset from the current library, and
 // the .sf2 files they live in, downloaded once and shared (soundfont.js lets the least recently used go past a memory budget),
-// or its synth, which needs nothing downloaded, or its sampler's audio, which the caller reads from the project.
+// or its synth, which needs nothing downloaded, or its sampler's audio, which the caller reads from the project; and an
+// audio track's files (PRD §16), which the caller reads too.
 import {
   drumSamples,
   samplerSettings,
@@ -47,16 +48,22 @@ export interface LoadedSample {
   buffer: AudioBuffer | null;
 }
 
+/** an audio track's files (PRD §16), each read once: null for one that can't be read */
+export interface LoadedAudio {
+  audio: ReadonlyMap<string, AudioBuffer | null>;
+}
+
 /** a track's instrument, loaded */
-export type LoadedInstrument = LoadedPreset | LoadedSynth | LoadedSample;
+export type LoadedInstrument = LoadedPreset | LoadedSynth | LoadedSample | LoadedAudio;
 
 /** what playProject plays a track with: a font and its preset, a synth's settings, or a sampler's and its audio */
 export type PlayableInstrument =
   | { font: LoadedFont; preset: Sf2Preset; rows?: readonly LoadedRow[] }
   | { synth: unknown }
-  | { sample: unknown; buffer: AudioBuffer | null };
+  | { sample: unknown; buffer: AudioBuffer | null }
+  | LoadedAudio;
 
-/** a sample file's audio, from the project it's in: null when it can't be read */
+/** a sample file's or an audio clip's file's audio, from the project it's in: null when it can't be read */
 export type SampleReader = (file: string) => Promise<AudioBuffer | null>;
 
 /** an audio file's bytes (WAV, AIFF, MP3) as audio the sampler plays */
@@ -64,18 +71,23 @@ export const decodeSample = (bytes: ArrayBuffer): Promise<AudioBuffer> =>
   audioEngine.context.decodeAudioData(bytes);
 
 /**
- * Downloads every .sf2 file the tracks need, and reads every sample with `readSample` (without one, a sampler plays
- * nothing). Resolves to one loaded instrument per track.
+ * Downloads every .sf2 file the tracks need, reads every sample with `readSample` (without one, a sampler plays
+ * nothing) and every audio track's files with `readAudio` (without one, its clips are silent). Resolves to one loaded
+ * instrument per track.
  */
 export async function loadInstruments(
   tracks: {
+    kind?: 'audio';
+    audio?: readonly { file: string }[];
     instrument: { bank: number; program: number; synth?: object; sample?: object; drumSamples?: object };
   }[],
   onStatus: (text: string) => void = () => {},
   readSample: SampleReader = () => Promise.resolve(null),
+  readAudio: SampleReader = () => Promise.resolve(null),
 ): Promise<LoadedInstrument[]> {
+  const isAudio = (t: { kind?: 'audio' }) => t.kind === 'audio';
   const entries = tracks.map((t) => {
-    if (t.instrument.synth || t.instrument.sample) return null;
+    if (isAudio(t) || t.instrument.synth || t.instrument.sample) return null;
     const entry = presetFor(t.instrument.bank, t.instrument.program);
     if (!entry) throw new Error('the SoundFont library has no presets');
     return entry;
@@ -102,19 +114,19 @@ export async function loadInstruments(
     ),
   );
   const samples = await Promise.all(
-    tracks.map(async ({ instrument: { sample } }) => {
-      if (!sample) return null;
+    tracks.map(async ({ kind, instrument: { sample } }) => {
+      if (!sample || kind === 'audio') return null;
       const s = samplerSettings(sample);
       return { sample: s, buffer: s.file ? await readSample(s.file).catch(() => null) : null };
     }),
   );
   const read = (file: string) => readSample(file).catch(() => null);
   const rows = await Promise.all(
-    tracks.map(({ instrument }) =>
-      instrument.synth || instrument.sample
+    tracks.map((t) =>
+      isAudio(t) || t.instrument.synth || t.instrument.sample
         ? []
         : Promise.all(
-            [...drumSamples(instrument.drumSamples)].map(async ([key, sample]): Promise<LoadedRow> => ({
+            [...drumSamples(t.instrument.drumSamples)].map(async ([key, sample]): Promise<LoadedRow> => ({
               key,
               sample,
               buffer: await read(sample.file),
@@ -122,8 +134,15 @@ export async function loadInstruments(
           ),
     ),
   );
+  const files = [...new Set(tracks.flatMap((t) => (isAudio(t) ? (t.audio ?? []).map((c) => c.file) : [])))];
+  const audio = new Map(
+    await Promise.all(files.map(async (f) => [f, await readAudio(f).catch(() => null)] as const)),
+  );
   await prepareEffects(audioEngine.context); // the effects' worklets, so the track effects can play
   return entries.map((entry, i): LoadedInstrument => {
+    const t = tracks[i]!;
+    if (isAudio(t))
+      return { audio: new Map((t.audio ?? []).map((c) => [c.file, audio.get(c.file) ?? null])) };
     const sampler = samples[i];
     if (sampler) return sampler;
     if (!entry) return { synth: synthSettings(tracks[i]!.instrument.synth) };

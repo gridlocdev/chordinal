@@ -1,8 +1,11 @@
 export { audioEngine, peak, renderPauses } from './audio-engine.ts';
 export { buildEffect, dbGain, effectChain, prepareEffects } from './effects.ts';
 export type { Effect, EffectChain, EffectParamTarget } from './effects.ts';
+export { clipPlan, playClip } from './audio-clips.ts';
+export type { ClipPlan, GainPoint } from './audio-clips.ts';
 export { decodeSample, loadInstruments, presetFor } from './instruments.ts';
 export type {
+  LoadedAudio,
   LoadedInstrument,
   LoadedPreset,
   LoadedSample,

@@ -1,6 +1,6 @@
 // Plays a project through the SoundFont synth: a channel strip per track in a mixer, then its notes (through each
 // track's MIDI FX, fx.js) and automation, scheduled a little ahead on the audio clock through the tempo map, so
-// timing doesn't depend on the frame rate.
+// timing doesn't depend on the frame rate. An audio track's clips play through its strip in the same way (PRD §16.8).
 //
 // Playback is a chain of segments: each plays from one beat until the end or the loop's end, where the next takes
 // over seamlessly at the loop's start, one pass further on so the MIDI FX can vary it. Reverb and delay tails carry
@@ -9,6 +9,7 @@ import { audioEngine, peak } from './audio-engine.ts';
 import { startTicker } from './ticker.ts';
 import { createInstrument, type Instrument } from './soundfont.ts';
 import { createSampler } from './sampler.ts';
+import { clipPlan, playClip } from './audio-clips.ts';
 import { withDrumRows } from './drum-rows.ts';
 import { createSynth } from './synth.ts';
 import type { PlayableInstrument } from './instruments.ts';
@@ -134,7 +135,7 @@ export function playProject(
   const makeInstruments = (): (Instrument | undefined)[] =>
     instrumentsOf.map((b, i) => {
       const strip = strips[i];
-      if (!strip) return undefined;
+      if (!strip || 'audio' in b) return undefined;
       return 'sample' in b
         ? createSampler(b.sample, b.buffer, strip.input)
         : 'synth' in b
@@ -212,6 +213,29 @@ export function playProject(
   };
   const automate = (s: Segment) => strips.forEach((_, i) => automateStrip(i, s));
 
+  // audio clips are few, so a segment's are all scheduled when it begins: those sounding from its start (partway in)
+  // until its end, cut there round a loop
+  const clipSources = new Set<AudioBufferSourceNode>();
+  const playClips = (s: Segment) =>
+    instrumentsOf.forEach((b, i) => {
+      const strip = strips[i],
+        clips = tracks[i]?.audio;
+      if (!strip || !clips || !('audio' in b)) return;
+      for (const c of clips) {
+        const buffer = b.audio.get(c.file);
+        if (!buffer || c.start >= s.until - 1e-9) continue;
+        const plan = clipPlan(c, timeOf(s, c.start), s.at, loop ? timeOf(s, s.until) : Infinity);
+        if (!plan) continue;
+        const src = playClip(ctx, buffer, plan, strip.input);
+        clipSources.add(src);
+        src.addEventListener('ended', () => clipSources.delete(src));
+      }
+    });
+  const stopClips = (at: number) => {
+    for (const src of clipSources) src.stop(at);
+    clipSources.clear();
+  };
+
   // MIDI FX events that aren't notes: tape stops, and a delay send swelling
   const fxEvent = (e: FxEvent, s: Segment) => {
     const at = timeOf(s, e.beat);
@@ -261,6 +285,7 @@ export function playProject(
     const delay = delayList[Math.max(0, nextDelay - 1)];
     if (delay) mixer.tempoAt(delay.bpm, s.at);
     automate(s);
+    playClips(s);
   };
   // notes already sounding at a beat play on from it, their note-offs still to come in this segment
   const restartHeld = (beat: number, at: number) => {
@@ -357,6 +382,7 @@ export function playProject(
       carried.clear();
       const now = ctx.currentTime;
       for (const osc of clicks) osc.stop(now);
+      stopClips(now);
       // a delay swell under way goes back to the track's send, where no automation lane sets it
       strips.forEach((s, i) => {
         if (tracks[i]?.automation.delay?.length) return;
@@ -427,6 +453,7 @@ export function playProject(
       stopped = true;
       stopTicker();
       for (const osc of clicks) osc.stop(0);
+      stopClips(0);
       for (const inst of instruments) inst?.dispose();
       mixer.dispose();
     },
