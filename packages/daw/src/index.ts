@@ -178,7 +178,16 @@ export {
   type LaneValue,
   longestLength,
 } from './steps.ts';
-export { MAX_SWING, chanceOf, swingOf, plays, swungBeat, playedClipNotes, rollProject } from './chance.ts';
+export {
+  MAX_SWING,
+  chanceOf,
+  swingOf,
+  withSwing,
+  plays,
+  swungBeat,
+  playedClipNotes,
+  rollProject,
+} from './chance.ts';
 export {
   addMarker,
   deleteTime,

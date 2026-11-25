@@ -14,6 +14,7 @@ import {
   readProject,
   rollProject,
   swungBeat,
+  withSwing,
   writeProject,
   type Clip,
   type Note,
@@ -109,4 +110,12 @@ test('a pattern shares its swing; a MIDI export writes every note; a save keeps 
   assert.equal(writeProject(back), text);
   const plain = song(clip(sixteenths(0.5), { swing: 0.5 }));
   assert.equal(JSON.parse(writeProject(plain)).version, 1);
+});
+
+test('the Swing slider keeps swing to whole percents up to 75%, and straight leaves no swing on the clip', () => {
+  const c = clip(sixteenths());
+  assert.equal(withSwing(c, 0.333).swing, 0.33);
+  assert.equal(withSwing(c, 2).swing, 0.75);
+  assert.ok(!('swing' in withSwing(withSwing(c, 0.5), 0)));
+  assert.ok(!('swing' in withSwing(c, -1)));
 });

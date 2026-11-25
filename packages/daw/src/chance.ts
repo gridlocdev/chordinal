@@ -13,6 +13,13 @@ export const chanceOf = (n: Note): number => (typeof n.chance === 'number' ? n.c
 /** a clip's swing, 0 to MAX_SWING; none means straight */
 export const swingOf = (c: Pick<Clip, 'swing'>): number => Math.min(MAX_SWING, Math.max(0, c.swing ?? 0));
 
+/** the clip with swing `swing`, kept to whole percents from 0 to MAX_SWING; straight leaves no swing on it */
+export function withSwing(c: Clip, swing: number): Clip {
+  const { swing: _swing, ...rest } = c,
+    s = Math.round(Math.min(MAX_SWING, Math.max(0, swing)) * 100) / 100;
+  return s > 0 ? { ...rest, swing: s } : rest;
+}
+
 /** a number from 0 to 1 fixed by `text` (FNV-1a, then a mix so close texts land far apart) */
 function roll(text: string): number {
   let h = 0x811c9dc5;

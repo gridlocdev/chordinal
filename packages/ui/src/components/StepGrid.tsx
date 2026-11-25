@@ -6,11 +6,11 @@
 // track, right-click a drum's name to add or hide rows, or to load a sample on it, and drop a WAV, AIFF or MP3 on a
 // row to play it there in place of the kit's sound (PRD §14).
 import type { TargetedDragEvent, TargetedMouseEvent, TargetedPointerEvent } from 'preact';
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { barAt, GRID_OCTAVES, GRID_OCTAVE_RANGE } from '@chordinal/daw';
 import { findPattern, isDrums } from '@chordinal/daw';
 import { STEP_SIZES, stepOf, stepCount, cell, drumName, ACCENT_VELOCITY } from '@chordinal/daw';
-import { laneValueOf, stepNotes } from '@chordinal/daw';
+import { laneValueOf, stepNotes, MAX_SWING, swingOf } from '@chordinal/daw';
 import type { LaneValue } from '@chordinal/daw';
 import { noteName } from '@chordinal/lib';
 import { GM_DRUMS } from '@chordinal/daw';
@@ -28,6 +28,7 @@ import {
   paintLane,
   accentStep,
   setStepSize,
+  setSwing,
   addGridRow,
   hideGridRow,
   previewStep,
@@ -340,6 +341,40 @@ function RangeControls({ track, clip }: { track: Track; clip: Clip | null }) {
   );
 }
 
+/** the clip's swing, 0 to 75%: each drag, or each key press, is one undo step (Chordinal PRD §17.7) */
+function SwingSlider({ track, clip }: { track: Track | null; clip: Clip | null }) {
+  // a ref, not state: the first input of a drag comes before a re-render would
+  const gesture = useRef('');
+  const percent = clip ? Math.round(swingOf(clip) * 100) : 0;
+  const set = (value: number) => track && clip && setSwing(track.id, clip.id, value / 100, gesture.current);
+  return (
+    <label class="swing" title="Delay every second step (double-click for straight)">
+      Swing
+      <input
+        type="range"
+        aria-label="Swing"
+        aria-valuetext={`${percent}%`}
+        min="0"
+        max={Math.round(MAX_SWING * 100)}
+        step="1"
+        disabled={!clip}
+        value={percent}
+        onPointerDown={(e) => {
+          // the second press of a double-click goes with the first, so undo takes the slider back to before both
+          if (e.pointerType !== 'mouse') gesture.current = `swing-${e.timeStamp}`;
+        }}
+        onMouseDown={(e) => {
+          if (e.detail < 2) gesture.current = `swing-${e.timeStamp}`;
+        }}
+        onKeyDown={(e) => (gesture.current = `swing-${e.timeStamp}`)}
+        onInput={(e) => set(Number(e.currentTarget.value))}
+        onDblClick={() => set(0)}
+      />
+      <span class="value">{percent}%</span>
+    </label>
+  );
+}
+
 /** the step grid's toolbar, in the editor's bar: the step size and what's shown */
 export function GridToolbar() {
   const { track, clip } = gridTarget();
@@ -358,6 +393,7 @@ export function GridToolbar() {
           ))}
         </select>
       </label>
+      <SwingSlider track={track} clip={clip} />
       {track && !isDrums(track) && !track.kind && <RangeControls track={track} clip={clip} />}
       <span class="sep" />
       <span>
@@ -366,7 +402,7 @@ export function GridToolbar() {
           : 'Select a track'}
       </span>
       <span class="sep" />
-      <span>Click a step to turn it on or off, drag to paint, Shift-click to accent</span>
+      <span class="tip">Click a step to turn it on or off, drag to paint, Shift-click to accent</span>
     </div>
   );
 }

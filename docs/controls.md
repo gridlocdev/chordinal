@@ -132,6 +132,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Show other notes in a melodic track's step grid | the step grid's **Octave −** and **Octave +**, and **Chromatic** for all twelve notes |
 | Choose a track's editor | **Piano Roll** or **Step Grid** tab with one of its clips selected, or right-click the clip, **Open in Piano Roll** or **Open in Step Grid** |
 | Step size of a drum clip (1/8, 1/16, 1/32, 1/16 triplet) | the step grid's **Step** menu |
+| Swing a clip, delaying every second step | drag the step grid's **Swing** slider; double-click it for straight |
 | Add or hide a drum row | right-click a row in the step grid, **Add Row**, **Hide** |
 | Put an audio file on an audio track | drop a WAV, AIFF or MP3 below the tracks for a new audio track, or on an audio track's lane; it snaps to the beat, `Shift` places it exactly |
 | Move, copy, trim or fade an audio clip | drag it (to another audio track too), `Alt`-drag to copy; drag its left or right edge to trim it; drag the small squares at its top corners for its fades; `Shift` places it exactly |

@@ -95,6 +95,45 @@ test.describe('Drums and patterns', () => {
     expect(errors).toEqual([]);
   });
 
+  test('the Swing slider sets the clip’s swing, a drag at a time, and a double-click makes it straight', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Drums').dblclick();
+    const swing = page.getByRole('slider', { name: 'Swing' });
+    await expect(swing).toHaveValue('0');
+    const box = await swing.boundingBox();
+    if (!box) throw new Error('the Swing slider has no size');
+    const y = box.y + box.height / 2;
+    // one drag past a third and on to two thirds: 50%, as one undo step
+    await page.mouse.move(box.x + 4, y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 3, y);
+    await page.mouse.move(box.x + (box.width * 2) / 3, y);
+    await page.mouse.up();
+    const at = Number(await swing.inputValue());
+    expect(at).toBeGreaterThan(40);
+    expect(at).toBeLessThan(60);
+    await expect(page.getByText(`${at}%`, { exact: true })).toBeVisible();
+    const swingIn = async () => /"swing":\s*([\d.]+)/.exec((await storedProject(page, 'Swing')) ?? '')?.[1];
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(swing).toHaveValue('0');
+    await saveAs(page, 'Swing');
+    expect(await swingIn()).toBeUndefined();
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await expect(swing).toHaveValue(String(at));
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page).toHaveTitle('Swing — Chordinal');
+    expect(Number(await swingIn())).toBe(at / 100);
+    // a double-click, the clicks that land on the slider first included, is one undo step
+    await swing.dblclick();
+    await expect(swing).toHaveValue('0');
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(swing).toHaveValue(String(at));
+    expect(errors).toEqual([]);
+  });
+
   test('the lane under the grid paints velocity and probability, a drag at a time', async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);

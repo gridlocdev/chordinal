@@ -17,6 +17,7 @@ import {
   setStep,
   setStepLength,
   setStepValue,
+  withSwing,
   toggleAccent,
   addRow,
   hideRow,
@@ -114,6 +115,11 @@ export const laneShows = signal<LaneValue>('vel');
 /** every note on step i set to `value` in the lane's terms; `merge` makes a drag one undo step */
 export const paintLane = (trackId: string, clipId: string, i: number, value: number, merge: string): void =>
   changeSteps(trackId, clipId, (notes, step) => setStepValue(notes, i, step, laneShows.value, value), merge);
+
+/** the clip's swing, shared by its pattern's clips; `merge` makes a drag of the slider one undo step (Chordinal PRD
+ * §17.7) */
+export const setSwing = (trackId: string, clipId: string, swing: number, merge: string): void =>
+  edit((p) => updateClip(p, trackId, clipId, (c) => withSwing(c, swing)), merge);
 
 export const accentStep = (trackId: string, clipId: string, key: number, i: number): void =>
   changeSteps(trackId, clipId, (notes, step) => toggleAccent(notes, key, i, step));
