@@ -7,7 +7,8 @@
 //
 // A project folder handed over when Chordinal starts (on the command line, or by the Finder through macOS's
 // open-file) opens instead of the last project; one handed over while it runs opens like
-// Open Recent, after the unsaved-changes question.
+// Open Recent, after the unsaved-changes question. A MIDI file handed over the same way (Open With in the Finder) is
+// read here and opens as a new project, as File → Import MIDI File does.
 import './headless-errors.ts'; // first: a headless run exits on an uncaught error instead of showing a dialog
 import { app, BrowserWindow } from 'electron';
 import type { IpcMainEvent, IpcMainInvokeEvent } from 'electron';
@@ -21,7 +22,15 @@ const DEFAULT_FOLDER = () => path.join(app.getPath('documents'), 'Chordinal');
 /** whether each window's project has unsaved changes, as its page last said */
 const dirty = new WeakMap<BrowserWindow, boolean>();
 
-/** folders handed over before the page asked for them, and the call that grants one once the folders are loaded */
+/** a MIDI file, by its name; anything else handed over is a project folder or its project.json */
+const isMidiFile = (file: string) => /\.(mid|midi|smf)$/i.test(file);
+const readMidiFile = async (file: string) => ({
+  name: path.basename(file),
+  bytes: new Uint8Array(await fs.readFile(file)),
+});
+
+/** folders and MIDI files handed over before the page asked for them, and the call that opens one once the folders
+ * are loaded */
 const handed = process.argv
   .slice(app.isPackaged ? 1 : 2)
   .filter((a) => !a.startsWith('-') && path.isAbsolute(a));
@@ -63,14 +72,26 @@ startShell({
       folders.writeTake(dir, file, bytes),
     );
     ipc.handle('folders:library', () => folders.listIn(DEFAULT_FOLDER()));
+    // the MIDI file handed over at launch, read, once; the page asks for it before the folder
+    ipc.handle('folders:handedMidi', async () => {
+      const file = handed.findLast(isMidiFile);
+      handed.splice(0, handed.length, ...handed.filter((f) => !isMidiFile(f)));
+      return file ? readMidiFile(file) : null;
+    });
     // the folder handed over at launch, granted, once
     ipc.handle('folders:handed', () => {
-      const file = handed.pop();
+      const file = handed.filter((f) => !isMidiFile(f)).pop();
       handed.length = 0;
       return file ? folders.grant(file) : '';
     });
     handOver = (file) => {
-      BrowserWindow.getAllWindows()[0]?.webContents.send('folders:handedOver', folders.grant(file));
+      const page = BrowserWindow.getAllWindows()[0]?.webContents;
+      if (!isMidiFile(file)) page?.send('folders:handedOver', folders.grant(file));
+      else
+        readMidiFile(file).then(
+          (midi) => page?.send('folders:midiHandedOver', midi),
+          (e: unknown) => console.error(`could not read ${file}`, e),
+        );
     };
     ipc.handle('folders:reveal', (_e, dir: unknown) => {
       screen.showInFolder(folders.fileToShow(dir));

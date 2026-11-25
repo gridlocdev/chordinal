@@ -30,6 +30,16 @@
       "to": "LICENSE"
     }
   ],
+  "fileAssociations": [
+    {
+      "ext": ["mid", "midi", "smf"],
+      "name": "MIDI File",
+      "description": "Standard MIDI file",
+      "mimeType": "audio/midi",
+      "role": "Editor",
+      "rank": "Alternate"
+    }
+  ],
   "mac": {
     "category": "public.app-category.music",
     "target": [

@@ -87,6 +87,9 @@ export interface ChordinalNative {
     /** a folder handed over at launch, or '' */
     handed(): Promise<string>;
     onHandedOver(fn: (dir: string) => void): void;
+    /** a MIDI file handed over at launch (Open With in the Finder), read, or null */
+    handedMidi(): Promise<{ name: string; bytes: Uint8Array } | null>;
+    onMidiHandedOver(fn: (file: { name: string; bytes: Uint8Array }) => void): void;
     reveal(dir: string): Promise<void>;
     /** the folder picked, or '' when cancelled */
     pickOpen(): Promise<string>;

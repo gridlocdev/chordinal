@@ -43,6 +43,12 @@ export const projectFolders = {
   handed: (): Promise<string> => backend?.handed() ?? Promise.resolve(''),
   /** a folder handed over while Chordinal runs */
   onHandedOver: (fn: (dir: string) => void): void => backend?.onHandedOver(fn),
+  /** the MIDI file handed over when Chordinal started (Open With in the Finder), read, or null */
+  handedMidi: (): Promise<{ name: string; bytes: Uint8Array } | null> =>
+    backend?.handedMidi() ?? Promise.resolve(null),
+  /** a MIDI file handed over while Chordinal runs */
+  onMidiHandedOver: (fn: (file: { name: string; bytes: Uint8Array }) => void): void =>
+    backend?.onMidiHandedOver(fn),
   /** asks for a project folder or its project.json; resolves to the folder, or '' when cancelled */
   pickOpen: (): Promise<string> => backend?.pickOpen() ?? Promise.resolve(''),
   /** asks where to save a new folder for the project; resolves to it, or '' when cancelled */

@@ -10,7 +10,9 @@ let recentList: string[] = [];
 let pickSaveAnswer = '',
   pickOpenAnswer = '',
   handedAnswer = '',
-  handedOver = (_dir: string) => {};
+  handedOver = (_dir: string) => {},
+  handedMidiAnswer: { name: string; bytes: Uint8Array } | null = null,
+  midiHandedOver = (_file: { name: string; bytes: Uint8Array }) => {};
 const toTop = (d: string) => {
   recentList = [d, ...recentList.filter((x) => x !== d)];
 };
@@ -47,6 +49,14 @@ Object.assign(globalThis, {
       },
       onHandedOver: (fn: (dir: string) => void) => {
         handedOver = fn;
+      },
+      handedMidi: async () => {
+        const f = handedMidiAnswer;
+        handedMidiAnswer = null;
+        return f;
+      },
+      onMidiHandedOver: (fn: (file: { name: string; bytes: Uint8Array }) => void) => {
+        midiHandedOver = fn;
       },
     },
   },
@@ -112,6 +122,29 @@ test('a folder handed over at start-up (from the command line or the Finder) ope
   disk.delete(b);
   recentList = [];
   await newSong();
+});
+
+test('a MIDI file handed over at start-up (Open With in the Finder) opens as a new project; one handed over later asks first (§9.2)', async () => {
+  const { projectMidi } = await import('@chordinal/daw');
+  const midi = (title: string) => projectMidi({ ...newSongProject(), title });
+  handedMidiAnswer = { name: 'sage.mid', bytes: midi('Sage Rescue') };
+  handedAnswer = '/docs/Chordinal/Ignored';
+  await startUp();
+  assert.equal(project.value.title, 'Sage Rescue');
+  assert.equal(projectName.value, '', 'a new project, not yet saved anywhere');
+  addOne();
+  midiHandedOver({ name: 'later.midi', bytes: midi('Later') });
+  await tick();
+  assert.ok(asking.value, 'the unsaved changes are asked about');
+  answer(OTHER);
+  await tick();
+  await tick();
+  assert.equal(project.value.title, 'Later');
+  handedAnswer = '';
+  const done = newSong();
+  await tick();
+  if (asking.value) answer(OTHER);
+  await done;
 });
 
 test("New with unsaved changes asks Save, Don't Save or Cancel (§4.3)", async () => {

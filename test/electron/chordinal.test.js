@@ -1,5 +1,6 @@
 // Chordinal's shell, run headless (no window on screen, no dialog): start-up, Save As to a chosen folder, the close
-// question, reopening at the next start, and a missing project at start-up (Chordinal PRD §4); the macOS title bar (§5.8).
+// question, reopening at the next start, and a missing project at start-up (Chordinal PRD §4); the macOS title bar (§5.8);
+// a MIDI file handed over by the Finder's Open With (§9.2).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
@@ -44,9 +45,9 @@ const remove = (dir)=> fs.rm(dir, { recursive: true, force: true, maxRetries: 10
 
 test.after(async ()=> { for (const run of [...running]) await stop(run); });
 
-async function launch(marker)
+async function launch(marker, ...handed)
 {
-    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'apps/desktop/dist/chordinal.js'), '--headless', `--profile=${PROFILE}`], cwd: ROOT });
+    const app = await _electron.launch({ executablePath: electronPath, args: [path.join(ROOT, 'apps/desktop/dist/chordinal.js'), '--headless', `--profile=${PROFILE}`, ...handed], cwd: ROOT });
     const page = await app.firstWindow();
     await page.waitForLoadState('domcontentloaded');
     // if the headless gate ever breaks, a native dialog still stays off the screen: it leaves a marker and answers
@@ -308,4 +309,37 @@ test('while a text field has focus, the menu bar leaves Cmd+Backspace and the ot
         assert.ok(!existsSync(marker), 'no dialog was shown');
     }
     finally { await stop(run); }
+});
+
+/** a one-track MIDI file with one note and no title, so the project is named after the file */
+const oneNote = ()=> Uint8Array.from([
+    0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 0, 96,
+    0x4d, 0x54, 0x72, 0x6b, 0, 0, 0, 13, 0, 0x90, 60, 100, 96, 0x80, 60, 0, 0, 0xff, 0x2f, 0,
+]);
+
+test('a MIDI file handed over at start-up or while it runs (the Finder\'s Open With) opens as a new project', { skip: !existsSync(path.join(ROOT, 'apps/web/dist/chordinal.js')) && 'run just build first', timeout: 60000 }, async ()=>
+{
+    await remove(DATA);
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'chordinal-'));
+    const marker = path.join(tmp, 'dialog-shown');
+    const first = path.join(tmp, 'Sage Rescue.mid'), second = path.join(tmp, 'Later.midi');
+    await fs.writeFile(first, oneNote());
+    await fs.writeFile(second, oneNote());
+    let run = null;
+    try
+    {
+        run = await launch(marker, first);
+        await until('the handed MIDI file opened', async ()=> (await run.page.title()).includes('Sage Rescue'));
+        // macOS's open-file while it runs
+        await run.app.evaluate(({ app }, file)=> app.emit('open-file', { preventDefault() {} }, file), second);
+        // the first import is unsaved, so it asks in the window first (§9.2)
+        await run.page.click('.dialog.ask button.other');
+        await until('the second one opened', async ()=> (await run.page.title()).includes('Later'));
+        assert.equal(existsSync(marker), false, 'no native dialog was asked for');
+    }
+    finally
+    {
+        await stop(run);
+        await remove(tmp);
+    }
 });

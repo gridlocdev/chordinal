@@ -1,5 +1,5 @@
-// MIDI files in: File → Import MIDI File opens one as a new project; one dropped on the arrangement adds its tracks to
-// this project from the bar it was dropped on, as one undo step.
+// MIDI files in: File → Import MIDI File (or Open With in the Finder) opens one as a new project; one dropped on the
+// arrangement adds its tracks to this project from the bar it was dropped on, as one undo step.
 import { midiProject, addMidiTracks } from '@chordinal/daw';
 import { readMidi } from '@chordinal/lib';
 import { appMenu } from './platform/app-menu.ts';
@@ -12,13 +12,19 @@ export const isMidi = (file: { name: string }): boolean => /\.(mid|midi|smf)$/i.
 /** asks for a MIDI file and opens it as a new project */
 export async function importMidi(): Promise<void> {
   const file = await appMenu.openFile('MIDI File', ['mid', 'midi', 'smf']);
-  if (!file) return;
+  if (file) await openMidi(file);
+}
+
+/** a MIDI file opened as a new project, after the unsaved-changes question; whether it opened */
+export async function openMidi(file: { name: string; bytes: Uint8Array }): Promise<boolean> {
   try {
     const p = midiProject(new Uint8Array(file.bytes), file.name.replace(/\.[^.]+$/, ''));
-    if (await openNew(p))
-      notify(`Imported ${file.name}: ${p.tracks.length} track${p.tracks.length === 1 ? '' : 's'}`);
+    if (!(await openNew(p))) return false;
+    notify(`Imported ${file.name}: ${p.tracks.length} track${p.tracks.length === 1 ? '' : 's'}`);
+    return true;
   } catch (e) {
     notify(`Couldn't import ${file.name}: ${errorText(e)}`, 'error');
+    return false;
   }
 }
 

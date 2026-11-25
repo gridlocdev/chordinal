@@ -86,4 +86,4 @@ To read a clip's audio again without recording it again, pick **Track ▸ Conver
 
 ## Importing and exporting
 
-Import a MIDI file as a new project from the File menu, or drop one on a track to add its tracks from that bar. Export the whole project, the loop or the selection as audio (the mix, or each track as its own WAV, normalized if you like) or as MIDI. A MIDI export writes a note's own tuning and its bend as pitch bend, giving tuned notes that overlap on one track channels of their own, and an import reads pitch bend back as each note's tuning and bend.
+Import a MIDI file as a new project from the File menu, or drop one on a track to add its tracks from that bar. In the Finder, **Open With ▸ Chordinal** on a MIDI file opens it in the desktop app the same way. Export the whole project, the loop or the selection as audio (the mix, or each track as its own WAV, normalized if you like) or as MIDI. A MIDI export writes a note's own tuning and its bend as pitch bend, giving tuned notes that overlap on one track channels of their own, and an import reads pitch bend back as each note's tuning and bend.

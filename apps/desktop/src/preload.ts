@@ -55,6 +55,10 @@ const bridge: ChordinalNative = {
     onHandedOver: (fn) => {
       ipcRenderer.on('folders:handedOver', (_e, dir: string) => fn(dir));
     },
+    handedMidi: () => ipcRenderer.invoke('folders:handedMidi'),
+    onMidiHandedOver: (fn) => {
+      ipcRenderer.on('folders:midiHandedOver', (_e, file: { name: string; bytes: Uint8Array }) => fn(file));
+    },
     reveal: (dir) => ipcRenderer.invoke('folders:reveal', dir),
     pickOpen: () => ipcRenderer.invoke('folders:pickOpen'),
     pickSave: (name) => ipcRenderer.invoke('folders:pickSave', name),

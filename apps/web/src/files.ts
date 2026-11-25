@@ -9,7 +9,7 @@ import type { NativeRecent } from '@chordinal/ui/native-bridge';
 import { emptyProject, makeTrack, addTrack } from '@chordinal/daw';
 import type { Project } from '@chordinal/daw';
 import { setPlace } from '@chordinal/ui';
-import { openProject, openNew, discardOk } from '@chordinal/ui';
+import { openProject, openNew, discardOk, openMidi } from '@chordinal/ui';
 import { askChoice, askText, askYes } from '@chordinal/ui';
 import { onDisk } from '@chordinal/ui';
 import { project, projectName, dirty, settings, setSettings, saveSettingsNow, notify } from '@chordinal/ui';
@@ -99,14 +99,19 @@ export async function clearRecent(): Promise<void> {
 
 let listening = false;
 
-/** start-up (§4.1, §4.2): a folder handed over (§9.2), else the project open at the last quit, else a new one, saying nothing */
+/** start-up (§4.1, §4.2): a MIDI file or a folder handed over (§9.2), else the project open at the last quit, else a
+ * new one, saying nothing */
 export async function startUp(): Promise<void> {
   await refreshRecent();
-  if (!listening)
+  if (!listening) {
     projectFolders.onHandedOver((dir) => {
       if (dir) void openRecent(dir);
     });
+    projectFolders.onMidiHandedOver((file) => void openMidi(file));
+  }
   listening = true;
+  const midi = await projectFolders.handedMidi().catch(() => null);
+  if (midi && (await openMidi(midi))) return;
   const handed = await projectFolders.handed().catch(() => '');
   if (handed && (await openProject(handed))) return;
   const last = settings.value.project;

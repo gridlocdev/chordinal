@@ -40,7 +40,7 @@ export {
 export type { PlayedKey } from './live.ts';
 export { editMenu, startMenus, trackMenu, transportMenu, viewMenu } from './menu-bar.ts';
 export type { Menu } from './menu-bar.ts';
-export { dropMidi, importMidi, isMidi } from './midi-import.ts';
+export { dropMidi, importMidi, isMidi, openMidi } from './midi-import.ts';
 export {
   GRIDS,
   canonicalClip,
