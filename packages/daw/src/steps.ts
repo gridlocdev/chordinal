@@ -56,14 +56,69 @@ export function cell<N extends Note>(
   return { on, off };
 }
 
-/** notes with a step turned on or off; notes off the grid are never touched (PRD §4.7, §4.8). Returns the same array
- * when nothing changes. */
+/** whether a note starts on one of the grid's steps */
+const onGrid = (n: Note, step: number) =>
+  Math.abs(n.beat / step - Math.round(n.beat / step)) * step < ON_GRID;
+
+/** the note on an earlier step of the row that runs over step i (Chordinal PRD §17.4), or null */
+export function heldOver<N extends Note>(notes: N[], key: number, i: number, step: number): N | null {
+  const at = startOf(i, step);
+  return (
+    notes.find(
+      (n) => n.key === key && onGrid(n, step) && n.beat < at - ON_GRID && n.beat + n.beats > at + ON_GRID,
+    ) ?? null
+  );
+}
+
+/**
+ * notes with a step turned on or off; notes off the grid are never touched (PRD §4.7, §4.8). Turning on a step that
+ * an earlier step's note runs over cuts that note short there (Chordinal PRD §17.4). Returns the same array when
+ * nothing changes.
+ */
 export function setStep(notes: Note[], key: number, i: number, step: number, on: boolean): Note[] {
   const has = notes.some((n) => isOn(n, key, i, step));
   if (has === on) return notes;
   if (!on) return notes.filter((n) => !isOn(n, key, i, step));
-  const added = { beat: startOf(i, step), beats: step, key, vel: STEP_VELOCITY };
-  return [...notes, added].sort((a, b) => a.beat - b.beat || a.key - b.key);
+  const at = startOf(i, step),
+    over = heldOver(notes, key, i, step);
+  const added = { beat: at, beats: step, key, vel: STEP_VELOCITY };
+  return [...notes.map((n) => (n === over ? { ...n, beats: at - n.beat } : n)), added].sort(
+    (a, b) => a.beat - b.beat || a.key - b.key,
+  );
+}
+
+/** the longest a note can be: to the clip's end, or to the next note starting on its row */
+export function longestLength(notes: Note[], n: Note, clipBeats: number): number {
+  const next = notes
+    .filter((x) => x.key === n.key && x.beat > n.beat + ON_GRID)
+    .reduce((end, x) => Math.min(end, x.beat), clipBeats);
+  return Math.max(0, next - n.beat);
+}
+
+/** the shortest a note dragged freely can be, in steps */
+const LEAST_FREE = 0.25;
+
+/**
+ * notes with step i's note on the row made `beats` long, at least a step (a quarter of one when free) and never past
+ * the clip's end or into the row's next note (Chordinal PRD §17.4); the same array when nothing changes or the step is
+ * off
+ */
+export function setStepLength<N extends Note>(
+  notes: N[],
+  key: number,
+  i: number,
+  step: number,
+  beats: number,
+  clipBeats: number,
+  free = false,
+): N[] {
+  const n = notes.find((x) => isOn(x, key, i, step));
+  if (!n) return notes;
+  const most = longestLength(notes, n, clipBeats),
+    want = free ? Math.max(LEAST_FREE * step, beats) : Math.max(1, Math.round(beats / step)) * step,
+    length = Math.min(most, want);
+  if (length <= 0 || Math.abs(length - n.beats) < 1e-9) return notes;
+  return notes.map((x) => (x === n ? { ...x, beats: length } : x));
 }
 
 /** an on step's accent toggled: 127, or back to 100 (PRD §4.9); an off step changes nothing */

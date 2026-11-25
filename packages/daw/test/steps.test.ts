@@ -7,6 +7,8 @@ import {
   stepCount,
   cell,
   setStep,
+  setStepLength,
+  heldOver,
   toggleAccent,
   addRow,
   hideRow,
@@ -136,4 +138,28 @@ test('the rows start in the track’s octave, or the one with the clip’s lowes
   assert.equal(gridOctave({}, { tonic: 9, mode: 'minor' }, { notes: [n(40)] }), 1, 'E2 is below A2, so A1');
   assert.equal(gridOctave({ gridOctave: 5 }, C_MAJOR, { notes: [n(40)] }), 5);
   assert.equal(gridOctave({ gridOctave: 99 }, C_MAJOR), 7);
+});
+
+test('a step stretched across later steps, a step at a time or freely, stopping at the clip end and the next note (Chordinal PRD §17.4)', () => {
+  const notes = setStep(setStep([], 60, 0, 0.25, true), 60, 6, 0.25, true);
+  const long = setStepLength(notes, 60, 0, 0.25, 0.8, 4);
+  assert.equal(long[0]!.beats, 0.75, 'snapped to whole steps');
+  assert.equal(setStepLength(notes, 60, 0, 0.25, 0.8, 4, true)[0]!.beats, 0.8, 'Shift: freely');
+  assert.equal(setStepLength(notes, 60, 0, 0.25, 3, 4)[0]!.beats, 1.5, 'stops at the next note on its row');
+  assert.equal(setStepLength(notes, 60, 6, 0.25, 9, 4)[1]!.beats, 2.5, 'stops at the clip end');
+  assert.equal(setStepLength(notes, 60, 0, 0.25, 0.01, 4)[0]!.beats, 0.25, 'at least a step');
+  assert.equal(setStepLength(notes, 60, 0, 0.25, 0.25, 4), notes, 'no change, same notes');
+  assert.equal(setStepLength(notes, 60, 3, 0.25, 1, 4), notes, 'an off step changes nothing');
+  // the steps under a long note stay off; turning one on cuts the long note there
+  assert.equal(heldOver(long, 60, 2, 0.25), long[0]);
+  assert.equal(heldOver(long, 60, 3, 0.25), null);
+  const cut = setStep(long, 60, 2, 0.25, true);
+  assert.deepEqual(
+    cut.map((n) => [n.beat, n.beats]),
+    [
+      [0, 0.5],
+      [0.5, 0.25],
+      [1.5, 0.25],
+    ],
+  );
 });

@@ -1,6 +1,7 @@
 // The step grid for the selected clip (PRD §4): a row per drum sound, or per note of the key on a melodic track
 // (Chordinal PRD §17.1), and a column per step. Click a step to turn it on or off and drag to paint more; Shift-click
-// an on step to accent it. Notes off the grid show greyed and are left alone. Click a row's name to hear it. On a drum
+// an on step to accent it. Drag an on step's right edge to make its note longer or shorter, a step at a time (Shift:
+// freely); a long note is one bar across the steps it covers (Chordinal PRD §17.4). Notes off the grid show greyed and are left alone. Click a row's name to hear it. On a drum
 // track, right-click a drum's name to add or hide rows, or to load a sample on it, and drop a WAV, AIFF or MP3 on a
 // row to play it there in place of the kit's sound (PRD §14).
 import type { TargetedDragEvent, TargetedMouseEvent, TargetedPointerEvent } from 'preact';
@@ -19,6 +20,7 @@ import {
   gridTarget,
   playingStep,
   paintStep,
+  stretchStep,
   accentStep,
   setStepSize,
   addGridRow,
@@ -76,21 +78,31 @@ function drawGrid(g: CanvasRenderingContext2D, w: number, h: number, track: Trac
     g.textAlign = 'left';
     const name = sample ? `♪ ${sample.name}` : drums ? drumName(key) : noteName(key);
     g.fillText(name, 8, y + G.rowH / 2, GRID_GUTTER - 14);
-    for (let i = 0; i < steps; i++) {
-      const x = G.x(i),
-        { on, off } = cell(clip.notes, key, i, step);
-      g.fillStyle = on ? rgba(track.color, 0.35 + 0.65 * Math.min(1, on.vel / ACCENT_VELOCITY)) : C.cell;
+    const cells = Array.from({ length: steps }, (_, i) => cell(clip.notes, key, i, step));
+    // every step's empty cell first, then each on step's note as one bar across the steps it covers
+    cells.forEach((_, i) => {
+      g.fillStyle = C.cell;
       g.beginPath();
-      g.roundRect(x + 1.5, y + 2, G.colW - 3, G.rowH - 5, 3);
+      g.roundRect(G.x(i) + 1.5, y + 2, G.colW - 3, G.rowH - 5, 3);
       g.fill();
-      if (on && on.vel >= ACCENT_VELOCITY) {
-        g.fillStyle = C.accent;
-        g.fillRect(x + 3, y + 3, G.colW - 6, 2);
+    });
+    cells.forEach(({ on, off }, i) => {
+      const x = G.x(i);
+      if (on) {
+        const width = spanOf(on.beats, step, steps - i) * G.colW;
+        g.fillStyle = rgba(track.color, 0.35 + 0.65 * Math.min(1, on.vel / ACCENT_VELOCITY));
+        g.beginPath();
+        g.roundRect(x + 1.5, y + 2, width - 3, G.rowH - 5, 3);
+        g.fill();
+        if (on.vel >= ACCENT_VELOCITY) {
+          g.fillStyle = C.accent;
+          g.fillRect(x + 3, y + 3, width - 6, 2);
+        }
       }
       g.fillStyle = C.offGrid;
       for (const n of off)
         g.fillRect(x + (n.beat / step - i) * G.colW, y + G.rowH / 2 - 2, Math.max(2, G.colW / 4), 4);
-    }
+    });
   });
   const bottom = G.y(rows.length);
   for (let i = 0; i <= steps; i++) {
@@ -102,6 +114,64 @@ function drawGrid(g: CanvasRenderingContext2D, w: number, h: number, track: Trac
     g.fillStyle = C.playhead;
     g.fillRect(G.x(now), 0, G.colW, bottom);
   }
+}
+
+/** how many steps a note `beats` long is drawn across: at least one, and no further than the `left` steps */
+const spanOf = (beats: number, step: number, left: number) => Math.min(left, Math.max(1, beats / step));
+
+/** px either side of a note's right end that grab it to change its length */
+const EDGE = 5;
+
+/** the on step whose note's right end is under the pointer, on the pointer's row, or null */
+function edgeAt(e: At, clip: Clip, rows: number[]): DrumCell | null {
+  const r = e.currentTarget.getBoundingClientRect(),
+    steps = stepCount(clip),
+    step = stepOf(clip);
+  const G = gridGeometry(r.width, r.height, rows.length, steps);
+  const px = e.clientX - r.left,
+    row = Math.floor((e.clientY - r.top) / G.rowH),
+    key = rows[row];
+  if (key === undefined || px < GRID_GUTTER) return null;
+  const grab = Math.min(EDGE, G.colW / 3);
+  for (let i = 0; i < steps; i++) {
+    const on = cell(clip.notes, key, i, step).on;
+    if (on && Math.abs(px - G.x(i + spanOf(on.beats, step, steps - i))) <= grab) return { row, col: i, key };
+  }
+  return null;
+}
+
+/** drags the right end of step `at`'s note: its length follows the pointer, as one undo step */
+function stretch(
+  e: TargetedPointerEvent<HTMLDivElement>,
+  track: Track,
+  clip: Clip,
+  rows: number[],
+  at: DrumCell,
+) {
+  const el = e.currentTarget,
+    step = stepOf(clip),
+    merge = `length-${e.timeStamp}`;
+  el.setPointerCapture?.(e.pointerId);
+  const move = (m: PointerEvent) => {
+    const r = el.getBoundingClientRect();
+    const G = gridGeometry(r.width, r.height, rows.length, stepCount(clip));
+    const beat = ((m.clientX - r.left - GRID_GUTTER) / G.colW) * step;
+    stretchStep(track.id, clip.id, at.key, at.col, beat - at.col * step, m.shiftKey, merge);
+  };
+  const up = () => {
+    el.removeEventListener('pointermove', move);
+    el.removeEventListener('pointerup', up);
+    el.removeEventListener('pointercancel', up);
+  };
+  el.addEventListener('pointermove', move);
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+}
+
+/** the resize cursor over a note's right end */
+function hover(e: TargetedPointerEvent<HTMLDivElement>, track: Track, clip: Clip) {
+  if (e.buttons) return;
+  e.currentTarget.style.cursor = edgeAt(e, clip, rowsOf(track, clip)) ? 'ew-resize' : '';
 }
 
 /** a cell of the grid and the drum or note its row plays */
@@ -135,6 +205,11 @@ function down(e: TargetedPointerEvent<HTMLDivElement>, track: Track, clip: Clip)
   focus.value = 'grid';
   // the rows as they are now, for the whole drag, even if turning a step off drops a row
   const rows = rowsOf(track, clip);
+  const edge = edgeAt(e, clip, rows);
+  if (edge) {
+    stretch(e, track, clip, rows, edge);
+    return;
+  }
   const first = hit(e, track, clip, rows);
   if (!first) return;
   if (first.col < 0) {
@@ -311,6 +386,7 @@ function Grid({ track, clip }: GridProps) {
         style={{ height: `${rows * ROW_H[0]}px` }}
         data-testid="step-grid"
         onPointerDown={(e) => down(e, track, clip)}
+        onPointerMove={(e) => hover(e, track, clip)}
         onContextMenu={(e) => menu(e, track, clip)}
         onDragOver={(e) => {
           if (files(e) && drums) {

@@ -54,6 +54,47 @@ test.describe('Drums and patterns', () => {
     expect(errors).toEqual([]);
   });
 
+  test('dragging a step’s right edge stretches its note, and a step under it cuts it short', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Drums').dblclick();
+    const grid = page.getByTestId('step-grid');
+    const box = await grid.boundingBox();
+    if (!box) throw new Error('the step grid has no size');
+    const step = (box.width - GUTTER) / 16,
+      y = box.y + 6;
+    const edge = (col: number) => box.x + GUTTER + col * step;
+    await clickAt(page, 'step-grid', GUTTER + 0.5 * step, 6);
+    await clickAt(page, 'step-grid', GUTTER + 8.5 * step, 6);
+    // step 0's end dragged to 3.4 steps snaps to 3 steps
+    await page.mouse.move(edge(1), y);
+    await page.mouse.down();
+    await page.mouse.move(edge(2.2), y);
+    await page.mouse.move(edge(3.4), y);
+    await page.mouse.up();
+    // Shift: step 8's end goes where it's dropped, a step and a half
+    await page.keyboard.down('Shift');
+    await page.mouse.move(edge(9), y);
+    await page.mouse.down();
+    await page.mouse.move(edge(9.5), y);
+    await page.mouse.up();
+    await page.keyboard.up('Shift');
+    await page.screenshot({ path: test.info().outputPath('long-steps.png') });
+    // step 2 is under step 0's note: turning it on cuts that note there
+    await clickAt(page, 'step-grid', GUTTER + 2.5 * step, 6);
+
+    await saveAs(page, 'Long');
+    const notes = savedNotes((await storedProject(page, 'Long')) ?? '', 'Drums');
+    expect(notes.map(([beat, beats]) => [beat, beats])).toEqual([
+      [0, 0.5],
+      [0.5, 0.25],
+      [2, 0.375],
+    ]);
+    expect(errors).toEqual([]);
+  });
+
   test('a melodic track gets a grid of notes, and keeps it as its editor', async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);

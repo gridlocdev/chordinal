@@ -170,6 +170,9 @@ export {
   stepCount,
   stepOf,
   toggleAccent,
+  setStepLength,
+  heldOver,
+  longestLength,
 } from './steps.ts';
 export { MAX_SWING, chanceOf, swingOf, plays, swungBeat, playedClipNotes, rollProject } from './chance.ts';
 export {

@@ -11,7 +11,7 @@ import {
   melodicRows,
   gridOctave,
 } from '@chordinal/daw';
-import { stepOf, stepCount, setStep, toggleAccent, addRow, hideRow } from '@chordinal/daw';
+import { stepOf, stepCount, setStep, setStepLength, toggleAccent, addRow, hideRow } from '@chordinal/daw';
 import type { Clip, Note, Track } from '@chordinal/daw';
 import { project, selectedClip, settings, setSettings, playing, picked, beat } from './store.ts';
 import type { ClipRef, EditorTab } from './store.ts';
@@ -77,6 +77,27 @@ export const paintStep = (
   on: boolean,
   merge?: string | null,
 ): void => changeSteps(trackId, clipId, (notes, step) => setStep(notes, key, i, step, on), merge);
+
+/** step i's note on the row made `beats` long, a step at a time unless `free`; `merge` makes a drag one undo step
+ * (Chordinal PRD §17.4) */
+export function stretchStep(
+  trackId: string,
+  clipId: string,
+  key: number,
+  i: number,
+  beats: number,
+  free: boolean,
+  merge: string,
+): void {
+  const c = findClip(project.value, trackId, clipId);
+  if (c)
+    changeSteps(
+      trackId,
+      clipId,
+      (notes, step) => setStepLength(notes, key, i, step, beats, c.beats, free),
+      merge,
+    );
+}
 
 export const accentStep = (trackId: string, clipId: string, key: number, i: number): void =>
   changeSteps(trackId, clipId, (notes, step) => toggleAccent(notes, key, i, step));
