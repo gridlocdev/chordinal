@@ -47,6 +47,37 @@ test.describe('Projects', () => {
     expect(errors).toEqual([]);
   });
 
+  test('a synth from the Synths tab plays on a track, and comes back after a reload', async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Grand Piano').click();
+    const browser = page.locator('.browser');
+    await browser.getByRole('button', { name: 'Synths', exact: true }).click();
+    await browser.locator('.item', { hasText: 'Warm Pad' }).dblclick();
+    await expect(trackHeader(page, 'Grand Piano').locator('.inst')).toHaveText('Warm Pad');
+
+    await saveAs(page, 'Pads');
+    // PRD §13: the synth is saved on the track's instrument, beside the General MIDI program it falls back to
+    const saved = JSON.parse((await storedProject(page, 'Pads')) ?? '{}') as {
+      tracks: { name: string; instrument: { program: number; synth?: { name: string; amp: object } } }[];
+    };
+    const piano = saved.tracks.find((t) => t.name === 'Grand Piano');
+    expect(piano?.instrument.program).toBe(89);
+    expect(piano?.instrument.synth?.name).toBe('Warm Pad');
+    expect(piano?.instrument.synth?.amp).toBeTruthy();
+    await expect.poll(async () => (await storedSettings(page)).project).toBe('Pads');
+
+    await openApp(page);
+    await expect(page).toHaveTitle('Pads — Chordinal');
+    await expect(trackHeader(page, 'Grand Piano').locator('.inst')).toHaveText('Warm Pad');
+    // a SoundFont preset put on the track takes the synth off it
+    await trackHeader(page, 'Grand Piano').click();
+    await page.locator('.browser').getByRole('button', { name: 'Instruments', exact: true }).click();
+    await page.locator('.browser .item', { hasText: 'Grand Piano' }).first().dblclick();
+    await expect(trackHeader(page, 'Grand Piano').locator('.inst')).not.toHaveText('Warm Pad');
+    expect(errors).toEqual([]);
+  });
+
   test('New asks about unsaved changes first', async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);

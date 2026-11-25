@@ -27,15 +27,29 @@ import {
 import { setLoop } from '@chordinal/daw';
 import { quantizeNotes, humanizeNotes, scaleNotes, reverseNotes } from '@chordinal/daw';
 import type { Clip, Loop, Mixer, Track } from '@chordinal/daw';
+import { synthSettings } from '@chordinal/audio';
+import { presetFor } from '@chordinal/playback';
 import { project, selected, selectedClip, settings, setSettings, picked } from './store.ts';
 import { edit } from './document.ts';
 import { askText } from './ask.ts';
 
-/** an instrument: its bank and program */
+/** an instrument: its bank and program, and a synth's settings when it's a synth (PRD §13) */
 export interface InstrumentRef {
   bank: number;
   program: number;
+  synth?: object;
 }
+
+/** just the instrument of a ref: a SoundFont preset drops a synth the track had */
+const instrumentOf = ({ bank, program, synth }: InstrumentRef): InstrumentRef => ({
+  bank,
+  program,
+  ...(synth && { synth }),
+});
+
+/** what the track header, the mixer and musical typing call an instrument: its synth's name, or its preset's */
+export const instrumentName = (i: InstrumentRef): string =>
+  i.synth ? synthSettings(i.synth).name : (presetFor(i.bank, i.program)?.name ?? '');
 
 /** the arrangement's zoom in px per beat, or 0 to fit the project to the window */
 export const arrangeZoom: Signal<number> = signal(0);
@@ -55,7 +69,7 @@ export function addNewTrack({
   edit((p) => {
     const t = makeTrack(p, {
       name: name || `Track ${p.tracks.length + 1}`,
-      ...(instrument && { instrument }),
+      ...(instrument && { instrument: instrumentOf(instrument) }),
     });
     id = t.id;
     const at = after ? p.tracks.findIndex((x) => x.id === after) + 1 : p.tracks.length;
@@ -67,8 +81,8 @@ export function addNewTrack({
 }
 
 /** puts an instrument on a track */
-export const assignPreset = (trackId: string, { bank, program }: InstrumentRef): void =>
-  edit((p) => updateTrack(p, trackId, { instrument: { bank, program } }));
+export const assignPreset = (trackId: string, instrument: InstrumentRef): void =>
+  edit((p) => updateTrack(p, trackId, { instrument: instrumentOf(instrument) }));
 
 /** selects a track and opens the instruments, to pick one for it */
 export function chooseInstrument(trackId: string | null): void {

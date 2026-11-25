@@ -7,16 +7,11 @@
 // over the loop point, because nothing is pre-rendered.
 import { audioEngine, peak } from './audio-engine.ts';
 import { startTicker } from './ticker.ts';
-import { createInstrument, type Instrument, type LoadedFont } from './soundfont.ts';
+import { createInstrument, type Instrument } from './soundfont.ts';
+import { createSynth } from './synth.ts';
+import type { PlayableInstrument } from './instruments.ts';
 import { createMixer, dbToGain } from './mixer.ts';
-import {
-  beatToSeconds,
-  bendCurve,
-  readBend,
-  secondsToBeat,
-  tempoSteps,
-  type Sf2Preset,
-} from '@chordinal/lib';
+import { beatToSeconds, bendCurve, readBend, secondsToBeat, tempoSteps } from '@chordinal/lib';
 import { insertValues, insertsOf, projectEnd } from '@chordinal/daw';
 import { passEvents, duckPlan, scheduleLane, playClick, heldAt, ownsKey } from '@chordinal/daw';
 import { clickBeats } from '@chordinal/daw';
@@ -86,7 +81,7 @@ interface Segment {
 /** Starts playing. instrumentsOf: from loadInstruments, one per track. */
 export function playProject(
   project: Project,
-  instrumentsOf: { font: LoadedFont; preset: Sf2Preset }[],
+  instrumentsOf: PlayableInstrument[],
   { from = 0, until = null, mix = null, click = false, ticker = startTicker }: PlayOptions = {},
 ): PlaybackHandle {
   const ctx = audioEngine.context;
@@ -122,7 +117,10 @@ export function playProject(
   const makeInstruments = (): (Instrument | undefined)[] =>
     instrumentsOf.map((b, i) => {
       const strip = strips[i];
-      return strip && createInstrument(b.font, b.preset, strip.input);
+      if (!strip) return undefined;
+      return 'synth' in b
+        ? createSynth(b.synth, strip.input)
+        : createInstrument(b.font, b.preset, strip.input);
     });
   let instruments = makeInstruments();
 

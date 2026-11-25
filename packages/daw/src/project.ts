@@ -76,12 +76,24 @@ export type Automation = {
   [insertParam: `${string}.${string}`]: Keyframe[] | undefined;
 };
 
+/**
+ * What a track plays: a SoundFont preset by its General MIDI bank and program, or a synth (PRD §13). A synth track
+ * keeps a program too: what a MIDI export names, and what a build without synths plays instead. `synth` is the synth's
+ * settings as saved (`SynthSettings` in @chordinal/audio, which sits beside this package): whatever plays or shows it
+ * reads it through `synthSettings`, which fills in what's missing.
+ */
+export interface TrackInstrument {
+  bank: number;
+  program: number;
+  synth?: object;
+}
+
 /** stepRows: the drum keys the step grid shows for the track (PRD §4.6) */
 export interface Track {
   id: string;
   name: string;
   color: number[];
-  instrument: { bank: number; program: number };
+  instrument: TrackInstrument;
   mixer: Mixer;
   fx: TrackFx[];
   /** the audio effects in its strip, in the order the sound goes through them; missing when it has none */
@@ -180,7 +192,7 @@ export function newId(project: Project, prefix: string): string {
 
 export interface TrackOptions {
   name?: string;
-  instrument?: { bank: number; program: number };
+  instrument?: TrackInstrument;
   color?: number[] | null;
   mixer?: Partial<Mixer>;
 }

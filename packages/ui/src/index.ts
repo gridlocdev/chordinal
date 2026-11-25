@@ -83,7 +83,7 @@ export {
 export { soundfonts } from './platform/soundfonts.ts';
 export { SETTINGS_KEY, browserStorage, storage } from './platform/storage.ts';
 export { heardDifferently, play, reload, seek, stop, toggle } from './player.ts';
-export { preview, previewNotes } from './preview.ts';
+export { preview, previewNotes, previewSynth } from './preview.ts';
 export type { PreviewNote, PreviewPreset } from './preview.ts';
 export {
   convertAgain,
@@ -182,6 +182,7 @@ export {
   joinWithNext,
   loopOver,
   makePatternOf,
+  instrumentName,
   makeUniqueOf,
   moveTrackBy,
   moveTrackTo,

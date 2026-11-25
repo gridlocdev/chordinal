@@ -11,13 +11,14 @@ import {
   loadSoundFont,
   findPreset,
   createInstrument,
+  createSynth,
   effectChain,
   prepareEffects,
 } from '@chordinal/playback';
 import { presetFor } from '@chordinal/playback';
 import { audioEngine } from '@chordinal/playback';
 import type { EffectChain, Instrument } from '@chordinal/playback';
-import type { LibraryPreset } from '@chordinal/audio';
+import { synthSettings, type LibraryPreset, type SynthSettings } from '@chordinal/audio';
 import {
   applyNoteFx,
   arpCycle,
@@ -119,25 +120,53 @@ function syncEffects(): void {
 const presetOf = (track: Track | null) =>
   track ? presetFor(track.instrument.bank, track.instrument.program) : presetFor(0, 0);
 
-async function load(entry: LibraryPreset): Promise<void> {
+/** what musical typing plays for the selected track: its synth, or its preset (by key, to load only when it changes) */
+function liveSound(
+  track: Track | null,
+): { key: string; synth: SynthSettings } | { key: string; entry: LibraryPreset } | null {
+  if (track?.instrument.synth) {
+    const synth = synthSettings(track.instrument.synth);
+    return { key: `synth:${JSON.stringify(synth)}`, synth };
+  }
+  const entry = presetOf(track);
+  return entry ? { key: `${entry.url}#${entry.bank}:${entry.program}`, entry } : null;
+}
+
+/** puts `make`'s instrument in place of the last one, once the live chain is ready. `make` waits out an export: an
+ * instrument made while exporting would belong to the offline render. */
+async function load(name: string, make: (into: AudioNode) => Promise<Instrument>): Promise<void> {
   const id = ++loading;
   try {
-    const font = await loadSoundFont(entry.url);
-    // an instrument made while exporting would belong to the offline render
-    while (audioEngine.rendering) await audioEngine.rendering.catch(() => {});
     const into = await liveInput();
-    if (id !== loading) return;
-    const preset = findPreset(font, entry.bank, entry.program);
-    if (!preset) throw new Error(`no preset ${entry.bank}:${entry.program}`);
+    const made = await make(into);
+    if (id !== loading) {
+      made.dispose();
+      return;
+    }
     releaseAll();
     instrument?.dispose();
-    instrument = createInstrument(font, preset, into);
+    instrument = made;
     instrument.setSustain(pedal);
-    liveName.value = preset.name;
+    liveName.value = name;
   } catch (e) {
-    if (id === loading) notify(`Couldn't load ${entry.name}: ${errorText(e)}`, 'error');
+    if (id === loading) notify(`Couldn't load ${name}: ${errorText(e)}`, 'error');
   }
 }
+
+const loadPreset = (entry: LibraryPreset): Promise<void> =>
+  load(entry.name, async (into) => {
+    const font = await loadSoundFont(entry.url);
+    while (audioEngine.rendering) await audioEngine.rendering.catch(() => {});
+    const preset = findPreset(font, entry.bank, entry.program);
+    if (!preset) throw new Error(`no preset ${entry.bank}:${entry.program}`);
+    return createInstrument(font, preset, into);
+  });
+
+const loadSynth = (synth: SynthSettings): Promise<void> =>
+  load(synth.name, async (into) => {
+    while (audioEngine.rendering) await audioEngine.rendering.catch(() => {});
+    return createSynth(synth, into);
+  });
 
 /** the keys one pressed key plays through the selected track's note effects (or just `fx`, some of them) */
 export function liveKeys(key: number, velocity = KEY_VELOCITY, fx?: TrackFx[]): number[] {
@@ -301,18 +330,15 @@ export function musicalKey(e: KeyPress): 'note' | 'octave' | 'letter' | null {
   return /^Key[A-Z]$/.test(e.code) ? 'letter' : null;
 }
 
-/** wires the keyboard and MIDI, and reloads the instrument whenever the selected track's preset changes */
+/** wires the keyboard and MIDI, and reloads the instrument whenever the selected track's preset or synth changes */
 export function startLive(): void {
   let last = '';
   effect(() => {
     void settings.value.library; // a library switch changes what presetFor finds
-    const entry = presetOf(selectedTrack.value);
-    if (!entry) return;
-    const id = `${entry.url}#${entry.bank}:${entry.program}`;
-    if (id !== last) {
-      last = id;
-      void load(entry);
-    }
+    const sound = liveSound(selectedTrack.value);
+    if (!sound || sound.key === last) return;
+    last = sound.key;
+    void ('synth' in sound ? loadSynth(sound.synth) : loadPreset(sound.entry));
   });
   void liveInput();
   effect(() => {

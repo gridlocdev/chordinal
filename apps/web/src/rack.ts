@@ -62,7 +62,7 @@ export const addDrumTrack = (): string =>
 
 /** an instrument dropped on a track sets that track's; dropped below the tracks, it adds a track with it (§6.3) */
 export function dropInstrument(trackId: string | null, preset: DroppedPreset): string {
-  const instrument = { bank: preset.bank, program: preset.program };
+  const { name: _name, ...instrument } = preset;
   if (trackId) {
     assignPreset(trackId, instrument);
     selected.value = trackId;

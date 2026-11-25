@@ -116,6 +116,13 @@ test('what a drag carries: an instrument, read back only when it is one', () => 
   assert.equal(readPreset('not json'), null);
   assert.equal(readPreset('{"bank":0,"program":"4","name":"x"}'), null);
   assert.equal(readPreset('null'), null);
+  const synth = { ...preset, name: 'Warm Pad', synth: { name: 'Warm Pad', mono: false } };
+  assert.deepEqual(readPreset(writePreset(synth)), synth, "a synth's settings ride along");
+  assert.deepEqual(
+    readPreset(JSON.stringify({ ...preset, synth: 'x' })),
+    preset,
+    'only settings, as an object',
+  );
   assert.equal(carries({ dataTransfer: { types: [PRESET] } }, PRESET), true);
   assert.equal(carries({ dataTransfer: { types: ['Files'] } }, PRESET), false);
   assert.equal(carries({ dataTransfer: null }, PRESET), false);

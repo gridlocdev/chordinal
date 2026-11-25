@@ -1,12 +1,12 @@
-// The browser under the channel rack (Chordinal PRD §7): the instruments by General MIDI family, the drum kits, the
-// projects (Open Recent and those in Documents/Chordinal/), and the open project's recorded takes (§9.3). Click an
+// The browser under the channel rack (Chordinal PRD §7): the instruments by General MIDI family, the synth's presets
+// (§13), the drum kits, the projects (Open Recent and those in Documents/Chordinal/), and the open project's recorded takes (§9.3). Click an
 // instrument or a kit to hear it, double-click to put it on the selected track, or drag it onto a track or the channel
 // rack. Click a take to read it onto the selected track at the playhead, or drag it onto a track.
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import { signal } from '@preact/signals';
-import { soundfontLibrary } from '@chordinal/audio';
-import type { LibraryPreset } from '@chordinal/audio';
+import { soundfontLibrary, SYNTH_GROUPS, SYNTH_PRESETS } from '@chordinal/audio';
+import type { LibraryPreset, SynthPreset } from '@chordinal/audio';
 import { folderTitle, projectFolders } from '@chordinal/ui';
 import { settings, setSettings, selected, selectedTrack, projectName, beat } from '@chordinal/ui';
 import type { BrowserTab } from '@chordinal/ui';
@@ -15,7 +15,8 @@ import { place } from '@chordinal/ui';
 import { dropTake, takesKept } from '@chordinal/ui';
 import { assignPreset } from '@chordinal/ui';
 import { liveName } from '@chordinal/ui';
-import { preview } from '@chordinal/ui';
+import { preview, previewSynth } from '@chordinal/ui';
+import type { InstrumentRef } from '@chordinal/ui';
 import { presetMenu, takeMenu } from '@chordinal/ui';
 import { PRESET, writePreset } from '@chordinal/ui';
 import { LibraryPicker } from '@chordinal/ui/components';
@@ -24,6 +25,7 @@ import { instrumentGroups, kits } from '../rack.ts';
 
 const TABS: [BrowserTab, string][] = [
   ['instruments', 'Instruments'],
+  ['synths', 'Synths'],
   ['kits', 'Kits'],
   ['projects', 'Projects'],
   ['takes', 'Takes'],
@@ -32,18 +34,21 @@ const TABS: [BrowserTab, string][] = [
 /** the open project's takes, as last listed */
 const takes = signal<string[]>([]);
 
-interface PresetProps {
-  p: LibraryPreset;
+interface ItemProps {
+  /** what it puts on a track, and its name */
+  p: InstrumentRef & { name: string };
+  hear: () => void;
 }
 
-function Preset({ p }: PresetProps) {
+/** an instrument in the browser: click to hear it, double-click to put it on the selected track, or drag it */
+function Item({ p, hear }: ItemProps) {
   return (
     <div
       class={`item ${p.name === liveName.value ? 'on' : ''}`}
       draggable
       title="Click to hear it, double-click to put it on the selected track"
       onDragStart={(e) => e.dataTransfer?.setData(PRESET, writePreset(p))}
-      onClick={() => preview(p)}
+      onClick={hear}
       onDblClick={() => selected.value && assignPreset(selected.value, p)}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -52,6 +57,33 @@ function Preset({ p }: PresetProps) {
     >
       {p.name}
     </div>
+  );
+}
+
+const Preset = ({ p }: { p: LibraryPreset }) => <Item p={p} hear={() => preview(p)} />;
+
+/** a synth preset: its General MIDI program stays on the track for a MIDI export */
+const Synth = ({ s }: { s: SynthPreset }) => (
+  <Item
+    p={{ bank: 0, program: s.program, name: s.settings.name, synth: s.settings }}
+    hear={() => previewSynth(s.settings)}
+  />
+);
+
+/** the synth's presets by group (PRD §13) */
+function Synths() {
+  const groups = SYNTH_GROUPS.map((g) => [g, SYNTH_PRESETS.filter((s) => s.group === g)] as const);
+  return (
+    <SectionList sections={[...SYNTH_GROUPS]}>
+      {groups.map(([group, list]) => (
+        <>
+          <div class="group">{group}</div>
+          {list.map((s) => (
+            <Synth s={s} />
+          ))}
+        </>
+      ))}
+    </SectionList>
   );
 }
 
@@ -254,7 +286,15 @@ export function LibraryBrowser() {
           </button>
         ))}
       </div>
-      {tab === 'projects' ? <Projects /> : tab === 'takes' ? <Takes /> : <Presets kit={tab === 'kits'} />}
+      {tab === 'projects' ? (
+        <Projects />
+      ) : tab === 'takes' ? (
+        <Takes />
+      ) : tab === 'synths' ? (
+        <Synths />
+      ) : (
+        <Presets kit={tab === 'kits'} />
+      )}
     </div>
   );
 }

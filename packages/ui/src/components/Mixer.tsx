@@ -2,12 +2,11 @@
 // master volume. Every move is an edit of the project,
 // a drag one undo step. Beside each fader, a meter of what it plays. Right-click a strip for more.
 import { audioEngine } from '@chordinal/playback';
-import { presetFor } from '@chordinal/playback';
 import { ARP_DIRECTIONS, ARP_FX, ARP_RATES, CHORD_FX, arpSettings, fxName, setMixer } from '@chordinal/daw';
 import type { TrackFx } from '@chordinal/daw';
 import { project, selected, settings, setSettings, levels, FADER_FLOOR_DB } from '../store.ts';
 import { edit } from '../document.ts';
-import { toggleMute, toggleSolo } from '../tracks.ts';
+import { instrumentName, toggleMute, toggleSolo } from '../tracks.ts';
 import { stripMenu } from '../context-menus.ts';
 import {
   ADDABLE,
@@ -205,7 +204,7 @@ export function Mixer() {
             <span class="name" title={t.name}>
               {t.name}
             </span>
-            <span class="inst">{presetFor(t.instrument.bank, t.instrument.program)?.name ?? ''}</span>
+            <span class="inst">{instrumentName(t.instrument)}</span>
             <EffectList track={t} />
             <div class="fx" role="group" aria-label={`${t.name} MIDI effects`}>
               {t.fx.map((fx, n) => (

@@ -10,7 +10,11 @@ A project is a folder with a `project.json`: tracks, clips of notes, instruments
 
 On macOS the window has no separate title bar, as in the system's own apps: the browser runs to the top with the window buttons above its tabs, and the transport row beside it is the rest of the title bar; drag either to move the window. A status bar runs along the bottom: the latest notice at the left (errors stay until you dismiss them), and at the right what the letter keys play (`Keys C4–F5 · Grand Piano`, dimmed until the piano roll has the focus), the connected MIDI keyboard and whether the project is saved.
 
-Each track's header in the arrangement has its mute, solo and a volume knob: double-click it to edit the track (a drum track opens the step grid), drag it to reorder, and drag instruments onto it from the browser at the left, where clicking an instrument or kit plays a preview and the dropdown under its tabs jumps to a section (an instrument family, or Recent and Documents/Chordinal).
+Each track's header in the arrangement has its mute, solo and a volume knob: double-click it to edit the track (a drum track opens the step grid), drag it to reorder, and drag instruments onto it from the browser at the left, where clicking an instrument, synth or kit plays a preview and the dropdown under its tabs jumps to a section (an instrument family, or Recent and Documents/Chordinal).
+
+## Synths
+
+Besides the SoundFont libraries, any track can play a synth: two oscillators and noise through a filter, with envelopes, an LFO, velocity, and a mono switch that glides between held notes. The browser's **Synths** tab lists its presets by group (Bass, Lead, Pad, Pluck and Keys). Click one to hear it, double-click it to put it on the selected track, or drag it onto a track. The synth is saved with the project and plays live, on Play and in an export. A MIDI export names the track's nearest General MIDI instrument.
 
 ## Humanize
 

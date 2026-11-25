@@ -1,9 +1,9 @@
 // Hearing an instrument before choosing it: a short note on middle C, or a kick, a snare and a closed hat for a kit
-// (Chordinal PRD §7.2). One preview sounds at a time; a new one cuts the last.
-import { loadSoundFont, findPreset, createInstrument } from '@chordinal/playback';
+// (Chordinal PRD §7.2), or a synth's preset (§13). One preview sounds at a time; a new one cuts the last.
+import { loadSoundFont, findPreset, createInstrument, createSynth } from '@chordinal/playback';
 import type { Instrument } from '@chordinal/playback';
 import { audioEngine } from '@chordinal/playback';
-import type { LibraryPreset } from '@chordinal/audio';
+import type { LibraryPreset, SynthSettings } from '@chordinal/audio';
 import { notify } from './store.ts';
 import { errorText } from './errors.ts';
 
@@ -37,24 +37,33 @@ export async function preview(preset: PreviewPreset): Promise<void> {
     if (id !== asked || audioEngine.rendering) return;
     const found = findPreset(font, preset.bank, preset.program);
     if (!found) throw new Error(`no preset ${preset.bank}:${preset.program}`);
-    stop();
-    const inst = createInstrument(font, found);
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    const notes = previewNotes(preset);
-    for (const [key, at, len] of notes) {
-      timers.push(setTimeout(() => inst.noteOn(key, VELOCITY), at * 1000));
-      timers.push(setTimeout(() => inst.noteOff(key), (at + len) * 1000));
-    }
-    const end = Math.max(...notes.map(([, at, len]) => at + len)) + TAIL_S;
-    timers.push(
-      setTimeout(() => {
-        if (current?.inst === inst) stop();
-      }, end * 1000),
-    );
-    current = { inst, timers };
+    sound(createInstrument(font, found), previewNotes(preset));
   } catch (e) {
     if (id === asked) notify(`Couldn't play ${preset.name}: ${errorText(e)}`, 'error');
   }
+}
+
+/** plays a synth's preset briefly */
+export function previewSynth(synth: SynthSettings): void {
+  ++asked;
+  if (!audioEngine.rendering) sound(createSynth(synth), previewNotes({ bank: 0 }));
+}
+
+/** plays `notes` on `inst`, cutting the last preview, and lets it go after its tail */
+function sound(inst: Instrument, notes: PreviewNote[]): void {
+  stop();
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  for (const [key, at, len] of notes) {
+    timers.push(setTimeout(() => inst.noteOn(key, VELOCITY), at * 1000));
+    timers.push(setTimeout(() => inst.noteOff(key), (at + len) * 1000));
+  }
+  const end = Math.max(...notes.map(([, at, len]) => at + len)) + TAIL_S;
+  timers.push(
+    setTimeout(() => {
+      if (current?.inst === inst) stop();
+    }, end * 1000),
+  );
+  current = { inst, timers };
 }
 
 function stop(): void {

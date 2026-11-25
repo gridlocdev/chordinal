@@ -24,6 +24,8 @@ export interface SynthOscillator {
 }
 
 export interface SynthSettings {
+  /** what the track header and the mixer call it: its preset's name, until it's renamed */
+  name: string;
   osc1: SynthOscillator;
   osc2: SynthOscillator;
   /** white noise, 0 to 1 */
@@ -57,6 +59,7 @@ export interface SynthSettings {
 
 /** a plain saw through an open low-pass: the settings a new synth starts with */
 export const DEFAULT_SYNTH: SynthSettings = {
+  name: 'Synth',
   osc1: { wave: 'saw', octave: 0, detune: 0, level: 0.8 },
   osc2: { wave: 'saw', octave: 0, detune: 7, level: 0 },
   noise: 0,
@@ -115,6 +118,7 @@ export function synthSettings(v: unknown = {}): SynthSettings {
     l = obj(p.lfo),
     d = DEFAULT_SYNTH;
   return {
+    name: typeof p.name === 'string' && p.name.trim() ? p.name.trim() : d.name,
     osc1: oscillator(p.osc1, d.osc1),
     osc2: oscillator(p.osc2, d.osc2),
     noise: num(p.noise, d.noise, 0, 1),

@@ -24,7 +24,12 @@ let bundle = '';
 test.beforeAll(async () => {
   const out = await build({
     stdin: {
-      contents: `import { createSynth } from './packages/playback/src/synth.ts'; window.createSynth = createSynth;`,
+      contents: [
+        `import { createSynth, loadInstruments, playProject, audioEngine, LEAD_IN } from '@chordinal/playback';`,
+        `import { emptyProject, makeTrack, addTrack, addClip } from '@chordinal/daw';`,
+        `window.createSynth = createSynth;`,
+        `window.chordinal = { loadInstruments, playProject, audioEngine, LEAD_IN, emptyProject, makeTrack, addTrack, addClip };`,
+      ].join('\n'),
       resolveDir: ROOT,
       loader: 'ts',
     },
@@ -37,6 +42,26 @@ test.beforeAll(async () => {
   bundle = out.outputFiles[0]!.text;
 });
 
+/** what the bundle puts on the page, as far as the tests use it */
+interface Bundle {
+  emptyProject(o: { bars: number }): ProjectLike;
+  makeTrack(p: ProjectLike, o: object): { id: string };
+  addTrack(p: ProjectLike, t: object): ProjectLike;
+  addClip(p: ProjectLike, track: string, clip: object): ProjectLike;
+  loadInstruments(tracks: unknown[]): Promise<unknown[]>;
+  playProject(p: ProjectLike, instruments: unknown[], o: object): unknown;
+  audioEngine: { render(seconds: number, start: () => () => void): Promise<AudioBuffer> };
+  LEAD_IN: number;
+}
+type ProjectLike = { tracks: unknown[] };
+
+/** puts the synth on a blank page, once */
+async function setUp(page: Page) {
+  if (await page.evaluate(() => 'createSynth' in window)) return;
+  await page.setContent('<!doctype html><title>synth</title>');
+  await page.addScriptTag({ content: bundle });
+}
+
 /** renders `calls` on a synth playing `settings` for `seconds`, and measures each [from, to] stretch of it */
 async function render(
   page: Page,
@@ -45,10 +70,7 @@ async function render(
   seconds: number,
   windows: [number, number][],
 ) {
-  if (!(await page.evaluate(() => 'createSynth' in window))) {
-    await page.setContent('<!doctype html><title>synth</title>');
-    await page.addScriptTag({ content: bundle });
-  }
+  await setUp(page);
   return page.evaluate(
     async ({ settings, calls, seconds, windows }) => {
       const rate = 48000;
@@ -213,5 +235,42 @@ test.describe('The synth', () => {
     expect(back!.hz).toBeLessThan(268);
     // the envelope stayed at its sustain level: no second attack up to the peak
     expect(attack!.peak).toBeLessThan(first!.peak * 1.2);
+  });
+
+  test('a project plays a track with a synth on it, as Play and an export do', async ({ page }) => {
+    await setUp(page);
+    const hz = await page.evaluate(async (synth) => {
+      const c = (window as unknown as { chordinal: Bundle }).chordinal;
+      let p = c.emptyProject({ bars: 1 });
+      const t = c.makeTrack(p, { name: 'Lead', instrument: { bank: 0, program: 80, synth } });
+      p = c.addTrack(p, t);
+      p = c.addClip(p, t.id, {
+        id: 'c1',
+        start: 0,
+        beats: 4,
+        notes: [{ beat: 0, beats: 2, key: 69, vel: 127 }],
+      });
+      const instruments = await c.loadInstruments(p.tracks);
+      const buffer = await c.audioEngine.render(1.5, () => {
+        let tick = () => {};
+        c.playProject(p, instruments, {
+          until: 4,
+          ticker: (_ms: number, fn: () => void) => {
+            tick = fn;
+            return () => {};
+          },
+        });
+        return () => tick();
+      });
+      const x = buffer.getChannelData(0),
+        rate = buffer.sampleRate;
+      const a = Math.floor((c.LEAD_IN + 0.2) * rate),
+        b = Math.floor((c.LEAD_IN + 0.7) * rate);
+      let ups = 0;
+      for (let i = a + 1; i < b; i++) if (x[i - 1]! < 0 && x[i]! >= 0) ups++;
+      return ups / 0.5;
+    }, SINE);
+    expect(hz).toBeGreaterThan(430);
+    expect(hz).toBeLessThan(450);
   });
 });

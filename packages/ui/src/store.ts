@@ -13,7 +13,7 @@ import type { History, Project, Track } from '@chordinal/daw';
 // ── settings, saved between runs ─────────────────────────────────────────────────────────────────────────────────────
 
 /** Chordinal's browser, on the left */
-export type BrowserTab = 'instruments' | 'kits' | 'projects' | 'takes';
+export type BrowserTab = 'instruments' | 'synths' | 'kits' | 'projects' | 'takes';
 /** what the editor, below the arrangement, shows */
 export type EditorTab = 'roll' | 'mixer' | 'grid';
 /** the theme setting: System follows the OS */

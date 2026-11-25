@@ -2,7 +2,7 @@ export { audioEngine, peak, renderPauses } from './audio-engine.ts';
 export { buildEffect, dbGain, effectChain, prepareEffects } from './effects.ts';
 export type { Effect, EffectChain, EffectParamTarget } from './effects.ts';
 export { loadInstruments, presetFor } from './instruments.ts';
-export type { LoadedInstrument } from './instruments.ts';
+export type { LoadedInstrument, LoadedPreset, LoadedSynth, PlayableInstrument } from './instruments.ts';
 export { mic } from './mic.ts';
 export { createMixer, dbToGain, delayTimes, panCurves, panGains } from './mixer.ts';
 export type { DelayTime, Panner, ProjectMixer, Strip, StripOptions } from './mixer.ts';

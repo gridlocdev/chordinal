@@ -135,7 +135,9 @@ The first part of §11.1. Its slices are in [4-small-daw.md](4-small-daw.md), fe
 6. An LFO: a sine, triangle, square or saw wave with a rate (0.1 to 20 Hz) and a depth, moving the pitch (in cents), the cutoff (in cents) or the volume.
 7. Mono: a switch that plays one note at a time. A note played while another is held slides to its pitch over the glide time (0 jumps) without starting its envelopes again. Letting it go slides back to the last key still held. Glide does nothing when Mono is off.
 8. A note's pitch moves (its tuning, bend, vibrato, scoop and fall, §9) and the sustain pedal work as on a SoundFont preset.
-9. Later slices save the synth on a track, add presets and a **Synths** tab in the browser, and a **Sound** tab in the editor to set it.
+9. A track's instrument keeps a synth's settings beside its General MIDI bank and program: `{ bank, program, synth }`. The program is what a MIDI export names and what a build without synths plays instead. Older projects, which have no `synth`, open and play as before. A saved synth is read with defaults for anything it lacks.
+10. The browser's **Synths** tab lists the synth's presets by group (Bass, Lead, Pad, Pluck and Keys), each with its General MIDI program. They work like the instruments: click to hear one, double-click to put it on the selected track, drag it onto a track or below them, or right-click for **Put on** and **New Track with It**. The track's header, the mixer and musical typing show the preset's name. Putting a SoundFont preset on a synth track takes the synth off it.
+11. A later slice adds a **Sound** tab in the editor to set the synth.
 
 ## Decisions
 

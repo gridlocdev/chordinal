@@ -227,9 +227,11 @@ test('the track headers and the browser: a header\'s double-click, + Drums, the 
         assert.equal(await page.$$eval('.track[data-id]', l => l.length), 3);
 
         // §7.1: the tabs
-        await page.click('.side-panel .tabs button:nth-child(2)');
+        await page.click('.side-panel .tabs button:text-is("Kits")');
         assert.ok((await page.$$eval('.side-panel .browser .item', l => l.map(x => x.textContent))).some(n => n.startsWith('Standard')), 'the kits are listed');
-        await page.click('.side-panel .tabs button:nth-child(1)');
+        await page.click('.side-panel .tabs button:text-is("Synths")');
+        assert.equal(await page.textContent('.side-panel .browser .group'), 'Bass', 'the synths are listed by group');
+        await page.click('.side-panel .tabs button:text-is("Instruments")');
         assert.equal(await page.textContent('.side-panel .browser .group'), 'Piano');
 
         // §5.2: the right edge drags, and B hides and shows the panel

@@ -379,8 +379,7 @@ export function presetMenu(preset: InstrumentRef): void {
     },
     {
       label: 'New Track with It',
-      run: () =>
-        addNewTrack({ instrument: { bank: preset.bank, program: preset.program }, after: selected.value }),
+      run: () => addNewTrack({ instrument: preset, after: selected.value }),
     },
   ]);
 }

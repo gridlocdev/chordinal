@@ -9,7 +9,6 @@ import { useState } from 'preact/hooks';
 import type { TargetedDragEvent, TargetedMouseEvent, TargetedPointerEvent } from 'preact';
 import { signal } from '@preact/signals';
 import { barAt } from '@chordinal/daw';
-import { presetFor } from '@chordinal/playback';
 import { updateClip, moveClip, newId, isDrums, findPattern } from '@chordinal/daw';
 import type { Clip, Track } from '@chordinal/daw';
 import { project, selected, selectedClip, beat, settings, setSettings } from '../store.ts';
@@ -17,7 +16,7 @@ import { edit } from '../document.ts';
 import { recording, takeNotes, dropAudio, dropTake } from '../recording.ts';
 import { isMidi, dropMidi } from '../midi-import.ts';
 import { focus } from '../focus.ts';
-import { renameTrack, toggleMute, toggleSolo, newClipAt, moveTrackTo } from '../tracks.ts';
+import { instrumentName, renameTrack, toggleMute, toggleSolo, newClipAt, moveTrackTo } from '../tracks.ts';
 import { clipMenu, laneMenu, trackContextMenu } from '../context-menus.ts';
 import { useCanvas, rgba } from './canvas.ts';
 import { px, snapTo } from './arrange-view.ts';
@@ -328,7 +327,7 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
           >
             {track.name}
           </span>
-          <span class="inst">{presetFor(track.instrument.bank, track.instrument.program)?.name ?? ''}</span>
+          <span class="inst">{instrumentName(track.instrument)}</span>
           <div class="ms" onClick={(e) => e.stopPropagation()} onDblClick={(e) => e.stopPropagation()}>
             <button class={`mute ${m.mute ? 'on' : ''}`} title="Mute" onClick={() => toggleMute(track.id)}>
               M

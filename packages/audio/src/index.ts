@@ -20,3 +20,5 @@ export type {
   SynthSettings,
   SynthWave,
 } from './synth-settings.ts';
+export { SYNTH_GROUPS, SYNTH_PRESETS } from './synth-presets-data.ts';
+export type { SynthGroup, SynthPreset } from './synth-presets-data.ts';
