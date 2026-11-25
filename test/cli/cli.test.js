@@ -195,6 +195,35 @@ test('export plays a sampler from the project folder’s samples, and nothing wh
     finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('export plays audio clips from the project folder’s audio, and nothing for a clip whose file is missing', { timeout: 60000 }, ()=>
+{
+    const dir = tmp();
+    try
+    {
+        fs.cpSync(path.join(FIXTURES, 'loop'), path.join(dir, 'clips'), { recursive: true });
+        fs.mkdirSync(path.join(dir, 'clips', 'audio'));
+        fs.writeFileSync(path.join(dir, 'clips', 'audio', 'tone.wav'), sineWav(440, 1));
+        const file = path.join(dir, 'clips', 'project.json');
+        const p = JSON.parse(fs.readFileSync(file, 'utf8'));
+        // the MIDI tracks fall silent, and an audio track plays the tone at beat 6 (2 s at 180 bpm) and a missing file at beat 12 (4 s)
+        for (const t of p.tracks) t.clips = [];
+        const clip = { offset: 0, seconds: 1, gain: 1, fadeIn: 0, fadeOut: 0 };
+        p.tracks.push({ ...p.tracks[0], id: 'voice', name: 'Voice', kind: 'audio', clips: [], inserts: [], automation: {}, audio: [
+            { ...clip, id: 'a1', start: 6, file: 'tone.wav' },
+            { ...clip, id: 'a2', start: 12, file: 'gone.wav' },
+        ] });
+        p.version = 3;
+        fs.writeFileSync(file, JSON.stringify(p));
+        cli(dir, 'export', 'clips', '--out', 'exported');
+        const wav = readWav(path.join(dir, 'exported', 'clips.wav'));
+        const before = peakBetween(wav, 0, 1.8), heard = peakBetween(wav, 2.1, 2.9), missing = peakBetween(wav, 4.6, 4.9);
+        assert.ok(heard > 1000, `the clip is heard (peak ${heard})`);
+        assert.ok(before < heard / 50, `nothing before it (peak ${before})`);
+        assert.ok(missing < heard / 50, `a clip with no file is silent (peak ${missing})`);
+    }
+    finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('export makes a project folder’s MIDI and WAV', { timeout: 60000 }, ()=>
 {
     const dir = tmp();

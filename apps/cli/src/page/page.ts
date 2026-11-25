@@ -49,12 +49,14 @@ function mixOf(p: Project): { gain: number; pan: number }[] {
 
 async function play(job: PlayJob): Promise<void> {
   const p: Project = { ...readProject(job.project), loop: null };
-  const { samples } = job;
-  const instruments = await loadInstruments(p.tracks, undefined, async (file) => {
-    if (!samples) return null;
-    const res = await fetch(samples + encodeURIComponent(file));
+  const { folder } = job;
+  /** a file in the project folder's samples/ or audio/, decoded as the app decodes it */
+  const reader = (sub: 'samples' | 'audio') => async (file: string) => {
+    if (!folder) return null;
+    const res = await fetch(`${folder}${sub}/${encodeURIComponent(file)}`);
     return res.ok ? decodeSample(await res.arrayBuffer()) : null;
-  });
+  };
+  const instruments = await loadInstruments(p.tracks, undefined, reader('samples'), reader('audio'));
   const until = job.until ?? projectEnd(p);
   const seconds = LEAD_IN + beatToSeconds(p.tempoMap, until) + job.tail;
   const playing: { handle: PlaybackHandle | null } = { handle: null };

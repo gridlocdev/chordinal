@@ -31,7 +31,7 @@ export interface Decoded {
 export interface Browser {
   /**
    * plays project.json's text to `until` (beats; null for its end) and `tail` seconds after; `folder` is the project
-   * folder its samplers' files are read from (samples/), or null
+   * folder its samplers' and audio clips' files are read from (samples/ and audio/), or null
    */
   play(project: string, until: number | null, tail: number, folder: string | null): Promise<Rendered>;
   /** decodes `file` at `rate` and hands back `count` frames of its left channel from `from` */
@@ -56,7 +56,7 @@ const TYPES: Record<string, string> = {
   '.aiff': 'audio/aiff',
 };
 
-/** a sample's file name, as a project's samples/ folder keeps them: nothing that could reach outside it */
+/** a sample's or audio clip's file name, as a project's samples/ and audio/ folders keep them: nothing that could reach outside it */
 const SAMPLE_NAME = /^\w[\w .-]*\.(wav|aiff?|mp3)$/i;
 
 const PAGE = `<!doctype html>
@@ -109,7 +109,7 @@ export async function openBrowser({
   const waiting: http.ServerResponse[] = [];
   const pending = new Map<number, { resolve: (a: Answer) => void; reject: (e: Error) => void }>();
   const shared = new Map<string, string>(); // url path → file
-  const sampleFolders: string[] = []; // /samples/<i>/<file> → <folder i>/samples/<file>
+  const folders: string[] = []; // /project/<i>/<samples|audio>/<file> → <folder i>/<samples|audio>/<file>
   let nextId = 1;
   let electron: ChildProcess | null = null;
   let closing = false;
@@ -164,10 +164,10 @@ export async function openBrowser({
         return;
       }
       if (p === '/page.js') return serveFile(res, path.join(DIST, 'page.js'));
-      const sample = /^\/samples\/(\d+)\/([^/]+)$/.exec(p);
-      const folder = sample && sampleFolders[Number(sample[1])];
-      if (folder && SAMPLE_NAME.test(sample[2]!)) {
-        const file = path.join(folder, 'samples', sample[2]!);
+      const inFolder = /^\/project\/(\d+)\/(samples|audio)\/([^/]+)$/.exec(p);
+      const folder = inFolder && folders[Number(inFolder[1])];
+      if (folder && SAMPLE_NAME.test(inFolder[3]!)) {
+        const file = path.join(folder, inFolder[2]!, inFolder[3]!);
         if (fs.existsSync(file) && fs.statSync(file).isFile()) return serveFile(res, file);
       }
       const file = shared.get(p) ?? path.join(ROOT, p);
@@ -210,13 +210,13 @@ export async function openBrowser({
 
   return {
     async play(project, until, tail, folder) {
-      let samples: string | null = null;
+      let served: string | null = null;
       if (folder) {
         const at = path.resolve(folder);
-        const i = sampleFolders.includes(at) ? sampleFolders.indexOf(at) : sampleFolders.push(at) - 1;
-        samples = `/samples/${i}/`;
+        const i = folders.includes(at) ? folders.indexOf(at) : folders.push(at) - 1;
+        served = `/project/${i}/`;
       }
-      const { body, query } = await ask({ kind: 'play', project, until, tail, samples });
+      const { body, query } = await ask({ kind: 'play', project, until, tail, folder: served });
       const all = floats(body),
         n = all.length / 2;
       return {
