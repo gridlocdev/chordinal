@@ -143,6 +143,7 @@ function shiftFrom(p: Project, at: number, by: number): Project {
     tracks: p.tracks.map((t) => ({
       ...t,
       clips: t.clips.map((c) => ({ ...c, start: move(c.start) })),
+      ...(t.audio && { audio: t.audio.map((c) => ({ ...c, start: move(c.start) })) }),
       automation: mapLanes(t.automation, (frames) => frames.map((f) => ({ ...f, beat: move(f.beat) }))),
     })),
   };
@@ -186,6 +187,7 @@ export function deleteTime(p: Project, from: number, to: number): Project {
     tracks: q.tracks.map((t) => ({
       ...t,
       clips: t.clips.filter((c) => !inside(c.start)),
+      ...(t.audio && { audio: t.audio.filter((c) => !inside(c.start)) }),
       automation: mapLanes(t.automation, (frames) => frames.filter((f) => !inside(f.beat))),
     })),
   };

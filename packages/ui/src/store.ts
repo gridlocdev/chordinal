@@ -126,6 +126,14 @@ export const libraryDownload: Signal<LibraryDownload | null> = signal(null);
 export const selected: Signal<string | null> = signal(null);
 /** the clip selected in the arrangement */
 export const selectedClip: Signal<ClipRef | null> = signal(null);
+/** the audio clip selected in the arrangement (PRD §16.6); selecting one clip unselects the other kind */
+export const selectedAudio: Signal<ClipRef | null> = signal(null);
+effect(() => {
+  if (selectedClip.value) selectedAudio.value = null;
+});
+effect(() => {
+  if (selectedAudio.value) selectedClip.value = null;
+});
 
 /** selected notes, as 'clipId:index': an edit that moves notes to other indexes clears it */
 export const picked: Signal<Set<string>> = signal(new Set());

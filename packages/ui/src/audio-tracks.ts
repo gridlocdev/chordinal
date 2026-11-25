@@ -1,9 +1,19 @@
-// Audio tracks in the app (Chordinal PRD §16): a new one, and audio files dropped on one's lane (or below the tracks,
-// for a new one) as clips, their files kept in the project's audio/ folder.
+// Audio tracks in the app (Chordinal PRD §16): a new one, audio files dropped on one's lane (or below the tracks, for
+// a new one) as clips, their files kept in the project's audio/ folder, and what the selected clip's commands do.
 import { SAMPLE_FILE } from '@chordinal/audio';
-import { addAudioClip, addTrack, audioClipEnd, isAudioTrack, makeAudioTrack } from '@chordinal/daw';
-import type { Project } from '@chordinal/daw';
-import { project, selected, notify } from './store.ts';
+import {
+  addAudioClip,
+  addTrack,
+  audioClipEnd,
+  findAudioClip,
+  isAudioTrack,
+  makeAudioTrack,
+  removeAudioClip,
+  updateAudioClip,
+} from '@chordinal/daw';
+import type { AudioClip, Loop, Project } from '@chordinal/daw';
+import { dbToGain } from '@chordinal/playback';
+import { project, selected, selectedAudio, notify } from './store.ts';
 import { edit } from './document.ts';
 import { errorText } from './errors.ts';
 import { audioFiles } from './audio-files.ts';
@@ -64,3 +74,41 @@ export async function dropAudioClips(trackId: string | null, files: File[], at: 
     }
   }
 }
+
+/** the selected audio clip, while it's there */
+export function selectedAudioClip(): { track: string; clip: AudioClip } | null {
+  const sel = selectedAudio.value,
+    clip = sel && findAudioClip(project.value, sel.track, sel.clip);
+  return sel && clip ? { track: sel.track, clip } : null;
+}
+
+export function deleteAudioClip(trackId: string, clipId: string): void {
+  edit((p) => removeAudioClip(p, trackId, clipId));
+  if (selectedAudio.value?.clip === clipId) selectedAudio.value = null;
+}
+
+export const toggleAudioMute = (trackId: string, clipId: string): void =>
+  edit((p) => updateAudioClip(p, trackId, clipId, (c) => ({ ...c, mute: !c.mute })));
+
+/** the gains a clip's right-click menu offers, in dB */
+export const AUDIO_GAINS_DB = [-12, -6, -3, 0, 3, 6, 12];
+
+/** a clip's gain in dB, rounded to a tenth */
+export const audioGainDb = (c: AudioClip): number =>
+  c.gain > 0 ? Math.round(200 * Math.log10(c.gain)) / 10 : -Infinity;
+
+export const setAudioGain = (trackId: string, clipId: string, db: number): void =>
+  edit((p) => updateAudioClip(p, trackId, clipId, { gain: dbToGain(db) }));
+
+/** a clip moved later (or earlier) by some beats, not before the start */
+export const nudgeAudioClip = (trackId: string, clipId: string, by: number): void =>
+  edit(
+    (p) => updateAudioClip(p, trackId, clipId, (c) => ({ ...c, start: Math.max(0, c.start + by) })),
+    `nudge ${clipId}`,
+  );
+
+/** the stretch an audio clip plays over */
+export const audioClipRange = (trackId: string, clipId: string): Loop | null => {
+  const c = findAudioClip(project.value, trackId, clipId);
+  return c ? { from: c.start, to: audioClipEnd(project.value.tempoMap, c) } : null;
+};

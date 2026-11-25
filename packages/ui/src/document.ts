@@ -1,7 +1,7 @@
 // The open project as a document: opening, saving, starting a new empty one,
 // and every edit, each a step undo can take back. Where projects are kept, and how Save As and the unsaved-changes
 // question go, is set at start-up (place.ts).
-import { emptyProject } from '@chordinal/daw';
+import { emptyProject, findAudioClip } from '@chordinal/daw';
 import { history, commit, undo as undoStep, redo as redoStep } from '@chordinal/daw';
 import { writeProject } from '@chordinal/daw';
 import type { Project } from '@chordinal/daw';
@@ -13,6 +13,7 @@ import {
   dirty,
   selected,
   selectedClip,
+  selectedAudio,
   picked,
   beat,
   notify,
@@ -97,6 +98,8 @@ function keepSelection(): void {
   const c = selectedClip.value;
   if (c && !p.tracks.find((t) => t.id === c.track)?.clips.some((x) => x.id === c.clip))
     selectedClip.value = null;
+  const a = selectedAudio.value;
+  if (a && !findAudioClip(p, a.track, a.clip)) selectedAudio.value = null;
 }
 
 /** puts a project in the window, stopped at its start; a project with no name has unsaved changes unless `clean` */
@@ -112,6 +115,7 @@ function show(p: Project, name: string, clean = false): void {
   session = NEW;
   selected.value = p.tracks[0]?.id ?? null;
   selectedClip.value = null;
+  selectedAudio.value = null;
   picked.value = new Set();
   focus.value = 'arrange';
   beat.value = 0;

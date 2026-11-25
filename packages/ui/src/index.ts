@@ -130,6 +130,7 @@ export {
   saved,
   selected,
   selectedClip,
+  selectedAudio,
   selectedTrack,
   setSettings,
   settings,

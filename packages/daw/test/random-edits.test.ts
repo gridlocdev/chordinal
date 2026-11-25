@@ -4,6 +4,13 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import {
+  addAudioClip,
+  audioClipsOf,
+  makeAudioTrack,
+  moveAudioClip,
+  removeAudioClip,
+  trimAudioClip,
+  updateAudioClip,
   addClip,
   addMarker,
   addRow,
@@ -99,6 +106,9 @@ function pickClip(
 
 const op = (o: Op<State>): Op<State> => o;
 
+const audioClips = (s: State) => tracks(s).flatMap((t) => audioClipsOf(t).map((c) => ({ t, c })));
+const hasAudioClips = (s: State) => audioClips(s).length > 0;
+
 const ops: Op<State>[] = [
   op({
     name: 'add track',
@@ -109,6 +119,58 @@ const ops: Op<State>[] = [
       const at = r.int(tracks(s).length + 1);
       edit(s, (p) => addTrack(p, makeTrack(p, { name: r.text(), instrument }), at));
       return `at ${at}${drums ? ' (drums)' : ''}`;
+    },
+  }),
+  op({
+    name: 'add audio track',
+    run(s, r) {
+      const at = r.int(tracks(s).length + 1);
+      edit(s, (p) => addTrack(p, makeAudioTrack(p, { name: r.text() }), at));
+      return `at ${at}`;
+    },
+  }),
+  op({
+    name: 'add audio clip',
+    weight: 2,
+    when: hasTracks,
+    run(s, r) {
+      const t = r.pick(tracks(s)),
+        start = beatIn(r, present(s).length),
+        seconds = r.pick([0.5, 1, 2.25, 7]),
+        fadeIn = r.pick([0, 0.1, 1, 9]);
+      edit(s, (p) => addAudioClip(p, t.id, { start, file: r.pick(['a.wav', 'b.mp3']), seconds, fadeIn }));
+      return `on ${t.id} at ${start}, ${seconds} s`;
+    },
+  }),
+  op({
+    name: 'edit audio clip',
+    weight: 2,
+    when: hasAudioClips,
+    run(s, r) {
+      const { t, c } = r.pick(audioClips(s)),
+        to = r.pick(tracks(s)),
+        at = beatIn(r, present(s).length);
+      switch (r.int(5)) {
+        case 0:
+          edit(s, (p) => moveAudioClip(p, t.id, c.id, to.id, at, r.chance(0.5)));
+          return `move ${c.id} to ${to.id} at ${at}`;
+        case 1:
+          edit(s, (p) =>
+            trimAudioClip(p, t.id, c.id, r.chance(0.5) ? 'start' : 'end', at, r.pick([1, 3, Infinity])),
+          );
+          return `trim ${c.id} to ${at}`;
+        case 2:
+          edit(s, (p) =>
+            updateAudioClip(p, t.id, c.id, { fadeOut: r.pick([0, 0.5, 9]), gain: r.pick([0, 0.5, 1, 2]) }),
+          );
+          return `fade and gain ${c.id}`;
+        case 3:
+          edit(s, (p) => updateAudioClip(p, t.id, c.id, { mute: !c.mute }));
+          return `mute ${c.id}`;
+        default:
+          edit(s, (p) => removeAudioClip(p, t.id, c.id));
+          return `remove ${c.id}`;
+      }
     },
   }),
   op({

@@ -1,14 +1,14 @@
-// The right-click menus, one for each thing that can be clicked: a clip, an empty stretch of a lane, a track's
+// The right-click menus, one for each thing that can be clicked: a clip, an audio clip, an empty stretch of a lane, a track's
 // header, the ruler, a note, the piano roll's background, a mixer strip, and the browser's
 // instruments and takes. The part clicked is selected first, so the menu's commands act on it.
-import { TRACK_COLORS, findClip, isDrums } from '@chordinal/daw';
+import { TRACK_COLORS, audioClipEnd, findAudioClip, findClip, isDrums } from '@chordinal/daw';
 import { renameMarker, removeMarker, markerRange } from '@chordinal/daw';
 import { barAt, laneParam, removeKeyframe, setKeyframeCurve, clearLane } from '@chordinal/daw';
 import type { LaneId } from '@chordinal/daw';
 import { shownLanes, toggleAutomation } from './automation.ts';
 import { appMenu } from './platform/app-menu.ts';
 import type { MenuEntry, MenuItem } from './platform/app-menu.ts';
-import { project, selected, selectedClip, settings, setSettings, picked } from './store.ts';
+import { project, selected, selectedClip, selectedAudio, settings, setSettings, picked } from './store.ts';
 import { edit } from './document.ts';
 import { seek } from './player.ts';
 import { dropTake } from './recording.ts';
@@ -25,6 +25,13 @@ import {
   reversePicked,
 } from './notes.ts';
 import { paste, clipboard } from './clipboard.ts';
+import {
+  AUDIO_GAINS_DB,
+  audioClipRange,
+  audioGainDb,
+  setAudioGain,
+  toggleAudioMute,
+} from './audio-tracks.ts';
 import { convertDialog, sourceOf } from './recording.ts';
 import {
   trackOf,
@@ -182,6 +189,52 @@ export function clipMenu(trackId: string, clipId: string, at: number): void {
     },
     '-',
     { label: 'Loop This Clip', run: () => loopOver(clipRange(trackId, clipId)) },
+  ]);
+}
+
+/** an audio clip, at the beat clicked (PRD §16.6) */
+export function audioClipMenu(trackId: string, clipId: string, at: number): void {
+  selected.value = trackId;
+  focus.value = 'arrange';
+  selectedAudio.value = { track: trackId, clip: clipId };
+  const c = findAudioClip(project.value, trackId, clipId);
+  if (!c) return;
+  const end = audioClipEnd(project.value.tempoMap, c);
+  const inside = at > c.start + 1e-6 && at < end - 1e-6;
+  const db = audioGainDb(c);
+  appMenu.popup([
+    item('cut'),
+    item('copy'),
+    item('paste', { label: 'Paste at Playhead' }),
+    item('duplicate'),
+    item('delete'),
+    '-',
+    { label: 'Split Here', enabled: inside, run: () => splitClipsAt(at, trackId) },
+    item('split'),
+    { label: 'Mute Clip', checked: !!c.mute, run: () => toggleAudioMute(trackId, clipId) },
+    '-',
+    {
+      label: 'Gain',
+      submenu: AUDIO_GAINS_DB.map((g) => ({
+        label: g > 0 ? `+${g} dB` : `${g} dB`,
+        radio: true,
+        checked: Math.abs(db - g) < 0.05,
+        run: () => setAudioGain(trackId, clipId, g),
+      })),
+    },
+    '-',
+    { label: 'Loop This Clip', run: () => loopOver(audioClipRange(trackId, clipId)) },
+  ]);
+}
+
+/** an empty stretch of an audio track's lane */
+export function audioLaneMenu(trackId: string, at: number): void {
+  selected.value = trackId;
+  selectedAudio.value = null;
+  focus.value = 'arrange';
+  appMenu.popup([
+    { ...pasteHere(trackId, at), enabled: clipboard.value?.kind === 'audio' },
+    playheadHere(at),
   ]);
 }
 

@@ -1,6 +1,7 @@
 // Audio tracks (PRD §16): a clip rendered through a real offline audio context in Chromium plays its stretch of the
 // file at its start; an audio file dropped below the tracks becomes a new audio track with the file as a clip, drawn
-// with its waveform, and saving keeps the file in the project's audio/ folder.
+// with its waveform, and saving keeps the file in the project's audio/ folder; a clip is moved, copied, trimmed, faded,
+// muted and deleted with the mouse and keys.
 import path from 'node:path';
 import { build } from 'esbuild';
 import type { Page } from '@playwright/test';
@@ -67,6 +68,54 @@ async function storedKey(page: Page, key: string): Promise<boolean> {
       }),
     key,
   );
+}
+
+/** puts a WAV file below the tracks, which makes an audio track for it */
+async function dropBelow(page: Page, name: string, bytes: Buffer): Promise<void> {
+  const below = page.locator('.add-track');
+  const data = await page.evaluateHandle(
+    ([n, b]) => {
+      const dt = new DataTransfer();
+      dt.items.add(new File([new Uint8Array(b)], n, { type: 'audio/wav' }));
+      return dt;
+    },
+    [name, [...bytes]] as const,
+  );
+  await below.dispatchEvent('dragover', { dataTransfer: data });
+  await below.dispatchEvent('drop', { dataTransfer: data });
+}
+
+/** the left and right edges of each clip drawn in the first audio lane, in page px, read from its name strips */
+async function clipSpans(page: Page): Promise<[number, number][]> {
+  const canvas = page.locator('.lane.audio canvas').first();
+  const box = (await canvas.boundingBox())!;
+  const spans = await canvas.evaluate((c: HTMLCanvasElement) => {
+    const g = c.getContext('2d')!,
+      ratio = c.width / c.clientWidth;
+    const row = g.getImageData(0, Math.round(8 * ratio), c.width, 1).data;
+    const out: [number, number][] = [];
+    let from = -1;
+    for (let x = 0; x <= c.width; x++) {
+      const on = x < c.width && row[x * 4 + 3]! > 0;
+      if (on && from < 0) from = x;
+      if (!on && from >= 0) {
+        out.push([from / ratio, x / ratio]);
+        from = -1;
+      }
+    }
+    return out;
+  });
+  return spans.map(([a, b]) => [box.x + a, box.x + b]);
+}
+
+/** a mouse drag from one point to another, in steps, with Alt held when `alt` */
+async function drag(page: Page, from: [number, number], to: [number, number], alt = false): Promise<void> {
+  await page.mouse.move(...from);
+  await page.mouse.down();
+  if (alt) await page.keyboard.down('Alt');
+  await page.mouse.move(...to, { steps: 8 });
+  await page.mouse.up();
+  if (alt) await page.keyboard.up('Alt');
 }
 
 test.describe('Audio tracks', () => {
@@ -142,17 +191,7 @@ test.describe('Audio tracks', () => {
   }) => {
     const errors = watchErrors(page);
     await openApp(page);
-    const below = page.locator('.add-track');
-    const data = await page.evaluateHandle(
-      (bytes) => {
-        const dt = new DataTransfer();
-        dt.items.add(new File([new Uint8Array(bytes)], 'tone.wav', { type: 'audio/wav' }));
-        return dt;
-      },
-      [...wav(220, 1)],
-    );
-    await below.dispatchEvent('dragover', { dataTransfer: data });
-    await below.dispatchEvent('drop', { dataTransfer: data });
+    await dropBelow(page, 'tone.wav', wav(220, 1));
     await expect(trackHeader(page, 'tone')).toBeVisible();
     await expect(trackHeader(page, 'tone')).toContainText('Audio');
     // the clip's waveform: the lane's canvas has the sine drawn in it
@@ -180,6 +219,62 @@ test.describe('Audio tracks', () => {
     expect(track?.audio?.[0]).toMatchObject({ file: 'tone.wav', start: 0 });
     expect(track?.audio?.[0]?.seconds).toBeCloseTo(1, 2);
     expect(await storedKey(page, 'audio:Tone:tone.wav')).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  test('a clip is moved, trimmed, faded, muted, copied and deleted with the mouse and keys', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await dropBelow(page, 'tone.wav', wav(220, 2));
+    await expect(trackHeader(page, 'tone')).toBeVisible();
+    // 2 s at 120 BPM: beats 0 to 4
+    await expect.poll(async () => (await clipSpans(page)).length).toBe(1);
+    const [a0, b0] = (await clipSpans(page))[0]!;
+    const ppb = (b0 - a0 + 2) / 4;
+    const lane = (await page.locator('.lane.audio').first().boundingBox())!;
+    const body = lane.y + lane.height - 8,
+      strip = lane.y + 6;
+
+    // drag the clip 2 beats later
+    await drag(page, [a0 + 1.5 * ppb, body], [a0 + 3.5 * ppb, body]);
+    await expect.poll(async () => (await clipSpans(page))[0]![0]).toBeCloseTo(a0 + 2 * ppb, -1);
+    // drag its right edge a beat earlier: beats 2 to 5
+    const end = a0 + 6 * ppb - 2;
+    await drag(page, [end, body], [end - ppb, body]);
+    await expect.poll(async () => (await clipSpans(page))[0]![1]).toBeCloseTo(a0 + 5 * ppb, -1);
+    // drag its fade-in square from the clip's start a beat in: half a second
+    const start = a0 + 2 * ppb + 2;
+    await drag(page, [start, strip], [start + ppb, strip]);
+    await page.keyboard.press('KeyM');
+    // Alt-drag a copy 4 beats on, then delete it and take that back
+    await drag(page, [start + 1.5 * ppb, body], [start + 5.5 * ppb, body], true);
+    await expect.poll(async () => (await clipSpans(page)).length).toBe(2);
+    await page.keyboard.press('Backspace');
+    await expect.poll(async () => (await clipSpans(page)).length).toBe(1);
+    await page.keyboard.press('ControlOrMeta+KeyZ');
+    await expect.poll(async () => (await clipSpans(page)).length).toBe(2);
+
+    await saveAs(page, 'Edited');
+    const saved = JSON.parse((await storedProject(page, 'Edited')) ?? '{}') as {
+      tracks: {
+        name: string;
+        audio?: { start: number; offset: number; seconds: number; fadeIn: number; mute?: boolean }[];
+      }[];
+    };
+    const clips = saved.tracks.find((t) => t.name === 'tone')?.audio ?? [];
+    expect(clips).toHaveLength(2);
+    for (const [c, at] of [
+      [clips[0], 2],
+      [clips[1], 6],
+    ] as const) {
+      expect(c?.start).toBe(at);
+      expect(c?.offset).toBe(0);
+      expect(c?.seconds).toBeCloseTo(1.5, 2);
+      expect(c?.fadeIn).toBeCloseTo(0.5, 1);
+      expect(c?.mute).toBe(true);
+    }
     expect(errors).toEqual([]);
   });
 });

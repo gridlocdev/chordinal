@@ -12,7 +12,20 @@ export {
   valueAt,
 } from './automation.ts';
 export type { KeyframeMoves, LaneId, LaneParam } from './automation.ts';
-export { addAudioClip, audioClipsOf, audioFiles, isAudioTrack, makeAudioTrack } from './audio-clips.ts';
+export {
+  MIN_AUDIO_SECONDS,
+  addAudioClip,
+  audioClipAt,
+  audioClipsOf,
+  audioFiles,
+  findAudioClip,
+  isAudioTrack,
+  makeAudioTrack,
+  moveAudioClip,
+  removeAudioClip,
+  trimAudioClip,
+  updateAudioClip,
+} from './audio-clips.ts';
 export type { AudioClipOptions } from './audio-clips.ts';
 export {
   addTrackFx,

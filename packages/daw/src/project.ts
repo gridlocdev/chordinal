@@ -324,6 +324,7 @@ export const removeTrack = (p: Project, id: string): Project => ({
 /** adds a clip; a pattern clip takes its pattern's notes, length and step from the clips already playing it, and one
  * of a pattern the project doesn't have is added as an ordinary clip (PRD §3.5) */
 export function addClip(p: Project, trackId: string, clip: Clip): Project {
+  if (p.tracks.find((t) => t.id === trackId)?.kind === 'audio') return p; // an audio track plays no notes (PRD §16.1)
   let added = clip;
   if (clip.pattern) {
     const sibling = p.tracks
@@ -478,12 +479,12 @@ export function moveClip(
   copy = false,
 ): Project {
   const clip = findClip(p, fromTrack, clipId);
-  if (!clip) return p;
+  if (!clip || p.tracks.find((t) => t.id === toTrack)?.kind === 'audio') return p;
   const out = copy ? p : removeClip(p, fromTrack, clipId);
   return addClip(out, toTrack, { ...clip, id: copy ? newId(p, 'c') : clip.id, start: Math.max(0, start) });
 }
 
-/** cuts the clips under a beat in two there: every track's, or one track's */
+/** cuts the clips under a beat in two there, audio clips too: every track's, or one track's */
 export function splitAt(p: Project, beat: number, trackId: string | null = null): Project {
   let out = p;
   for (const t of p.tracks) {
@@ -514,6 +515,27 @@ export function splitAt(p: Project, beat: number, trackId: string | null = null)
         right,
       );
     }
+    for (const c of t.audio ?? []) {
+      const cut = beatToSeconds(p.tempoMap, beat) - beatToSeconds(p.tempoMap, c.start);
+      if (beat <= c.start + 1e-9 || cut >= c.seconds - 1e-6) continue;
+      // PRD §16.6: the left piece keeps the fade in, the right one the fade out, each within its length
+      const left = { ...c, seconds: cut, fadeIn: Math.min(c.fadeIn, cut), fadeOut: 0 };
+      const right = {
+        ...c,
+        id: newId(out, 'a'),
+        start: beat,
+        offset: c.offset + cut,
+        seconds: c.seconds - cut,
+        fadeIn: 0,
+        fadeOut: Math.min(c.fadeOut, c.seconds - cut),
+      };
+      out = updateTrack(out, t.id, (x) => ({
+        ...x,
+        audio: [...(x.audio ?? []).filter((a) => a.id !== c.id), left, right].sort(
+          (a, b) => a.start - b.start,
+        ),
+      }));
+    }
   }
   return out;
 }
@@ -538,10 +560,15 @@ export function duplicateTrack(p: Project, id: string): Project {
     id: newId(p, 't'),
     name: `${t.name} copy`,
     clips: [],
+    ...(t.audio && { audio: [] }),
     mixer: { ...t.mixer, solo: false },
   };
   let out = addTrack(p, copy, i + 1);
   for (const c of t.clips) out = addClip(out, copy.id, { ...c, id: newId(out, 'c') });
+  for (const c of t.audio ?? []) {
+    const id = newId(out, 'a');
+    out = updateTrack(out, copy.id, (x) => ({ ...x, audio: [...(x.audio ?? []), { ...c, id }] }));
+  }
   return out;
 }
 

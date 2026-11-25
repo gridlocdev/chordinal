@@ -18,6 +18,7 @@ import {
   hist,
   selected,
   selectedClip,
+  selectedAudio,
   selectedTrack,
   beat,
   playing,
@@ -73,7 +74,14 @@ import {
   makeUniqueOf,
   patternOf,
 } from './tracks.ts';
-import { addAudioTrack } from './audio-tracks.ts';
+import {
+  addAudioTrack,
+  audioClipRange,
+  deleteAudioClip,
+  nudgeAudioClip,
+  selectedAudioClip,
+  toggleAudioMute,
+} from './audio-tracks.ts';
 import { exportDialog } from './bounce.ts';
 import { convertDialog } from './recording.ts';
 import { importMidi } from './midi-import.ts';
@@ -123,13 +131,19 @@ export function deleteSelection(): boolean {
     pointPicks.value = null;
     return true;
   }
+  const a = selectedAudioClip();
+  if (a) {
+    deleteAudioClip(a.track, a.clip.id);
+    return true;
+  }
   const c = selectedClip.value;
   if (!c) return false;
   deleteClip(c.track, c.clip);
   return true;
 }
 
-const canDelete = () => (focus.value === 'roll' ? hasPicks() : !!pickedPoints() || !!selectedClip.value);
+const canDelete = () =>
+  focus.value === 'roll' ? hasPicks() : !!pickedPoints() || !!selectedClip.value || !!selectedAudioClip();
 
 /** the stretch a loop is set to: the selection, else the section at the playhead, else four bars from its bar */
 export function selectionRange(): Loop | null {
@@ -140,6 +154,8 @@ export function selectionRange(): Loop | null {
       b = barAt(p.meters, Math.max(...list.map((o) => o.at + o.n.beats)) - 1e-6);
     return { from: a.start, to: b.start + b.beatsPerBar };
   }
+  const a = selectedAudioClip();
+  if (a) return audioClipRange(a.track, a.clip.id);
   const c = selectedClip.value;
   if (c) return clipRange(c.track, c.clip);
   const m = p.markers.findLastIndex((x) => x.beat <= beat.value + 1e-6);
@@ -215,6 +231,15 @@ const zoomBy = (k: number) => {
 const clipMuted = () => {
   const c = selectedClip.value;
   return !!c && !!findClip(project.value, c.track, c.clip)?.mute;
+};
+const audioSelected = () => focus.value !== 'roll' && !!selectedAudioClip();
+
+/** a nudge by some beats: the picked notes, the selected clip, or the selected audio clip */
+const nudge = (notes: () => unknown, beats: () => number) => () => {
+  const a = !inRoll() && selectedAudioClip();
+  if (a) return nudgeAudioClip(a.track, a.clip.id, beats());
+  const sel = selectedClip.value;
+  return inRoll() ? notes() : sel ? nudgeClip(sel.track, sel.clip, beats()) : undefined;
 };
 
 // ── the commands ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -393,7 +418,7 @@ export const catalog = new CommandCatalog([
     title: 'Split at Playhead',
     shortcut: 'mod+t',
     field: true,
-    run: () => splitClipsAt(beat.value, selectedClip.value?.track ?? null),
+    run: () => splitClipsAt(beat.value, selectedClip.value?.track ?? selectedAudio.value?.track ?? null),
     description: 'Cut the clips under the playhead in two.',
     keywords: 'cut divide',
   },
@@ -468,10 +493,10 @@ export const catalog = new CommandCatalog([
     title: 'Nudge Left',
     shortcut: 'left',
     repeats: true,
-    enabled: onNotesOrClip,
-    run: onSelection(
+    enabled: () => onNotesOrClip() || audioSelected(),
+    run: nudge(
       () => nudgePicked(-settings.value.grid),
-      (t, c) => nudgeClip(t, c, -barAt(project.value.meters, beat.value).beatsPerBar),
+      () => -barAt(project.value.meters, beat.value).beatsPerBar,
     ),
     description: 'Move the selected notes back a grid step, or the clip a bar.',
     keywords: 'earlier move',
@@ -482,10 +507,10 @@ export const catalog = new CommandCatalog([
     title: 'Nudge Right',
     shortcut: 'right',
     repeats: true,
-    enabled: onNotesOrClip,
-    run: onSelection(
+    enabled: () => onNotesOrClip() || audioSelected(),
+    run: nudge(
       () => nudgePicked(settings.value.grid),
-      (t, c) => nudgeClip(t, c, barAt(project.value.meters, beat.value).beatsPerBar),
+      () => barAt(project.value.meters, beat.value).beatsPerBar,
     ),
     description: 'Move the selected notes on a grid step, or the clip a bar.',
     keywords: 'later move',
@@ -537,9 +562,13 @@ export const catalog = new CommandCatalog([
     group: 'Edit',
     title: 'Mute Clip',
     shortcut: 'm',
-    enabled: () => !!selectedClip.value,
-    checked: clipMuted,
-    run: clipCommand(toggleClipMute),
+    enabled: () => !!selectedClip.value || !!selectedAudioClip(),
+    checked: () => clipMuted() || !!selectedAudioClip()?.clip.mute,
+    run: () => {
+      const a = selectedAudioClip();
+      if (a) toggleAudioMute(a.track, a.clip.id);
+      else clipCommand(toggleClipMute)();
+    },
     description: 'Silence the selected clip, or play it again.',
     keywords: 'silence unmute',
   },
