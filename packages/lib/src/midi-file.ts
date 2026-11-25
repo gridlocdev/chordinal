@@ -1,7 +1,8 @@
 // Standard MIDI Files: writes one (format 1) from tracks of notes timed in beats, so a score opens in any DAW, and reads
 // one (format 0 or 1) back into tracks of notes. A note tuned off its key (cents) is written as pitch bend on its channel,
-// and read back from it, taking the bend range as 2 semitones; a note's bend (a curve over the note) as pitch bend that
-// moves while it sounds, on a channel to itself. Pure.
+// and read back from it; a note's bend (a curve over the note) as pitch bend that moves while it sounds, on a channel to
+// itself. A track's bend range is 2 semitones, or wider when its notes bend further (a fall of an octave), set on each
+// channel by RPN 0; reading, a channel's range comes from its RPN 0, else 2 semitones. Pure.
 import { bendAt } from './bend.ts';
 import type { BendPoint } from './bend.ts';
 
@@ -9,14 +10,15 @@ const PPQ = 480; // ticks per beat
 const BEND_STEP = PPQ / 32; // how often a bend that moves over a note is written, in ticks
 const BEND_CENTER = 8192;
 const BEND_RANGE = 200; // cents either way: the General MIDI default of 2 semitones, set on each channel that bends
+const MAX_BEND_RANGE = 2400; // the widest range written: 24 semitones, as far as a note's bend goes
 
 // the text codecs every JavaScript runtime has; the engine's typecheck leaves out the DOM and Node types that hold them
 declare const TextEncoder: new () => { encode(text: string): Uint8Array };
 declare const TextDecoder: new () => { decode(bytes: Uint8Array): string };
 
 /**
- * cents: tuned this far off the key (±200 at most), written as pitch bend on its channel; bend: a curve over the note
- * on top of that (BendPoint), written as pitch bend that moves while the note sounds
+ * cents: tuned this far off the key, written as pitch bend on its channel; bend: a curve over the note on top of that
+ * (BendPoint), written as pitch bend that moves while the note sounds; together at most ±2400 cents
  */
 export interface MidiNote {
   key: number;
@@ -127,9 +129,19 @@ export function shareSpareChannels(tracks: Pick<MidiTrack, 'channel' | 'notes' |
 
 const isTuned = (n: MidiNote): boolean => !!n.cents || !!n.bend?.length;
 
-/** a note's cents as a 14-bit pitch bend */
-const bendValue = (cents = 0): number =>
-  Math.max(0, Math.min(16383, Math.round(BEND_CENTER + (cents / BEND_RANGE) * BEND_CENTER)));
+/** a note's cents as a 14-bit pitch bend, over a bend range of `range` cents either way */
+const bendValue = (cents: number, range: number): number =>
+  Math.max(0, Math.min(16383, Math.round(BEND_CENTER + (cents / range) * BEND_CENTER)));
+
+/** the bend range a track needs: 2 semitones, or whole semitones enough for its widest tuning and bend, up to 24 */
+function bendRange(notes: MidiNote[]): number {
+  let widest = 0;
+  for (const n of notes) {
+    const cents = n.cents ?? 0;
+    widest = Math.max(widest, Math.abs(cents), ...(n.bend ?? []).map((p) => Math.abs(cents + p.cents)));
+  }
+  return Math.min(MAX_BEND_RANGE, Math.max(BEND_RANGE, Math.ceil(widest / 100) * 100));
+}
 
 /**
  * For a track with tuned notes: sets the bend range and program on each of its channels, and returns a function that
@@ -140,15 +152,16 @@ const bendValue = (cents = 0): number =>
  */
 function bendChannels(t: MidiTrack, events: MidiEvent[]): (n: MidiNote, on: number, off: number) => number {
   const pool = [...new Set([t.channel, ...(t.channels ?? [])].map((c) => c & 15))];
+  const range = bendRange(t.notes);
   // until: the last note-off on the channel; bentUntil: the end of a note bending there, which no other note joins
   const state = pool.map((c) => ({ c, bend: BEND_CENTER, until: 0, bentUntil: 0 }));
   for (const c of pool) {
     if (c !== (t.channel & 15)) events.push({ tick: 0, order: 0, bytes: [0xc0 | c, t.program & 127] });
-    // RPN 0, pitch bend sensitivity: 2 semitones
+    // RPN 0, pitch bend sensitivity: the track's range in semitones
     for (const [cc, v] of [
       [101, 0],
       [100, 0],
-      [6, BEND_RANGE / 100],
+      [6, range / 100],
       [38, 0],
       [101, 127],
       [100, 127],
@@ -162,7 +175,7 @@ function bendChannels(t: MidiTrack, events: MidiEvent[]): (n: MidiNote, on: numb
   return (n, on, off) => {
     const curve = n.bend?.length ? n.bend : null;
     const cents = n.cents ?? 0;
-    const want = bendValue(cents + (curve ? bendAt(curve, 0) : 0));
+    const want = bendValue(cents + (curve ? bendAt(curve, 0) : 0), range);
     const s =
       (curve ? undefined : state.find((x) => x.bend === want && x.bentUntil <= on)) ??
       state.find((x) => x.until <= on) ??
@@ -171,7 +184,7 @@ function bendChannels(t: MidiTrack, events: MidiEvent[]): (n: MidiNote, on: numb
     if (s.bend !== want && free) bendTo(s, want, on);
     if (curve && free) {
       for (let tick = on + BEND_STEP; tick < off; tick += BEND_STEP) {
-        const value = bendValue(cents + bendAt(curve, (tick - on) / PPQ));
+        const value = bendValue(cents + bendAt(curve, (tick - on) / PPQ), range);
         if (value !== s.bend) bendTo(s, value, tick);
       }
       s.bentUntil = off;
@@ -222,6 +235,9 @@ interface ChannelState {
   program: number | null;
   held: Map<number, Held[]>;
   bend: number;
+  /** the bend range in cents either way, from RPN 0 (2 semitones until set); rpn: the parameter CC 101 and 100 chose */
+  range: number;
+  rpn: [number, number];
 }
 
 /**
@@ -262,7 +278,18 @@ export function readMidi(bytes: Uint8Array | ArrayBuffer | ArrayLike<number>): M
     const channels = new Map<number, ChannelState>();
     const chan = (c: number): ChannelState => {
       let state = channels.get(c);
-      if (!state) channels.set(c, (state = { notes: [], program: null, held: new Map(), bend: 0 }));
+      if (!state)
+        channels.set(
+          c,
+          (state = {
+            notes: [],
+            program: null,
+            held: new Map(),
+            bend: 0,
+            range: BEND_RANGE,
+            rpn: [127, 127],
+          }),
+        );
       return state;
     };
     const read = () => {
@@ -323,11 +350,19 @@ export function readMidi(bytes: Uint8Array | ArrayBuffer | ArrayLike<number>): M
       } else if (kind === 0x80 || kind === 0x90) off(c, d1, tick);
       else if (kind === 0xe0) {
         const state = chan(c);
-        state.bend = Math.round((((d2 << 7) | d1) - BEND_CENTER) * (BEND_RANGE / BEND_CENTER) * 10) / 10;
+        state.bend = Math.round((((d2 << 7) | d1) - BEND_CENTER) * (state.range / BEND_CENTER) * 10) / 10;
         // a bend while notes sound moves them: a point on each one's curve, over the bend it started on
         for (const stack of state.held.values())
           for (const h of stack)
             h.bend.push({ beat: (tick - h.tick) / ppq, cents: Math.round((state.bend - h.cents) * 10) / 10 });
+      } else if (kind === 0xb0) {
+        // RPN 0 sets the bend range: CC 101 and 100 choose the parameter, CC 6 its semitones and CC 38 its cents
+        const state = chan(c);
+        if (d1 === 101) state.rpn[0] = d2;
+        else if (d1 === 100) state.rpn[1] = d2;
+        else if (state.rpn[0] === 0 && state.rpn[1] === 0 && (d1 === 6 || d1 === 38))
+          state.range =
+            d1 === 6 ? Math.max(1, d2) * 100 + (state.range % 100) : Math.floor(state.range / 100) * 100 + d2;
       } else if (kind === 0xc0 && chan(c).program === null) chan(c).program = d1;
     }
     for (const [c, ch] of channels)

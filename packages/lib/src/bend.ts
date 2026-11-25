@@ -9,7 +9,7 @@ export interface BendPoint {
   cents: number;
 }
 
-const MAX_CENTS = 1200;
+const MAX_CENTS = 2400; // two octaves either way: a tracker's fall can drop a note that far
 
 /** a note's bend mark read safely: its points in beat order, or null when it has none or it isn't a curve */
 export function readBend(mark: unknown): BendPoint[] | null {

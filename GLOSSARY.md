@@ -26,7 +26,7 @@ How far a **note** is tuned off its key, in cents (100 to a semitone). A MIDI ex
 _Avoid_: microtone, pitch offset
 
 **Bend**:
-How a **note**'s pitch moves while it sounds: points of cents over its **detune**, each at a number of beats into the note, joined by straight lines. A MIDI export writes it as pitch bend that moves over the note.
+How a **note**'s pitch moves while it sounds: points of cents over its **detune**, each at a number of beats into the note, joined by straight lines, up to two octaves either way. A MIDI export writes it as pitch bend that moves over the note.
 _Avoid_: pitch curve, glide (a glide is one note sliding into the next)
 
 **Pattern**:

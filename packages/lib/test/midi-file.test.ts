@@ -144,6 +144,44 @@ test('a bent note moves its pitch bend over its length, on a channel no other no
   assert.ok(Math.abs(at(1.97)) < 3, 'and comes back down');
 });
 
+test("a note that falls an octave widens its track's bend range, and reads back falling an octave", () => {
+  const fall = [
+    { beat: 0.5, cents: 0 },
+    { beat: 1, cents: -1200 },
+  ];
+  const bytes = writeMidi({
+    tempo: 120,
+    beatsPerBar: 4,
+    tracks: [
+      {
+        name: 'Lead',
+        channel: 0,
+        program: 80,
+        notes: [{ key: 72, beat: 0, beats: 1, vel: 100, bend: fall }],
+      },
+    ],
+  });
+  const data = [...bytes];
+  const rpn = data.findIndex((b, i) => b === 0xb0 && data[i + 1] === 6);
+  assert.equal(data[rpn + 2], 12, 'RPN 0 sets 12 semitones');
+  const curve = readMidi(bytes).tracks[0]?.notes[0]?.bend ?? [];
+  assert.ok(Math.abs((curve.at(-1)?.cents ?? 0) + 1200) < 120, 'an octave down by its end');
+  const at = (beat: number) => curve.findLast((p) => p.beat <= beat + 1e-9)?.cents ?? 0;
+  assert.ok(Math.abs(at(0.4)) < 1, 'still at pitch before the fall starts');
+});
+
+test("a file's own bend range is read from RPN 0", () => {
+  // channel 0: range 24 semitones, the bend at full down, a note on it, the note off
+  const ev = [
+    0, 0xb0, 101, 0, 0, 0xb0, 100, 0, 0, 0xb0, 6, 24, 0, 0xb0, 38, 0, 0, 0xe0, 0, 0, 0, 0x90, 60, 100, 96,
+    0x80, 60, 0, 0, 0xff, 0x2f, 0,
+  ];
+  const head = [0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 0, 96];
+  const track = [0x4d, 0x54, 0x72, 0x6b, 0, 0, 0, ev.length, ...ev];
+  const note = readMidi(new Uint8Array([...head, ...track])).tracks[0]?.notes[0];
+  assert.equal(note?.cents, -2400);
+});
+
 test('a track with no tuned notes writes no bends or extra channels', () => {
   const plain = { name: 'Lead', channel: 0, program: 0, notes: [{ key: 60, beat: 0, beats: 1, vel: 90 }] };
   const song = { tempo: 120, beatsPerBar: 4, tracks: [plain] };

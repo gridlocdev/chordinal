@@ -30,7 +30,7 @@ To record onto an audio track, select it and press **●** (or `R`). The project
 
 A track can have a **Humanize** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round a loop is a little different. Your own edits are played the same way. A section can swing on its own or play straight, and sit further behind or ahead of the beat, when its marker says so.
 
-A note can be tuned off its key by a number of cents, written in the project file. It plays that way and stays under the note's other pitch moves (vibrato, scoops, slides). A note can also bend while it sounds: a curve of cents over its length, also written in the project file, so a held note can slide up a quarter tone and back.
+A note can be tuned off its key by a number of cents, written in the project file. It plays that way and stays under the note's other pitch moves (vibrato, scoops, slides). A note can also bend while it sounds: a curve of cents over its length, also written in the project file, so a held note can slide up a quarter tone and back, or a note can fall up to two octaves at its end. A chip part plays a bent note as written: it isn't cut short and gets no fall of its own.
 
 ## MIDI effects
 
@@ -106,4 +106,4 @@ To read a clip's audio again without recording it again, pick **Track ▸ Conver
 
 ## Importing and exporting
 
-Import a MIDI file as a new project from the File menu, or drop one on a track to add its tracks from that bar. In the Finder, **Open With ▸ Chordinal** on a MIDI file opens it in the desktop app the same way. Export the whole project, the loop or the selection as audio (the mix, or each track as its own WAV, normalized if you like) or as MIDI. A MIDI export writes a note's own tuning and its bend as pitch bend, giving tuned notes that overlap on one track channels of their own, and an import reads pitch bend back as each note's tuning and bend.
+Import a MIDI file as a new project from the File menu, or drop one on a track to add its tracks from that bar. In the Finder, **Open With ▸ Chordinal** on a MIDI file opens it in the desktop app the same way. Export the whole project, the loop or the selection as audio (the mix, or each track as its own WAV, normalized if you like) or as MIDI. A MIDI export writes a note's own tuning and its bend as pitch bend (each track's bend range widened to fit, up to two octaves), giving tuned notes that overlap on one track channels of their own, and an import reads pitch bend back as each note's tuning and bend, using the file's own bend range where it sets one.

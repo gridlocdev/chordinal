@@ -482,7 +482,8 @@ function endBeforeRepeats<N extends WorkingNote>(notes: N[]): N[] {
   return merged.size ? notes.filter((n) => !merged.has(n)) : notes;
 }
 
-// a chip part falls off the end of a phrase, and zaps (a blip down from above) into the next one outside quiet sections
+// a chip part falls off the end of a phrase, and zaps (a blip down from above) into the next one outside quiet sections;
+// a note with a bend of its own (a written fall) keeps that bend and gets no fall
 function addFallsAndZaps(
   notes: WorkingNote[],
   role: string,
@@ -502,6 +503,7 @@ function addFallsAndZaps(
     if (
       falls &&
       !n.held &&
+      !n.bend?.length &&
       (!after || after.beat - (n.beat + n.beats) >= F.rest - 1e-9) &&
       seconds >= F.minSeconds &&
       unit(role, 'fall', n.key, n.grid) < F.chance
@@ -520,11 +522,18 @@ function addFallsAndZaps(
 }
 
 // a chip part's quick notes are cut short, the gap that makes a tracker line bounce; not those slid into or out of,
-// nor an arpeggio's shimmer or a falling note, which need their length
+// nor an arpeggio's shimmer or a falling or bending note, which need their length
 function chopShortNotes(notes: WorkingNote[], spbAt: SpbAt): void {
   const S = CHIP.staccato;
   for (const n of notes)
-    if (n.beats <= S.maxBeats + 1e-9 && !n.held && n.glideFrom === undefined && !n.cycle && !n.fall)
+    if (
+      n.beats <= S.maxBeats + 1e-9 &&
+      !n.held &&
+      n.glideFrom === undefined &&
+      !n.cycle &&
+      !n.fall &&
+      !n.bend?.length
+    )
       n.beats = Math.min(n.beats, Math.max(n.beats * S.gate, S.minSeconds / spbAt(n.beat)));
 }
 

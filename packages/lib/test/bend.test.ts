@@ -22,6 +22,8 @@ test('a bend mark that is not a curve of numbers is no bend; its points come out
   assert.equal(readBend([{ beat: 1, cents: '40' }]), null);
   assert.equal(readBend([{ beat: -1, cents: 40 }]), null);
   assert.equal(readBend([{ beat: 1, cents: 5000 }]), null);
+  assert.equal(readBend([{ beat: 1, cents: -2500 }]), null, 'past two octaves');
+  assert.deepEqual(readBend([{ beat: 1, cents: -2400 }]), [{ beat: 1, cents: -2400 }], 'a two-octave fall');
   assert.deepEqual(
     readBend([
       { beat: 2, cents: 10 },
