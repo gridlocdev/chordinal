@@ -28,7 +28,7 @@ Music Generator is already a small DAW: tracks with SoundFont instruments, a pia
 8. Edits that cut a pattern clip turn the pieces into ordinary clips: Split, Join, Insert Bars and Delete Bars across it. The pattern's other clips are untouched.
 9. Ordinary-clip edits that move or remove a clip (move, nudge, mute, delete) work on pattern clips as on any clip and affect only that clip.
 10. In the arrangement a pattern clip shows the pattern's name and a link mark (`⧉`) in its corner, so linked copies are easy to tell apart from independent ones.
-11. A pattern with no clips left is dropped when the project is saved. Undo before saving brings its clips back with it.
+11. A pattern with no clips left stays in the project until it's deleted (replaced by Chordinal PRD §18.1).
 
 ## §4 The step grid
 

@@ -1,7 +1,7 @@
 // MIDI FX: code that changes a track's notes as they play, a little differently on each pass round a loop. A type is
 // registered once (the app registers them, so this layer needs none of their code); a track lists the types it uses
 // in track.fx. One type runs once per pass for the whole project, so it can share a plan across its tracks.
-import { trackNotes, updateTrack } from './project.ts';
+import { spreadPatternsFrom, trackNotes, updateTrack } from './project.ts';
 import { applyNoteFx, isNoteFx, noteFxName } from './note-fx.ts';
 import { rollProject } from './chance.ts';
 import type { Note, Project, Track, TrackFx } from './project.ts';
@@ -177,7 +177,7 @@ export function applyFxToNotes(p: Project, trackId: string, index: number): Proj
   const fx = track?.fx[index];
   if (!track || !fx || !on(fx)) return p;
   const baked = { ...track, fx: track.fx.slice(0, index + 1).filter(on) };
-  return updateTrack(p, trackId, (t) => ({
+  const out = updateTrack(p, trackId, (t) => ({
     ...t,
     fx: t.fx.filter((f, i) => i > index || !on(f)),
     clips: t.clips.map((c) => {
@@ -187,4 +187,5 @@ export function applyFxToNotes(p: Project, trackId: string, index: number): Proj
       return notes === inside ? c : { ...c, notes: [...notes, ...c.notes.filter((n) => !plays(n))] };
     }),
   }));
+  return spreadPatternsFrom(out, trackId);
 }

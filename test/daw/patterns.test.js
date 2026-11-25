@@ -30,7 +30,7 @@ test('a pattern clip and its copies share notes, length and step (PRD §3.2, §3
 {
     const { p, drums } = kit();
     const id = p.patterns[0].id;
-    assert.deepEqual(p.patterns, [{ id, name: 'Drums 1' }]);
+    assert.deepEqual(p.patterns.map(x => [x.id, x.name, x.track, x.beats, x.notes]), [[id, 'Drums 1', drums, 4, clipsOf(p, drums)[0].notes]]);
     assert.deepEqual(clipsOf(p, drums).map(c => [c.start, c.pattern]), [[0, id], [4, id], [8, id]]);
     const edited = updateClip(p, drums, clipsOf(p, drums)[1].id, c => ({ ...c, step: 0.125, notes: [...c.notes, { beat: 2, beats: 0.25, key: KICK, vel: 127 }] }));
     for (const c of clipsOf(edited, drums)) assert.deepEqual([c.notes.length, c.step, c.beats], [3, 0.125, 4]);
@@ -75,9 +75,9 @@ test('a project with patterns writes as version 2 and reads back the same (PRD �
     assert.match(text, /\[1,0\.25,38,100\]/, 'pattern notes keep the one-line form');
 
     const gone = clipsOf(p, drums).reduce((q, c)=> removeClip(q, drums, c.id), p);
-    const plain = JSON.parse(writeProject(gone));
-    assert.equal(plain.version, 1, 'no pattern clips: version 1 (PRD §7.1, §3.11)');
-    assert.equal(plain.patterns, undefined);
+    const kept = JSON.parse(writeProject(gone));
+    assert.equal(kept.version, 2, 'no pattern clips, but a kept pattern: still version 2 (Chordinal PRD §18.8)');
+    assert.deepEqual(kept.patterns.map(x => [x.id, x.notes.length]), [[id, 2]]);
 
     const broken = text.replace('"patterns": [', '"unused": [');
     assert.throws(()=> readProject(broken), new RegExp(`clip c1 plays pattern ${id}, which the project doesn't have`));

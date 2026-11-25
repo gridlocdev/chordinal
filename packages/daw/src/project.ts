@@ -44,9 +44,18 @@ export interface AudioClip {
   mute?: boolean;
 }
 
+/** what every clip of a pattern shares, kept on the pattern too so it outlives its clips (Chordinal PRD §18.1);
+ * track is the track it was made on, missing once that track is deleted, and drums says whether that was a drum
+ * track */
 export interface Pattern {
   id: string;
   name: string;
+  beats: number;
+  notes: Note[];
+  step?: number;
+  swing?: number;
+  track?: string;
+  drums?: boolean;
 }
 
 export interface Keyframe {
@@ -325,24 +334,31 @@ export function addTrack(p: Project, track: Track, index: number = p.tracks.leng
   return { ...p, tracks };
 }
 
-/** removes a track, and any ducking that listened to it */
-export const removeTrack = (p: Project, id: string): Project => ({
-  ...p,
-  tracks: p.tracks
-    .filter((t) => t.id !== id)
-    .map((t) => (t.mixer.duck?.from === id ? { ...t, mixer: { ...t.mixer, duck: null } } : t)),
-});
+/** removes a track, and any ducking that listened to it; its patterns stay, remembering whether it was a drum track
+ * (Chordinal PRD §18.1) */
+export function removeTrack(p: Project, id: string): Project {
+  const gone = p.tracks.find((t) => t.id === id);
+  const orphan = ({ track: _track, ...x }: Pattern): Pattern => ({
+    ...x,
+    ...(gone && isDrums(gone) && { drums: true }),
+  });
+  return {
+    ...p,
+    tracks: p.tracks
+      .filter((t) => t.id !== id)
+      .map((t) => (t.mixer.duck?.from === id ? { ...t, mixer: { ...t.mixer, duck: null } } : t)),
+    ...(p.patterns && { patterns: p.patterns.map((x) => (x.track === id ? orphan(x) : x)) }),
+  };
+}
 
-/** adds a clip; a pattern clip takes its pattern's notes, length and step from the clips already playing it, and one
- * of a pattern the project doesn't have is added as an ordinary clip (PRD §3.5) */
+/** adds a clip; a pattern clip takes its pattern's notes, length, step and swing, and one of a pattern the project
+ * doesn't have is added as an ordinary clip (PRD §3.5) */
 export function addClip(p: Project, trackId: string, clip: Clip): Project {
   if (p.tracks.find((t) => t.id === trackId)?.kind === 'audio') return p; // an audio track plays no notes (PRD §16.1)
   let added = clip;
   if (clip.pattern) {
-    const sibling = p.tracks
-      .flatMap((t) => t.clips)
-      .find((c) => c.pattern === clip.pattern && c.id !== clip.id);
-    added = !findPattern(p, clip.pattern) ? unlinked(clip) : sibling ? withShared(clip, sibling) : clip;
+    const pattern = findPattern(p, clip.pattern);
+    added = pattern ? withShared(clip, pattern) : unlinked(clip);
   }
   return updateTrack(p, trackId, (t) => ({
     ...t,
@@ -369,22 +385,24 @@ export function updateClip(p: Project, trackId: string, clipId: string, patch: P
 /** what every clip of a pattern shares (PRD §3.2) */
 const LINKED = ['notes', 'beats', 'step', 'swing'] as const;
 
-/** a clip with these shared fields from another; a missing step or swing stays missing */
-function withShared(clip: Clip, from: Clip): Clip {
-  const { step: _step, swing: _swing, ...rest } = clip;
-  return {
-    ...rest,
-    notes: from.notes,
-    beats: from.beats,
-    ...(from.step !== undefined && { step: from.step }),
-    ...(from.swing !== undefined && { swing: from.swing }),
-  };
+/** the fields a pattern's clips share */
+type Shared = Pick<Clip, (typeof LINKED)[number]>;
+
+/** a clip, or a pattern, with these shared fields from another; a missing step or swing stays missing */
+function withShared<T extends Shared>(clip: T, from: Shared): T {
+  const out: T = { ...clip, notes: from.notes, beats: from.beats };
+  if (from.step === undefined) delete out.step;
+  else out.step = from.step;
+  if (from.swing === undefined) delete out.swing;
+  else out.swing = from.swing;
+  return out;
 }
 
-/** every other clip of `source`'s pattern made to match it */
+/** the pattern and every other clip of `source`'s pattern made to match it */
 function spreadPattern(p: Project, source: Clip): Project {
   return {
     ...p,
+    patterns: patternsOf(p).map((x) => (x.id === source.pattern ? withShared(x, source) : x)),
     tracks: p.tracks.map((t) =>
       t.clips.some((c) => c.pattern === source.pattern && c.id !== source.id)
         ? {
@@ -436,9 +454,88 @@ export function makePattern(p: Project, trackId: string, clipId: string, name: s
   if (!clip || clip.pattern) return p;
   const id = newPatternId(p),
     clean = name.trim() || nextPatternName(p, 'Pattern');
-  return updateClip({ ...p, patterns: [...patternsOf(p), { id, name: clean }] }, trackId, clipId, {
-    pattern: id,
+  const pattern = withShared({ id, name: clean, beats: clip.beats, notes: clip.notes, track: trackId }, clip);
+  return updateClip({ ...p, patterns: [...patternsOf(p), pattern] }, trackId, clipId, { pattern: id });
+}
+
+/** a clip of a pattern placed on a track at a beat, with the id given or a new one; an audio track or a missing
+ * pattern changes nothing (Chordinal PRD §18.4) */
+export function placePattern(
+  p: Project,
+  trackId: string,
+  patternId: string,
+  start: number,
+  id: string = newId(p, 'c'),
+): Project {
+  const pattern = findPattern(p, patternId);
+  if (!pattern || !p.tracks.some((t) => t.id === trackId)) return p;
+  return addClip(p, trackId, {
+    id,
+    start: Math.max(0, start),
+    beats: pattern.beats,
+    notes: [],
+    pattern: patternId,
   });
+}
+
+/** an empty pattern of `beats` on an instrument or drum track, named as Make Pattern names it, with a clip of it at
+ * `start`; the new pattern is the last of the project's (Chordinal PRD §18.6) */
+export function newPattern(p: Project, trackId: string, start: number, beats: number): Project {
+  const track = p.tracks.find((t) => t.id === trackId);
+  if (!track || track.kind === 'audio' || beats <= 0) return p;
+  const pattern: Pattern = {
+    id: newPatternId(p),
+    name: nextPatternName(p, track.name),
+    beats,
+    notes: [],
+    track: trackId,
+  };
+  return placePattern({ ...p, patterns: [...patternsOf(p), pattern] }, trackId, pattern.id, start);
+}
+
+/** an unplaced copy of a pattern on the same track, named "<name> copy" or "<name> copy 2"; the copy is the last of
+ * the project's patterns (Chordinal PRD §18.7) */
+export function duplicatePattern(p: Project, id: string): Project {
+  const pattern = findPattern(p, id);
+  if (!pattern) return p;
+  const names = new Set(patternsOf(p).map((x) => x.name)),
+    stem = `${pattern.name} copy`;
+  let name = stem;
+  for (let n = 2; names.has(name); n++) name = `${stem} ${n}`;
+  return { ...p, patterns: [...patternsOf(p), { ...pattern, id: newPatternId(p), name }] };
+}
+
+/** a pattern taken out of the project with every clip of it (Chordinal PRD §18.7) */
+export function deletePattern(p: Project, id: string): Project {
+  if (!findPattern(p, id)) return p;
+  const { patterns: _patterns, ...rest } = p,
+    left = patternsOf(p).filter((x) => x.id !== id);
+  return {
+    ...rest,
+    ...(left.length && { patterns: left }),
+    tracks: p.tracks.map((t) =>
+      t.clips.some((c) => c.pattern === id) ? { ...t, clips: t.clips.filter((c) => c.pattern !== id) } : t,
+    ),
+  };
+}
+
+/** how many clips play each pattern, by its id */
+export function patternUses(p: Project): Map<string, number> {
+  const uses = new Map(patternsOf(p).map((x) => [x.id, 0]));
+  for (const t of p.tracks)
+    for (const c of t.clips) if (c.pattern) uses.set(c.pattern, (uses.get(c.pattern) ?? 0) + 1);
+  return uses;
+}
+
+/** each pattern a track plays, and its clips on every track, made to match its first clip on that track: for an edit
+ * that rewrites one track's clips one by one (Apply to Notes) */
+export function spreadPatternsFrom(p: Project, trackId: string): Project {
+  const first = new Map<string, Clip>();
+  for (const c of p.tracks.find((t) => t.id === trackId)?.clips ?? [])
+    if (c.pattern && !first.has(c.pattern)) first.set(c.pattern, c);
+  let out = p;
+  for (const c of first.values()) out = spreadPattern(out, c);
+  return out;
 }
 
 /** a pattern clip turned into an ordinary clip with the same notes (PRD §3.6) */
@@ -456,10 +553,20 @@ export function renamePattern(p: Project, id: string, name: string): Project {
   return { ...p, patterns: patternsOf(p).map((x) => (x === pattern ? { ...x, name: clean } : x)) };
 }
 
-/** what's wrong with the project's patterns, for tests: clips of a pattern that disagree, clips of a missing pattern */
+/** what's wrong with the project's patterns, for tests: clips that disagree with their pattern, clips of a missing
+ * pattern, a pattern of a missing track, two patterns with one id */
 export function patternProblems(p: Project): string[] {
   const problems: string[] = [],
-    first = new Map<string, Clip>();
+    ids = new Set<string>(),
+    tracks = new Set(p.tracks.map((t) => t.id));
+  for (const x of patternsOf(p)) {
+    if (ids.has(x.id)) problems.push(`two patterns are ${x.id}`);
+    ids.add(x.id);
+    if (x.track !== undefined && !tracks.has(x.track))
+      problems.push(`pattern ${x.id} is on a missing track ${x.track}`);
+    if (!(x.beats > 0)) problems.push(`pattern ${x.id} is ${x.beats} beats long`);
+  }
+  const first = new Map<string, Shared & { id: string }>(patternsOf(p).map((x) => [x.id, x]));
   for (const t of p.tracks)
     for (const c of t.clips) {
       if (!c.pattern) continue;
@@ -471,7 +578,7 @@ export function patternProblems(p: Project): string[] {
       }
       for (const k of LINKED)
         if (JSON.stringify(f[k]) !== JSON.stringify(c[k]))
-          problems.push(`clips ${f.id} and ${c.id} of ${c.pattern} differ in ${k}`);
+          problems.push(`${f.id} and clip ${c.id} of ${c.pattern} differ in ${k}`);
     }
   return problems;
 }

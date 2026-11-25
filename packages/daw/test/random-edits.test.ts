@@ -21,6 +21,10 @@ import {
   duplicateTrack,
   emptyProject,
   findPattern,
+  placePattern,
+  newPattern,
+  duplicatePattern,
+  deletePattern,
   hideRow,
   history,
   humanizeNotes,
@@ -393,6 +397,46 @@ const ops: Op<State>[] = [
         name = r.text();
       edit(s, (p) => renamePattern(p, x.id, name));
       return `${x.id} to ${JSON.stringify(name)}`;
+    },
+  }),
+  op({
+    name: 'place pattern',
+    when: (s) => hasTracks(s) && patternsOf(present(s)).length > 0,
+    run(s, r) {
+      const x = r.pick(patternsOf(present(s))),
+        t = r.pick(tracks(s)),
+        at = beatIn(r, present(s).length);
+      edit(s, (p) => placePattern(p, t.id, x.id, at));
+      return `${x.id} on ${t.id} at ${at}`;
+    },
+  }),
+  op({
+    name: 'new pattern',
+    when: hasTracks,
+    run(s, r) {
+      const t = r.pick(tracks(s)),
+        at = beatIn(r, present(s).length),
+        beats = r.pick([4, 3, 6, 0]);
+      edit(s, (p) => newPattern(p, t.id, at, beats));
+      return `on ${t.id} at ${at}, ${beats} beats`;
+    },
+  }),
+  op({
+    name: 'duplicate pattern',
+    when: (s) => patternsOf(present(s)).length > 0,
+    run(s, r) {
+      const x = r.pick(patternsOf(present(s)));
+      edit(s, (p) => duplicatePattern(p, x.id));
+      return x.id;
+    },
+  }),
+  op({
+    name: 'delete pattern',
+    when: (s) => patternsOf(present(s)).length > 0,
+    run(s, r) {
+      const x = r.pick(patternsOf(present(s)));
+      edit(s, (p) => deletePattern(p, x.id));
+      return x.id;
     },
   }),
   op({

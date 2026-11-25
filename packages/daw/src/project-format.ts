@@ -2,11 +2,12 @@
 // note is one compact line, [beat, beats, key, vel] with its marks as a fifth item when it has any, so a song is a
 // few hundred kilobytes rather than megabytes. Pure.
 //
-// Version 1 has every clip's notes in the clip. Version 2 adds patterns (PRD §7): their notes, length and step are
-// written once in `patterns`, and a pattern clip is just { id, start, pattern, mute? }. A project with no pattern clips
-// is written as version 1, so older versions of the app still open it. Version 3 adds audio tracks (PRD §16): a
-// project with one is written as version 3, which older versions refuse rather than play without its audio.
-import type { Clip, Note, Project, Track } from './project.ts';
+// Version 1 has every clip's notes in the clip. Version 2 adds patterns (PRD §7): their notes, length, step, swing and
+// track are written once in `patterns`, placed or not (Chordinal PRD §18.8), and a pattern clip is just
+// { id, start, pattern, mute? }. A project with no patterns is written as version 1, so older versions of the app
+// still open it. Version 3 adds audio tracks (PRD §16): a project with one is written as version 3, which older
+// versions refuse rather than play without its audio.
+import type { Clip, Note, Pattern, Project, Track } from './project.ts';
 
 export const FORMAT = 'music-generator-project';
 export const VERSION = 1;
@@ -16,15 +17,9 @@ export const AUDIO_VERSION = 3;
 /** a note as written: [beat, beats, key, vel], and its marks when it has any */
 type NoteRow = [number, number, number, number, Record<string, unknown>?];
 
-/** a pattern as written: the notes, length, step and swing its clips share */
-interface WrittenPattern {
-  id: string;
-  name: string;
-  beats: number;
-  step?: number;
-  swing?: number;
-  notes: NoteRow[];
-}
+/** a pattern as written: the notes, length, step and swing its clips share, and its track, null once that track is
+ * deleted; a file from before Chordinal PRD §18 has no track */
+type WrittenPattern = Omit<Pattern, 'notes' | 'track'> & { track?: string | null; notes: NoteRow[] };
 
 /** a clip as written; a pattern clip has no notes or length of its own, as reading gives it its pattern's */
 type WrittenClip = Omit<Clip, 'notes'> & { notes: NoteRow[] };
@@ -52,11 +47,6 @@ export function writeProject(project: Project): string {
       return `\u0000${rows.length - 1}`;
     });
   const { patterns = [], ...rest } = project;
-  // PRD §3.11: a pattern no clip plays any more isn't written; the first clip of each gives its notes
-  const firstClip = new Map<string, Clip>();
-  for (const t of project.tracks)
-    for (const c of t.clips) if (c.pattern && !firstClip.has(c.pattern)) firstClip.set(c.pattern, c);
-  const used = patterns.filter((x) => firstClip.has(x.id));
   // a fixed order, whatever order the project's keys are in, so opening and saving a project changes nothing
   const { tracks: _tracks, ...settings } = rest;
   const values = new Map<string, unknown>(Object.entries(settings));
@@ -69,25 +59,21 @@ export function writeProject(project: Project): string {
     format: FORMAT,
     version: project.tracks.some((t) => t.kind === 'audio')
       ? AUDIO_VERSION
-      : used.length
+      : patterns.length
         ? PATTERN_VERSION
         : VERSION,
     ...ordered,
-    ...(used.length && {
-      patterns: used.flatMap((x) => {
-        const c = firstClip.get(x.id);
-        if (!c) return [];
-        return [
-          {
-            id: x.id,
-            name: x.name,
-            beats: c.beats,
-            ...(c.step !== undefined && { step: c.step }),
-            ...(c.swing !== undefined && { swing: c.swing }),
-            notes: placeholders(c.notes),
-          },
-        ];
-      }),
+    ...(patterns.length && {
+      patterns: patterns.map((x) => ({
+        id: x.id,
+        name: x.name,
+        track: x.track ?? null,
+        ...(x.drums && { drums: true }),
+        beats: x.beats,
+        ...(x.step !== undefined && { step: x.step }),
+        ...(x.swing !== undefined && { swing: x.swing }),
+        notes: placeholders(x.notes),
+      })),
     }),
     tracks: project.tracks.map((t) => ({
       ...t,
@@ -226,7 +212,17 @@ export function readProject(text: string): Project {
   // problemIn has checked all the app relies on to play it; the rest is read as written
   const file = project as WrittenProject,
     list = written as WrittenPattern[];
-  const patterns = new Map(list.map((x) => [x.id, { ...x, notes: readNotes(x.notes) }]));
+  // Chordinal PRD §18.8: a pattern on a track the file doesn't have is one whose track was deleted, and one from a
+  // file from before patterns had tracks is on the track of its first clip
+  const trackIds = new Set(file.tracks.map((t) => t.id));
+  const firstTrack = (id: string) => file.tracks.find((t) => t.clips.some((c) => c.pattern === id))?.id;
+  const patterns = new Map(
+    list.map((written): [string, Pattern] => {
+      const { track, ...x } = written,
+        on = track === undefined ? firstTrack(x.id) : track;
+      return [x.id, { ...x, ...(on && trackIds.has(on) && { track: on }), notes: readNotes(x.notes) }];
+    }),
+  );
   const tracks = file.tracks.map((t): Track => ({
     ...t,
     clips: t.clips.map((c): Clip => {
@@ -251,6 +247,6 @@ export function readProject(text: string): Project {
     chords: [],
     ...file,
     tracks,
-    ...(patterns.size ? { patterns: list.map((x) => ({ id: x.id, name: x.name })) } : {}),
+    ...(patterns.size ? { patterns: [...patterns.values()] } : {}),
   };
 }
