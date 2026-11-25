@@ -1,7 +1,8 @@
 // The step grid for the selected clip (PRD §4): a row per drum sound, or per note of the key on a melodic track
 // (Chordinal PRD §17.1), and a column per step. Click a step to turn it on or off and drag to paint more; Shift-click
 // an on step to accent it. Drag an on step's right edge to make its note longer or shorter, a step at a time (Shift:
-// freely); a long note is one bar across the steps it covers (Chordinal PRD §17.4). Notes off the grid show greyed and are left alone. Click a row's name to hear it. On a drum
+// freely); a long note is one bar across the steps it covers (Chordinal PRD §17.4). The lane under the grid sets each
+// step's velocity or chance of playing; drag across it to paint (§17.5). Notes off the grid show greyed and are left alone. Click a row's name to hear it. On a drum
 // track, right-click a drum's name to add or hide rows, or to load a sample on it, and drop a WAV, AIFF or MP3 on a
 // row to play it there in place of the kit's sound (PRD §14).
 import type { TargetedDragEvent, TargetedMouseEvent, TargetedPointerEvent } from 'preact';
@@ -9,6 +10,8 @@ import { useState } from 'preact/hooks';
 import { barAt, GRID_OCTAVES, GRID_OCTAVE_RANGE } from '@chordinal/daw';
 import { findPattern, isDrums } from '@chordinal/daw';
 import { STEP_SIZES, stepOf, stepCount, cell, drumName, ACCENT_VELOCITY } from '@chordinal/daw';
+import { laneValueOf, stepNotes } from '@chordinal/daw';
+import type { LaneValue } from '@chordinal/daw';
 import { noteName } from '@chordinal/lib';
 import { GM_DRUMS } from '@chordinal/daw';
 import type { Clip, Track } from '@chordinal/daw';
@@ -21,6 +24,8 @@ import {
   playingStep,
   paintStep,
   stretchStep,
+  laneShows,
+  paintLane,
   accentStep,
   setStepSize,
   addGridRow,
@@ -90,9 +95,19 @@ function drawGrid(g: CanvasRenderingContext2D, w: number, h: number, track: Trac
       const x = G.x(i);
       if (on) {
         const width = spanOf(on.beats, step, steps - i) * G.colW;
+        // a step that may not play is filled only to its chance (Chordinal PRD §17.5)
+        const share = laneValueOf(on, 'chance'),
+          full = G.rowH - 5,
+          tall = full * share;
+        if (share < 1) {
+          g.fillStyle = rgba(track.color, 0.18);
+          g.beginPath();
+          g.roundRect(x + 1.5, y + 2, width - 3, full, 3);
+          g.fill();
+        }
         g.fillStyle = rgba(track.color, 0.35 + 0.65 * Math.min(1, on.vel / ACCENT_VELOCITY));
         g.beginPath();
-        g.roundRect(x + 1.5, y + 2, width - 3, G.rowH - 5, 3);
+        g.roundRect(x + 1.5, y + 2 + full - tall, width - 3, tall, 3);
         g.fill();
         if (on.vel >= ACCENT_VELOCITY) {
           g.fillStyle = C.accent;
@@ -403,9 +418,102 @@ function Grid({ track, clip }: GridProps) {
   );
 }
 
+/** the lane's value at y px of a lane h px tall: a velocity from 1 to 127, or a chance in whole percents */
+function laneValueAt(y: number, h: number, what: LaneValue): number {
+  const share = Math.max(0, Math.min(1, (h - 3 - y) / (h - 6)));
+  return what === 'vel' ? 1 + Math.round(share * 126) : Math.round(share * 100) / 100;
+}
+
+function drawLane(
+  g: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  track: Track,
+  clip: Clip,
+  what: LaneValue,
+) {
+  const t = palette.value,
+    step = stepOf(clip),
+    steps = stepCount(clip),
+    colW = w / steps;
+  g.fillStyle = t['grid-lane'];
+  g.fillRect(0, 0, w, h);
+  for (let i = 0; i < steps; i++) {
+    const notes = stepNotes(clip.notes, i, step);
+    g.fillStyle = t['grid-key'];
+    g.fillRect(i * colW + 1.5, 3, colW - 3, h - 6);
+    if (!notes.length) continue;
+    const top = Math.max(...notes.map((n) => laneValueOf(n, what))),
+      share = what === 'vel' ? top / 127 : top,
+      tall = Math.max(2, (h - 6) * share);
+    g.fillStyle = rgba(track.color, 0.85);
+    g.fillRect(i * colW + 1.5, h - 3 - tall, colW - 3, tall);
+  }
+}
+
+/** the lane under the grid: a bar per step of its velocity or its chance, painted by dragging (Chordinal PRD §17.5) */
+function StepLane({ track, clip }: GridProps) {
+  const what = laneShows.value;
+  const ref = useCanvas((g, w, h) => drawLane(g, w, h, track, clip, laneShows.value));
+  const down = (e: TargetedPointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    focus.value = 'grid';
+    const el = e.currentTarget,
+      steps = stepCount(clip),
+      merge = `lane-${e.timeStamp}`;
+    el.setPointerCapture?.(e.pointerId);
+    let last: number | null = null;
+    // pointer moves can jump several steps, so every step between the last one and this one is painted
+    const paint = (m: { clientX: number; clientY: number }) => {
+      const r = el.getBoundingClientRect();
+      const col = Math.max(0, Math.min(steps - 1, Math.floor(((m.clientX - r.left) / r.width) * steps))),
+        value = laneValueAt(m.clientY - r.top, r.height, laneShows.value);
+      const from = last ?? col;
+      for (let i = Math.min(from, col); i <= Math.max(from, col); i++)
+        paintLane(track.id, clip.id, i, value, merge);
+      last = col;
+    };
+    paint(e);
+    const up = () => {
+      el.removeEventListener('pointermove', paint);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+    };
+    el.addEventListener('pointermove', paint);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  };
+  const choice = (value: LaneValue, label: string, title: string) => (
+    <button
+      class={what === value ? 'on' : ''}
+      aria-pressed={what === value}
+      title={title}
+      onClick={() => (laneShows.value = value)}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <div class="step-lane">
+      <div class="lane-switch" role="group" aria-label="What the lane sets">
+        {choice('vel', 'Velocity', 'Drag across the lane to set how hard each step plays')}
+        {choice('chance', 'Probability', 'Drag across the lane to set the chance each step plays')}
+      </div>
+      <div class="lane-bars" data-testid="step-lane" onPointerDown={down}>
+        <canvas ref={ref} />
+      </div>
+    </div>
+  );
+}
+
 export function StepGrid() {
   const { track, clip } = gridTarget();
   // PRD §4.3: the message for no clip; melodic tracks have a grid of their own now (Chordinal PRD §17.1)
   if (!track || !clip) return <div class="hint">Select a clip to edit its steps.</div>;
-  return <Grid track={track} clip={clip} />;
+  return (
+    <>
+      <Grid track={track} clip={clip} />
+      <StepLane track={track} clip={clip} />
+    </>
+  );
 }

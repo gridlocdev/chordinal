@@ -172,6 +172,10 @@ export {
   toggleAccent,
   setStepLength,
   heldOver,
+  stepNotes,
+  laneValueOf,
+  setStepValue,
+  type LaneValue,
   longestLength,
 } from './steps.ts';
 export { MAX_SWING, chanceOf, swingOf, plays, swungBeat, playedClipNotes, rollProject } from './chance.ts';

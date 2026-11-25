@@ -8,6 +8,8 @@ import {
   cell,
   setStep,
   setStepLength,
+  setStepValue,
+  laneValueOf,
   heldOver,
   toggleAccent,
   addRow,
@@ -162,4 +164,26 @@ test('a step stretched across later steps, a step at a time or freely, stopping 
       [1.5, 0.25],
     ],
   );
+});
+
+test('the lane sets velocity or chance for every note on a step, a chord at once (Chordinal PRD §17.5)', () => {
+  const notes = setStep(setStep(setStep([], 60, 0, 0.25, true), 64, 0, 0.25, true), 60, 1, 0.25, true);
+  const loud = setStepValue(notes, 0, 0.25, 'vel', 140);
+  assert.deepEqual(
+    loud.map((n) => n.vel),
+    [127, 127, 100],
+    'both notes of the chord, kept to 127',
+  );
+  const maybe = setStepValue(notes, 0, 0.25, 'chance', 0.4);
+  assert.deepEqual(
+    maybe.map((n) => laneValueOf(n, 'chance')),
+    [0.4, 0.4, 1],
+  );
+  const back = setStepValue(maybe, 0, 0.25, 'chance', 1);
+  assert.ok(
+    back.every((n) => !('chance' in n)),
+    'a chance of 1 is no chance at all',
+  );
+  assert.equal(setStepValue(notes, 0, 0.25, 'vel', 100), notes, 'no change, same notes');
+  assert.equal(setStepValue(notes, 3, 0.25, 'vel', 50), notes, 'an empty step changes nothing');
 });

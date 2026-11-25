@@ -128,6 +128,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Make a clip a pattern, so its copies stay linked; make one copy unique again; rename the pattern | right-click the clip |
 | Turn steps on or off | click a step in the step grid, drag to paint; `Shift` click accents a step |
 | Make a step's note longer or shorter | drag its right edge in the step grid, a step at a time; hold `Shift` to drag freely |
+| Set how hard each step plays, or its chance of playing | drag across the lane under the step grid, higher for more; its **Velocity** and **Probability** switch picks which. A step holding a chord sets all its notes |
 | Show other notes in a melodic track's step grid | the step grid's **Octave −** and **Octave +**, and **Chromatic** for all twelve notes |
 | Choose a track's editor | **Piano Roll** or **Step Grid** tab with one of its clips selected, or right-click the clip, **Open in Piano Roll** or **Open in Step Grid** |
 | Step size of a drum clip (1/8, 1/16, 1/32, 1/16 triplet) | the step grid's **Step** menu |

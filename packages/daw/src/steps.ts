@@ -186,3 +186,37 @@ export function melodicRows(
   for (const n of clip?.notes ?? []) rows.add(n.key);
   return [...rows].sort((a, b) => b - a);
 }
+
+/** what the lane under the grid sets: how hard a step plays, or its chance of playing (Chordinal PRD §17.5) */
+export type LaneValue = 'vel' | 'chance';
+
+/** the notes starting on step i, on any row: a chord is all of them */
+export const stepNotes = <N extends Note>(notes: N[], i: number, step: number): N[] =>
+  notes.filter((n) => Math.abs(n.beat - startOf(i, step)) < ON_GRID);
+
+/** a note's value in the lane: its velocity, or its chance from 0 to 1 (none: 1) */
+export const laneValueOf = (n: Note, what: LaneValue): number =>
+  what === 'vel' ? n.vel : typeof n.chance === 'number' ? n.chance : 1;
+
+/**
+ * notes with every note on step i set to `value`: a velocity from 1 to 127, or a chance from 0 to 1, which at 1 is
+ * dropped from the note (Chordinal PRD §17.5, §17.6); the same array when nothing changes
+ */
+export function setStepValue<N extends Note>(
+  notes: N[],
+  i: number,
+  step: number,
+  what: LaneValue,
+  value: number,
+): N[] {
+  const on = new Set(stepNotes(notes, i, step));
+  if (!on.size) return notes;
+  const v = what === 'vel' ? Math.round(Math.max(1, Math.min(127, value))) : Math.max(0, Math.min(1, value));
+  if ([...on].every((n) => laneValueOf(n, what) === v)) return notes;
+  return notes.map((n) => {
+    if (!on.has(n)) return n;
+    if (what === 'vel') return { ...n, vel: v };
+    const { chance: _chance, ...rest } = n;
+    return (v < 1 ? { ...rest, chance: v } : rest) as N;
+  });
+}

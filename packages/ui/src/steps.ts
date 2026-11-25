@@ -1,7 +1,7 @@
 // What the step grid does (PRD §4): steps painted on and off, accents, the step size, rows added and hidden, a melodic
 // track's range (Chordinal PRD §17.1), the preview sound, and switching the editor between the piano roll and the grid
 // as clips are selected, by the track's own choice (§17.3).
-import { effect } from '@preact/signals';
+import { effect, signal } from '@preact/signals';
 import {
   findClip,
   updateClip,
@@ -11,8 +11,17 @@ import {
   melodicRows,
   gridOctave,
 } from '@chordinal/daw';
-import { stepOf, stepCount, setStep, setStepLength, toggleAccent, addRow, hideRow } from '@chordinal/daw';
-import type { Clip, Note, Track } from '@chordinal/daw';
+import {
+  stepOf,
+  stepCount,
+  setStep,
+  setStepLength,
+  setStepValue,
+  toggleAccent,
+  addRow,
+  hideRow,
+} from '@chordinal/daw';
+import type { Clip, LaneValue, Note, Track } from '@chordinal/daw';
 import { project, selectedClip, settings, setSettings, playing, picked, beat } from './store.ts';
 import type { ClipRef, EditorTab } from './store.ts';
 import { playheadStep } from './components/grid-view.ts';
@@ -98,6 +107,13 @@ export function stretchStep(
       merge,
     );
 }
+
+/** what the lane under the grid shows and sets (Chordinal PRD §17.5) */
+export const laneShows = signal<LaneValue>('vel');
+
+/** every note on step i set to `value` in the lane's terms; `merge` makes a drag one undo step */
+export const paintLane = (trackId: string, clipId: string, i: number, value: number, merge: string): void =>
+  changeSteps(trackId, clipId, (notes, step) => setStepValue(notes, i, step, laneShows.value, value), merge);
 
 export const accentStep = (trackId: string, clipId: string, key: number, i: number): void =>
   changeSteps(trackId, clipId, (notes, step) => toggleAccent(notes, key, i, step));

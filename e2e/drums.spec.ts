@@ -95,6 +95,54 @@ test.describe('Drums and patterns', () => {
     expect(errors).toEqual([]);
   });
 
+  test('the lane under the grid paints velocity and probability, a drag at a time', async ({ page }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Drums').dblclick();
+    const grid = page.getByTestId('step-grid');
+    const box = await grid.boundingBox();
+    if (!box) throw new Error('the step grid has no size');
+    const step = (box.width - GUTTER) / 16;
+    // a kick and a snare together on step 0, a kick on step 4
+    await clickAt(page, 'step-grid', GUTTER + 0.5 * step, 6);
+    await clickAt(page, 'step-grid', GUTTER + 0.5 * step, 6 + 24);
+    await clickAt(page, 'step-grid', GUTTER + 4.5 * step, 6);
+
+    const lane = page.getByTestId('step-lane');
+    const bars = await lane.boundingBox();
+    if (!bars) throw new Error('the lane has no size');
+    const col = (i: number) => bars.x + ((i + 0.5) * bars.width) / 16;
+    // one drag across both steps, near the bottom: soft
+    await page.mouse.move(col(0), bars.y + bars.height - 8);
+    await page.mouse.down();
+    await page.mouse.move(col(2), bars.y + bars.height - 8);
+    await page.mouse.move(col(4), bars.y + bars.height - 8);
+    await page.mouse.up();
+    // one drag is one undo step: one undo gives every step back its 100
+    await page.keyboard.press('ControlOrMeta+z');
+    await saveAs(page, 'Lane');
+    const undone = savedNotes((await storedProject(page, 'Lane')) ?? '', 'Drums');
+    expect(undone.map(([, , , vel]) => vel)).toEqual([100, 100, 100]);
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    // step 4's chance, halfway up
+    await page.getByRole('button', { name: 'Probability' }).click();
+    await expect(page.getByRole('button', { name: 'Probability' })).toHaveAttribute('aria-pressed', 'true');
+    await page.mouse.click(col(4), bars.y + bars.height / 2);
+    await page.screenshot({ path: test.info().outputPath('lane.png') });
+
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page).toHaveTitle('Lane — Chordinal');
+    const notes = savedNotes((await storedProject(page, 'Lane')) ?? '', 'Drums');
+    const vels = notes.map(([, , , vel]) => vel as number);
+    expect(new Set(vels).size).toBe(1);
+    expect(vels[0]).toBeLessThan(20);
+    const chances = notes.map((n) => (n[4] as { chance?: number } | undefined)?.chance ?? 1);
+    expect(chances.slice(0, 2)).toEqual([1, 1]);
+    expect(chances[2]).toBeGreaterThan(0.4);
+    expect(chances[2]).toBeLessThan(0.6);
+    expect(errors).toEqual([]);
+  });
+
   test('a melodic track gets a grid of notes, and keeps it as its editor', async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);
