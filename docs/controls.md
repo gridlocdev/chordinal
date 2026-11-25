@@ -95,7 +95,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Play the selected track's instrument (click the piano roll first; while it has the focus, `B`, `C`, `M`, `Q` and `R` wait until you click the arrangement, or use the menus) | `A S D F G H J K L ; '` white keys, `W E T Y U O P` black keys |
 | An octave down or up, while playing it (the piano roll scrolls to keep those keys in view; the status bar shows the range) | `Z`, `X` |
 | Move through the command menu's list, run the command, close it | `↑` `↓` or `Tab` `Shift Tab`, `Return`, `Esc` |
-| Draw a note without the grid | `Alt` while drawing |
+| Draw, move or resize a note without the grid | hold `Alt` once you've started dragging |
 | Copy a clip as you drag it | `Alt` drag |
 | Zoom with the scroll wheel | `Cmd` + scroll (`Ctrl` + scroll on Windows and Linux) |
 
@@ -115,6 +115,8 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Draw a note | click empty space in the piano roll |
 | Draw automation | in a track's automation lane: click to add a point and drag it, drag a point to move it, double-click it to delete it, right-click for its curve; `Shift` while dragging places it off the beat; `Shift`-drag on empty space picks the points in a box and `Shift`-click picks one more, then drag one to move them all or press `⌫` to delete them |
 | Move or resize a note | drag it, or drag its right edge |
+| Slice notes | `Alt` drag across them in the piano roll: they're cut where the line is, on the grid |
+| Delete notes | `Cmd` drag over them in the piano roll (`Ctrl` drag on Windows and Linux), or select them and press `⌫` |
 | Select notes | `Shift` click adds or removes one, `Shift` drag on empty space adds a rectangle of them |
 | Humanize, double or half speed, reverse, transpose, velocity, legato | right-click the notes or the clip |
 | Add, bypass or remove a MIDI effect; pick Chord's shape or the arpeggiator's rate, direction, octaves and gate | in the track's mixer strip: **+ MIDI FX**, its power button, **×**, the dropdowns under the effect's name; **↧** applies it to the notes; right-click the effect (desktop app) to move it or Chord's notes up or down |

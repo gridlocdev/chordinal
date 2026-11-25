@@ -46,7 +46,7 @@ Effects play in the list's order, before **Humanize**. Play, the exports and the
 
 ## Editing
 
-Draw, move, resize and delete notes and their velocity in the piano roll, on a grid or free, or steps in the step grid. Move, copy, split and delete clips, add and delete tracks, and change the tempo and meter. Everything can be undone. The keys and mouse actions for each are in [Controls](controls.md).
+Draw, move, resize and delete notes and their velocity in the piano roll, on a grid or free, or steps in the step grid. In the piano roll, `Alt`-drag across notes to slice them where the line is, and `Cmd`-drag (`Ctrl`-drag on Windows and Linux) over notes to delete them. Move, copy, split and delete clips, add and delete tracks, and change the tempo and meter. Everything can be undone. The keys and mouse actions for each are in [Controls](controls.md).
 
 ## Drums and patterns
 

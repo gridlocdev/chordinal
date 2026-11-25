@@ -2,10 +2,11 @@
 //
 // Click empty space in a clip to draw a note (outside a clip, a bar's clip is made for it) and drag to set its
 // length; drag a note to move it, its right edge to resize it; Shift-click adds to the selection, Shift-drag on empty
-// space picks the notes in a rectangle; other tracks' notes show faintly behind; Delete removes,
+// space picks the notes in a rectangle; Alt-drag slices the notes a line crosses, Cmd-drag (Ctrl elsewhere) deletes the
+// notes it passes over (PRD §5.10); other tracks' notes show faintly behind; Delete removes,
 // ↑ ↓ transpose (Shift: an octave), Cmd+A selects the clip's notes. Drag in the velocity strip to set velocity.
-// Right-click a note or the background for more. Everything snaps to the grid picked in the toolbar (RollToolbar, in the editor's bar); hold Alt to place
-// freely. Changing the letter keys' octave (Z, X) scrolls their keys into view. Press a key in the gutter to hear it (drag to glide across keys); its lane lights while it sounds. The wheel scrolls (Shift: across), Cmd/Ctrl + wheel zooms.
+// Right-click a note or the background for more. Everything snaps to the grid picked in the toolbar (RollToolbar, in the editor's bar); hold Alt once a drag
+// has started to place freely. Changing the letter keys' octave (Z, X) scrolls their keys into view. Press a key in the gutter to hear it (drag to glide across keys); its lane lights while it sounds. The wheel scrolls (Shift: across), Cmd/Ctrl + wheel zooms.
 import { useEffect, useRef } from 'preact/hooks';
 import { project, selected, selectedTrack, picked, settings } from '../store.ts';
 import { typedRange } from '../live.ts';

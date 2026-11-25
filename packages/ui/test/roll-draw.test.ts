@@ -35,7 +35,7 @@ test('drawing a note on an empty lane, and dragging its length, is one undo step
   selected.value = 't1';
   const el = roll();
   const press = { button: 0, currentTarget: el, clientX: 300, clientY: 250, timeStamp: 1, pointerId: 1 };
-  down({ ...press, altKey: false, shiftKey: false }, p, p.tracks[0] ?? null);
+  down({ ...press, altKey: false, shiftKey: false, metaKey: false, ctrlKey: false }, p, p.tracks[0] ?? null);
   el.on.pointermove?.({ clientX: 360, clientY: 250, altKey: false });
   el.on.pointerup?.({ clientX: 360, clientY: 250, altKey: false });
   assert.equal(project.value.tracks[0]?.clips.length, 1);
@@ -55,7 +55,7 @@ test("pressing the roll's keyboard holds that key until the pointer lets go, gli
   selected.value = 't1';
   const el = roll();
   const at = { button: 0, currentTarget: el, clientX: 10, clientY: 250, timeStamp: 1, pointerId: 1 };
-  down({ ...at, altKey: false, shiftKey: false }, p, p.tracks[0] ?? null);
+  down({ ...at, altKey: false, shiftKey: false, metaKey: false, ctrlKey: false }, p, p.tracks[0] ?? null);
   assert.equal(held.value.size, 1, 'the pressed key sounds');
   const first = [...held.value][0] ?? 0;
   el.on.pointermove?.({ clientX: 10, clientY: 150, altKey: false });

@@ -43,3 +43,36 @@ export function notesInBand(all: readonly PlacedNote[], a: RollPoint, b: RollPoi
     [k0, k1] = [Math.min(a.key, b.key), Math.max(a.key, b.key)];
   return all.filter((o) => o.n.key >= k0 && o.n.key <= k1 && o.at < b1 && o.at + o.n.beats > b0);
 }
+
+/** a note cut in two at `at` beats into its clip, when `at` falls inside it; otherwise the note alone */
+export function sliceNote(n: Note, at: number): Note[] {
+  const EPS = 1e-6;
+  if (at <= n.beat + EPS || at >= n.beat + n.beats - EPS) return [n];
+  return [
+    { ...n, beats: at - n.beat },
+    { ...n, beat: at, beats: n.beat + n.beats - at },
+  ];
+}
+
+/**
+ * Where a cut at project beat `beat` across keys `k0`..`k1` goes through notes: clip id → (note index → the beat in
+ * that clip to cut at). Each note once, by `canon` (a pattern's notes are cut through its first clip).
+ */
+export function cutsAt(
+  all: readonly PlacedNote[],
+  beat: number,
+  k0: number,
+  k1: number,
+  canon: (clipId: string) => string,
+): Map<string, Map<number, number>> {
+  const [lo, hi] = [Math.min(k0, k1), Math.max(k0, k1)],
+    out = new Map<string, Map<number, number>>();
+  for (const o of all) {
+    if (o.n.key < lo || o.n.key > hi || beat <= o.at || beat >= o.at + o.n.beats) continue;
+    const c = canon(o.clip.id),
+      m = out.get(c) ?? new Map<number, number>();
+    if (!m.has(o.i)) m.set(o.i, o.n.beat + beat - o.at);
+    out.set(c, m);
+  }
+  return out;
+}

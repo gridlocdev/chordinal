@@ -26,6 +26,8 @@ export interface RollView {
 
 /** a selection rectangle being dragged out: two corners */
 export const band: Signal<{ a: RollPoint; b: RollPoint } | null> = signal(null);
+/** a cut being dragged out with Alt: the beat it cuts at, across the keys from k0 to k1 */
+export const knife: Signal<{ beat: number; k0: number; k1: number } | null> = signal(null);
 export const view: Signal<RollView> = signal({ from: 0, ppb: 40, low: 48 });
 
 /** the key lanes: the lowest and highest key shown, a lane's height, and the top of a key's lane */

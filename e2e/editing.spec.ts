@@ -51,6 +51,60 @@ test.describe('Editing', () => {
     expect(errors).toEqual([]);
   });
 
+  test('Alt-drag slices a note in two and Cmd-drag (Ctrl on Windows and Linux) deletes the notes it passes over', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Grand Piano').click();
+    await page.getByRole('tab', { name: 'Piano Roll' }).click();
+    const roll = page.getByTestId('piano-roll');
+    const box = (await roll.boundingBox())!;
+    const at = (x: number, y: number) => [box.x + x, box.y + y] as const;
+    const y = STRIP + 40;
+
+    // one note two beats long (40 px a beat), drawn by dragging out its length
+    await page.mouse.move(...at(GUTTER + 20, y));
+    await page.mouse.down();
+    await page.mouse.move(...at(GUTTER + 100, y), { steps: 4 });
+    await page.mouse.up();
+
+    // a line down through its middle cuts it in two
+    await page.keyboard.down('Alt');
+    await page.mouse.move(...at(GUTTER + 60, y - 12));
+    await page.mouse.down();
+    await page.mouse.move(...at(GUTTER + 61, y + 12), { steps: 3 });
+    await page.mouse.up();
+    await page.keyboard.up('Alt');
+
+    await saveAs(page, 'Sliced');
+    const halves = savedNotes((await storedProject(page, 'Sliced')) ?? '', 'Grand Piano');
+    expect(halves).toHaveLength(2);
+    expect(new Set(halves.map(([, , key]) => key)).size, 'both halves on the same key').toBe(1);
+
+    // sweep across both halves
+    const command = process.platform === 'darwin' ? 'Meta' : 'Control';
+    await page.keyboard.down(command);
+    await page.mouse.move(...at(GUTTER + 30, y));
+    await page.mouse.down();
+    await page.mouse.move(...at(GUTTER + 90, y), { steps: 2 });
+    await page.mouse.up();
+    await page.keyboard.up(command);
+    await page.keyboard.press('ControlOrMeta+KeyS');
+    await expect
+      .poll(async () => savedNotes((await storedProject(page, 'Sliced')) ?? '', 'Grand Piano').length)
+      .toBe(0);
+
+    await page.keyboard.press('ControlOrMeta+KeyZ');
+    await page.keyboard.press('ControlOrMeta+KeyS');
+    await expect
+      .poll(async () => savedNotes((await storedProject(page, 'Sliced')) ?? '', 'Grand Piano').length, {
+        message: 'one undo brings back both halves',
+      })
+      .toBe(2);
+    expect(errors).toEqual([]);
+  });
+
   test("a key pressed on the roll's keyboard or typed lights its row while it sounds", async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);

@@ -245,6 +245,7 @@ export {
   STRIP,
   VEL_H,
   band,
+  knife,
   geometry,
   rollGeometry,
   showKeys,
@@ -253,7 +254,7 @@ export {
   view,
 } from './components/roll-view.ts';
 export type { Lanes, RollGeometry, RollPoint, RollView } from './components/roll-view.ts';
-export { dragNote, notesInBand, velocityAt } from './components/roll-edit.ts';
+export { cutsAt, dragNote, notesInBand, sliceNote, velocityAt } from './components/roll-edit.ts';
 export type { NoteDrag } from './components/roll-edit.ts';
 export { PRESET, TRACK, carries, readPreset, writePreset } from './components/drag-data.ts';
 export type { DroppedPreset } from './components/drag-data.ts';

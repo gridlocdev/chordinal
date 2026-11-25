@@ -1,8 +1,9 @@
-// What a pointer does on the piano roll: draw, move and resize notes, pick them, set velocities, scroll and zoom, and
-// the right-click menus.
+// What a pointer does on the piano roll: draw, move, resize, slice and delete notes, pick them, set velocities, scroll
+// and zoom, and the right-click menus.
 import { barAt, addClip, newId } from '@chordinal/daw';
 import type { Clip, Note, Project, Track } from '@chordinal/daw';
-import { selectedClip, selectedTrack, settings, picked } from '../store.ts';
+import { project, selectedClip, selectedTrack, settings, picked } from '../store.ts';
+import { isMac } from '../commands/shortcut.ts';
 import { edit } from '../document.ts';
 import { seek } from '../player.ts';
 import { press, release } from '../live.ts';
@@ -10,8 +11,21 @@ import { focus } from '../focus.ts';
 import { noteId, notesOf, changeNotes, canonicalClip, isPicked, pickedNotes } from '../notes.ts';
 import type { PlacedNote } from '../notes.ts';
 import { noteMenu, rollMenu } from '../context-menus.ts';
-import { GUTTER, STRIP, PPB, VEL_H, EDGE, band, view, geometry, snap } from './roll-view.ts';
-import { dragNote, notesInBand, velocityAt } from './roll-edit.ts';
+import {
+  GUTTER,
+  STRIP,
+  PPB,
+  VEL_H,
+  EDGE,
+  band,
+  knife,
+  view,
+  geometry,
+  snap,
+  snapToGrid,
+} from './roll-view.ts';
+import type { RollGeometry } from './roll-view.ts';
+import { cutsAt, dragNote, notesInBand, sliceNote, velocityAt } from './roll-edit.ts';
 import type { NoteDrag } from './roll-edit.ts';
 
 const NEW_VEL = 90;
@@ -37,6 +51,8 @@ export interface RollTarget {
 export interface RollPress extends RollMove {
   button: number;
   shiftKey: boolean;
+  metaKey: boolean;
+  ctrlKey: boolean;
   timeStamp: number;
   pointerId: number;
   currentTarget: RollTarget;
@@ -57,7 +73,11 @@ export function wheel(e: WheelEvent & { currentTarget: Element }): void {
   else view.value = { ...v, low: Math.max(0, Math.min(115, v.low - Math.round(e.deltaY / 12))) };
 }
 
-/** a press on the roll of project p's track: seek, set velocities, pick, move or resize notes, or draw one */
+/** Cmd on a Mac, Ctrl elsewhere (on a Mac, Ctrl-click is a right-click) */
+const commandKey = (e: { metaKey: boolean; ctrlKey: boolean }): boolean => (isMac ? e.metaKey : e.ctrlKey);
+
+/** a press on the roll of project p's track: seek, set velocities, pick, move, resize, slice or delete notes, or draw
+ * one */
 export function down(e: RollPress, p: Project, track: Track | null): void {
   if (e.button !== 0 || !track) return;
   focus.value = 'roll';
@@ -109,6 +129,15 @@ export function down(e: RollPress, p: Project, track: Track | null): void {
     el.addEventListener('pointermove', setVel);
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
+    return;
+  }
+
+  if (e.altKey) {
+    sliceDrag(e, track.id, G);
+    return;
+  }
+  if (commandKey(e)) {
+    deleteDrag(e, track.id, G);
     return;
   }
 
@@ -214,6 +243,95 @@ export function down(e: RollPress, p: Project, track: Track | null): void {
   el.addEventListener('pointercancel', up);
 }
 
+/** the track as it is now, partway through a drag that has changed it */
+const trackNow = (id: string): Track | undefined => project.value.tracks.find((t) => t.id === id);
+
+/** listens to a drag's moves until the pointer lets go */
+function follow(el: RollTarget, move: (m: RollMove) => void, done: (m: RollMove) => void): void {
+  const up = (m: RollMove) => {
+    el.removeEventListener('pointermove', move);
+    el.removeEventListener('pointerup', up);
+    el.removeEventListener('pointercancel', up);
+    done(m);
+  };
+  el.addEventListener('pointermove', move);
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+}
+
+/** Alt-drag slices: a line on the grid at the pointer's beat, across the keys from the press to the pointer, cuts
+ * every note it goes through in two when the pointer lets go (one undo step) */
+function sliceDrag(e: RollPress, trackId: string, G: RollGeometry): void {
+  const el = e.currentTarget,
+    r = el.getBoundingClientRect(),
+    k0 = G.keyAt(e.clientY - r.top);
+  const place = (m: RollMove) => {
+    const y = Math.max(G.top, Math.min(G.bottom - 1, m.clientY - r.top));
+    knife.value = {
+      beat: Math.max(0, snapToGrid(G.beatAt(m.clientX - r.left), settings.value.grid, false)),
+      k0,
+      k1: G.keyAt(y),
+    };
+  };
+  place(e);
+  follow(el, place, () => {
+    const c = knife.value,
+      t = trackNow(trackId);
+    knife.value = null;
+    if (!c || !t) return;
+    const cuts = cutsAt(notesOf(t), c.beat, c.k0, c.k1, (id) => canonicalClip(t, id));
+    if (!cuts.size) return;
+    changeNotes(
+      t.id,
+      new Map(
+        [...cuts].map(([clip, at]) => [
+          clip,
+          (notes: Note[]) => notes.flatMap((n, i) => (at.has(i) ? sliceNote(n, at.get(i)!) : [n])),
+        ]),
+      ),
+    );
+    picked.value = new Set();
+  });
+}
+
+/** Cmd-drag (Ctrl elsewhere) deletes every note the pointer passes over; one drag is one undo step */
+function deleteDrag(e: RollPress, trackId: string, G: RollGeometry): void {
+  const el = e.currentTarget,
+    r = el.getBoundingClientRect(),
+    merge = `erase-${e.timeStamp}`;
+  picked.value = new Set();
+  let last = { x: e.clientX - r.left, y: e.clientY - r.top };
+  const sweep = (m: RollMove) => {
+    const to = { x: m.clientX - r.left, y: m.clientY - r.top },
+      t = trackNow(trackId);
+    if (!t) return;
+    // every few pixels along the way, so a quick drag doesn't skip a note
+    const steps = Math.max(1, Math.ceil(Math.hypot(to.x - last.x, to.y - last.y) / 3)),
+      all = notesOf(t),
+      gone = new Map<string, Set<number>>();
+    for (let s = 0; s <= steps; s++) {
+      const x = last.x + ((to.x - last.x) * s) / steps,
+        y = last.y + ((to.y - last.y) * s) / steps;
+      if (x < GUTTER || y < G.top || y >= G.bottom) continue;
+      const b = G.beatAt(x),
+        key = G.keyAt(y);
+      const hit = all.findLast((o) => o.n.key === key && b >= o.at && b < o.at + o.n.beats);
+      if (!hit) continue;
+      const c = canonicalClip(t, hit.clip.id);
+      gone.set(c, (gone.get(c) ?? new Set()).add(hit.i));
+    }
+    last = to;
+    if (gone.size)
+      changeNotes(
+        t.id,
+        new Map([...gone].map(([c, list]) => [c, (notes: Note[]) => notes.filter((_, i) => !list.has(i))])),
+        merge,
+      );
+  };
+  sweep(e);
+  follow(el, sweep, () => {});
+}
+
 /** the keyboard in the gutter: a press plays its key until the pointer lets go, and a drag glides to the keys it
  * passes over; the key's lane lights up while it sounds (roll-draw.ts) */
 function playKeys(
@@ -263,16 +381,23 @@ function noteAt(e: MouseEvent & { currentTarget: Element }, track: Track) {
 export function hover(e: MouseEvent & { currentTarget: HTMLElement }, track: Track | null): void {
   if (!track || e.buttons) return;
   const { G, px, py, hit } = noteAt(e, track);
+  const lanes = px > GUTTER && py > STRIP + 4 && py < G.bottom;
   e.currentTarget.style.cursor =
     py >= G.bottom
       ? 'ns-resize'
-      : hit
-        ? G.x(hit.at + hit.n.beats) - px <= EDGE
-          ? 'ew-resize'
-          : 'grab'
-        : px > GUTTER && py > STRIP + 4
-          ? 'crosshair'
-          : '';
+      : lanes && e.altKey
+        ? 'text'
+        : lanes && commandKey(e)
+          ? hit
+            ? 'not-allowed'
+            : 'default'
+          : hit
+            ? G.x(hit.at + hit.n.beats) - px <= EDGE
+              ? 'ew-resize'
+              : 'grab'
+            : px > GUTTER && py > STRIP + 4
+              ? 'crosshair'
+              : '';
 }
 
 // right-click a note for what can be done to the picked notes (it's picked, if it wasn't), or the background

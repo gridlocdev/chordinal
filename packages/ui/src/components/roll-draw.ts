@@ -11,7 +11,7 @@ import { notesOf, canonicalIds, isPicked } from '../notes.ts';
 import { rgba } from './canvas.ts';
 import { palette, alpha } from '../theme.ts';
 import type { Palette } from '../theme.ts';
-import { GUTTER, STRIP, LANE_H, VEL_H, band, geometry } from './roll-view.ts';
+import { GUTTER, STRIP, LANE_H, VEL_H, band, knife, geometry } from './roll-view.ts';
 import type { Lanes } from './roll-view.ts';
 
 const FONT = '-apple-system, system-ui, sans-serif';
@@ -246,6 +246,16 @@ export function drawRoll(
     g.strokeStyle = C.bandEdge;
     g.lineWidth = 1;
     g.strokeRect(x0 + 0.5, y0 + 0.5, x1 - x0, y1 - y0);
+  }
+  const line = knife.value;
+  if (line) {
+    const x = Math.round(G.x(line.beat)) + 0.5;
+    g.strokeStyle = C.bandEdge;
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(x, G.L.y(Math.max(line.k0, line.k1)));
+    g.lineTo(x, G.L.y(Math.min(line.k0, line.k1)) + LANE_H);
+    g.stroke();
   }
   g.restore();
   text(g, 'vel', GUTTER - 6, G.bottom + VEL_H / 2, 10, C.label, 'right');

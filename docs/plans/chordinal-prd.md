@@ -62,6 +62,7 @@ The patterns and step grid spec (`prd.md`, §3 to §7) stays in force. Chordinal
 7. Changing the octave (`Z`, `X`) scrolls the piano roll, when needed, so every key the letter keys play is in view.
 8. On macOS the window has no title bar. The browser runs to the top of the window, and its top row holds the window's close, minimise and zoom buttons and, at its right, the browser's toggle; the top bar beside it is the rest of the title bar. With the browser hidden, the top bar makes room for the window's buttons and has the toggle. Dragging the empty parts of either row moves the window (double-clicking zooms it, as the system settings say). In full screen the room for the buttons goes. Windows, Linux and the browser keep their own frame.
 9. A part of the window too wide for its space (the mixer's strips, the Sound tab's panels, a long editor toolbar, the browser's tabs) scrolls sideways inside that part and shows a scrollbar. It never widens the window or hides what's past the edge.
+10. In the piano roll, `Alt`-drag slices: a line at the pointer's beat, snapped to the grid, runs across the keys from where the drag started to the pointer, and when the button is let go it cuts every note it goes through in two. `Cmd`-drag (`Ctrl` on Windows and Linux) deletes every note the pointer passes over. Each drag is one undo step. `Alt` held once a drag has started still moves, resizes or draws off the grid.
 
 ## §6 The track headers
 
