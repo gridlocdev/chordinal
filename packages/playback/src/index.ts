@@ -12,5 +12,6 @@ export type { ChannelMix, PlayOptions, PlaybackHandle } from './player.ts';
 export { keyBeat, startRecording, stopRecording, takeBlock, updateRecording } from './recorder.ts';
 export type { MicTake, Recording, TakeKind } from './recorder.ts';
 export { createInstrument, findPreset, loadSoundFont, trimFonts, voicesIn } from './soundfont.ts';
-export type { Instrument, LoadedFont, NoteOptions, Voice } from './soundfont.ts';
+export type { Instrument, LoadedFont, NoteOptions, SoundFontInstrument, Voice } from './soundfont.ts';
+export { SYNTH_VOICES, createSynth } from './synth.ts';
 export { startTicker } from './ticker.ts';

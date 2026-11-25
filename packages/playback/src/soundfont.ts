@@ -9,9 +9,9 @@ import { startPitchMoves } from './pitch-moves.ts';
 import { CHIP_URL, CHIP_BANK, CHIP_KIT_BANK, CHIP_INSTRUMENTS, CHIP_KITS } from '@chordinal/audio';
 
 const MAX_VOICES = 96; // oldest voices are cut beyond this, released or not
-const MIN_RELEASE = 0.03; // seconds; shorter releases click
-const MIN_ATTACK = 0.002; // seconds; an instant attack clicks
-const FAST_RELEASE = 0.01; // seconds; for stolen, retriggered and choked voices
+export const MIN_RELEASE = 0.03; // seconds; shorter releases click
+export const MIN_ATTACK = 0.002; // seconds; an instant attack clicks
+export const FAST_RELEASE = 0.01; // seconds; for stolen, retriggered and choked voices
 const BUFFER_BUDGET = 256e6; // bytes of decoded Float32 samples kept across all fonts
 
 const FONT_BUDGET = 400e6; // bytes of loaded .sf2 samples kept across all fonts; the least recently asked for go first
@@ -46,9 +46,8 @@ export interface Voice {
  */
 export type NoteOptions = PitchMoves & { program?: number; mono?: boolean };
 
-/** one playable instrument: a preset from a loaded font, with its own output and sustain pedal */
+/** one playable instrument, a SoundFont preset or a synth, with its own output and sustain pedal */
 export interface Instrument {
-  preset: Sf2Preset;
   noteOn(key: number, velocity?: number, when?: number, opts?: NoteOptions): void;
   noteOff(key: number, fast?: boolean, when?: number): void;
   glide(fromKey: number, toKey: number, when: number, seconds: number): boolean;
@@ -56,6 +55,11 @@ export interface Instrument {
   output: GainNode;
   setSustain(on: boolean): void;
   dispose(): void;
+}
+
+/** an instrument playing a preset from a loaded font */
+export interface SoundFontInstrument extends Instrument {
+  preset: Sf2Preset;
 }
 
 const fonts = new Map<string, FontLoad>(); // url → its load, least recently asked for first
@@ -168,7 +172,7 @@ export function createInstrument(
   font: LoadedFont,
   preset: Sf2Preset,
   destination: AudioNode = audioEngine.output,
-): Instrument {
+): SoundFontInstrument {
   const ctx = destination.context;
   const active = voicesIn(ctx);
   const output = ctx.createGain();
@@ -177,7 +181,7 @@ export function createInstrument(
   const sustained = new Set<Voice>(); // voices whose key is up but the pedal holds them
   let pedal = false;
 
-  const instrument: Instrument = {
+  const instrument: SoundFontInstrument = {
     preset,
     // when: an AudioContext time to start at, for notes scheduled ahead (a song); omitted = now
     noteOn(key, velocity = 100, when = 0, opts = {}) {
@@ -417,7 +421,7 @@ function startVoice(
 }
 
 /** cancels a param's later changes at `at`, holding its value there where the browser can (Firefox can't) */
-function holdAt(param: AudioParam, at: number): void {
+export function holdAt(param: AudioParam, at: number): void {
   // Firefox has no cancelAndHoldAtTime, though the DOM types say every browser does
   if (typeof param.cancelAndHoldAtTime === 'function') param.cancelAndHoldAtTime(at);
   else param.cancelScheduledValues(at);

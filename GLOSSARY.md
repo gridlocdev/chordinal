@@ -92,8 +92,12 @@ _Avoid_: command palette
 ### Sound
 
 **Instrument**:
-The sound a **track** plays: one preset from a **sound library**.
+The sound a **track** plays: one preset from a **sound library**, or a **synth**.
 _Avoid_: patch, preset, voice
+
+**Synth**:
+An **instrument** Chordinal makes itself from two oscillators and noise, a filter, envelopes and an LFO, set by its settings rather than read from a **sound library**.
+_Avoid_: patch, synthesizer
 
 **Kit**:
 An **instrument** of drum sounds, one per key.

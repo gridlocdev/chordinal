@@ -123,6 +123,20 @@ Each gets its own interview and PRD section before it's built. [4-small-daw.md](
 2. Every project Chordinal Melody Composer writes opens and plays the same in Chordinal (the fixtures in `test/fixtures/projects/`).
 3. A project saved by an older build still opens: the format id and versions 1 and 2 stay readable.
 
+## §13 The synth
+
+The first part of §11.1. Its slices are in [4-small-daw.md](4-small-daw.md), feature 4.
+
+1. A synth is an instrument like a SoundFont preset: it plays live, on Play, in an exported WAV and in `chordinal render`. It plays up to 16 notes at once; a 17th cuts the oldest short.
+2. Two oscillators, each a saw, square, triangle or sine wave, with an octave (−2 to +2), a detune (±100 cents) and a level, plus white noise with its own level.
+3. A filter: low-pass, high-pass or band-pass, with a cutoff (20 Hz to 20 kHz) and a resonance. It has its own attack, decay, sustain and release envelope, which moves the cutoff by an amount (±4 octaves).
+4. An amp envelope: attack, decay, sustain and release.
+5. Velocity: a harder note is louder, and brighter by a velocity amount (0 to 1) that scales the filter envelope's amount.
+6. An LFO: a sine, triangle, square or saw wave with a rate (0.1 to 20 Hz) and a depth, moving the pitch (in cents), the cutoff (in cents) or the volume.
+7. Mono: a switch that plays one note at a time. A note played while another is held slides to its pitch over the glide time (0 jumps) without starting its envelopes again. Letting it go slides back to the last key still held. Glide does nothing when Mono is off.
+8. A note's pitch moves (its tuning, bend, vibrato, scoop and fall, §9) and the sustain pedal work as on a SoundFont preset.
+9. Later slices save the synth on a track, add presets and a **Synths** tab in the browser, and a **Sound** tab in the editor to set it.
+
 ## Decisions
 
 1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid (§11.2).
