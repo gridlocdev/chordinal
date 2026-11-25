@@ -1,6 +1,6 @@
 // A project store held in memory: for tests, and as the reference the other stores are checked against
 // (store-contract tests). `change` stands in for another app writing a project behind the store's back.
-import { ConflictError, TAKE_NAME } from './project-store.ts';
+import { ConflictError, SAMPLE_NAME, TAKE_NAME } from './project-store.ts';
 import type { ProjectStore, Version } from './project-store.ts';
 
 export interface MemoryStore extends ProjectStore {
@@ -11,10 +11,15 @@ export interface MemoryStore extends ProjectStore {
 export function memoryStore(): MemoryStore {
   const projects = new Map<string, { text: string; version: Version }>();
   const takes = new Map<string, Map<string, Uint8Array>>();
+  const samples = new Map<string, Map<string, Uint8Array>>();
   let n = 0;
   const next = (): Version => `m${++n}`;
   const takeOf = (file: string) => {
     if (!TAKE_NAME.test(file)) throw new Error(`not a take: ${file}`);
+    return file;
+  };
+  const sampleOf = (file: string) => {
+    if (!SAMPLE_NAME.test(file)) throw new Error(`not a sample: ${file}`);
     return file;
   };
 
@@ -47,6 +52,19 @@ export function memoryStore(): MemoryStore {
       const kept = takes.get(name) ?? new Map<string, Uint8Array>();
       kept.set(takeOf(file), bytes.slice());
       takes.set(name, kept);
+    },
+    async samples(name) {
+      return [...(samples.get(name)?.keys() ?? [])].sort();
+    },
+    async readSample(name, file) {
+      const bytes = samples.get(name)?.get(sampleOf(file));
+      if (!bytes) throw new Error(`no sample ${file}`);
+      return bytes.slice().buffer;
+    },
+    async writeSample(name, file, bytes) {
+      const kept = samples.get(name) ?? new Map<string, Uint8Array>();
+      kept.set(sampleOf(file), bytes.slice());
+      samples.set(name, kept);
     },
   };
 }

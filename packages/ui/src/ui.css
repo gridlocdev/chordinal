@@ -99,7 +99,8 @@ select {
   font: inherit;
   color: inherit;
 }
-button {
+button,
+label.button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -115,8 +116,20 @@ button {
     border-color 0.12s,
     color 0.12s;
 }
-button:hover:not(:disabled) {
+button:hover:not(:disabled),
+label.button:hover {
   background: var(--hover);
+}
+/* a file picker that looks like a button: the input stays focusable but out of sight */
+label.button input[type='file'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+label.button:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 button:disabled {
   opacity: 0.4;
@@ -1027,6 +1040,9 @@ input[type='range']::-moz-range-thumb {
 }
 .sound .synth-name {
   width: 200px;
+}
+.sound .sample-file {
+  color: var(--muted);
 }
 .sound .sections {
   flex: 1;

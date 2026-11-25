@@ -82,13 +82,14 @@ const FILTERS: readonly SynthFilterType[] = ['lowpass', 'highpass', 'bandpass'];
 const TARGETS: readonly SynthLfoTarget[] = ['pitch', 'filter', 'volume'];
 
 type Loose = Record<string, unknown>;
-const obj = (v: unknown): Loose => (v && typeof v === 'object' ? (v as Loose) : {});
-const num = (v: unknown, fallback: number, lo: number, hi: number) =>
+/** these read saved settings for the sampler too */
+export const obj = (v: unknown): Loose => (v && typeof v === 'object' ? (v as Loose) : {});
+export const num = (v: unknown, fallback: number, lo: number, hi: number) =>
   typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback;
-const pick = <T extends string>(v: unknown, from: readonly T[], fallback: T): T =>
+export const pick = <T extends string>(v: unknown, from: readonly T[], fallback: T): T =>
   from.includes(v as T) ? (v as T) : fallback;
 
-function envelope(v: unknown, d: SynthEnvelope): SynthEnvelope {
+export function envelope(v: unknown, d: SynthEnvelope): SynthEnvelope {
   const e = obj(v);
   return {
     attack: num(e.attack, d.attack, 0, 20),

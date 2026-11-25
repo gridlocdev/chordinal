@@ -11,6 +11,7 @@ import {
   loadSoundFont,
   findPreset,
   createInstrument,
+  createSampler,
   createSynth,
   effectChain,
   prepareEffects,
@@ -18,7 +19,13 @@ import {
 import { presetFor } from '@chordinal/playback';
 import { audioEngine } from '@chordinal/playback';
 import type { EffectChain, Instrument } from '@chordinal/playback';
-import { synthSettings, type LibraryPreset, type SynthSettings } from '@chordinal/audio';
+import {
+  samplerSettings,
+  synthSettings,
+  type LibraryPreset,
+  type SamplerSettings,
+  type SynthSettings,
+} from '@chordinal/audio';
 import {
   applyNoteFx,
   arpCycle,
@@ -29,7 +36,8 @@ import {
   splitAtArp,
 } from '@chordinal/daw';
 import type { ArpSettings, Insert, Track, TrackFx } from '@chordinal/daw';
-import { settings, setSettings, selectedTrack, project, beat, notify } from './store.ts';
+import { settings, setSettings, selectedTrack, project, projectName, beat, notify } from './store.ts';
+import { readSample } from './sample-files.ts';
 import { musicalTyping } from './focus.ts';
 import type { KeyPress } from './commands/shortcut.ts';
 import { errorText } from './errors.ts';
@@ -120,10 +128,19 @@ function syncEffects(): void {
 const presetOf = (track: Track | null) =>
   track ? presetFor(track.instrument.bank, track.instrument.program) : presetFor(0, 0);
 
-/** what musical typing plays for the selected track: its synth, or its preset (by key, to load only when it changes) */
+/** what musical typing plays for the selected track: its sampler, its synth, or its preset (by key, to load only when
+ * it changes) */
 function liveSound(
   track: Track | null,
-): { key: string; synth: SynthSettings } | { key: string; entry: LibraryPreset } | null {
+):
+  | { key: string; sample: SamplerSettings }
+  | { key: string; synth: SynthSettings }
+  | { key: string; entry: LibraryPreset }
+  | null {
+  if (track?.instrument.sample) {
+    const sample = samplerSettings(track.instrument.sample);
+    return { key: `sample:${projectName.value}:${JSON.stringify(sample)}`, sample };
+  }
   if (track?.instrument.synth) {
     const synth = synthSettings(track.instrument.synth);
     return { key: `synth:${JSON.stringify(synth)}`, synth };
@@ -160,6 +177,13 @@ const loadPreset = (entry: LibraryPreset): Promise<void> =>
     const preset = findPreset(font, entry.bank, entry.program);
     if (!preset) throw new Error(`no preset ${entry.bank}:${entry.program}`);
     return createInstrument(font, preset, into);
+  });
+
+const loadSampler = (sample: SamplerSettings): Promise<void> =>
+  load(sample.name, async (into) => {
+    const buffer = await readSample(sample.file);
+    while (audioEngine.rendering) await audioEngine.rendering.catch(() => {});
+    return createSampler(sample, buffer, into);
   });
 
 const loadSynth = (synth: SynthSettings): Promise<void> =>
@@ -330,7 +354,8 @@ export function musicalKey(e: KeyPress): 'note' | 'octave' | 'letter' | null {
   return /^Key[A-Z]$/.test(e.code) ? 'letter' : null;
 }
 
-/** wires the keyboard and MIDI, and reloads the instrument whenever the selected track's preset or synth changes */
+/** wires the keyboard and MIDI, and reloads the instrument whenever the selected track's preset, synth or sampler
+ * changes */
 export function startLive(): void {
   let last = '';
   effect(() => {
@@ -338,7 +363,11 @@ export function startLive(): void {
     const sound = liveSound(selectedTrack.value);
     if (!sound || sound.key === last) return;
     last = sound.key;
-    void ('synth' in sound ? loadSynth(sound.synth) : loadPreset(sound.entry));
+    void ('sample' in sound
+      ? loadSampler(sound.sample)
+      : 'synth' in sound
+        ? loadSynth(sound.synth)
+        : loadPreset(sound.entry));
   });
   void liveInput();
   effect(() => {

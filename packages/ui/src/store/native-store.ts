@@ -11,6 +11,9 @@ export interface FoldersBridge {
   takes(dir: string): Promise<string[]>;
   readTake(dir: string, file: string): Promise<Uint8Array>;
   writeTake(dir: string, file: string, bytes: Uint8Array): Promise<void>;
+  samples(dir: string): Promise<string[]>;
+  readSample(dir: string, file: string): Promise<Uint8Array>;
+  writeSample(dir: string, file: string, bytes: Uint8Array): Promise<void>;
 }
 
 /** an error from the main process arrives as "Error invoking remote method '…': Error: CONFLICT: …" */
@@ -34,5 +37,11 @@ export function nativeStore(bridge: FoldersBridge): ProjectStore {
       return u.slice().buffer;
     },
     writeTake: (dir, file, bytes) => bridge.writeTake(dir, file, new Uint8Array(bytes)),
+    samples: (dir) => bridge.samples(dir),
+    async readSample(dir, file) {
+      const u = await bridge.readSample(dir, file);
+      return u.slice().buffer;
+    },
+    writeSample: (dir, file, bytes) => bridge.writeSample(dir, file, new Uint8Array(bytes)),
   };
 }

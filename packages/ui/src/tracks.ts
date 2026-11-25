@@ -27,29 +27,36 @@ import {
 import { setLoop } from '@chordinal/daw';
 import { quantizeNotes, humanizeNotes, scaleNotes, reverseNotes } from '@chordinal/daw';
 import type { Clip, Loop, Mixer, Track } from '@chordinal/daw';
-import { synthSettings } from '@chordinal/audio';
+import { samplerSettings, synthSettings } from '@chordinal/audio';
 import { presetFor } from '@chordinal/playback';
 import { project, selected, selectedClip, settings, setSettings, picked } from './store.ts';
 import { edit } from './document.ts';
 import { askText } from './ask.ts';
 
-/** an instrument: its bank and program, and a synth's settings when it's a synth (PRD §13) */
+/** an instrument: its bank and program, and a synth's or sampler's settings when it's one of those (PRD §13) */
 export interface InstrumentRef {
   bank: number;
   program: number;
   synth?: object;
+  sample?: object;
 }
 
-/** just the instrument of a ref: a SoundFont preset drops a synth the track had */
-const instrumentOf = ({ bank, program, synth }: InstrumentRef): InstrumentRef => ({
+/** just the instrument of a ref: a SoundFont preset drops a synth or sampler the track had */
+const instrumentOf = ({ bank, program, synth, sample }: InstrumentRef): InstrumentRef => ({
   bank,
   program,
   ...(synth && { synth }),
+  ...(sample && { sample }),
 });
 
-/** what the track header, the mixer and musical typing call an instrument: its synth's name, or its preset's */
+/** what the track header, the mixer and musical typing call an instrument: its synth's or sample's name, or its
+ * preset's */
 export const instrumentName = (i: InstrumentRef): string =>
-  i.synth ? synthSettings(i.synth).name : (presetFor(i.bank, i.program)?.name ?? '');
+  i.sample
+    ? samplerSettings(i.sample).name
+    : i.synth
+      ? synthSettings(i.synth).name
+      : (presetFor(i.bank, i.program)?.name ?? '');
 
 /** the arrangement's zoom in px per beat, or 0 to fit the project to the window */
 export const arrangeZoom: Signal<number> = signal(0);

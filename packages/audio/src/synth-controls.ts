@@ -1,12 +1,14 @@
 // The Sound tab's controls for a synth (Chordinal PRD §13), as data: what each one sets, its range and how its slider
 // moves over it, and how its value reads. Pure, so the panel only draws them and the tests check them in Node.
+import { noteName } from '@chordinal/lib';
 import { synthSettings, type SynthSettings } from './synth-settings.ts';
 
 /** how a slider spreads its range: evenly, on octaves (a frequency, a rate), or bunched at the low end (a time) */
 export type SynthScale = 'linear' | 'log' | 'curve';
-export type SynthUnit = 'Hz' | 's' | '%' | 'cents' | 'oct' | 'Q';
+export type SynthUnit = 'Hz' | 's' | '%' | 'cents' | 'oct' | 'Q' | 'key';
 
-export interface SynthNumberControl {
+/** a control on a synth's settings, or with S, on another sound's (the sampler's) */
+export interface SynthNumberControl<S = SynthSettings> {
   kind: 'number';
   /** where it is in the settings, like 'filter.env.attack' */
   path: string;
@@ -18,9 +20,9 @@ export interface SynthNumberControl {
   /** whole steps only (octaves) */
   whole?: boolean;
   /** shown only for settings where this is true */
-  shown?: (s: SynthSettings) => boolean;
+  shown?: (s: S) => boolean;
   /** greyed out for settings where this is false */
-  enabled?: (s: SynthSettings) => boolean;
+  enabled?: (s: S) => boolean;
 }
 
 export interface SynthChoiceControl {
@@ -36,11 +38,11 @@ export interface SynthSwitchControl {
   label: string;
 }
 
-export type SynthControl = SynthNumberControl | SynthChoiceControl | SynthSwitchControl;
+export type SynthControl<S = SynthSettings> = SynthNumberControl<S> | SynthChoiceControl | SynthSwitchControl;
 
-export interface SynthSection {
+export interface SynthSection<S = SynthSettings> {
   title: string;
-  controls: readonly SynthControl[];
+  controls: readonly SynthControl<S>[];
 }
 
 const WAVES = [
@@ -50,15 +52,15 @@ const WAVES = [
   ['sine', 'Sine'],
 ] as const;
 
-const num = (
+export const num = <S = SynthSettings>(
   path: string,
   label: string,
   min: number,
   max: number,
   scale: SynthScale,
   unit: SynthUnit,
-  more: Partial<SynthNumberControl> = {},
-): SynthNumberControl => ({ kind: 'number', path, label, min, max, scale, unit, ...more });
+  more: Partial<SynthNumberControl<S>> = {},
+): SynthNumberControl<S> => ({ kind: 'number', path, label, min, max, scale, unit, ...more });
 
 const oscillator = (n: 1 | 2): SynthSection => ({
   title: `Oscillator ${n}`,
@@ -70,11 +72,11 @@ const oscillator = (n: 1 | 2): SynthSection => ({
   ],
 });
 
-const envelope = (at: string): SynthControl[] => [
-  num(`${at}.attack`, 'Attack', 0, 10, 'curve', 's'),
-  num(`${at}.decay`, 'Decay', 0, 10, 'curve', 's'),
-  num(`${at}.sustain`, 'Sustain', 0, 1, 'linear', '%'),
-  num(`${at}.release`, 'Release', 0, 10, 'curve', 's'),
+export const envelope = <S = SynthSettings>(at: string): SynthNumberControl<S>[] => [
+  num<S>(`${at}.attack`, 'Attack', 0, 10, 'curve', 's'),
+  num<S>(`${at}.decay`, 'Decay', 0, 10, 'curve', 's'),
+  num<S>(`${at}.sustain`, 'Sustain', 0, 1, 'linear', '%'),
+  num<S>(`${at}.release`, 'Release', 0, 10, 'curve', 's'),
 ];
 
 const toVolume = (s: SynthSettings) => s.lfo.target === 'volume';
@@ -134,7 +136,7 @@ export const SYNTH_SECTIONS: readonly SynthSection[] = [
 ];
 
 /** the value at `path` in the settings */
-export function synthValue(s: SynthSettings, path: string): unknown {
+export function synthValue(s: object, path: string): unknown {
   let at: unknown = s;
   for (const k of path.split('.'))
     at = at && typeof at === 'object' ? (at as Record<string, unknown>)[k] : undefined;
@@ -149,11 +151,8 @@ const depthFor = (depth: number, from: string, to: string): number =>
       ? Math.min(1, depth / 1200)
       : depth * 1200;
 
-/**
- * New settings with `path` set to `value`, held in range. An LFO moved to or from the volume keeps its depth's share
- * of its range, since the volume's depth isn't in cents.
- */
-export function withSynthValue(s: SynthSettings, path: string, value: unknown): SynthSettings {
+/** a copy of `s` with `path` set to `value`, not yet held in range */
+export function withValue<S extends object>(s: S, path: string, value: unknown): S {
   const keys = path.split('.');
   const put = (at: unknown, i: number): unknown => {
     const k = keys[i];
@@ -161,14 +160,22 @@ export function withSynthValue(s: SynthSettings, path: string, value: unknown): 
     const o = at && typeof at === 'object' ? (at as Record<string, unknown>) : {};
     return { ...o, [k]: put(o[k], i + 1) };
   };
-  const next = put(s, 0) as SynthSettings;
+  return put(s, 0) as S;
+}
+
+/**
+ * New settings with `path` set to `value`, held in range. An LFO moved to or from the volume keeps its depth's share
+ * of its range, since the volume's depth isn't in cents.
+ */
+export function withSynthValue(s: SynthSettings, path: string, value: unknown): SynthSettings {
+  const next = withValue(s, path, value);
   if (path === 'lfo.target' && typeof value === 'string')
     next.lfo = { ...next.lfo, depth: depthFor(s.lfo.depth, s.lfo.target, value) };
   return synthSettings(next);
 }
 
 /** where a value sits on a control's slider, 0 to 1 */
-export function controlPlace(c: SynthNumberControl, value: number): number {
+export function controlPlace<S>(c: SynthNumberControl<S>, value: number): number {
   const x =
     c.scale === 'log'
       ? Math.log(value / c.min) / Math.log(c.max / c.min)
@@ -179,7 +186,7 @@ export function controlPlace(c: SynthNumberControl, value: number): number {
 }
 
 /** the value at a place on a control's slider, 0 to 1 */
-export function controlValue(c: SynthNumberControl, place: number): number {
+export function controlValue<S>(c: SynthNumberControl<S>, place: number): number {
   const x = Math.max(0, Math.min(1, place));
   const v =
     c.scale === 'log'
@@ -193,7 +200,7 @@ export function controlValue(c: SynthNumberControl, place: number): number {
 const fixed = (x: number, d: number) => x.toFixed(d).replace('-', '−');
 
 /** a control's value as the panel shows it */
-export function controlText(c: SynthNumberControl, value: number): string {
+export function controlText<S>(c: SynthNumberControl<S>, value: number): string {
   switch (c.unit) {
     case 'Hz':
       return value >= 1000
@@ -209,5 +216,7 @@ export function controlText(c: SynthNumberControl, value: number): string {
       return value ? `${value > 0 ? '+' : ''}${fixed(value, 0)} oct` : '0';
     case 'Q':
       return fixed(value, 1);
+    case 'key':
+      return noteName(Math.round(value));
   }
 }

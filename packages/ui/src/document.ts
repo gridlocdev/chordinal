@@ -28,6 +28,7 @@ import { classifyFile } from './store/classify-file.ts';
 import { NEW, step, expectedOf } from './store/save-session.ts';
 import type { SaveState } from './store/save-session.ts';
 import { errorText } from './errors.ts';
+import { forgetUnsavedSamples, writeUnsavedSamples } from './sample-files.ts';
 
 /** what a new project starts from: a title, a tempo, a meter and a length in bars */
 export interface NewProjectOptions {
@@ -101,6 +102,7 @@ function show(p: Project, name: string, clean = false): void {
   stop();
   mergeKey = null;
   hist.value = history(p);
+  forgetUnsavedSamples();
   saved.value = name || clean ? p : null;
   projectName.value = name;
   session = NEW;
@@ -210,16 +212,32 @@ async function saveNow(): Promise<boolean> {
   }
 }
 
-/** the takes of the project's old folder, copied into its new one after a Save As (those already there are kept) */
-async function copyTakes(from: string, to: string): Promise<void> {
-  try {
-    const there = new Set(await place.files.takes(to).catch((): string[] => []));
-    for (const file of await place.files.takes(from))
-      if (!there.has(file))
-        await place.files.writeTake(to, file, new Uint8Array(await place.files.readTake(from, file)));
-  } catch (e) {
-    notify(`Saved ${place.where(to)}, but couldn't copy its takes: ${errorText(e)}`, 'error');
-  }
+/** the takes and samples of the project's old folder, copied into its new one after a Save As (files already there
+ * are kept) */
+async function copyFiles(from: string, to: string): Promise<void> {
+  const f = place.files;
+  const kinds = [
+    {
+      what: 'takes',
+      list: (n: string) => f.takes(n),
+      read: (n: string, file: string) => f.readTake(n, file),
+      write: (n: string, file: string, b: Uint8Array) => f.writeTake(n, file, b),
+    },
+    {
+      what: 'samples',
+      list: (n: string) => f.samples(n),
+      read: (n: string, file: string) => f.readSample(n, file),
+      write: (n: string, file: string, b: Uint8Array) => f.writeSample(n, file, b),
+    },
+  ];
+  for (const { what, list, read, write } of kinds)
+    try {
+      const there = new Set(await list(to).catch((): string[] => []));
+      for (const file of await list(from))
+        if (!there.has(file)) await write(to, file, new Uint8Array(await read(from, file)));
+    } catch (e) {
+      notify(`Saved ${place.where(to)}, but couldn't copy its ${what}: ${errorText(e)}`, 'error');
+    }
 }
 
 /** saves under a new name (the app's place asks where); the project takes the name only once it's saved there.
@@ -248,7 +266,8 @@ export async function saveAs(): Promise<boolean> {
   });
   if (done) {
     setSettings({ project: name });
-    if (before && name !== before) await copyTakes(before, name);
+    if (before && name !== before) await copyFiles(before, name);
+    await writeUnsavedSamples(name);
   }
   return done;
 }

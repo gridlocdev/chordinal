@@ -5,7 +5,14 @@
 // device's, so a file comes out the same on every machine.
 import { readProject, projectEnd, registerFx } from '@chordinal/daw';
 import type { Project } from '@chordinal/daw';
-import { loadInstruments, playProject, LEAD_IN, audioEngine, dbToGain } from '@chordinal/playback';
+import {
+  decodeSample,
+  loadInstruments,
+  playProject,
+  LEAD_IN,
+  audioEngine,
+  dbToGain,
+} from '@chordinal/playback';
 import type { PlaybackHandle } from '@chordinal/playback';
 import { beatToSeconds } from '@chordinal/lib';
 import { soundfontLibrary } from '@chordinal/audio';
@@ -42,7 +49,12 @@ function mixOf(p: Project): { gain: number; pan: number }[] {
 
 async function play(job: PlayJob): Promise<void> {
   const p: Project = { ...readProject(job.project), loop: null };
-  const instruments = await loadInstruments(p.tracks);
+  const { samples } = job;
+  const instruments = await loadInstruments(p.tracks, undefined, async (file) => {
+    if (!samples) return null;
+    const res = await fetch(samples + encodeURIComponent(file));
+    return res.ok ? decodeSample(await res.arrayBuffer()) : null;
+  });
   const until = job.until ?? projectEnd(p);
   const seconds = LEAD_IN + beatToSeconds(p.tempoMap, until) + job.tail;
   const playing: { handle: PlaybackHandle | null } = { handle: null };

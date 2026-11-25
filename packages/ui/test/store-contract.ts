@@ -62,6 +62,22 @@ export function storeContract(label: string, make: () => Promise<ContractStore>)
     await assert.rejects(store.writeTake(a, '../evil.wav', new Uint8Array([1])), /not a take/);
   });
 
+  test(`${label}: samples are kept per project, by safe names only`, async () => {
+    const { store, name } = await make();
+    const a = name('A'),
+      b = name('B');
+    await store.write(a, '{}', null);
+    await store.write(b, '{}', null);
+    assert.deepEqual(await store.samples(a), []);
+    await store.writeSample(a, 'Pad C3.aiff', new Uint8Array([4, 5]));
+    await store.writeSample(a, 'kick.wav', new Uint8Array([1, 2, 3]));
+    assert.deepEqual((await store.samples(a)).sort(), ['Pad C3.aiff', 'kick.wav']);
+    assert.deepEqual(await store.samples(b), []);
+    assert.deepEqual([...new Uint8Array(await store.readSample(a, 'kick.wav'))], [1, 2, 3]);
+    for (const bad of ['../evil.wav', '.hidden.wav', 'a/b.wav', 'notes.txt'])
+      await assert.rejects(store.writeSample(a, bad, new Uint8Array([1])), /not a sample/);
+  });
+
   test(`${label}: saves one after another keep the last`, async () => {
     const { store, name } = await make();
     const a = name('A');

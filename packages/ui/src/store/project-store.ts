@@ -1,6 +1,6 @@
 // Where projects are kept (Chordinal PRD §4), behind one interface, so the document code never knows whether a project
 // is in memory (tests), in the browser (the web build) or in a folder on disk (the desktop app). Each project is named
-// by a string (a folder's path on the desktop) and holds its project.json text and its recorded takes.
+// by a string (a folder's path on the desktop) and holds its project.json text, its recorded takes and its samples.
 //
 // Every read hands back a version token. A write passes the token it last saw: if the project changed somewhere else
 // since (another app, a sync, a second window), the write is refused with a ConflictError and nothing is overwritten.
@@ -24,6 +24,10 @@ export interface ProjectStore {
   takes(name: string): Promise<string[]>;
   readTake(name: string, file: string): Promise<ArrayBuffer>;
   writeTake(name: string, file: string, bytes: Uint8Array): Promise<void>;
+  /** the audio files its samplers play (PRD §13), in samples/, or [] */
+  samples(name: string): Promise<string[]>;
+  readSample(name: string, file: string): Promise<ArrayBuffer>;
+  writeSample(name: string, file: string, bytes: Uint8Array): Promise<void>;
 }
 
 /** the project changed somewhere else since it was read or written here; nothing was written */
@@ -33,3 +37,6 @@ export class ConflictError extends Error {
 
 /** take files are named take-<n>.wav or the like: nothing that could leave the project */
 export const TAKE_NAME = /^[\w-]+\.wav$/;
+
+/** sample files keep the name they were dropped with, within the same bounds: kick 2.wav, Pad-C3.aiff */
+export const SAMPLE_NAME = /^\w[\w .-]*\.(wav|aiff?|mp3)$/i;

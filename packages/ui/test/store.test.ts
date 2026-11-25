@@ -53,6 +53,9 @@ function fakeBridge(): FoldersBridge & { change(dir: string, text: string): void
     takes: (d) => inner.takes(d),
     readTake: async (d, f) => new Uint8Array(await inner.readTake(d, f)),
     writeTake: (d, f, b) => inner.writeTake(d, f, b),
+    samples: (d) => inner.samples(d),
+    readSample: async (d, f) => new Uint8Array(await inner.readSample(d, f)),
+    writeSample: (d, f, b) => inner.writeSample(d, f, b),
     change: (d, t) => inner.change(d, t),
   };
 }

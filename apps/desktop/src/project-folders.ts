@@ -1,5 +1,5 @@
 // Chordinal's projects (Chordinal PRD §4): folders anywhere on disk, each holding project.json and, beside it, the
-// recorded takes in takes/. The window may read and write only a folder the user picked in this run (Open…, Save As…)
+// recorded takes in takes/ and the samplers' audio files in samples/. The window may read and write only a folder the user picked in this run (Open…, Save As…)
 // or one in Open Recent, which is kept here, newest first, in a file in the app's data folder. A folder is named by
 // its absolute path; a project.json picked instead of its folder names that folder.
 import { createHash } from 'node:crypto';
@@ -11,6 +11,7 @@ export const RECENT_LIMIT = 10;
 /** the start of a write's error when project.json changed on disk since the page read or wrote it */
 export const CONFLICT = 'CONFLICT';
 const TAKE = /^[\w-]+\.wav$/;
+const SAMPLE = /^\w[\w .-]*\.(wav|aiff?|mp3)$/i;
 
 const exists = (file: string): Promise<boolean> =>
   fs.access(file).then(
@@ -64,6 +65,9 @@ export interface ProjectFolders {
   takes(dir: unknown): Promise<string[]>;
   readTake(dir: unknown, file: unknown): Promise<Uint8Array>;
   writeTake(dir: unknown, file: unknown, bytes: Uint8Array): Promise<void>;
+  samples(dir: unknown): Promise<string[]>;
+  readSample(dir: unknown, file: unknown): Promise<Uint8Array>;
+  writeSample(dir: unknown, file: unknown, bytes: Uint8Array): Promise<void>;
   /** the file a Finder reveal shows */
   fileToShow(dir: unknown): string;
 }
@@ -91,6 +95,10 @@ export function projectFolders({ listFile }: { listFile: string }): ProjectFolde
   const take = (dir: unknown, file: unknown) => {
     if (!TAKE.test(String(file))) throw new Error(`not a take: ${String(file)}`);
     return path.join(reach(dir), 'takes', String(file));
+  };
+  const sample = (dir: unknown, file: unknown) => {
+    if (!SAMPLE.test(String(file))) throw new Error(`not a sample: ${String(file)}`);
+    return path.join(reach(dir), 'samples', String(file));
   };
 
   return {
@@ -175,6 +183,12 @@ export function projectFolders({ listFile }: { listFile: string }): ProjectFolde
       ),
     readTake: async (dir, file) => new Uint8Array(await fs.readFile(take(dir, file))),
     writeTake: async (dir, file, bytes) => writeAtomic(take(dir, file), Buffer.from(bytes)),
+    samples: async (dir) =>
+      (await fs.readdir(path.join(reach(dir), 'samples')).catch((): string[] => [])).filter((f) =>
+        SAMPLE.test(f),
+      ),
+    readSample: async (dir, file) => new Uint8Array(await fs.readFile(sample(dir, file))),
+    writeSample: async (dir, file, bytes) => writeAtomic(sample(dir, file), Buffer.from(bytes)),
     fileToShow: (dir) => path.join(reach(dir), 'project.json'),
   };
 }

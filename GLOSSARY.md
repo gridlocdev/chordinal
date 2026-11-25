@@ -92,12 +92,20 @@ _Avoid_: command palette
 ### Sound
 
 **Instrument**:
-The sound a **track** plays: one preset from a **sound library**, or a **synth**.
+The sound a **track** plays: one preset from a **sound library**, a **synth** or a **sampler**.
 _Avoid_: patch, preset, voice
 
 **Synth**:
 An **instrument** Chordinal makes itself from two oscillators and noise, a filter, envelopes and an LFO, set by its settings rather than read from a **sound library**.
 _Avoid_: patch, synthesizer
+
+**Sampler**:
+An **instrument** that plays one audio file, a **sample**, across the keys from its root key: the key it sounds at as recorded.
+_Avoid_: sample player
+
+**Sample**:
+An audio file a **sampler** plays, kept in the project's `samples/` folder. Not a **take**, which is a recording kept with the project.
+_Avoid_: audio clip, one-shot
 
 **Kit**:
 An **instrument** of drum sounds, one per key.

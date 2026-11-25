@@ -16,6 +16,10 @@ Each track's header in the arrangement has its mute, solo and a volume knob: dou
 
 Besides the SoundFont libraries, any track can play a synth: two oscillators and noise through a filter, with envelopes, an LFO, velocity, and a mono switch that glides between held notes. The browser's **Synths** tab lists its presets by group (Bass, Lead, Pad, Pluck and Keys). Click one to hear it, double-click it to put it on the selected track, or drag it onto a track. The editor's **Sound** tab (`⌘4`) sets the selected track's synth, a card for each stage of the sound, and names it. On a track playing a sound-library instrument, **Use a Synth** starts it from a plain saw. The synth is saved with the project and plays live, on Play and in an export. A MIDI export names the track's nearest General MIDI instrument.
 
+## Samplers
+
+A track can also play an audio file of your own across the keys. Drop a WAV, AIFF or MP3 on a track's header, or use **Load a Sample…** in the **Sound** tab. Chordinal copies the file into the project's `samples/` folder and listens for its pitch to set its root key, which you can change. In the **Sound** tab, **One-shot** plays the whole sample on each note and **Sustain loop** holds it while the key is down; **Start** skips into the file, and the amp envelope shapes each note. **Replace Sample…** swaps the file. A sampler plays live, on Play, in an export and in `chordinal render`. Drum tracks don't take samples yet.
+
 ## Humanize
 
 A track can have a **Humanize** effect that adds ghost notes, swing, timing and ornaments as it plays, so every pass round a loop is a little different. Your own edits are played the same way. A section can swing on its own or play straight, and sit further behind or ahead of the beat, when its marker says so.

@@ -9,6 +9,7 @@ import type { Mixer, Project } from '@chordinal/daw';
 import { audioEngine } from '@chordinal/playback';
 import { project, mix, playing, beat, notify, settings, levels, exporting } from './store.ts';
 import { errorText } from './errors.ts';
+import { readSample } from './sample-files.ts';
 
 let handle: PlaybackHandle | null = null;
 let heard: Project | null = null; // the project the handle plays
@@ -26,9 +27,13 @@ export async function play(): Promise<void> {
   halt();
   playing.value = true;
   try {
-    const instruments = await loadInstruments(p.tracks, (text) => {
-      if (id === starting) notify(text, 'busy');
-    });
+    const instruments = await loadInstruments(
+      p.tracks,
+      (text) => {
+        if (id === starting) notify(text, 'busy');
+      },
+      readSample,
+    );
     if (id !== starting) return;
     // an edit while the instruments loaded: start again with what's there now (and its instruments)
     if (project.value !== p) return play();

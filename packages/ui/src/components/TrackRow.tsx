@@ -1,6 +1,7 @@
 // A track's row in the arrangement: its header (colour, name, instrument, mute, solo and a volume knob) and its lane of
 // clips. Click a header to select the track, double-click it to open the track's editor, double-click the name to
-// rename it; drag headers to reorder the tracks; drop an instrument on a track to play it there. Right-click a header
+// rename it; drag headers to reorder the tracks; drop an instrument on a track to play it there, or a WAV, AIFF or MP3
+// on its header to play that file across the keys (a sampler, PRD §14). Right-click a header
 // for more (Delete Track among them). Show Automation (A) opens the track's automation lane under its row.
 //
 // Clips: drag to move (to another track too), Alt-drag to copy, drag the right edge to resize, double-click empty
@@ -11,9 +12,11 @@ import { signal } from '@preact/signals';
 import { barAt } from '@chordinal/daw';
 import { updateClip, moveClip, newId, isDrums, findPattern } from '@chordinal/daw';
 import type { Clip, Track } from '@chordinal/daw';
-import { project, selected, selectedClip, beat, settings, setSettings } from '../store.ts';
+import { project, selected, selectedClip, beat, settings, setSettings, notify } from '../store.ts';
 import { edit } from '../document.ts';
 import { recording, takeNotes, dropAudio, dropTake } from '../recording.ts';
+import { loadSample } from '../sample-edit.ts';
+import { SAMPLE_FILE } from '@chordinal/audio';
 import { isMidi, dropMidi } from '../midi-import.ts';
 import { focus } from '../focus.ts';
 import { instrumentName, renameTrack, toggleMute, toggleSolo, newClipAt, moveTrackTo } from '../tracks.ts';
@@ -288,6 +291,22 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
       moveTrackTo(e.dataTransfer?.getData(TRACK) ?? '', index);
     }
   };
+  // an audio file dropped on the header: the track plays it as a sampler (on the lane, it's read as notes)
+  const overHead = (e: DragEvent) => {
+    if (carries(e, 'Files')) {
+      e.preventDefault();
+      setDrop(true);
+    }
+  };
+  const droppedOnHead = (e: DragEvent) => {
+    if (!carries(e, 'Files')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setDrop(false);
+    const file = [...(e.dataTransfer?.files ?? [])].find((f) => SAMPLE_FILE.test(f.name));
+    if (file) void loadSample(track.id, file);
+    else notify('Drop a WAV, AIFF or MP3 file on a track header to play it there', 'error');
+  };
   return (
     <>
       <div
@@ -308,6 +327,8 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
             setDragging(true);
           }}
           onDragEnd={() => setDragging(false)}
+          onDragOver={overHead}
+          onDrop={droppedOnHead}
           onClick={() => {
             selected.value = track.id;
           }}

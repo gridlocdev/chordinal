@@ -8,6 +8,7 @@
 import { audioEngine, peak } from './audio-engine.ts';
 import { startTicker } from './ticker.ts';
 import { createInstrument, type Instrument } from './soundfont.ts';
+import { createSampler } from './sampler.ts';
 import { createSynth } from './synth.ts';
 import type { PlayableInstrument } from './instruments.ts';
 import { createMixer, dbToGain } from './mixer.ts';
@@ -118,9 +119,11 @@ export function playProject(
     instrumentsOf.map((b, i) => {
       const strip = strips[i];
       if (!strip) return undefined;
-      return 'synth' in b
-        ? createSynth(b.synth, strip.input)
-        : createInstrument(b.font, b.preset, strip.input);
+      return 'sample' in b
+        ? createSampler(b.sample, b.buffer, strip.input)
+        : 'synth' in b
+          ? createSynth(b.synth, strip.input)
+          : createInstrument(b.font, b.preset, strip.input);
     });
   let instruments = makeInstruments();
 

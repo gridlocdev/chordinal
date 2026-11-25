@@ -139,6 +139,21 @@ The first part of §11.1. Its slices are in [4-small-daw.md](4-small-daw.md), fe
 10. The browser's **Synths** tab lists the synth's presets by group (Bass, Lead, Pad, Pluck and Keys), each with its General MIDI program. They work like the instruments: click to hear one, double-click to put it on the selected track, drag it onto a track or below them, or right-click for **Put on** and **New Track with It**. The track's header, the mixer and musical typing show the preset's name. Putting a SoundFont preset on a synth track takes the synth off it.
 11. The editor's **Sound** tab (`⌘4`) sets the selected track's synth: a card per stage (Oscillator 1 and 2, Noise, Filter, Filter envelope, Amp envelope, LFO and Voice), with a slider per number and a dropdown per choice. Double-clicking a slider puts back the starting synth's value, and a slider dragged is one undo step. The LFO's depth is in cents for pitch and filter and a share for volume; moving it between them keeps its share of the range. Glide is greyed out until Mono is on. The synth's name is a field at the top, which the track's header and the mixer show, and **Reset** puts back every setting but the name. On a track playing a SoundFont preset, the tab offers **Use a Synth**, which keeps its General MIDI program; a drum track says synths play the other tracks.
 
+## §14 The sampler
+
+The second part of §11.1. Its slices are in [4-small-daw.md](4-small-daw.md), feature 4.
+
+1. A sampler plays one audio file (WAV, AIFF or MP3) across the keys, as an instrument like a synth: live, on Play, in an exported WAV and in `chordinal render`. A note at the root key plays the file as recorded; each key above or below plays it a semitone faster or slower. It plays up to 32 notes at once; past that, the oldest is cut short.
+2. Dropping an audio file on a track's header puts a sampler on the track. Dropping it on the track's lane still reads it as notes (§9.3). The **Sound** tab's **Load a Sample…** does the same as a drop, and **Replace Sample…** swaps the file and starts its settings again. A drum track refuses a sample (drum rows come in a later slice).
+3. The file is copied into the project's `samples/` folder, under its own name. The same file dropped again reuses its copy; a different file with a name already taken gets " 2", " 3" and so on. Save As copies the samples with the project. A project not yet saved keeps its samples in memory until it is saved. In the browser build, samples are kept in the browser's storage with the project.
+4. The root key is guessed from the first 4 seconds of the file: the middle pitch of its clear frames. A file with no steady pitch (a drum hit, noise) starts at C4, and the notice says so. The **Root key** slider changes it.
+5. Mode: **One-shot** plays the sample through whatever the key does; only a note on the same key cuts it. **Sustain loop** loops it from the start offset to its end while the key or the sustain pedal holds it, then lets it go over the release.
+6. Start: where in the file a note starts, as a share of its length (0 to 99%).
+7. An amp envelope: attack, decay, sustain and release.
+8. A note's pitch moves (§9), glide between notes on a mono track, and the tape stop work as on a synth.
+9. A track's instrument keeps a sampler's settings beside its General MIDI bank and program: `{ bank, program, sample }`, where `sample` is `{ name, file, root, mode, start, amp }`. A saved sampler is read with defaults for anything it lacks. A sampler whose file is missing plays nothing.
+10. The **Sound** tab shows a sampler's name (a field, which the track's header and the mixer show), its file, **Replace Sample…**, and a card for the Sample (Root key, Mode, Start) and one for the Amp envelope. A slider dragged is one undo step. Putting a SoundFont preset or a synth on the track takes the sampler off it.
+
 ## Decisions
 
 1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid (§11.2).

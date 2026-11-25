@@ -77,15 +77,17 @@ export type Automation = {
 };
 
 /**
- * What a track plays: a SoundFont preset by its General MIDI bank and program, or a synth (PRD §13). A synth track
- * keeps a program too: what a MIDI export names, and what a build without synths plays instead. `synth` is the synth's
- * settings as saved (`SynthSettings` in @chordinal/audio, which sits beside this package): whatever plays or shows it
- * reads it through `synthSettings`, which fills in what's missing.
+ * What a track plays: a SoundFont preset by its General MIDI bank and program, a synth or a sampler (PRD §13). A synth
+ * or sampler track keeps a program too: what a MIDI export names, and what a build without them plays instead. `synth`
+ * and `sample` are their settings as saved (`SynthSettings` and `SamplerSettings` in @chordinal/audio, which sits beside
+ * this package): whatever plays or shows them reads them through `synthSettings` or `samplerSettings`, which fill in
+ * what's missing. A track has one of them at most.
  */
 export interface TrackInstrument {
   bank: number;
   program: number;
   synth?: object;
+  sample?: object;
 }
 
 /** stepRows: the drum keys the step grid shows for the track (PRD §4.6) */

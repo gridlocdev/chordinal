@@ -65,9 +65,9 @@ export const exportCommand: Command = {
     const browser = await openBrowser({ library, rate: null });
     let failed = 0;
     try {
-      for (const [i, { name }] of songs.entries()) {
+      for (const [i, { name, file }] of songs.entries()) {
         try {
-          const { channels, rate, leadIn } = await browser.play(texts[i]!, null, TAIL);
+          const { channels, rate, leadIn } = await browser.play(texts[i]!, null, TAIL, path.dirname(file));
           const skip = Math.round(leadIn * rate);
           const wav = path.join(out, `${name}.wav`);
           fs.writeFileSync(

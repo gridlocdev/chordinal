@@ -109,6 +109,9 @@ function spy(s: State): ProjectStore {
     takes: (name) => s.store.takes(name),
     readTake: (name, file) => s.store.readTake(name, file),
     writeTake: (name, file, bytes) => s.store.writeTake(name, file, bytes),
+    samples: (name) => s.store.samples(name),
+    readSample: (name, file) => s.store.readSample(name, file),
+    writeSample: (name, file, bytes) => s.store.writeSample(name, file, bytes),
   };
 }
 

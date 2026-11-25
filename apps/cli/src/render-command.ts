@@ -90,8 +90,9 @@ export const renderCommand: Command = {
     needFfmpeg('render');
 
     const all = soundtrackOf(JSON.parse(fs.readFileSync(soundtrackFile, 'utf8')), soundtrackFile);
+    const folderOf = (t: SoundtrackTrack) => path.join(path.dirname(soundtrackFile), t.project);
     const projectOf = (t: SoundtrackTrack) => {
-      const file = path.join(path.dirname(soundtrackFile), t.project, 'project.json');
+      const file = path.join(folderOf(t), 'project.json');
       if (!fs.existsSync(file))
         throw new Error(`${t.id}: ${t.project} isn't a project folder: it has no project.json`);
       return readProject(fs.readFileSync(file, 'utf8'));
@@ -109,7 +110,7 @@ export const renderCommand: Command = {
         if (track.loop) checkLoop(track.id, score, track.loop);
         const timing = timingOf(score, track.loop, track.trim);
         const project = writeProject({ ...read, loop: null });
-        const { channels, rate, leadIn } = await browser.play(project, score.beats, TAIL);
+        const { channels, rate, leadIn } = await browser.play(project, score.beats, TAIL, folderOf(track));
 
         const chans = cutRender(channels, rate, leadIn, timing);
         if (timing.loop) crossfadeSeam(chans, rate, timing.loop);

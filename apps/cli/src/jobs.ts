@@ -11,6 +11,8 @@ export interface PlayJob {
   until: number | null;
   /** seconds rendered after `until`, for reverb and release */
   tail: number;
+  /** where the project's samples are served, file name appended (`/samples/1/`); null when it has none */
+  samples: string | null;
 }
 
 /** decode an encoded file as the browser does, at `rate`, and hand back `count` frames of its left channel from `from` */

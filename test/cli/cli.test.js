@@ -168,6 +168,33 @@ test('export plays track effects: a bypassed one changes nothing, a gain is hear
     finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+/** a 16-bit mono WAV of a sine */
+function sineWav(hz, seconds, rate = 44100)
+{
+    const n = Math.round(rate * seconds), b = Buffer.alloc(44 + n * 2);
+    b.write('RIFF', 0); b.writeUInt32LE(36 + n * 2, 4); b.write('WAVEfmt ', 8); b.writeUInt32LE(16, 16);
+    b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(rate, 24); b.writeUInt32LE(rate * 2, 28);
+    b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34); b.write('data', 36); b.writeUInt32LE(n * 2, 40);
+    for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(16000 * Math.sin(2 * Math.PI * hz * i / rate)), 44 + i * 2);
+    return b;
+}
+
+test('export plays a sampler from the project folder’s samples, and nothing when its file is missing', { timeout: 60000 }, ()=>
+{
+    const dir = tmp();
+    try
+    {
+        const sampled = (t)=> { t.instrument = { ...t.instrument, sample: { name: 'Tone', file: 'tone.wav', root: 69, mode: 'loop' } }; };
+        fs.mkdirSync(path.join(dir, 'with', 'samples'), { recursive: true });
+        fs.writeFileSync(path.join(dir, 'with', 'samples', 'tone.wav'), sineWav(440, 0.5));
+        const heard = peakBetween(exportWith(dir, 'with', sampled), 0, 9);
+        assert.ok(heard > 1000, `the sample is heard (peak ${heard})`);
+        const missing = peakBetween(exportWith(dir, 'without', sampled), 0, 9);
+        assert.ok(missing < 50, `a sampler with no file is silent (peak ${missing})`);
+    }
+    finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('export makes a project folder’s MIDI and WAV', { timeout: 60000 }, ()=>
 {
     const dir = tmp();
