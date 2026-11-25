@@ -109,7 +109,7 @@ Each gets its own interview and PRD section before it's built. [4-small-daw.md](
    - Each mixer channel gets an insert chain: EQ (3 bands), compressor, distortion, chorus, delay and reverb, reordered by drag and bypassed per effect.
    - A subtractive synth: two oscillators, noise, a filter with its own envelope, an amp envelope, an LFO and glide, with presets.
    - Synths and effects are saved in the project. The browser gains Synths and Effects tabs.
-2. **Melodic step grid and per-step settings**: rows from the project's key over an octave range, a velocity lane, per-step length, probability and swing, and a strip of steps per drum row inline in the arrangement.
+2. **Melodic step grid and per-step settings**: rows from the project's key over an octave range, a velocity lane, per-step length, probability and swing, and a strip of steps per drum row inline in the arrangement. Specified in §17.
 3. **Audio tracks and samples**:
    - Record from a microphone, or drop audio files onto audio tracks, kept in the project folder.
    - Drum rows can play a one-shot sample (drop a `.wav` on a row) instead of a kit sound.
@@ -180,9 +180,23 @@ The first part of §11.3. Its slices are in [4-small-daw.md](4-small-daw.md), fe
 8. Audio clips play on Play, starting partway through a clip when Play starts inside it, and in the WAV and MP3 exports and `chordinal render`. `chordinal render` and `chordinal export` read the clips' files from the project folder's `audio/` and decode them as the app does, so WAV, AIFF and MP3 all play. A MIDI export leaves audio tracks out.
 9. A project with an audio track is saved as format version 3, which older builds refuse with a notice instead of playing it wrongly. A project without one is saved as before, so older builds still open it (§12.3).
 
+## §17 The melodic step grid and per-step settings
+
+§11.2, built on the drum step grid (`prd.md` §4). Its slices are in [5-melodic-step-grid.md](5-melodic-step-grid.md).
+
+1. The Step Grid edits melodic tracks too. On a melodic track its rows are the notes of the project's key over two octaves, highest at the top, each labelled with its note name (C4, D4…). With no key, the rows are all twelve notes. Two toolbar buttons move the range an octave down or up, and a **Chromatic** toggle shows all twelve notes in place of the key's. A note in the clip outside the shown rows (another octave, or outside the key) gets a row of its own, as a drum key outside the kit does (`prd.md` §4.6). The range and the toggle are saved with the track.
+2. A melodic step turns on as a drum step does (`prd.md` §4.7 and §4.8): a note at the step's start, one step long, velocity 100, on that row's pitch. A step can hold several rows at once, so chords work. Turning one on while the transport is stopped plays it once through the track's instrument.
+3. **Which editor a clip opens in.** The Piano Roll stays the default for melodic tracks and the Step Grid for drum tracks. Choosing the other tab by hand while one of a track's clips is selected makes it that track's editor: its clips open there from then on. The track saves it as `editor: 'grid' | 'roll'`; with none saved, the default holds. The Mixer is never switched away from (`prd.md` §4.2).
+4. **Length.** Dragging the right edge of an on step stretches its note across later steps, or shortens it, a step at a time (`Shift`: freely). The note is drawn as one bar across the steps it covers, and the steps under it stay off. This works on drum and melodic tracks. A note can't run past the clip's end.
+5. **The lane** under the grid edits the on steps of the selected clip, one bar per step, with a switch between **Velocity** (1–127) and **Probability** (0–100%). Dragging across bars paints them; one drag is one undo step. A step holding several notes (a chord) sets them all. A step with probability under 100% is drawn with its fill cut down to that share.
+6. **Probability** is the chance a note plays each time it comes round. The note keeps it as `chance` (0 to 1; none means 1). Whether a note plays is fixed by a seed: the clip's pattern (or the clip, without one), the note, the clip's start and how many times a loop has come round. So Play, the WAV and MP3 exports and `chordinal render` all play the same notes, and each loop pass rolls again. A MIDI export writes every note.
+7. **Swing** is per clip, 0 to 75%, set by a **Swing** slider in the grid's toolbar, and shared by the clips of a pattern. It delays every second step by that share of a step as the clip plays (the clip's step size, `prd.md` §4.4); at 50% the off step lands two thirds of the way through a pair of steps. The notes don't move, so 0% gives back the straight timing exactly. Notes off the grid are delayed too, by where they fall in their pair of steps. The clip keeps it as `swing` (0 to 0.75; none means 0). Changing it is an edit.
+8. **Inline steps.** A drum track's lane in the arrangement can show its rows as strips of steps, toggled by **Show Steps** in the track's right-click menu. Clicking a step there turns it on or off in the clip under it, as in the grid. Its rows are the track's rows; the track saves the toggle.
+9. Projects with `chance`, `swing` or `editor` are saved at the same format version as before. An older build opens them, plays every note and plays them straight.
+
 ## Decisions
 
-1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid (§11.2).
+1. The track headers show no inline steps in 1.0. Double-clicking a header opens the step grid (§6.2). Inline steps come with the melodic grid, as the last slice of §17.
 2. Music Generator is dropped, and the composer with it; composing lives in Chordinal Melody Composer (§9.1).
 3. Recording lives in Chordinal (§9.3).
 4. The master has its own insert chain in the first version, beside the mastering chain (§15.3).
