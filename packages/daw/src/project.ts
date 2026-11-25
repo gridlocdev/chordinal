@@ -11,11 +11,14 @@ export interface Note {
   beats: number;
   key: number;
   vel: number;
+  /** the chance it plays each time round, 0 to 1; none means 1 (PRD §17.6) */
+  chance?: number;
   [mark: string]: unknown;
 }
 
-/** a muted clip is kept but not played; a clip with a pattern shares its notes, length and step with every clip of
- * that pattern (PRD §3.2); step is the step grid's step in beats (PRD §4.4) */
+/** a muted clip is kept but not played; a clip with a pattern shares its notes, length, step and swing with every
+ * clip of that pattern (PRD §3.2); step is the step grid's step in beats (PRD §4.4); swing delays every second step
+ * as it plays, 0 to 0.75, none meaning straight (Chordinal PRD §17.7) */
 export interface Clip {
   id: string;
   start: number;
@@ -24,6 +27,7 @@ export interface Clip {
   mute?: boolean;
   pattern?: string;
   step?: number;
+  swing?: number;
 }
 
 /** a stretch of an audio file played from a beat (PRD §16.2): `offset` seconds into the file, for `seconds` seconds,
@@ -361,16 +365,17 @@ export function updateClip(p: Project, trackId: string, clipId: string, patch: P
 // ── patterns ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 /** what every clip of a pattern shares (PRD §3.2) */
-const LINKED = ['notes', 'beats', 'step'] as const;
+const LINKED = ['notes', 'beats', 'step', 'swing'] as const;
 
-/** a clip with these shared fields from another; a missing step stays missing */
+/** a clip with these shared fields from another; a missing step or swing stays missing */
 function withShared(clip: Clip, from: Clip): Clip {
-  const { step, ...rest } = clip;
+  const { step: _step, swing: _swing, ...rest } = clip;
   return {
     ...rest,
     notes: from.notes,
     beats: from.beats,
     ...(from.step !== undefined && { step: from.step }),
+    ...(from.swing !== undefined && { swing: from.swing }),
   };
 }
 

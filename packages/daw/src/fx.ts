@@ -3,6 +3,7 @@
 // in track.fx. One type runs once per pass for the whole project, so it can share a plan across its tracks.
 import { trackNotes, updateTrack } from './project.ts';
 import { applyNoteFx, isNoteFx, noteFxName } from './note-fx.ts';
+import { rollProject } from './chance.ts';
 import type { Note, Project, Track, TrackFx } from './project.ts';
 
 // The pitch moves a voice makes on top of its note (the player's pitch-moves.js plays them).
@@ -107,12 +108,12 @@ function withNoteFx(project: Project): Project {
 }
 
 /** Every track's notes for one pass, through its FX, and the FX's events: tracks in the project's order, each sorted
- * by beat */
+ * by beat. Notes that don't roll in this pass are left out first, and swung steps moved (Chordinal PRD §17.6, §17.7). */
 export function performProject(
   project: Project,
   pass: number,
 ): { tracks: PlayedNote[][]; events: FxEvent[] } {
-  project = withNoteFx(project);
+  project = withNoteFx(rollProject(project, pass));
   const used = new Set(
     project.tracks.flatMap((t) => t.fx.map((f) => f.type)).filter((type) => types.has(type)),
   );

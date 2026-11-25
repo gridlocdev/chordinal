@@ -54,6 +54,7 @@ Chordinal's window has a transport bar at the top, a browser on the left (instru
 | `packages/daw/src/meter.ts` | bars from meter changes: bar lines, the bar a beat is in, beats per bar |
 | `packages/daw/src/automation.ts` | automation lanes: each value's range and scale (`LANE_PARAMS`), the value at a beat from keyframes, and the edits (add, move and remove a keyframe, set its curve, clear a lane) |
 | `packages/ui/src/automation.ts` | which track shows which automation lane, and how a lane's value maps to its height and reads as text |
+| `packages/daw/src/chance.ts` | probability and swing as a clip plays: which notes roll in on a pass (seeded by the clip's pattern or id, the note, the clip's start and the pass) and where swung steps land; `performProject` plays through it, a MIDI export doesn't |
 | `packages/daw/src/fx.ts` | MIDI FX: a registry of types (the app registers them), `performProject(project, pass)`, which runs each track's notes through its FX for one pass round the loop, returning the notes and any events (a tape stop, a send swell), and the edits to a track's FX list, Apply to Notes (`applyFxToNotes`) among them |
 | `packages/daw/src/note-fx.ts` | the built-in note effects, Scale, Chord and Arpeggiator: pure changes to a track's notes that `performProject` runs first, in the track's order, so Humanize plays their output; live playing runs them on each key (`applyNoteFx`), and with an arpeggiator splits the list there (`splitAtArp`) and plays its steps on a clock in `packages/ui/src/live.ts` |
 | `packages/playback/src/instruments.ts` | the SoundFont preset each track plays, from the library in use, loaded once and shared |
@@ -110,15 +111,15 @@ A project is a folder anywhere on disk (`Documents/Chordinal/<title>/` by defaul
   tracks: [{ id, name, color, instrument: { bank, program },
              mixer: { volumeDb, pan, mute, solo, lowCut, sends, autoPan, duck },
              fx: [{ type, …params }], automation: { volume?, pan?, tone?, reverb?, delay? },
-             stepRows?: [key, …],
-             clips: [{ id, start, beats, mute?, step?, notes: [[beat, beats, key, vel, marks?], …] }
+             stepRows?: [key, …], gridOctave?, gridChromatic?, editor?: 'grid' | 'roll',
+             clips: [{ id, start, beats, mute?, step?, swing?, notes: [[beat, beats, key, vel, marks?], …] }
                      | { id, start, pattern, mute? }] }],
-  patterns?: [{ id, name, beats, step?, notes }] }
+  patterns?: [{ id, name, beats, step?, swing?, notes }] }
 ```
 
-A project with no pattern clips is written as version 1, without `patterns`; one with pattern clips is version 2, and each pattern clip names its pattern instead of holding notes. The reader takes both. In memory every pattern clip carries its pattern's notes, length and step, and `project.patterns` holds only ids and names, so playback and export read `clip.notes` as before; `updateClip` copies an edit to the notes, length or step to the pattern's other clips.
+A project with no pattern clips is written as version 1, without `patterns`; one with pattern clips is version 2, and each pattern clip names its pattern instead of holding notes. The reader takes both. In memory every pattern clip carries its pattern's notes, length, step and swing, and `project.patterns` holds only ids and names, so playback and export read `clip.notes` as before; `updateClip` copies an edit to the notes, length, step or swing to the pattern's other clips.
 
-A beat is a quarter note; a note's beat is from its clip's start. `marker.meta`, `groove`, the FX params and a note's marks are opaque to the DAW: the Humanize FX reads them (a section's type and energy, swing, a track's role, a note's ornament). The reader takes version 1 only.
+A beat is a quarter note; a note's beat is from its clip's start. A note's `chance` mark (0 to 1) and a clip's `swing` (0 to 0.75) are played by `rollProject` in `packages/daw/src/chance.ts`, before the FX; an older build ignores both and plays every note straight. The other marks, `marker.meta`, `groove` and the FX params are opaque to the DAW: the Humanize FX reads them (a section's type and energy, swing, a track's role, a note's ornament). The reader takes version 1 only.
 
 ## Layout
 

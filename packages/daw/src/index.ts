@@ -171,6 +171,7 @@ export {
   stepOf,
   toggleAccent,
 } from './steps.ts';
+export { MAX_SWING, chanceOf, swingOf, plays, swungBeat, playedClipNotes, rollProject } from './chance.ts';
 export {
   addMarker,
   deleteTime,

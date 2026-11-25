@@ -16,12 +16,13 @@ export const AUDIO_VERSION = 3;
 /** a note as written: [beat, beats, key, vel], and its marks when it has any */
 type NoteRow = [number, number, number, number, Record<string, unknown>?];
 
-/** a pattern as written: the notes, length and step its clips share */
+/** a pattern as written: the notes, length, step and swing its clips share */
 interface WrittenPattern {
   id: string;
   name: string;
   beats: number;
   step?: number;
+  swing?: number;
   notes: NoteRow[];
 }
 
@@ -82,6 +83,7 @@ export function writeProject(project: Project): string {
             name: x.name,
             beats: c.beats,
             ...(c.step !== undefined && { step: c.step }),
+            ...(c.swing !== undefined && { swing: c.swing }),
             notes: placeholders(c.notes),
           },
         ];
@@ -231,8 +233,14 @@ export function readProject(text: string): Project {
       if (!c.pattern) return { ...c, notes: readNotes(c.notes) };
       const x = patterns.get(c.pattern);
       if (!x) throw new Error(`clip ${c.id} plays pattern ${c.pattern}, which the project doesn't have`);
-      // PRD §7.5: in memory every pattern clip holds its pattern's notes, length and step
-      return { ...c, beats: x.beats, notes: x.notes, ...(x.step !== undefined && { step: x.step }) };
+      // PRD §7.5: in memory every pattern clip holds its pattern's notes, length, step and swing
+      return {
+        ...c,
+        beats: x.beats,
+        notes: x.notes,
+        ...(x.step !== undefined && { step: x.step }),
+        ...(x.swing !== undefined && { swing: x.swing }),
+      };
     }),
   }));
   return {

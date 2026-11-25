@@ -301,6 +301,27 @@ const ops: Op<State>[] = [
     },
   }),
   op({
+    name: 'chance and swing',
+    weight: 2,
+    when: hasClips,
+    run(s, r) {
+      const { t, c } = r.pick(clips(s));
+      if (r.chance(0.5)) {
+        const swing = r.pick([0, 0.25, 0.5, 0.75]);
+        edit(s, (p) => updateClip(p, t.id, c.id, { swing }));
+        return `swing ${c.id} ${swing}`;
+      }
+      const chance = r.pick([0, 0.3, 0.5, 1]);
+      edit(s, (p) =>
+        updateClip(p, t.id, c.id, (x) => ({
+          ...x,
+          notes: x.notes.map((n) => (r.chance(0.5) ? { ...n, chance } : n)),
+        })),
+      );
+      return `chance ${chance} on ${c.id}${c.pattern ? ` (${c.pattern})` : ''}`;
+    },
+  }),
+  op({
     name: 'resize clip',
     when: hasClips,
     run(s, r) {
