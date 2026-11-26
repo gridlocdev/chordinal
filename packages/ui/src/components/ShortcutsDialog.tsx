@@ -3,6 +3,7 @@
 // runs instead of running it, until Escape or Stop (commands/key-finder.ts).
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { keyFinder, overlay } from '../dialogs.ts';
+import { restoreFocus } from '../focus.ts';
 import { catalog } from '../commands.ts';
 import { GROUPS, compact, endedMode, findKey, holdKeys } from '../commands/index.ts';
 import type { Command } from '../commands/catalog.ts';
@@ -63,7 +64,7 @@ export function ShortcutsDialog() {
   const close = () => {
     endFinding();
     overlay.value = null;
-    if (back.current instanceof HTMLElement) back.current.focus();
+    restoreFocus(back.current);
   };
   const q = compact(query);
   const shows = (c: Command) =>

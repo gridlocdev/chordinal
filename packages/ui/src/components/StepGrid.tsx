@@ -431,7 +431,15 @@ function Grid({ track, clip }: GridProps) {
   // rows that don't fit at their least height scroll (chromatic rows, Chordinal PRD §17.1)
   const rows = rowsOf(track, clip).length;
   return (
-    <div class="roll steps">
+    <div
+      class="roll steps"
+      data-focus-part="grid"
+      data-focus-item
+      data-focused={focus.value === 'grid' || undefined}
+      tabIndex={0}
+      aria-label="Step grid"
+      onFocus={(e) => e.target === e.currentTarget && (focus.value = 'grid')}
+    >
       <div
         class={`grid ${dropping ? 'drop' : ''}`}
         style={{ height: `${rows * ROW_H[0]}px` }}

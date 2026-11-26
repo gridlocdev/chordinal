@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { TargetedKeyboardEvent } from 'preact';
 import { overlay } from '../dialogs.ts';
+import { restoreFocus } from '../focus.ts';
 import { catalog } from '../commands.ts';
 import { listStep } from '../commands/index.ts';
 
@@ -29,7 +30,7 @@ export function CommandMenu() {
   const at = Math.min(index, Math.max(0, found.length - 1));
   const close = () => {
     overlay.value = null;
-    if (back.current instanceof HTMLElement) back.current.focus();
+    restoreFocus(back.current);
   };
   const runAt = (i: number) => {
     const c = found[i];

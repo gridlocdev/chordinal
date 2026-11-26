@@ -51,6 +51,8 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Delete Track | `⌘⌫` | `Ctrl+Backspace` | Delete the selected track and its clips. |
 | Move Track Up | `⌥⌘↑` | `Ctrl+Alt+Up` | Move the selected track up the list. |
 | Move Track Down | `⌥⌘↓` | `Ctrl+Alt+Down` | Move the selected track down the list. |
+| Previous Track | `⌥↑` | `Alt+Up` | Select the track above, and give the arrangement the keys. |
+| Next Track | `⌥↓` | `Alt+Down` | Select the track below, and give the arrangement the keys. |
 | Show Automation | `A` | `A` | Show or hide the selected track's automation lane, to draw its volume, pan, tone or sends over time. |
 
 ### Transport

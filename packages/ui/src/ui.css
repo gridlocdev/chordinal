@@ -19,6 +19,8 @@
   --play: #4fd18b;
   --rec: #ff5c5c;
   --select: #6fa8ff;
+  /* the focus ring, the one way the app shows where the keys go (PRD §5.11) */
+  --focus: #6fa8ff;
   --lcd: #0d0e10;
   --lcd-text: #f2efe6;
   --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.35);
@@ -53,6 +55,7 @@
   --play: #1d9a5a;
   --rec: #e2474c;
   --select: #2d6fdc;
+  --focus: #2d6fdc;
   --lcd: #22232a;
   --lcd-text: #f2efe6;
   --shadow: 0 1px 2px rgba(20, 20, 40, 0.08);
@@ -128,7 +131,7 @@ label.button input[type='file'] {
   opacity: 0;
 }
 label.button:focus-within {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 button:disabled {
@@ -170,9 +173,24 @@ input[type='number'] {
 input[type='checkbox'] {
   accent-color: var(--accent);
 }
+/* Focus (PRD §5.11): never the browser's own outline. Buttons and fields show the ring while the keyboard is on them.
+   The parts the editing keys act on draw it from the app's state instead: the current item (data-current: the selected
+   track's header) of the focused part (data-focused), or the part itself when it's one item (the piano roll, the step
+   grid), whether the keyboard focus is there or the mouse put the state there. */
+:focus {
+  outline: none;
+}
 :focus-visible {
-  outline: 2px solid var(--select);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
+}
+[data-focus-item]:focus-visible {
+  outline: none;
+}
+[data-focus-part][data-focused] [data-current],
+[data-focus-part][data-focused][data-focus-item] {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
 }
 [hidden] {
   display: none !important;

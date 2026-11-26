@@ -247,6 +247,18 @@ const nudge = (notes: () => unknown, beats: () => number) => () => {
 
 const track = () => selectedTrack.value;
 
+/** selects the track `step` rows from the selected one (the first or last when none is), and gives the arrangement the
+ * keys, so the keyboard focus moves to its header (PRD §5.11) */
+const selectTrackBy = (step: number) => {
+  const tracks = project.value.tracks,
+    i = tracks.findIndex((t) => t.id === selected.value);
+  const next =
+    tracks[i < 0 ? (step > 0 ? 0 : tracks.length - 1) : Math.max(0, Math.min(tracks.length - 1, i + step))];
+  if (!next) return;
+  selected.value = next.id;
+  focus.value = 'arrange';
+};
+
 const clipCommand = (fn: (track: string, clip: string) => unknown) => () => {
   const sel = selectedClip.value;
   return sel ? fn(sel.track, sel.clip) : undefined;
@@ -735,6 +747,26 @@ export const catalog = new CommandCatalog([
     enabled: () => !!track() && project.value.tracks.at(-1) !== track(),
     description: 'Move the selected track down the list.',
     keywords: 'reorder',
+  },
+  {
+    id: 'prevTrack',
+    group: 'Track',
+    title: 'Previous Track',
+    shortcut: 'alt+up',
+    run: () => selectTrackBy(-1),
+    enabled: () => project.value.tracks.length > 0,
+    description: 'Select the track above, and give the arrangement the keys (PRD §5.11).',
+    keywords: 'select up focus',
+  },
+  {
+    id: 'nextTrack',
+    group: 'Track',
+    title: 'Next Track',
+    shortcut: 'alt+down',
+    run: () => selectTrackBy(1),
+    enabled: () => project.value.tracks.length > 0,
+    description: 'Select the track below, and give the arrangement the keys (PRD §5.11).',
+    keywords: 'select down focus',
   },
   // Transport
   {

@@ -142,7 +142,12 @@ export function Arrange({ actions }: ArrangeProps) {
   return (
     // a click anywhere in the arrangement (a header, the ruler, empty space) takes the keys back from the piano roll, so
     // its letters run their shortcuts again (R records, A shows automation)
-    <div class="arrange" onPointerDownCapture={() => (focus.value = 'arrange')}>
+    <div
+      class="arrange"
+      data-focus-part="arrange"
+      data-focused={focus.value === 'arrange' || undefined}
+      onPointerDownCapture={() => (focus.value = 'arrange')}
+    >
       <div class="scroll" ref={scroller}>
         <div class="rows" style={{ width: px(HEAD_W + beats * ppb) }}>
           <div class="ruler">

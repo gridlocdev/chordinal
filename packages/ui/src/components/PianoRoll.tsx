@@ -9,6 +9,7 @@
 // has started to place freely. Changing the letter keys' octave (Z, X) scrolls their keys into view. Press a key in the gutter to hear it (drag to glide across keys); its lane lights while it sounds. The wheel scrolls (Shift: across), Cmd/Ctrl + wheel zooms.
 import { useEffect, useRef } from 'preact/hooks';
 import { project, selected, selectedTrack, picked, settings } from '../store.ts';
+import { focus } from '../focus.ts';
 import { typedRange } from '../live.ts';
 import { useCanvas } from './canvas.ts';
 import { view, geometry, showKeys } from './roll-view.ts';
@@ -44,6 +45,12 @@ function Roll() {
     <div
       class="roll"
       data-testid="piano-roll"
+      data-focus-part="roll"
+      data-focus-item
+      data-focused={focus.value === 'roll' || undefined}
+      tabIndex={0}
+      aria-label="Piano roll"
+      onFocus={(e) => e.target === e.currentTarget && (focus.value = 'roll')}
       onWheel={wheel}
       onPointerDown={(e) => down(e, p, track)}
       onPointerMove={(e) => hover(e, track)}

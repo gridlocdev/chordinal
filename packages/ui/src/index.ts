@@ -22,7 +22,15 @@ export { appDialog, keyFinder, overlay, toggleOverlay } from './dialogs.ts';
 export type { Overlay } from './dialogs.ts';
 export { discardOk, edit, newProject, openNew, openProject, redo, save, saveAs, undo } from './document.ts';
 export type { NewProjectOptions } from './document.ts';
-export { focus, musicalTyping, takingKeys } from './focus.ts';
+export {
+  focus,
+  musicalTyping,
+  takingKeys,
+  focusTarget,
+  followFocus,
+  restoreFocus,
+  syncFocus,
+} from './focus.ts';
 export type { FocusPart } from './focus.ts';
 export { handleKey } from './keys.ts';
 export { checkLibraries, chooseLibrary, downloadLibrary } from './libraries.ts';

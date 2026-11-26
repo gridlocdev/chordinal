@@ -382,6 +382,7 @@ export interface TrackRowProps {
 
 export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: TrackRowProps) {
   const strips = stripsOf(track);
+  const current = selected.value === track.id;
   const [drop, setDrop] = useState(false);
   const [dragging, setDragging] = useState(false);
   void settings.value.library;
@@ -426,7 +427,7 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
   return (
     <>
       <div
-        class={`track ${selected.value === track.id ? 'on' : ''} ${drop ? 'drop' : ''} ${dragging ? 'dragging' : ''} ${strips.length ? 'strips' : ''}`}
+        class={`track ${current ? 'on' : ''} ${drop ? 'drop' : ''} ${dragging ? 'dragging' : ''} ${strips.length ? 'strips' : ''}`}
         data-id={track.id}
         style={{
           '--track': rgba(track.color),
@@ -440,6 +441,16 @@ export function TrackRow({ track, index, beats, ppb, onOpen, onInstrument }: Tra
           class="head"
           role="group"
           aria-label={`${track.name} track`}
+          data-focus-item
+          data-current={current || undefined}
+          tabIndex={
+            current || (index === 0 && !project.value.tracks.some((t) => t.id === selected.value)) ? 0 : -1
+          }
+          onFocus={(e) => {
+            if (e.target !== e.currentTarget) return;
+            selected.value = track.id;
+            focus.value = 'arrange';
+          }}
           draggable
           onDragStart={(e) => {
             e.dataTransfer?.setData(TRACK, track.id);

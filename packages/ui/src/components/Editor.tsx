@@ -17,6 +17,19 @@ const TABS: [EditorTab, string][] = [
   ['sound', 'Sound'],
 ];
 
+/** Left and Right move between the tabs, which are one Tab stop (the open one) */
+function tabKey(e: KeyboardEvent, tab: EditorTab) {
+  const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+  if (!step || e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const i = TABS.findIndex(([id]) => id === tab);
+  const next = TABS[(i + step + TABS.length) % TABS.length]?.[0];
+  if (next) chooseEditor(next);
+  const list = (e.currentTarget as HTMLElement).closest('[role="tablist"]');
+  requestAnimationFrame(() => list?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus());
+}
+
 export function Editor() {
   const tab = settings.value.editorTab;
   return (
@@ -27,8 +40,10 @@ export function Editor() {
             <button
               role="tab"
               aria-selected={tab === id}
+              tabIndex={tab === id ? 0 : -1}
               class={tab === id ? 'on' : ''}
               onClick={() => chooseEditor(id)}
+              onKeyDown={(e) => tabKey(e, tab)}
             >
               {label}
             </button>
