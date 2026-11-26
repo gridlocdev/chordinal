@@ -1,6 +1,7 @@
 // The Keyboard Shortcuts window's "press a shortcut" mode: while it's on, every key press is held back from the app and
 // shown with the command it runs. Escape always ends it and is never held back, and the listener comes off however
-// the mode ends (Escape, the button, the window closing, or an error in the handler), so no key can stay swallowed.
+// the mode ends (Escape, the button, the window closing, a while with no key pressed, or an error in the handler), so
+// no key can stay swallowed.
 import { eventKey, formatShortcut } from './shortcut.ts';
 import type { KeyPress } from './shortcut.ts';
 import type { CommandCatalog, Command } from './catalog.ts';
@@ -36,22 +37,32 @@ const endedOn = new WeakSet<Event>();
 /** whether this Escape ended the mode, so nothing else should act on it */
 export const endedMode = (e: Event): boolean => endedOn.has(e);
 
+/** how long the mode waits for a key before it ends by itself */
+export const KEY_FINDER_IDLE_MS = 10_000;
+
 /**
  * Starts the mode: key presses on `target` (the window) go to `onKey` and no further, before the app's own listeners
- * see them. Escape calls `onEnd` and goes on as usual. An error in `onKey` ends the mode before it's thrown on. Gives
- * back the function that ends it, which is safe to call more than once.
+ * see them. Escape calls `onEnd` and goes on as usual. An error in `onKey` ends the mode before it's thrown on, and so
+ * does `idleMs` with no key pressed. Gives back the function that ends it, which is safe to call more than once.
  */
 export function holdKeys(
   target: EventTarget,
   onKey: (e: KeyboardEvent) => void,
   onEnd: () => void,
+  idleMs = KEY_FINDER_IDLE_MS,
 ): () => void {
   let on = true;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const end = () => {
     if (!on) return;
     on = false;
+    clearTimeout(timer);
     target.removeEventListener('keydown', listener, true);
     onEnd();
+  };
+  const wait = () => {
+    clearTimeout(timer);
+    timer = setTimeout(end, idleMs);
   };
   function listener(ev: Event): void {
     const e = ev as KeyboardEvent;
@@ -62,6 +73,7 @@ export function holdKeys(
     }
     e.preventDefault();
     e.stopImmediatePropagation();
+    wait();
     let handled = false;
     try {
       onKey(e);
@@ -71,5 +83,6 @@ export function holdKeys(
     }
   }
   target.addEventListener('keydown', listener, true);
+  wait();
   return end;
 }

@@ -17,7 +17,7 @@ See [Getting started](docs/getting-started.md) for which file to pick, the first
 ## Learn more
 
 - [Features](docs/features.md) · [Controls](docs/controls.md) · [Credits](docs/credits.md)
-- [All documentation](docs/README.md) · [Working on the code](docs/development.md) · [Glossary](GLOSSARY.md)
+- [All documentation](docs/README.md) · [Working on the code](docs/development.md)
 
 ## License
 

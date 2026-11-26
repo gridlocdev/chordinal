@@ -1,6 +1,6 @@
-import { test } from 'vitest';
+import { afterEach, test, vi } from 'vitest';
 import assert from 'node:assert/strict';
-import { CommandCatalog, endedMode, findKey, holdKeys } from '@chordinal/ui';
+import { CommandCatalog, KEY_FINDER_IDLE_MS, endedMode, findKey, holdKeys } from '@chordinal/ui';
 
 type Listener = (e: Event) => void;
 
@@ -148,4 +148,56 @@ test('a handler that throws ends the mode, and keys reach the app afterwards', (
   press(win, 'b', 'KeyB');
   press(win, ' ', 'Space');
   assert.deepEqual(heard, ['b', ' '], 'the next keys reach the app');
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+test('the mode ends by itself after a while with no key, and each key held back starts the wait again', () => {
+  vi.useFakeTimers();
+  const { win, heard } = appWindow(),
+    seen: string[] = [];
+  let ended = 0;
+  holdKeys(
+    win,
+    (e) => seen.push(e.key),
+    () => ended++,
+  );
+  vi.advanceTimersByTime(KEY_FINDER_IDLE_MS - 1);
+  press(win, 'a', 'KeyA');
+  vi.advanceTimersByTime(KEY_FINDER_IDLE_MS - 1);
+  assert.equal(ended, 0, 'a key pressed in time keeps the mode on');
+  assert.deepEqual([seen, heard], [['a'], []]);
+  vi.advanceTimersByTime(1);
+  assert.equal(ended, 1, 'the wait after the last key ran out');
+  press(win, 'b', 'KeyB');
+  assert.deepEqual([seen, heard], [['a'], ['b']], 'after it, keys reach the app again');
+  vi.advanceTimersByTime(KEY_FINDER_IDLE_MS * 2);
+  assert.equal(ended, 1, 'it ends once');
+});
+
+test('ending the mode any other way leaves no wait behind to end it again', () => {
+  vi.useFakeTimers();
+  const { win } = appWindow();
+  let ended = 0;
+  const end = holdKeys(
+    win,
+    () => {},
+    () => ended++,
+  );
+  press(win, 'Escape', 'Escape');
+  end();
+  assert.equal(vi.getTimerCount(), 0, 'Escape cleared the wait');
+  holdKeys(
+    win,
+    () => {
+      throw new Error('broken');
+    },
+    () => ended++,
+  );
+  press(win, 'a', 'KeyA');
+  assert.equal(vi.getTimerCount(), 0, 'an error cleared the wait');
+  vi.advanceTimersByTime(KEY_FINDER_IDLE_MS * 2);
+  assert.equal(ended, 2);
 });

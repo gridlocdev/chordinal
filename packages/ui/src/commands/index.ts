@@ -10,5 +10,5 @@ export {
   typesText,
 } from './shortcut.ts';
 export type { KeyPress, Shortcut } from './shortcut.ts';
-export { endedMode, findKey, holdKeys } from './key-finder.ts';
+export { KEY_FINDER_IDLE_MS, endedMode, findKey, holdKeys } from './key-finder.ts';
 export type { FoundKey } from './key-finder.ts';

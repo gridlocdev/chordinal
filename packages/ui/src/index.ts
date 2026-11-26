@@ -286,6 +286,7 @@ export {
   eventKey,
   findKey,
   holdKeys,
+  KEY_FINDER_IDLE_MS,
   formatShortcut,
   inOrder,
   isMac,

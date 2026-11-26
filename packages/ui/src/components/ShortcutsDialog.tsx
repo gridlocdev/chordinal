@@ -1,11 +1,11 @@
 // Help ▸ Keyboard Shortcuts (⌘/): every command with a shortcut, by menu, written from the catalog so it can't drift;
 // and the keys that aren't commands (musical typing, the command menu's list). Press a Shortcut shows what a key
-// runs instead of running it, until Escape or Stop (commands/key-finder.ts).
+// runs instead of running it, until Escape, Stop or a while with no key (commands/key-finder.ts).
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { keyFinder, overlay } from '../dialogs.ts';
 import { restoreFocus } from '../focus.ts';
 import { catalog } from '../commands.ts';
-import { GROUPS, compact, endedMode, findKey, holdKeys } from '../commands/index.ts';
+import { GROUPS, KEY_FINDER_IDLE_MS, compact, endedMode, findKey, holdKeys } from '../commands/index.ts';
 import type { Command } from '../commands/catalog.ts';
 
 /** keys that aren't commands: what they do, and the keys */
@@ -32,7 +32,7 @@ export function ShortcutsDialog() {
     field.current?.focus();
   }, [open]);
   // the mode's listener: put on by the button itself, not by an effect that could run after the mode had ended, and
-  // taken off by Escape, Stop, an error in it, or the window closing
+  // taken off by Escape, Stop, an error in it, the window closing, or a while with no key pressed
   const stopFinding = useRef<(() => void) | null>(null);
   const startFinding = () => {
     stopFinding.current?.();
@@ -101,7 +101,7 @@ export function ShortcutsDialog() {
                     {finder.found.command ? `runs ${finder.found.command.title}` : 'runs no command'}
                   </>
                 ) : (
-                  'Press a key or a shortcut to see what it does. Esc stops.'
+                  `Press a key or a shortcut to see what it does. Esc stops, and it stops by itself after ${KEY_FINDER_IDLE_MS / 1000} seconds with no key.`
                 )}
               </p>
               <button onClick={endFinding}>Stop</button>
