@@ -75,6 +75,9 @@ APPLESCRIPT
     mkdir -p "$res/app"
     printf '{ "name": "%s", "productName": "%s", "main": "main.mjs" }\n' "$id" "$name" > "$res/app/package.json"
     printf "import '%s';\n" "$root/$entry" > "$res/app/main.mjs"
+    # electron-builder's electronFuses only reach the packaged app, and this is a copy of node_modules' Electron, so it
+    # gets its fuses here, before it's signed. The --dev copy keeps them on, so a debugger can still attach to it.
+    if [ "$bundle" = "$id" ]; then node "$root/tools/fuses.mjs" "$dest"; fi
     codesign --force --deep --sign - "$dest" 2>/dev/null
     # tell Launch Services now, so Open With lists it without waiting for a rescan
     /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$dest" 2>/dev/null || true
