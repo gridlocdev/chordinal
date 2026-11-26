@@ -2,7 +2,14 @@
   "appId": "dev.gridloc.chordinal",
   "productName": "Chordinal",
   "asar": false,
-  "afterPack": "fuses.mjs",
+  "electronFuses": {
+    "runAsNode": false,
+    "enableNodeOptionsEnvironmentVariable": false,
+    "enableNodeCliInspectArguments": false,
+    "enableCookieEncryption": true,
+    "grantFileProtocolExtraPrivileges": false,
+    "resetAdHocDarwinSignature": true
+  },
   "directories": {
     "output": "../../release/chordinal",
     "buildResources": "assets/icon"

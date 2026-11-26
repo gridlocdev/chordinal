@@ -76,7 +76,7 @@ APPLESCRIPT
     printf '{ "name": "%s", "productName": "%s", "main": "main.mjs" }\n' "$id" "$name" > "$res/app/package.json"
     printf "import '%s';\n" "$root/$entry" > "$res/app/main.mjs"
     # no other program can run it as a plain Node.js (RunAsNode, NODE_OPTIONS, --inspect off), then sign it again
-    node "$root/apps/desktop/fuses.mjs" "$dest"
+    node "$root/tools/fuses.mjs" "$dest"
     codesign --force --deep --sign - "$dest" 2>/dev/null
     # tell Launch Services now, so Open With lists it without waiting for a rescan
     /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$dest" 2>/dev/null || true
