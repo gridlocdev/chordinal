@@ -6,7 +6,6 @@
     "runAsNode": false,
     "enableNodeOptionsEnvironmentVariable": false,
     "enableNodeCliInspectArguments": false,
-    "enableCookieEncryption": true,
     "grantFileProtocolExtraPrivileges": false,
     "resetAdHocDarwinSignature": true
   },
