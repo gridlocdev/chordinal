@@ -250,6 +250,9 @@ input[type='range']::-moz-range-thumb {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
+/* Reduced motion turns transitions off rather than making them very short: a short transition still runs on every
+   property, visibility included, so a menu that has just been shown stays hidden for a moment and can't take the
+   focus. */
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

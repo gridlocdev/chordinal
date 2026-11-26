@@ -31,10 +31,6 @@ const focusRing = (page: Page) =>
     };
   });
 
-/** whether the keyboard focus is on the selected track's header */
-const focusOnSelectedHeader = (page: Page) =>
-  page.evaluate(() => document.activeElement === document.querySelector('.track.on .head'));
-
 test.describe('Focus', () => {
   test('every stop on the Tab path shows the theme’s focus ring, never the browser’s outline', async ({
     page,
@@ -107,17 +103,39 @@ test.describe('Focus', () => {
     // a dialog that doesn't hand the focus back itself: renaming the track
     await second.locator('.name').dblclick();
     await expect(page.getByRole('dialog')).toBeVisible();
+    // the dialog takes the focus just after it shows; Escape is its own key only from then on
+    await expect(page.getByRole('dialog').getByRole('textbox')).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(second, 'after the rename dialog closes').toBeFocused();
     // a command run from ⌘K moves the focus with the selection
     await runCommand(page, 'Next Track');
     await expect(page.locator('.track').nth(2)).toHaveClass(/\bon\b/);
-    expect(await focusOnSelectedHeader(page)).toBe(true);
+    await expect(selectedHeader(page), 'the focus follows the selection').toBeFocused();
     // undo takes away the selected track: the focus lands on the track the state selects next, never the page
     await page.keyboard.press('ControlOrMeta+KeyZ');
     await expect(page.locator('.track')).toHaveCount(count - 1);
     await expect(selectedHeader(page)).toBeFocused();
+    expect(errors).toEqual([]);
+  });
+
+  test('with reduced motion, nothing transitions, and a menu opened from the keyboard takes the focus and closes on Escape', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await openApp(page);
+    // a very short transition still runs, and on visibility it keeps a menu that has just been shown from the focus
+    const play = page.getByRole('button', { name: 'Play' });
+    await expect(play).toHaveCSS('transition-property', 'none');
+    await selectedHeader(page).click();
+    await page.keyboard.press('ControlOrMeta+KeyK');
+    const menu = page.getByRole('dialog');
+    await expect(menu).toBeVisible();
+    await expect(menu.getByRole('combobox').or(menu.locator('input')).first()).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    await expect(selectedHeader(page), 'Escape closed the menu, and the focus went back').toBeFocused();
     expect(errors).toEqual([]);
   });
 });
