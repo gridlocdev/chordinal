@@ -214,4 +214,17 @@ test.describe('The window', () => {
     await expect(jump.locator('option')).toHaveText(['Recent', 'Documents/Chordinal']);
     expect(errors).toEqual([]);
   });
+
+  test('an instrument whose sound file is missing says so in words, not with its address', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await page.getByRole('button', { name: 'Play' }).click();
+    const notice = page.locator('.status-bar .notice.error');
+    await expect(notice).toContainText(/its sound file \S+ is missing/);
+    await expect(notice).not.toContainText('/soundfonts/');
+    await expect(notice).not.toContainText('404');
+    expect(errors).toEqual([]);
+  });
 });

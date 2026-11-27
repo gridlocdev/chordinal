@@ -134,8 +134,20 @@ export function trimFonts(
 }
 
 async function download(url: string, onProgress?: Progress): Promise<ArrayBuffer> {
-  const res = await fetch(url);
-  if (!res.ok || !res.body) throw new Error(`${url}: ${res.status} ${res.statusText}`);
+  // the error says what's wrong in words a player reads in the status bar, with the file's name, not its whole address
+  const file = decodeURIComponent(url.split(/[?#]/)[0]?.split('/').pop() ?? url);
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch {
+    throw new Error(`its sound file ${file} couldn't be downloaded. Check the connection and try again`);
+  }
+  if (!res.ok || !res.body)
+    throw new Error(
+      res.status === 404
+        ? `its sound file ${file} is missing`
+        : `its sound file ${file} couldn't be downloaded (${res.status} ${res.statusText})`,
+    );
   // content-length is the compressed size when the server compresses, so it's only a first guess
   const total = Number(res.headers.get('content-length')) || 0;
   let bytes = new Uint8Array(total || 1 << 24);
