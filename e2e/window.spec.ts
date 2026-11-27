@@ -227,4 +227,10 @@ test.describe('The window', () => {
     await expect(notice).not.toContainText('404');
     expect(errors).toEqual([]);
   });
+
+  test('the piano roll’s click while recording is named apart from the metronome', async ({ page }) => {
+    await openApp(page);
+    await page.getByRole('tab', { name: 'Piano Roll' }).click();
+    await expect(page.getByLabel('Record click')).toBeVisible();
+  });
 });

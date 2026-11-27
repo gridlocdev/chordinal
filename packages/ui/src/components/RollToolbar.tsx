@@ -34,7 +34,7 @@ export function RollToolbar() {
           checked={settings.value.click}
           onChange={(e) => setSettings({ click: e.currentTarget.checked })}
         />{' '}
-        Click
+        Record click
       </label>
     </div>
   );
