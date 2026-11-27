@@ -29,7 +29,7 @@ Plain keys (Space, `Q`, `R`, the arrows) wait while a text field has the focus, 
 | Duplicate | `⌘D` | `Ctrl+D` | Put a copy of the selected notes or clip right after them. |
 | Delete | `⌫` (or `⌦`) | `Backspace` (or `Delete`) | Delete the selected notes, clip, chords or automation points. |
 | Select All | `⌘A` | `Ctrl+A` | Select every note in the piano roll. |
-| Deselect All | `⎋` | `Esc` | Select no notes, clip or automation points. |
+| Deselect All | `Esc` | `Esc` | Select no notes, clip or automation points. |
 | Split at Playhead | `⌘T` | `Ctrl+T` | Cut the clips under the playhead in two. |
 | Join with Next Clip | `⌘J` | `Ctrl+J` | Make the selected clip and the one after it one clip. |
 | Quantize | `Q` | `Q` | Move the selected notes, or the clip’s, onto the grid. |

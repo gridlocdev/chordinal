@@ -60,6 +60,7 @@ test('shortcuts are written once: matched, labelled and given to Electron from t
   assert.equal(formatShortcut(parseShortcut('alt+,'), true), '⌥,');
   assert.equal(toAccelerator(parseShortcut('enter')), 'Return');
   assert.equal(formatShortcut(parseShortcut('esc'), false), 'Esc');
+  assert.equal(formatShortcut(parseShortcut('esc'), true), 'Esc', 'not ⎋, which reads as a refresh sign');
 });
 
 test('a key press finds its command, by the layout’s letter or the physical key', () => {

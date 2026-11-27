@@ -98,7 +98,7 @@ export const typesText = (s: Shortcut): boolean => !s.mod && !s.ctrl && !s.alt;
 
 const MAC_SYMBOLS: Record<string, string> = {
   enter: '↩',
-  esc: '⎋',
+  esc: 'Esc',
   backspace: '⌫',
   delete: '⌦',
   tab: '⇥',
