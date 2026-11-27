@@ -303,4 +303,17 @@ test.describe('Drums and patterns', () => {
     await page.screenshot({ path: test.info().outputPath('tune.png') });
     expect(errors).toEqual([]);
   });
+
+  test('with a track selected but no clip, the step grid names the track and says where the clips are', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await openApp(page);
+    await trackHeader(page, 'Drums').click();
+    await page.getByRole('tab', { name: 'Step Grid' }).click();
+    await expect(page.locator('.editor .hint')).toHaveText(
+      'Click one of the track’s clips in the arrangement to edit its steps.',
+    );
+    expect(errors).toEqual([]);
+  });
 });

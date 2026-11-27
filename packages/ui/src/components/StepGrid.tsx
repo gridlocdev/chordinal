@@ -17,7 +17,7 @@ import { GM_DRUMS } from '@chordinal/daw';
 import type { Clip, Track } from '@chordinal/daw';
 import { appMenu } from '../platform/app-menu.ts';
 import { useComputed } from '@preact/signals';
-import { project } from '../store.ts';
+import { project, selected } from '../store.ts';
 import { focus } from '../focus.ts';
 import {
   gridTarget,
@@ -399,10 +399,12 @@ export function GridToolbar() {
       <span>
         {track
           ? `${track.name}${pattern ? ` · ⧉ ${pattern.name}` : clip ? ` · clip at bar ${barAt(project.value.meters, clip.start).bar + 1}` : ''}`
-          : 'Select a track'}
+          : (project.value.tracks.find((t) => t.id === selected.value)?.name ?? 'Select a track')}
       </span>
       <span class="sep" />
-      <span class="tip">Click a step to turn it on or off, drag to paint, Shift-click to accent</span>
+      <span class="tip" title={STEP_TIP}>
+        {STEP_TIP}
+      </span>
     </div>
   );
 }
@@ -550,10 +552,19 @@ function StepLane({ track, clip }: GridProps) {
   );
 }
 
+const STEP_TIP = 'Click a step to turn it on or off, drag to paint, Shift-click to accent';
+
 export function StepGrid() {
   const { track, clip } = gridTarget();
   // PRD §4.3: the message for no clip; melodic tracks have a grid of their own now (Chordinal PRD §17.1)
-  if (!track || !clip) return <div class="hint">Select a clip to edit its steps.</div>;
+  if (!track || !clip)
+    return (
+      <div class="hint">
+        {selected.value
+          ? 'Click one of the track’s clips in the arrangement to edit its steps.'
+          : 'Select a clip to edit its steps.'}
+      </div>
+    );
   return (
     <>
       <Grid track={track} clip={clip} />
