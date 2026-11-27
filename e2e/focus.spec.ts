@@ -103,8 +103,7 @@ test.describe('Focus', () => {
     // a dialog that doesn't hand the focus back itself: renaming the track
     await second.locator('.name').dblclick();
     await expect(page.getByRole('dialog')).toBeVisible();
-    // the dialog takes the focus just after it shows; Escape is its own key only from then on
-    await expect(page.getByRole('dialog').getByRole('textbox')).toBeFocused();
+    // Escape pressed as soon as the dialog shows is the dialog's: it takes the focus before it's painted
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(second, 'after the rename dialog closes').toBeFocused();

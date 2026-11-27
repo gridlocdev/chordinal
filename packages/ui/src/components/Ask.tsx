@@ -1,13 +1,14 @@
 // The question the app is asking, if any: a line of text, yes or no, or a choice, with Enter and Escape. Enter presses
 // the button with the focus, which starts on the main answer.
-import { useEffect, useRef } from 'preact/hooks';
+import { useLayoutEffect, useRef } from 'preact/hooks';
 import { asking, answer, OTHER } from '../ask.ts';
 
 export function Ask() {
   const a = asking.value;
   const input = useRef<HTMLInputElement>(null);
   const ok = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
+  // before the dialog is painted, so no key typed as it opens goes past it
+  useLayoutEffect(() => {
     if (a) (input.current ?? ok.current)?.focus();
     input.current?.select();
   }, [a]);
